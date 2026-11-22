@@ -1,0 +1,7 @@
+# Test fixtures contain obviously fake provider keys (backend/tests/test_pay.py); nothing else is allowlisted.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "fake keys in test fixtures"
+paths = ['''backend/tests/''']
