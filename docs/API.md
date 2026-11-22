@@ -1,0 +1,85 @@
+# nazoratly API (v1)
+
+Holat: backend/API, MCP server, Telegram worker va Payme/Click callbacklari qurilgan va sinalgan (Python 3.13, FastAPI, psycopg3, PostgreSQL 16). To'liq endpoint ro'yxati: `clients/typescript/openapi.json` (kod bilan CI orqali sinxron saqlanadi) yoki ishga tushirilgan serverda `/docs`.
+
+## Umumiy qoidalar
+- **Identifikatorlar:** hamma resurs UUID bilan (ketma-ket raqamlar URL/javobda yo'q). Pul: `"500000.00"` ko'rinishidagi o'nlik satr, UZS, doim 2 xona.
+- **Auth:** `POST /v1/auth/login` → `access_token` (JWT, 15 daqiqa) + `refresh_token` (opaque, 30 kun, har ishlatishda almashadi). Almashgan token qayta ko'rsatilsa butun sessiya bekor qilinadi (o'g'irlik belgisi). `Authorization: Bearer <access>`.
+- **Bir nechta markaz:** foydalanuvchi bir nechta markazda a'zo bo'lishi mumkin; login `org_id` bilan yoki bitta markaz bo'lsa avtomatik; keyin `POST /v1/auth/switch`.
+- **Rol har so'rovda bazadan tekshiriladi:** a'zolik to'xtatilsa yoki foydalanuvchi o'chirilsa, kirish darhol yopiladi (JWT muddatini kutmaydi).
+- **Idempotency-Key** (ixtiyoriy, `POST` uchun, 8–255 belgi): bir xil kalit + bir xil tana → saqlangan javob (`Idempotent-Replayed: true`); boshqa tana → 422; hali bajarilayotgan → 409; xato (non-2xx) kalitni bo'shatadi. 24 soat saqlanadi, markaz+foydalanuvchi doirasida.
+- **Sahifalash:** `limit` (1–200, standart 50) va `offset`; javob `{items, limit, offset, has_more}`.
+- **Xato formati:** `{"error": {"code", "message", "details", "request_id"}}`. Kodlar: `validation_error` (422), `unauthorized` (401), `forbidden` (403), `not_found` (404), `conflict` (409), `unprocessable` (422, biznes qoidasi/FK/CHECK), `rate_limited` (429, `Retry-After`), `retry` (503, deadlock/serialization), `payload_too_large` (413), `internal_error` (500).
+- **Kuzatuv:** har javobda `X-Request-ID` (kiruvchi qiymat qabul qilinadi); loglar JSON (structlog), parol/token redaksiya qilinadi; Sentry (`send_default_pii=false`) va OTLP trace faqat sozlanganda yoqiladi; `/health` (jonli), `/ready` (DB javob beradi).
+
+## Rollar va ruxsatlar (`src/nazoratly/permissions.py`)
+| Rol | Nima qila oladi |
+|---|---|
+| owner | hammasi (markaz profili, xodimlar, moliya, oylik tasdiqlash, agentlar, audit) |
+| admin | owner'dan farqi: markaz profilini o'zgartirmaydi, owner/admin rolini bermaydi/o'zgartirmaydi |
+| manager | o'quvchi/vasiy/rozilik, o'quv jarayoni, davomat, to'lovlarni yozish, hisobotlar; xarajat, oylik, agent, audit yo'q |
+| accountant | moliya (hisob, to'lov, xarajat), oylik tuzish/to'lash (tasdiqlash emas), hisobotlar; o'quvchi yozmaydi |
+| teacher | faqat o'z guruhlari/darslari: ro'yxat ko'rish va davomat belgilash; o'quvchilarning umumiy ro'yxati yo'q |
+| viewer | o'qish + agregat hisobotlar; qarzdorlar ro'yxati/to'lovlar yo'q |
+
+Ikkinchi qatlam: Postgres RLS (`app.org_id`) — API xatosi bo'lsa ham boshqa markaz ma'lumoti ko'rinmaydi (testlarda tekshirilgan).
+
+## Modullar
+| Guruh | Endpointlar |
+|---|---|
+| Auth | `/v1/auth/register`, `login`, `refresh`, `logout`, `switch`, `password`; `/v1/me`, `/v1/me/invitations/{org}/accept` |
+| Markaz | `/v1/organization`, `/v1/branches`, `/v1/staff` (yangi akkaunt yoki mavjud foydalanuvchiga taklif — u qabul qilmaguncha a'zo emas) |
+| O'quvchilar | `/v1/students` (qidiruv: trigram), `/v1/guardians`, `/v1/students/{id}/guardians`, `/v1/students/{id}/consents`, `/v1/consents/{id}/revoke` |
+| O'quv | `/v1/courses`, `/v1/teachers`, `/v1/rooms`, `/v1/groups` (+`/schedule`, `/enrollments`), `/v1/enrollments/{id}` |
+| Darslar | `/v1/lessons`, `/v1/groups/{id}/lessons/generate`, `/v1/lessons/{id}/attendance` (varaqa/saqlash/o'chirish), `/v1/groups/{id}/attendance?month=`, `/v1/reports/absences` |
+| Moliya | `/v1/charges` (+`/generate` — oylik hisob, idempotent), `/v1/payments` (+`allocate`, `void`), `/v1/students/{id}/balance`, `/allocate-credit`, `/v1/expenses`, `/v1/reports/debtors|revenue|summary` |
+| Oylik | `/v1/payrolls/generate`, `/v1/payrolls/{id}` (+`items`, `approve`, `pay`) |
+| To'lov provayderlari | `/v1/payment-providers/{provider}` (PUT/GET), `/v1/online-transactions` (Payme/Click daftar, `/{id}/reverse` Click qaytarish) |
+| Agent/audit | `/v1/agents` (token faqat yaratilganda 1 marta), `/v1/agent-drafts` (approve/reject), `/v1/outbox`, `/v1/audit` |
+
+## Qo'shimcha servislar (bir xil image, alohida jarayon)
+| Servis | Ishga tushirish | Vazifa |
+|---|---|---|
+| MCP server | `python -m nazoratly.mcp_server` (port 8001, `/mcp`, streamable HTTP, stateless) | Mijozning AI agenti uchun: `list_debtors`, `attendance_summary`, `revenue_report`, `list_reminder_targets` (read) va `draft_reminder` (draft). Har so'rovda `Authorization: Bearer nzt_...` (`agent_authenticate`), faqat `agent_v_*` view'lar, scope tekshiruvi, daqiqasiga cheklov, har chaqiruv (ok/denied/error) `agent_tool_calls` ga yoziladi. Hech narsa yubormaydi/to'lamaydi: draftni inson `/v1/agent-drafts/{id}/approve` bilan tasdiqlaydi. |
+| Worker | `python -m nazoratly.worker` | Outbox'dan Telegram xabar yuboradi (`NAZORATLY_TELEGRAM_BOT_TOKEN`). DB'ga faqat `outbox_claim/complete` funksiyalari orqali (rol `nazoratly_worker`), `SKIP LOCKED` (bir nechta worker xavfsiz), yuborish paytida rozilik qayta tekshiriladi (bekor qilingan bo'lsa yuborilmaydi), qayta urinish backoff bilan (5 martagacha), 403/404 doimiy xato, bot tokeni hech qachon logga/DB'ga tushmaydi. **SMS: Eskiz.uz adapteri** (`NAZORATLY_ESKIZ_EMAIL/PASSWORD/FROM`; login → token keshlanadi, 401 da qayta login, 4xx doimiy xato, 5xx qayta urinish). Sozlanmasa SMS xabarlar aniq sabab bilan `failed` bo'ladi. |
+| To'lov callbacklari | API ichida: `POST /pay/payme/{center_id}`, `POST /pay/click/{center_id}` | Payme Merchant API (JSON-RPC: Check/Create/Perform/Cancel/CheckTransaction, GetStatement; Basic auth; tiyin; holatlar 1/2/-1/-2; 12 soat timeout) va Click SHOP API (Prepare/Complete, MD5 imzo, xatolar 0..-9). To'lanadigan "hisob" = o'quvchi (`account.student` / `merchant_trans_id` = o'quvchi UUID). Bajarilgan tranzaksiya oddiy `payment` yaratadi va eng eski hisoblarga FIFO taqsimlanadi; Payme bekor qilish (qaytarish) to'lovni void qiladi va qarzni qayta ochadi. Markaz kalitlari `PUT /v1/payment-providers/{payme|click}` bilan (Fernet bilan shifrlanadi, `NAZORATLY_SECRETS_KEY`), `callback_url` javobda. |
+
+## Muhim biznes qoidalari (kodda va testlarda)
+- **Qarz hisoblanadi:** hisob − to'lov taqsimoti. To'lov `auto_allocate` bilan eng eski muddatli hisoblarga FIFO taqsimlanadi; ortig'i o'quvchi krediti (`credit`), keyin `/allocate-credit`.
+- **Parallel xavfsizlik:** taqsimot to'lovni, so'ng hisoblarni (due_date, id) tartibida qulflaydi → parallel to'lovlar ketma-ketlashadi (8 parallel to'lov testi); qulf kutgandan keyin qoldiq yangi so'rovda o'qiladi (READ COMMITTED snapshot tuzog'i tuzatilgan). Guruh sig'imi ham qator qulfi bilan (6 parallel yozilishdan 1 tasi o'tadi).
+- **Oylik hisob generatsiyasi:** har yozilish uchun oyiga 1 ta o'qish haqi (qayta ishga tushirsa ham takror yo'q); to'liq oy narxi, **proratsiya yo'q** (qaror kerak bo'lsa alohida); muzlatilgan yozilishlar hisoblanmaydi; chegirma foizi va individual narx hisobga olinadi.
+- **Bekor qilish:** hisob/to'lov/xarajat o'chirilmaydi, `void` + sabab. To'lovni bekor qilish taqsimotni bo'shatadi; taqsimotli hisobni faqat `release_allocations=true` bilan.
+- **Online to'lov:** `(method, external_ref)` bo'yicha idempotent — qayta kelgan Payme/Click so'rovi asl to'lovni qaytaradi (200), boshqa summa bilan 409.
+- **Oylik:** yaratilgan qatorlar (`base`/`lesson`) qayta hisoblanadi, qo'lda qatorlar (bonus/jarima/tuzatish) saqlanadi; tasdiqlangach DB qatorlarni muzlatadi; tasdiqlash faqat owner/admin; bo'sh yoki manfiy yig'indi tasdiqlanmaydi.
+- **Model B:** agent token `nzt_…` faqat SHA-256 sifatida saqlanadi; agent faqat `agent_v_*` view'larni o'qiydi va draft yaratadi; draftni inson tasdiqlaydi (`approve` → DB roziligi/vasiy bog'lanishini qayta tekshirib outbox'ga qo'yadi, rozilik bekor bo'lsa 422 va draft `pending` qoladi); 48 soatdan keyin draft `expired`.
+
+## Ishga tushirish
+```powershell
+Copy-Item .env.example .env   # to'ldiring (maxfiy kalitlarni python -c "import secrets; print(secrets.token_urlsafe(48))" bilan)
+docker compose up --build     # db + migratsiya + api (8000) + mcp (8001) + worker; http://127.0.0.1:8000/docs
+```
+Migratsiyalar: `python -m nazoratly.migrate up|down|status|roles` (OWNER ulanishi `NAZORATLY_MIGRATE_URL`, superuser yoki BYPASSRLS; rol parollari `NAZORATLY_*_PASSWORD` dan). Ilova `nazoratly_app` va `nazoratly_auth` ulanishlari bilan ishlaydi.
+
+Sozlamalar (`NAZORATLY_` prefiksi): `DATABASE_URL_APP`, `DATABASE_URL_AUTH`, `JWT_SECRET` (≥32 belgi; almashtirish uchun eskisini `JWT_PREVIOUS_SECRETS` ga), `ENV` (`prod` da `/docs` o'chadi, HSTS yoqiladi, wildcard CORS taqiqlanadi), `CORS_ORIGINS`, `TRUST_PROXY_HEADERS` (faqat ishonchli proksi orqasida), `RATE_LIMIT_PER_MINUTE`, `AUTH_RATE_LIMIT_PER_MINUTE`, `LOGIN_MAX_FAILURES`, `SECRETS_KEY` (Fernet; Payme/Click kalitlarini saqlash uchun), `SENTRY_DSN`, `OTEL_EXPORTER_OTLP_ENDPOINT`. MCP: `DATABASE_URL_AGENT`, `MCP_ALLOWED_HOSTS`, `MCP_CALLS_PER_MINUTE`. Worker: `DATABASE_URL_WORKER`, `TELEGRAM_BOT_TOKEN`, `WORKER_POLL_INTERVAL_S`.
+
+## Sinash va sifat darvozalari
+```powershell
+cd backend
+uv sync
+uv run ruff check src tests ; uv run ruff format --check src tests
+uv run mypy                       # strict
+uv run pytest tests -q            # haqiqiy PostgreSQL 16 Docker konteynerida
+bash ../db/scripts/test_migrations.sh
+```
+CI: `.github/workflows/ci.yml` (lint, mypy, pytest, OpenAPI sinxronligi, pip-audit, migratsiya up/down, TS klient, gitleaks, Docker image).
+
+## Ma'lum cheklovlar
+- Rate limit jarayon ichida (bir nusxa uchun aniq); ko'p nusxada har biri o'z oynasini yuritadi — parol taxmini uchun DB'dagi login qulfi (markaziy) ishlaydi. Ko'p nusxa kerak bo'lsa Redis/proksi limiti qo'shiladi.
+- Access token (15 daqiqa) parol o'zgargandan keyin muddati tugaguncha amal qiladi; refresh tokenlar darhol bekor qilinadi. A'zolik/foydalanuvchi holati esa har so'rovda tekshiriladi.
+- **Tashqi hisob/kirish kerak bo'lgani uchun haqiqiy provayderga qarshi sinalmagan:** Telegram (bot tokeni; sinov `httpx.MockTransport` bilan Bot API javoblarini taqlid qiladi), Payme/Click (merchant shartnomasi va kalitlar; sinov protokol hujjatidagi maydon/xato kodlariga qarab yozilgan o'z test mijozi bilan, Payme sandbox'ida ishga tushirilmagan). Ishga tushirishdan oldin provayderlarning test muhitida sinash shart.
+- Eskiz adapteri Eskiz hujjatidagi endpointlarga qarab yozilgan (Postman kolleksiyasi), haqiqiy hisob bilan sinalmagan (hisob foyda boshlangach). Sheets demo (L1) keng muhokamadan keyin quriladi (qaror: professional, so'nggi imkoniyatlar bilan).
+- Click qaytarish: `POST /v1/online-transactions/{id}/reverse` Click merchant API `payment/reversal` ni chaqiradi (`Auth: merchant_user_id:sha1(ts+secret):ts`; `merchant_user_id` provayder sozlamasida), Click rad etsa hech narsa o'zgarmaydi, qabul qilsa to'lov void bo'ladi. Click qoidalari: faqat joriy hisobot oyidagi kartali to'lov. Sinov Click javobini taqlid qiladi (`MockTransport`).
+- Payme fiskalizatsiya (`SetFiscalData` / `detail`) amalga oshirilmagan: IKPU/package_code kerak, ular har markazning mahsulot kodlariga bog'liq va Payme bilan kelishiladi (spetsifikatsiyada ixtiyoriy).
+- Kirishda markaz tanlash/QR/Telegram login yo'q; ota-ona portali yo'q (faqat xodimlar).
+- Yuk (load) testi o'tkazilmagan; faqat mantiqiy va parallel (8 to'lov, 6 yozilish) testlar.
+- Hisobotlarda `CURRENT_DATE` server vaqt zonasi bo'yicha (tushum hisoboti markaz vaqt zonasida).

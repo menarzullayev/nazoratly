@@ -1,7 +1,7 @@
-# Test fixtures contain obviously fake provider keys (backend/tests/test_pay.py); nothing else is allowlisted.
+# Test fixtures and the example env file contain obviously fake/blank values; nothing else is allowlisted.
 [extend]
 useDefault = true
 
 [allowlist]
-description = "fake keys in test fixtures"
-paths = ['''backend/tests/''']
+description = "fake keys in test fixtures and placeholders in .env.example"
+paths = ['''backend/tests/''', '''\.env\.example''']
