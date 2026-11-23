@@ -35,6 +35,13 @@ def month_start(d: date) -> date:
     return d.replace(day=1)
 
 
+async def has_plan(conn: Conn, charge_id: int) -> bool:
+    row = await fetch_one(
+        conn, "SELECT 1 AS x FROM charge_installments WHERE charge_id = %s LIMIT 1", (charge_id,)
+    )
+    return row is not None
+
+
 def next_month(d: date) -> date:
     return date(d.year + (d.month == 12), d.month % 12 + 1, 1)
 
@@ -76,6 +83,8 @@ class ChargeOut(Out):
     outstanding: Dec2
     voided: bool
     void_reason: str | None
+    installments_count: int = Field(description="0 when the charge has no payment plan")
+    overdue: Dec2 = Field(description="part of the outstanding amount that is past due (per installment)")
 
 
 class GenerateChargesIn(Model):
@@ -91,10 +100,13 @@ class GenerateChargesOut(Out):
     skipped_zero_fee: int
 
 
+_OVERDUE_SQL = "COALESCE((SELECT b.overdue_outstanding FROM v_charge_balance b WHERE b.charge_id = c.id), 0)"
 _CHARGE_SQL = (
     "SELECT c.public_id AS id, s.public_id AS student_id, s.full_name AS student_name, c.kind, c.period_month, c.description,"
     " c.amount, c.due_date, COALESCE(a.paid, 0) AS paid, c.amount - COALESCE(a.paid, 0) AS outstanding,"
-    " (c.voided_at IS NOT NULL) AS voided, c.void_reason "
+    " (c.voided_at IS NOT NULL) AS voided, c.void_reason,"
+    " (SELECT count(*) FROM charge_installments ci WHERE ci.charge_id = c.id)::int AS installments_count,"
+    f" {_OVERDUE_SQL} AS overdue "
     "FROM charges c JOIN students s ON s.org_id = c.org_id AND s.id = c.student_id "
     "LEFT JOIN LATERAL (SELECT sum(pa.amount) AS paid FROM payment_allocations pa WHERE pa.charge_id = c.id) a ON TRUE"
 )
@@ -227,7 +239,7 @@ async def list_charges(
         elif state == "settled":
             where.append("c.amount - COALESCE(a.paid, 0) = 0")
         elif state == "overdue":
-            where.append("c.amount - COALESCE(a.paid, 0) > 0 AND c.due_date < CURRENT_DATE")
+            where.append(f"{_OVERDUE_SQL} > 0")
     async with db.tx(p.session()) as conn:
         rows = await fetch_all(
             conn,
@@ -258,9 +270,10 @@ async def patch_charge(
         assert cur is not None
         if cur["voided_at"] is not None:
             raise Conflict("Charge is voided")
-        await patch_row(
-            conn, "charges", cid, body.model_dump(exclude_unset=True)
-        )  # trigger: amount >= allocated
+        changes = body.model_dump(exclude_unset=True)
+        if ("amount" in changes or "due_date" in changes) and await has_plan(conn, cid):
+            raise Conflict("Charge has a payment plan; change the plan instead of its amount or due date")
+        await patch_row(conn, "charges", cid, changes)  # trigger: amount >= allocated
         return await _charge(conn, cid)
 
 
@@ -285,6 +298,9 @@ async def void_charge(
                     details={"allocated": str(alloc["s"])},
                 )
             await execute(conn, "DELETE FROM payment_allocations WHERE charge_id = %s", (cid,))
+        await execute(
+            conn, "DELETE FROM charge_installments WHERE charge_id = %s", (cid,)
+        )  # voided = no plan
         await execute(
             conn, "UPDATE charges SET voided_at = now(), void_reason = %s WHERE id = %s", (body.reason, cid)
         )
@@ -625,6 +641,8 @@ class OpenCharge(Out):
     paid: Dec2
     outstanding: Dec2
     overdue: bool
+    overdue_amount: Dec2 = Field(description="past-due part of the outstanding amount (per installment)")
+    next_due: date | None = Field(description="earliest due date of what is still unpaid")
 
 
 class StudentBalanceOut(Out):
@@ -649,7 +667,8 @@ async def student_balance(
         assert bal is not None
         charges = await fetch_all(
             conn,
-            "SELECT c.public_id AS id, b.kind, b.period_month, b.due_date, b.amount, b.paid, b.outstanding, (b.due_date < CURRENT_DATE) AS overdue "
+            "SELECT c.public_id AS id, b.kind, b.period_month, b.due_date, b.amount, b.paid, b.outstanding, (b.overdue_outstanding > 0) AS overdue,"
+            " b.overdue_outstanding AS overdue_amount, b.next_due "
             "FROM v_charge_balance b JOIN charges c ON c.id = b.charge_id WHERE b.student_id = %s AND b.outstanding > 0 ORDER BY b.due_date, b.charge_id",
             (sid,),
         )
@@ -680,11 +699,11 @@ async def debtors(
         rows = await fetch_all(
             conn,
             "SELECT s.public_id AS student_id, s.full_name AS student_name, s.phone, count(*) AS open_charges,"
-            " sum(b.outstanding) FILTER (WHERE b.due_date < CURRENT_DATE) AS overdue_total, sum(b.outstanding) AS outstanding_total,"
-            " min(b.due_date) AS oldest_due_date, (CURRENT_DATE - min(b.due_date)) AS max_days_overdue "
+            " sum(b.overdue_outstanding) AS overdue_total, sum(b.outstanding) AS outstanding_total,"
+            " min(b.next_due) AS oldest_due_date, (CURRENT_DATE - min(b.next_due)) AS max_days_overdue "
             "FROM v_charge_balance b JOIN students s ON s.org_id = b.org_id AND s.id = b.student_id "
             "WHERE b.outstanding > 0 AND s.deleted_at IS NULL GROUP BY s.id "
-            "HAVING (CURRENT_DATE - min(b.due_date)) >= %s AND min(b.due_date) < CURRENT_DATE "
+            "HAVING (CURRENT_DATE - min(b.next_due)) >= %s AND min(b.next_due) < CURRENT_DATE "
             "ORDER BY overdue_total DESC NULLS LAST, s.id LIMIT %s",
             (min_days_overdue, limit),
         )
@@ -842,7 +861,7 @@ async def summary(
             " (SELECT COALESCE(sum(amount), 0) FROM charges WHERE period_month = %(f)s AND voided_at IS NULL) AS charged,"
             " (SELECT COALESCE(sum(total), 0) FROM v_daily_revenue WHERE day >= %(f)s AND day < %(n)s) AS revenue,"
             " (SELECT COALESCE(sum(outstanding), 0) FROM v_charge_balance) AS outstanding_now,"
-            " (SELECT COALESCE(sum(outstanding), 0) FROM v_charge_balance WHERE due_date < CURRENT_DATE) AS overdue_now,"
+            " (SELECT COALESCE(sum(overdue_outstanding), 0) FROM v_charge_balance) AS overdue_now,"
             " (SELECT COALESCE(sum(amount), 0) FROM expenses WHERE spent_at >= %(f)s AND spent_at < %(n)s AND voided_at IS NULL) AS expenses,"
             " (SELECT COALESCE(sum(total), 0) FROM v_teacher_payroll_totals WHERE period_month = %(f)s AND status IN ('approved','paid')) AS payroll",
             {"f": first, "n": nxt},

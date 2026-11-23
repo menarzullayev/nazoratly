@@ -37,6 +37,7 @@ _RESOLVABLE = {
     "absence_entitlements": False,
     "lessons": False,
     "charges": False,
+    "documents": False,
     "payments": False,
     "expenses": False,
     "teacher_payrolls": False,

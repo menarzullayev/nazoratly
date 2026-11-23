@@ -16,6 +16,7 @@ from nazoratly.routers import (
     org,
     pay,
     payroll,
+    plans,
     settings,
     students,
 )
@@ -31,6 +32,7 @@ router.include_router(leads.router)
 router.include_router(settings.router)
 router.include_router(lessons.router)
 router.include_router(finance.router)
+router.include_router(plans.router)
 router.include_router(payroll.router)
 router.include_router(agents.router)
 router.include_router(pay.settings_router)
