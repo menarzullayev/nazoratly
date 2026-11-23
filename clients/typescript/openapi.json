@@ -895,12 +895,22 @@
             "title": "Id",
             "type": "string"
           },
+          "installments_count": {
+            "description": "0 when the charge has no payment plan",
+            "title": "Installments Count",
+            "type": "integer"
+          },
           "kind": {
             "title": "Kind",
             "type": "string"
           },
           "outstanding": {
             "title": "Outstanding",
+            "type": "string"
+          },
+          "overdue": {
+            "description": "part of the outstanding amount that is past due (per installment)",
+            "title": "Overdue",
             "type": "string"
           },
           "paid": {
@@ -949,7 +959,9 @@
           "paid",
           "outstanding",
           "voided",
-          "void_reason"
+          "void_reason",
+          "installments_count",
+          "overdue"
         ],
         "title": "ChargeOut",
         "type": "object"
@@ -1339,6 +1351,142 @@
           "max_days_overdue"
         ],
         "title": "DebtorRow",
+        "type": "object"
+      },
+      "DocumentDetail": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "issued_on": {
+            "format": "date",
+            "title": "Issued On",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "number": {
+            "title": "Number",
+            "type": "string"
+          },
+          "payment_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Id"
+          },
+          "snapshot": {
+            "additionalProperties": true,
+            "title": "Snapshot",
+            "type": "object"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "number",
+          "issued_on",
+          "student_id",
+          "student_name",
+          "payment_id",
+          "total",
+          "created_at",
+          "snapshot"
+        ],
+        "title": "DocumentDetail",
+        "type": "object"
+      },
+      "DocumentOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "issued_on": {
+            "format": "date",
+            "title": "Issued On",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "number": {
+            "title": "Number",
+            "type": "string"
+          },
+          "payment_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Id"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "number",
+          "issued_on",
+          "student_id",
+          "student_name",
+          "payment_id",
+          "total",
+          "created_at"
+        ],
+        "title": "DocumentOut",
         "type": "object"
       },
       "DraftOut": {
@@ -1891,6 +2039,28 @@
           "created_at"
         ],
         "title": "EntitlementOut",
+        "type": "object"
+      },
+      "EqualSplitIn": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "description": "2..24 installments",
+            "title": "Count",
+            "type": "integer"
+          },
+          "first_due": {
+            "description": "monthly from this date, the day clamped to the month end",
+            "format": "date",
+            "title": "First Due",
+            "type": "string"
+          }
+        },
+        "required": [
+          "count",
+          "first_due"
+        ],
+        "title": "EqualSplitIn",
         "type": "object"
       },
       "ExpenseIn": {
@@ -2853,6 +3023,143 @@
         "title": "Health",
         "type": "object"
       },
+      "InstallmentDueRow": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "charge_id": {
+            "format": "uuid",
+            "title": "Charge Id",
+            "type": "string"
+          },
+          "days_overdue": {
+            "description": "positive = overdue, negative = days until due",
+            "title": "Days Overdue",
+            "type": "integer"
+          },
+          "due_date": {
+            "format": "date",
+            "title": "Due Date",
+            "type": "string"
+          },
+          "installments_count": {
+            "title": "Installments Count",
+            "type": "integer"
+          },
+          "outstanding": {
+            "title": "Outstanding",
+            "type": "string"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "student_id",
+          "student_name",
+          "phone",
+          "charge_id",
+          "seq",
+          "installments_count",
+          "due_date",
+          "amount",
+          "outstanding",
+          "days_overdue"
+        ],
+        "title": "InstallmentDueRow",
+        "type": "object"
+      },
+      "InstallmentIn": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "UZS amount, 2 decimals",
+            "title": "Amount"
+          },
+          "due_date": {
+            "format": "date",
+            "title": "Due Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "amount",
+          "due_date"
+        ],
+        "title": "InstallmentIn",
+        "type": "object"
+      },
+      "InstallmentOut": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "due_date": {
+            "format": "date",
+            "title": "Due Date",
+            "type": "string"
+          },
+          "outstanding": {
+            "title": "Outstanding",
+            "type": "string"
+          },
+          "overdue": {
+            "title": "Overdue",
+            "type": "boolean"
+          },
+          "paid": {
+            "title": "Paid",
+            "type": "string"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "seq",
+          "due_date",
+          "amount",
+          "paid",
+          "outstanding",
+          "overdue"
+        ],
+        "title": "InstallmentOut",
+        "type": "object"
+      },
       "InteractionIn": {
         "additionalProperties": false,
         "properties": {
@@ -2953,6 +3260,34 @@
           "created_at"
         ],
         "title": "InteractionOut",
+        "type": "object"
+      },
+      "InvoiceIn": {
+        "additionalProperties": false,
+        "properties": {
+          "charge_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "only this charge; default: everything open",
+            "title": "Charge Id"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "student_id"
+        ],
+        "title": "InvoiceIn",
         "type": "object"
       },
       "ItemIn": {
@@ -4186,6 +4521,19 @@
             "title": "Kind",
             "type": "string"
           },
+          "next_due": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "earliest due date of what is still unpaid",
+            "title": "Next Due"
+          },
           "outstanding": {
             "title": "Outstanding",
             "type": "string"
@@ -4193,6 +4541,11 @@
           "overdue": {
             "title": "Overdue",
             "type": "boolean"
+          },
+          "overdue_amount": {
+            "description": "past-due part of the outstanding amount (per installment)",
+            "title": "Overdue Amount",
+            "type": "string"
           },
           "paid": {
             "title": "Paid",
@@ -4212,7 +4565,9 @@
           "amount",
           "paid",
           "outstanding",
-          "overdue"
+          "overdue",
+          "overdue_amount",
+          "next_due"
         ],
         "title": "OpenCharge",
         "type": "object"
@@ -4650,6 +5005,37 @@
           "has_more"
         ],
         "title": "Page[CourseOut]",
+        "type": "object"
+      },
+      "Page_DocumentOut_": {
+        "properties": {
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset",
+          "has_more"
+        ],
+        "title": "Page[DocumentOut]",
         "type": "object"
       },
       "Page_DraftOut_": {
@@ -5684,6 +6070,75 @@
         "title": "PendingTrial",
         "type": "object"
       },
+      "PlanIn": {
+        "additionalProperties": false,
+        "properties": {
+          "equal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EqualSplitIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "installments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/InstallmentIn"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Installments"
+          }
+        },
+        "title": "PlanIn",
+        "type": "object"
+      },
+      "PlanOut": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "charge_id": {
+            "format": "uuid",
+            "title": "Charge Id",
+            "type": "string"
+          },
+          "installments": {
+            "items": {
+              "$ref": "#/components/schemas/InstallmentOut"
+            },
+            "title": "Installments",
+            "type": "array"
+          },
+          "outstanding": {
+            "title": "Outstanding",
+            "type": "string"
+          },
+          "paid": {
+            "title": "Paid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "charge_id",
+          "amount",
+          "paid",
+          "outstanding",
+          "installments"
+        ],
+        "title": "PlanOut",
+        "type": "object"
+      },
       "ProviderIn": {
         "additionalProperties": false,
         "properties": {
@@ -5763,6 +6218,21 @@
           "callback_url"
         ],
         "title": "ProviderOut",
+        "type": "object"
+      },
+      "ReceiptIn": {
+        "additionalProperties": false,
+        "properties": {
+          "payment_id": {
+            "format": "uuid",
+            "title": "Payment Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "payment_id"
+        ],
+        "title": "ReceiptIn",
         "type": "object"
       },
       "RefreshIn": {
@@ -6211,6 +6681,52 @@
         "title": "ScheduleSlotOut",
         "type": "object"
       },
+      "SendIn": {
+        "additionalProperties": false,
+        "properties": {
+          "guardian_id": {
+            "format": "uuid",
+            "title": "Guardian Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "guardian_id"
+        ],
+        "title": "SendIn",
+        "type": "object"
+      },
+      "SendOut": {
+        "properties": {
+          "document_id": {
+            "format": "uuid",
+            "title": "Document Id",
+            "type": "string"
+          },
+          "guardian_id": {
+            "format": "uuid",
+            "title": "Guardian Id",
+            "type": "string"
+          },
+          "message_id": {
+            "format": "uuid",
+            "title": "Message Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message_id",
+          "document_id",
+          "guardian_id",
+          "status"
+        ],
+        "title": "SendOut",
+        "type": "object"
+      },
       "SettingsOut": {
         "properties": {
           "excused_mode": {
@@ -6230,6 +6746,18 @@
             "title": "Makeup Lapses",
             "type": "boolean"
           },
+          "requisites": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "the center's own requisites, printed on receipts and invoices",
+            "title": "Requisites"
+          },
           "trial_free_days": {
             "title": "Trial Free Days",
             "type": "integer"
@@ -6244,7 +6772,8 @@
           "trial_free_days",
           "excused_mode",
           "makeup_expiry_days",
-          "makeup_lapses"
+          "makeup_lapses",
+          "requisites"
         ],
         "title": "SettingsOut",
         "type": "object"
@@ -6291,6 +6820,19 @@
               }
             ],
             "title": "Makeup Lapses"
+          },
+          "requisites": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "empty string clears it",
+            "title": "Requisites"
           },
           "trial_free_days": {
             "anyOf": [
@@ -9023,6 +9565,149 @@
         ]
       }
     },
+    "/v1/charges/{charge_id}/plan": {
+      "delete": {
+        "operationId": "delete_plan_v1_charges__charge_id__plan_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "charge_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Charge Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Remove the plan (the charge keeps the due date of its first installment)",
+        "tags": [
+          "payment plans"
+        ]
+      },
+      "get": {
+        "operationId": "get_plan_v1_charges__charge_id__plan_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "charge_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Charge Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Plan",
+        "tags": [
+          "payment plans"
+        ]
+      },
+      "put": {
+        "operationId": "put_plan_v1_charges__charge_id__plan_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "charge_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Charge Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Set (or replace) the payment plan of a charge",
+        "tags": [
+          "payment plans"
+        ]
+      }
+    },
     "/v1/charges/{charge_id}/void": {
       "post": {
         "operationId": "void_charge_v1_charges__charge_id__void_post",
@@ -9402,6 +10087,348 @@
         "summary": "Patch Course",
         "tags": [
           "academics"
+        ]
+      }
+    },
+    "/v1/documents": {
+      "get": {
+        "operationId": "list_documents_v1_documents_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "student_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Student Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "receipt",
+                    "invoice"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 1000000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_DocumentOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Documents",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/v1/documents/invoices": {
+      "post": {
+        "operationId": "issue_invoice_v1_documents_invoices_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvoiceIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Issue an invoice (to'lov hisobi) for a student's open debt",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/v1/documents/receipts": {
+      "post": {
+        "operationId": "issue_receipt_v1_documents_receipts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiptIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Issue the receipt of a payment (the same document is returned on a repeat)",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/v1/documents/{document_id}": {
+      "get": {
+        "operationId": "get_document_v1_documents__document_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Document",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/v1/documents/{document_id}/pdf": {
+      "get": {
+        "operationId": "get_document_pdf_v1_documents__document_id__pdf_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "The PDF file of the document",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/v1/documents/{document_id}/send": {
+      "post": {
+        "description": "This call IS the approval: a signed-in person decides to send this document to this guardian. The guardian must\nbe linked to the student, receive reminders and the student must have an active notifications consent.",
+        "operationId": "send_document_v1_documents__document_id__send_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Approve and queue the document for a guardian's Telegram (rich message plus the PDF)",
+        "tags": [
+          "documents"
         ]
       }
     },
@@ -13528,6 +14555,82 @@
         "summary": "Lead funnel for leads created in the range",
         "tags": [
           "leads"
+        ]
+      }
+    },
+    "/v1/reports/installments": {
+      "get": {
+        "operationId": "installments_due_v1_reports_installments_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "days_ahead",
+            "required": false,
+            "schema": {
+              "default": 7,
+              "maximum": 365,
+              "minimum": 0,
+              "title": "Days Ahead",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "only_overdue",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Only Overdue",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/InstallmentDueRow"
+                  },
+                  "title": "Response Installments Due V1 Reports Installments Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Open installments overdue or due soon (what reminders follow)",
+        "tags": [
+          "payment plans"
         ]
       }
     },

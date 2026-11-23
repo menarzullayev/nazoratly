@@ -77,3 +77,26 @@ export function sendRich(chatId: string, html: string, extra: Record<string, unk
 
 export const sendMessage = (chatId: string, text: string, extra: Record<string, unknown> = {}): TgResult =>
   tg("sendMessage", { chat_id: chatId, text, disable_web_page_preview: true, ...extra });
+
+/** Sends a PDF (or any file) to a chat; multipart upload through UrlFetchApp. */
+export function sendDocument(chatId: string, blob: GoogleAppsScript.Base.BlobSource, caption?: string): TgResult {
+  const token = getToken();
+  if (!token) return { ok: false, description: "Telegram bot tokeni sozlanmagan (nazoratly > Telegram sozlash)" };
+  try {
+    const res = UrlFetchApp.fetch(`https://api.telegram.org/bot${token}/sendDocument`, {
+      method: "post",
+      payload: { chat_id: chatId, document: blob.getBlob(), ...(caption ? { caption } : {}) },
+      muteHttpExceptions: true,
+    });
+    let data: { ok?: boolean; description?: string } = {};
+    try {
+      data = JSON.parse(res.getContentText());
+    } catch {
+      /* non-JSON answer */
+    }
+    if (res.getResponseCode() === 200 && data.ok) return { ok: true };
+    return { ok: false, errorCode: res.getResponseCode(), description: String(data.description ?? "Telegram xatosi").slice(0, 200) };
+  } catch {
+    return { ok: false, description: "Telegramga ulanib bo'lmadi" }; // never echo the exception: it contains the URL (token)
+  }
+}

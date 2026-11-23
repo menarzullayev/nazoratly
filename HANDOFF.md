@@ -40,6 +40,11 @@ Foydalanuvchi bilan hisobotlar o'zbek lotin tilida; kod/izoh/identifikatorlar in
 - KUTMOQDA (egasining ruxsati): (1) 0011 ni haqiqiy lokal bazaga qo'llash (oldin `pg_dump` zaxira), (2) yangi kodni haqiqiy Sheet'ga `clasp push` qilish va u yerda "Boshlang'ich sozlash"ni bosish.
 - Keyingi bosqichlar: davomat/qoplash, to'lov rejasi va PDF, abonement, panel, buxgalteriya, sig'im/QR/import/demo rejim; saytni har bosqichdan keyin yangilash.
 
+## Holat 2026-11-23 (kech, 4): 3-bosqich (to'lov rejalari va PDF hujjatlar), branch `feat/phase3-payment-plans-pdf`
+- Qurildi: oltin qoidalar (`installments.json`, `documents.json`), migratsiya 0013, API (`/v1/charges/{id}/plan`, `/v1/documents/*`, MCP `list_due_installments`), PDF (reportlab + DejaVu), worker (rich + PDF), Sheets (To'lov rejasi, Hujjatlar menyulari).
+- KUTMOQDA (egasining ruxsati): 0013 ni lokal bazaga qo'llash (oldin `pg_dump`; docker image qayta quriladi: reportlab), `clasp push` (yangi `drive.file` ruxsati so'raladi) + Sheet'da "Boshlang'ich sozlash", `Markaz rekvizitlari` ni to'ldirish.
+- Tekshirilmagan: PDF'ning ko'rinishi (matn/shrift qamrovi testlangan, vizual emas), Sheets HTML->PDF va Drive haqiqiy Google muhitida.
+
 ## Holat 2026-11-23 (kech, 3): 2-bosqich (sababli yo'qlik va qoplash), branch `feat/phase2-attendance`
 - Qurildi: oltin qoidalar (`tests/golden/entitlements.json`), migratsiya 0012, API (`/v1/entitlements`, sozlamalar, kredit `/charges/generate` da, oylik qoidasi), Sheets (Qoplash huquqlari varaqi, menyu Qoplash, kredit, oylik).
 - KUTMOQDA (egasining ruxsati): 0012 ni lokal bazaga qo'llash (oldin `pg_dump`), `clasp push` + Sheet'da "Boshlang'ich sozlash".

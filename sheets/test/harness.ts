@@ -77,6 +77,19 @@ class FakeSheet {
   setColumnWidths() {}
 }
 
+interface Blob { content: string; type: string; name: string; getName(): string; getBytes(): number[]; getAs(t: string): Blob; setName(n: string): Blob; getBlob(): Blob }
+function makeBlob(content: string, type: string, name: string): Blob {
+  const b: Blob = {
+    content, type, name,
+    getName: () => b.name,
+    getBytes: () => [...content].map((c) => c.charCodeAt(0) & 255),
+    getAs: (t: string) => makeBlob(t === "application/pdf" ? `%PDF-1.4 fake ${content}` : content, t, name),
+    setName: (n: string) => { b.name = n; return b; },
+    getBlob: () => b,
+  };
+  return b;
+}
+
 export interface Harness {
   sheets: Map<string, FakeSheet>;
   alerts: { title: string; message: string }[];
@@ -87,6 +100,8 @@ export interface Harness {
   telegram: { handler: (method: string, body: Record<string, unknown>) => { status: number; body: unknown } };
   props: Map<string, string>;
   webUrl: string | null;
+  /** files created in Drive: id -> blob content */
+  drive: Map<string, { name: string; folder: string; content: string }>;
   sheet(ref: SheetRef): FakeSheet;
   rows(ref: SheetRef): Cell[][];
 }
@@ -102,6 +117,7 @@ export function installHarness(): Harness {
     telegram: { handler: () => ({ status: 200, body: { ok: true, result: {} } }) },
     props: new Map(),
     webUrl: null,
+    drive: new Map(),
     sheet: (ref) => sheets.get(nameOf(ref))!,
     rows: (ref) => sheets.get(nameOf(ref))!.data.slice(0, sheets.get(nameOf(ref))!.getLastRow()),
   };
@@ -133,6 +149,7 @@ export function installHarness(): Harness {
     },
     getUuid: () => crypto.randomUUID(),
     sleep: () => {},
+    newBlob: (data: string, type: string, name: string) => makeBlob(data, type, name),
   };
   g.LockService = { getScriptLock: () => ({ tryLock: () => true, releaseLock: () => {} }) };
   g.PropertiesService = {
@@ -143,13 +160,27 @@ export function installHarness(): Harness {
     }),
   };
   g.UrlFetchApp = {
-    fetch: (url: string, opts: { payload?: string }) => {
+    fetch: (url: string, opts: { payload?: string | Record<string, unknown> }) => {
       const method = url.split("/").pop()!;
-      const body = JSON.parse(opts.payload ?? "{}") as Record<string, unknown>;
+      const raw = opts.payload ?? "{}";
+      // an object payload is a multipart upload: blobs are reported by name and size
+      const body = (typeof raw === "string"
+        ? JSON.parse(raw)
+        : Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, v && typeof v === "object" && "getBytes" in v ? { _blob: (v as Blob).getName(), size: (v as Blob).content.length, content: (v as Blob).content } : v]))) as Record<string, unknown>;
       h.fetches.push({ url, body: { _method: method, ...body } });
       const r = h.telegram.handler(method, body);
       return { getResponseCode: () => r.status, getContentText: () => JSON.stringify(r.body) };
     },
+  };
+  const folders = new Map<string, { name: string }>();
+  g.DriveApp = {
+    getFoldersByName: (n: string) => { const f = folders.get(n); const items = f ? [f] : []; return { hasNext: () => items.length > 0, next: () => items.shift() }; },
+    createFolder: (n: string) => { const f = { name: n, createFile: (b: Blob) => {
+      const id = `FILE${h.drive.size + 1}`;
+      h.drive.set(id, { name: b.getName(), folder: n, content: b.content });
+      return { getUrl: () => `https://drive.google.com/file/d/${id}/view?usp=drivesdk` };
+    } }; folders.set(n, f); return f; },
+    getFileById: (id: string) => { const f = h.drive.get(id); if (!f) throw new Error("file not found"); return { getBlob: () => makeBlob(f.content, "application/pdf", f.name) }; },
   };
   g.ContentService = { createTextOutput: (s: string) => ({ getContent: () => s }) };
   g.ScriptApp = { getService: () => ({ getUrl: () => h.webUrl }) };

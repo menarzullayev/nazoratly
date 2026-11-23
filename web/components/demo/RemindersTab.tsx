@@ -55,7 +55,7 @@ export function RemindersTab({ d, state, setState, show, brand }: TabProps & { b
           <ul className="mt-3 space-y-1 text-sm text-mute">
             {state.skipped.map((x) => (
               <li key={x.studentId}>
-                {d.reminders.skipped}: {nameOf(x.studentId)} ({d.reminders.reasons[x.reason]})
+                {d.reminders.skipped}: {nameOf(x.studentId)} ({(d.reminders.reasons as Record<string, string>)[x.reason] ?? x.reason})
               </li>
             ))}
           </ul>

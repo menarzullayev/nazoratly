@@ -401,6 +401,25 @@ export interface paths {
         patch: operations["patch_charge_v1_charges__charge_id__patch"];
         trace?: never;
     };
+    "/v1/charges/{charge_id}/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Plan */
+        get: operations["get_plan_v1_charges__charge_id__plan_get"];
+        /** Set (or replace) the payment plan of a charge */
+        put: operations["put_plan_v1_charges__charge_id__plan_put"];
+        post?: never;
+        /** Remove the plan (the charge keeps the due date of its first installment) */
+        delete: operations["delete_plan_v1_charges__charge_id__plan_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/charges/{charge_id}/void": {
         parameters: {
             query?: never;
@@ -470,6 +489,112 @@ export interface paths {
         head?: never;
         /** Patch Course */
         patch: operations["patch_course_v1_courses__course_id__patch"];
+        trace?: never;
+    };
+    "/v1/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Documents */
+        get: operations["list_documents_v1_documents_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/documents/invoices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Issue an invoice (to'lov hisobi) for a student's open debt */
+        post: operations["issue_invoice_v1_documents_invoices_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/documents/receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Issue the receipt of a payment (the same document is returned on a repeat) */
+        post: operations["issue_receipt_v1_documents_receipts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/documents/{document_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Document */
+        get: operations["get_document_v1_documents__document_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/documents/{document_id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The PDF file of the document */
+        get: operations["get_document_pdf_v1_documents__document_id__pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/documents/{document_id}/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve and queue the document for a guardian's Telegram (rich message plus the PDF)
+         * @description This call IS the approval: a signed-in person decides to send this document to this guardian. The guardian must
+         *     be linked to the student, receive reminders and the student must have an active notifications consent.
+         */
+        post: operations["send_document_v1_documents__document_id__send_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/enrollments/{enrollment_id}": {
@@ -1327,6 +1452,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/reports/installments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Open installments overdue or due soon (what reminders follow) */
+        get: operations["installments_due_v1_reports_installments_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/reports/revenue": {
         parameters: {
             query?: never;
@@ -1985,10 +2127,20 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /**
+             * Installments Count
+             * @description 0 when the charge has no payment plan
+             */
+            installments_count: number;
             /** Kind */
             kind: string;
             /** Outstanding */
             outstanding: string;
+            /**
+             * Overdue
+             * @description part of the outstanding amount that is past due (per installment)
+             */
+            overdue: string;
             /** Paid */
             paid: string;
             /**
@@ -2125,6 +2277,76 @@ export interface components {
             student_id: string;
             /** Student Name */
             student_name: string;
+        };
+        /** DocumentDetail */
+        DocumentDetail: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Issued On
+             * Format: date
+             */
+            issued_on: string;
+            /** Kind */
+            kind: string;
+            /** Number */
+            number: string;
+            /** Payment Id */
+            payment_id: string | null;
+            /** Snapshot */
+            snapshot: {
+                [key: string]: unknown;
+            };
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+            /** Total */
+            total: string;
+        };
+        /** DocumentOut */
+        DocumentOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Issued On
+             * Format: date
+             */
+            issued_on: string;
+            /** Kind */
+            kind: string;
+            /** Number */
+            number: string;
+            /** Payment Id */
+            payment_id: string | null;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+            /** Total */
+            total: string;
         };
         /** DraftOut */
         DraftOut: {
@@ -2351,6 +2573,20 @@ export interface components {
             student_name: string;
             /** Used On */
             used_on: string | null;
+        };
+        /** EqualSplitIn */
+        EqualSplitIn: {
+            /**
+             * Count
+             * @description 2..24 installments
+             */
+            count: number;
+            /**
+             * First Due
+             * Format: date
+             * @description monthly from this date, the day clamped to the month end
+             */
+            first_due: string;
         };
         /** ExpenseIn */
         ExpenseIn: {
@@ -2667,6 +2903,72 @@ export interface components {
             /** Version */
             version: string;
         };
+        /** InstallmentDueRow */
+        InstallmentDueRow: {
+            /** Amount */
+            amount: string;
+            /**
+             * Charge Id
+             * Format: uuid
+             */
+            charge_id: string;
+            /**
+             * Days Overdue
+             * @description positive = overdue, negative = days until due
+             */
+            days_overdue: number;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /** Installments Count */
+            installments_count: number;
+            /** Outstanding */
+            outstanding: string;
+            /** Phone */
+            phone: string | null;
+            /** Seq */
+            seq: number;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+        };
+        /** InstallmentIn */
+        InstallmentIn: {
+            /**
+             * Amount
+             * @description UZS amount, 2 decimals
+             */
+            amount: number | string;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+        };
+        /** InstallmentOut */
+        InstallmentOut: {
+            /** Amount */
+            amount: string;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /** Outstanding */
+            outstanding: string;
+            /** Overdue */
+            overdue: boolean;
+            /** Paid */
+            paid: string;
+            /** Seq */
+            seq: number;
+        };
         /** InteractionIn */
         InteractionIn: {
             /**
@@ -2710,6 +3012,19 @@ export interface components {
             next_follow_up_on: string | null;
             /** Summary */
             summary: string;
+        };
+        /** InvoiceIn */
+        InvoiceIn: {
+            /**
+             * Charge Id
+             * @description only this charge; default: everything open
+             */
+            charge_id?: string | null;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
         };
         /** ItemIn */
         ItemIn: {
@@ -3123,10 +3438,20 @@ export interface components {
             id: string;
             /** Kind */
             kind: string;
+            /**
+             * Next Due
+             * @description earliest due date of what is still unpaid
+             */
+            next_due: string | null;
             /** Outstanding */
             outstanding: string;
             /** Overdue */
             overdue: boolean;
+            /**
+             * Overdue Amount
+             * @description past-due part of the outstanding amount (per installment)
+             */
+            overdue_amount: string;
             /** Paid */
             paid: string;
             /**
@@ -3292,6 +3617,17 @@ export interface components {
             has_more: boolean;
             /** Items */
             items: components["schemas"]["CourseOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
+        /** Page[DocumentOut] */
+        Page_DocumentOut_: {
+            /** Has More */
+            has_more: boolean;
+            /** Items */
+            items: components["schemas"]["DocumentOut"][];
             /** Limit */
             limit: number;
             /** Offset */
@@ -3677,6 +4013,28 @@ export interface components {
             /** Student Name */
             student_name: string;
         };
+        /** PlanIn */
+        PlanIn: {
+            equal?: components["schemas"]["EqualSplitIn"] | null;
+            /** Installments */
+            installments?: components["schemas"]["InstallmentIn"][] | null;
+        };
+        /** PlanOut */
+        PlanOut: {
+            /** Amount */
+            amount: string;
+            /**
+             * Charge Id
+             * Format: uuid
+             */
+            charge_id: string;
+            /** Installments */
+            installments: components["schemas"]["InstallmentOut"][];
+            /** Outstanding */
+            outstanding: string;
+            /** Paid */
+            paid: string;
+        };
         /** ProviderIn */
         ProviderIn: {
             /**
@@ -3716,6 +4074,14 @@ export interface components {
             reversal_enabled: boolean;
             /** Status */
             status: string;
+        };
+        /** ReceiptIn */
+        ReceiptIn: {
+            /**
+             * Payment Id
+             * Format: uuid
+             */
+            payment_id: string;
         };
         /** RefreshIn */
         RefreshIn: {
@@ -3891,6 +4257,34 @@ export interface components {
             /** Weekday */
             weekday: number;
         };
+        /** SendIn */
+        SendIn: {
+            /**
+             * Guardian Id
+             * Format: uuid
+             */
+            guardian_id: string;
+        };
+        /** SendOut */
+        SendOut: {
+            /**
+             * Document Id
+             * Format: uuid
+             */
+            document_id: string;
+            /**
+             * Guardian Id
+             * Format: uuid
+             */
+            guardian_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+            /** Status */
+            status: string;
+        };
         /** SettingsOut */
         SettingsOut: {
             /**
@@ -3902,6 +4296,11 @@ export interface components {
             makeup_expiry_days: number;
             /** Makeup Lapses */
             makeup_lapses: boolean;
+            /**
+             * Requisites
+             * @description the center's own requisites, printed on receipts and invoices
+             */
+            requisites: string | null;
             /** Trial Free Days */
             trial_free_days: number;
             /** Trial Free Lessons */
@@ -3915,6 +4314,11 @@ export interface components {
             makeup_expiry_days?: number | null;
             /** Makeup Lapses */
             makeup_lapses?: boolean | null;
+            /**
+             * Requisites
+             * @description empty string clears it
+             */
+            requisites?: string | null;
             /** Trial Free Days */
             trial_free_days?: number | null;
             /** Trial Free Lessons */
@@ -5213,6 +5617,101 @@ export interface operations {
             };
         };
     };
+    get_plan_v1_charges__charge_id__plan_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                charge_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_plan_v1_charges__charge_id__plan_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                charge_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_plan_v1_charges__charge_id__plan_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                charge_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     void_charge_v1_charges__charge_id__void_post: {
         parameters: {
             query?: never;
@@ -5429,6 +5928,203 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CourseOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_documents_v1_documents_get: {
+        parameters: {
+            query?: {
+                student_id?: string | null;
+                kind?: ("receipt" | "invoice") | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_DocumentOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    issue_invoice_v1_documents_invoices_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvoiceIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    issue_receipt_v1_documents_receipts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReceiptIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_document_v1_documents__document_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_document_pdf_v1_documents__document_id__pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_document_v1_documents__document_id__send_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SendOut"];
                 };
             };
             /** @description Validation Error */
@@ -7614,6 +8310,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FunnelOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    installments_due_v1_reports_installments_get: {
+        parameters: {
+            query?: {
+                days_ahead?: number;
+                only_overdue?: boolean;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstallmentDueRow"][];
                 };
             };
             /** @description Validation Error */

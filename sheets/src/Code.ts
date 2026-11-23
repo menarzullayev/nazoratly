@@ -1,6 +1,7 @@
 /** Apps Script entry point: every function Google calls (menu, web app, sidebars) is exposed on globalThis. */
 import * as actions from "./gas/actions";
 import * as admission from "./gas/admission";
+import * as documents from "./gas/documents";
 import * as makeup from "./gas/makeup";
 import * as plans from "./gas/plans";
 import { setupWorkbook, loadSampleData, resetSampleData } from "./gas/setup";
@@ -52,6 +53,13 @@ g.onOpen = (): void => {
     )
     .addSubMenu(
       SpreadsheetApp.getUi()
+        .createMenu("Hujjatlar (kvitansiya, to'lov hisobi)")
+        .addItem("Kvitansiya yaratish (to'lov)", "menuDocReceipt")
+        .addItem("To'lov hisobi yaratish (o'quvchi)", "menuDocInvoice")
+        .addItem("Hujjatni vasiyga yuborish", "menuDocSend"),
+    )
+    .addSubMenu(
+      SpreadsheetApp.getUi()
         .createMenu("Telegram eslatmalar")
         .addItem("Eslatma loyihalarini yaratish", "menuCreateDrafts")
         .addItem("Eslatmalarni ko'rib chiqish", "openDrafts")
@@ -90,6 +98,9 @@ g.menuPlanCreate = plans.menu.create;
 g.menuPlanView = plans.menu.view;
 g.menuPlanRemove = plans.menu.remove;
 g.menuPlanCheck = plans.menu.check;
+g.menuDocReceipt = documents.menu.receipt;
+g.menuDocInvoice = documents.menu.invoice;
+g.menuDocSend = documents.menu.send;
 g.menuEntitlements = makeup.menu.view;
 g.menuScheduleMakeup = makeup.menu.schedule;
 g.menuCancelEntitlement = makeup.menu.cancel;
