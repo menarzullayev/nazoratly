@@ -3,7 +3,10 @@ import * as actions from "./gas/actions";
 import { setupWorkbook, loadSampleData } from "./gas/setup";
 import { handleGet, handlePost } from "./gas/webhook";
 
-const g = globalThis as unknown as Record<string, unknown>;
+// Collected here and exposed to Apps Script as top-level function declarations by build.mjs.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const handlers: Record<string, (...args: any[]) => unknown> = {};
+const g = handlers;
 
 function html(file: string, title: string, w: number, h: number): GoogleAppsScript.HTML.HtmlOutput {
   return HtmlService.createHtmlOutputFromFile(file).setTitle(title).setWidth(w).setHeight(h);
