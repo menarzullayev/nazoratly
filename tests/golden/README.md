@@ -12,3 +12,5 @@ Files: `entitlements.json`, `funnel.json`, `lifecycle.json`, `installments.json`
 (document numbers, money wording, the no-fiscal-claim footer) and `packages.json` (lesson packages: credited lessons,
 expiry, what consumes a lesson, the lesson balance with burn and debt, payment-needed levels, reminder texts). Money in JSON is a string so both languages parse it
 their own way.
+
+`dashboard.json` (dashboard rules: paid vs unpaid students, new/left students and trial conversion, six-month income/expenses/net, and the "waiting for a decision" lists). Dates in outputs are ISO strings; money inputs are strings and outputs whole so'm.
