@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, type ComponentType } from "react";
-import type { Dict } from "@/i18n/get";
 import type { Locale } from "@/i18n/locales";
 
-type Props = { demo: Dict["demo"]; brand: string; locale: Locale };
+type Props = { locale: Locale };
 
-/** Loads and hydrates the interactive demo only when it is about to scroll into view, so first load stays light. */
+/** Loads and hydrates the interactive demo only when it is about to scroll into view, so first load stays light.
+ * The copy is not passed as props: it would be serialised into the page payload and parsed on every load, so the lazy chunk reads its own dictionary. */
 export function DemoLoader(props: Props) {
   const host = useRef<HTMLDivElement>(null);
   const [Demo, setDemo] = useState<ComponentType<Props> | null>(null);
@@ -31,7 +31,7 @@ export function DemoLoader(props: Props) {
 
   return (
     <div ref={host} className="min-h-[30rem]">
-      {Demo ? <Demo {...props} /> : null}
+      {Demo ? <Demo locale={props.locale} /> : null}
     </div>
   );
 }

@@ -10,6 +10,10 @@ describe("detectTier", () => {
   it("no WebGL2 gets the static page", () => {
     expect(detectTier({ ...base, hasWebGL2: false })).toBe("static");
   });
+  it("a weak device is never probed for WebGL2 and gets the lite scene", () => {
+    const probe = { ...base, width: 390, get hasWebGL2(): boolean { throw new Error("probed"); } };
+    expect(detectTier(probe)).toBe("lite");
+  });
   it("phones and weak devices get the lite scene", () => {
     expect(detectTier({ ...base, width: 390 })).toBe("lite");
     expect(detectTier({ ...base, cores: 4 })).toBe("lite");

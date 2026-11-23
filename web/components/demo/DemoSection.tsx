@@ -11,7 +11,7 @@ export function DemoSection({ d, locale }: { d: Dict; locale: Locale }) {
       <p className="mt-3 max-w-2xl text-mute">{d.demo.lead}</p>
       <p className="mt-1 text-sm text-mute">{d.demo.note}</p>
       <div className="mt-8">
-        <DemoLoader demo={d.demo} brand={d.brand} locale={locale} />
+        <DemoLoader locale={locale} />
       </div>
     </section>
   );
