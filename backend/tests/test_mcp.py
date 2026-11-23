@@ -66,6 +66,7 @@ async def test_unauthenticated_and_listing(pg_server: dict[str, Any], tenant: Te
         names = {t["name"] for t in r.json()["result"]["tools"]}
         assert names == {
             "list_debtors",
+            "list_due_installments",
             "attendance_summary",
             "revenue_report",
             "list_reminder_targets",
@@ -200,3 +201,38 @@ async def test_revoked_token_stops_working_and_rate_limit(pg_server: dict[str, A
     async with mcp_ctx(pg_server, mcp_calls_per_minute=2) as c:
         results = [(await tool(c, tok2, "list_debtors"))["isError"] for _ in range(3)]
     assert results == [False, False, True]
+
+
+async def test_reminder_tools_follow_installments(pg_server: dict[str, Any], tenant: Tenant) -> None:
+    from tests.helpers import consent, mk_student
+    from tests.test_plans import charge, pay, put_plan
+
+    async with mcp_ctx(pg_server) as mcp_client:
+        seen, hidden = await mk_student(tenant, "Plan Seen"), await mk_student(tenant, "Plan Hidden")
+        await consent(tenant, seen["id"], "ai_assistant_processing")
+        rows = [("300000", -40), ("300000", -10), ("300000", 2), ("300000", 30)]
+        for st in (seen, hidden):
+            ch = await charge(tenant, st["id"], "1200000", due=-40)
+            await put_plan(tenant, ch["id"], rows)
+        await pay(tenant, seen["id"], "300000")  # the first installment is paid
+        token = await _agent(tenant, ["read"])
+        debtors = content(await tool(mcp_client, token, "list_debtors"))
+        assert [
+            (x["full_name"], x["overdue_total"], x["outstanding_total"], x["max_days_overdue"])
+            for x in debtors
+        ] == [
+            ("Plan Seen", "300000.00", "900000.00", 10)
+        ]  # only installment 2 is overdue; installment 3 (due in 2 days) and 4 are not
+        due = content(await tool(mcp_client, token, "list_due_installments", days_ahead=3))
+        assert [
+            (x["full_name"], x["seq"], x["installments_count"], x["outstanding"], x["days_overdue"])
+            for x in due
+        ] == [
+            ("Plan Seen", 2, 4, "300000.00", 10),
+            ("Plan Seen", 3, 4, "300000.00", -2),
+        ]  # installment 4 is 30 days away; the student without AI consent is invisible
+        assert [
+            x["seq"] for x in content(await tool(mcp_client, token, "list_due_installments", days_ahead=0))
+        ] == [2]
+        too_far = await tool(mcp_client, token, "list_due_installments", days_ahead=15)
+        assert too_far["isError"] is True

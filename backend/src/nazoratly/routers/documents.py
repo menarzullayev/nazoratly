@@ -17,7 +17,7 @@ from pydantic import Field
 
 from nazoratly.db import Conn, fetch_all, fetch_one, resolve, resolve_opt
 from nazoratly.deps import DB, Paging, Principal, require
-from nazoratly.documents import KIND_LABEL, METHOD_LABEL, Line, Snapshot, render_pdf
+from nazoratly.documents import KIND_LABEL, METHOD_LABEL, Line, Snapshot, delivery_text, render_pdf
 from nazoratly.errors import Conflict, NotFound, NothingOwed
 from nazoratly.idempotency import IdempotentRoute
 from nazoratly.routers.settings import load_settings
@@ -309,4 +309,80 @@ async def get_document_pdf(
         content=bytes(row["pdf"]),
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{row["number"]}.pdf"'},
+    )
+
+
+class SendIn(Model):
+    guardian_id: uuid.UUID
+
+
+class SendOut(Out):
+    message_id: uuid.UUID
+    document_id: uuid.UUID
+    guardian_id: uuid.UUID
+    status: str
+
+
+@router.post(
+    "/documents/{document_id}/send",
+    response_model=SendOut,
+    status_code=201,
+    summary="Approve and queue the document for a guardian's Telegram (rich message plus the PDF)",
+)
+async def send_document(
+    document_id: uuid.UUID,
+    body: SendIn,
+    response: Response,
+    p: Annotated[Principal, Depends(require("finance:write"))],
+    db: DB,
+) -> SendOut:
+    """This call IS the approval: a signed-in person decides to send this document to this guardian. The guardian must
+    be linked to the student, receive reminders and the student must have an active notifications consent."""
+    async with db.tx(p.session()) as conn:
+        did = await resolve(conn, "documents", document_id, what="document")
+        gid = await resolve(conn, "guardians", body.guardian_id, what="guardian")
+        doc = await fetch_one(conn, "SELECT student_id, snapshot FROM documents WHERE id = %s", (did,))
+        guardian = await fetch_one(conn, "SELECT telegram_chat_id FROM guardians WHERE id = %s", (gid,))
+        assert doc is not None and guardian is not None
+        key = f"doc-{document_id}-{body.guardian_id}"
+        prev = await fetch_one(
+            conn, "SELECT public_id, status FROM outbox_messages WHERE idempotency_key = %s", (key,)
+        )
+        if prev is not None:  # approved before: never a second message
+            response.status_code = 200
+            return SendOut(
+                message_id=prev["public_id"],
+                document_id=document_id,
+                guardian_id=body.guardian_id,
+                status=prev["status"],
+            )
+        if guardian["telegram_chat_id"] is None:
+            raise Conflict("Guardian has not linked the Telegram bot yet")
+        linked = await fetch_one(
+            conn,
+            "SELECT 1 AS x FROM student_guardians WHERE student_id = %s AND guardian_id = %s AND receives_reminders",
+            (doc["student_id"], gid),
+        )
+        if linked is None:
+            raise Conflict("Guardian is not linked to this student or does not receive messages")
+        consent = await fetch_one(
+            conn,
+            "SELECT 1 AS x FROM data_consents WHERE student_id = %s AND purpose = 'notifications' AND revoked_at IS NULL",
+            (doc["student_id"],),
+        )
+        if consent is None:
+            raise Conflict("The student has no active consent for notifications")
+        plain, rich = delivery_text(Snapshot.model_validate(doc["snapshot"]))
+        row = await fetch_one(
+            conn,
+            "INSERT INTO outbox_messages (org_id, student_id, guardian_id, channel, body, body_html, document_id, idempotency_key) "
+            "VALUES (%s, %s, %s, 'telegram', %s, %s, %s, %s) RETURNING public_id, status",
+            (p.org_id, doc["student_id"], gid, plain, rich, did, key),
+        )
+        assert row is not None
+    return SendOut(
+        message_id=row["public_id"],
+        document_id=document_id,
+        guardian_id=body.guardian_id,
+        status=row["status"],
     )

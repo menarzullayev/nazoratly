@@ -12,7 +12,7 @@ import contextlib
 import signal
 import sys
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Protocol
 
 import httpx
 import structlog
@@ -47,6 +47,9 @@ class Message:
     body: str
     telegram_chat_id: int | None
     phone: str | None
+    body_html: str | None = None  # rich text of a document message
+    has_document: bool = False
+    text_delivered: bool = False  # the rich text already reached the chat (a retry must not repeat it)
 
 
 @dataclass(frozen=True)
@@ -55,6 +58,7 @@ class Outcome:
     error: str | None = None
     retry_after_s: int | None = None
     permanent: bool = False
+    status_code: int | None = None
 
 
 class Sender(Protocol):
@@ -63,41 +67,73 @@ class Sender(Protocol):
 
 class TelegramSender:
     def __init__(self, token: str, base_url: str, client: httpx.AsyncClient) -> None:
-        self._url = f"{base_url.rstrip('/')}/bot{token}/sendMessage"
+        self._base = f"{base_url.rstrip('/')}/bot{token}"
         self._client = client
 
-    async def send(self, msg: Message) -> Outcome:
-        if msg.telegram_chat_id is None:
-            return Outcome(False, "guardian has no Telegram chat", permanent=True)
+    async def _call(
+        self,
+        method: str,
+        *,
+        json: dict[str, Any] | None = None,
+        data: dict[str, Any] | None = None,
+        files: dict[str, tuple[str, bytes, str]] | None = None,
+    ) -> Outcome:
         try:
-            r = await self._client.post(
-                self._url,
-                json={
-                    "chat_id": msg.telegram_chat_id,
-                    "text": msg.body,
-                    "link_preview_options": {"is_disabled": True},
-                },
-            )
+            r = await self._client.post(f"{self._base}/{method}", json=json, data=data, files=files)
         except httpx.HTTPError as exc:  # never include str(exc): it contains the URL with the bot token
             return Outcome(False, f"network error: {type(exc).__name__}")
         try:
-            data = r.json()
+            body = r.json()
         except ValueError:
-            data = {}
-        if r.status_code == 200 and data.get("ok") is True:
-            return Outcome(True)
-        desc = str(data.get("description", ""))[:200]
+            body = {}
+        if r.status_code == 200 and body.get("ok") is True:
+            return Outcome(True, status_code=200)
+        desc = str(body.get("description", ""))[:200]
         if r.status_code == 429:
-            retry = int(data.get("parameters", {}).get("retry_after", 30))
-            return Outcome(False, f"telegram rate limit: {desc}", retry_after_s=retry + 1)
+            retry = int(body.get("parameters", {}).get("retry_after", 30))
+            return Outcome(False, f"telegram rate limit: {desc}", retry_after_s=retry + 1, status_code=429)
         if r.status_code in (
             400,
             401,
             403,
             404,
         ):  # blocked bot, chat not found, bad token: retrying cannot help
-            return Outcome(False, f"telegram {r.status_code}: {desc}", permanent=True)
-        return Outcome(False, f"telegram {r.status_code}: {desc}")
+            return Outcome(
+                False, f"telegram {r.status_code}: {desc}", permanent=True, status_code=r.status_code
+            )
+        return Outcome(False, f"telegram {r.status_code}: {desc}", status_code=r.status_code)
+
+    async def send(self, msg: Message) -> Outcome:
+        if msg.telegram_chat_id is None:
+            return Outcome(False, "guardian has no Telegram chat", permanent=True)
+        return await self._call(
+            "sendMessage",
+            json={
+                "chat_id": msg.telegram_chat_id,
+                "text": msg.body,
+                "link_preview_options": {"is_disabled": True},
+            },
+        )
+
+    async def send_rich(self, msg: Message) -> Outcome:
+        """Rich message (Bot API 10.1+); when Telegram rejects it (400/404) the plain text is sent instead."""
+        if msg.telegram_chat_id is None:
+            return Outcome(False, "guardian has no Telegram chat", permanent=True)
+        if msg.body_html:
+            out = await self._call(
+                "sendRichMessage",
+                json={"chat_id": msg.telegram_chat_id, "rich_message": {"html": msg.body_html}},
+            )
+            if out.ok or out.status_code not in (400, 404):
+                return out
+        return await self.send(msg)
+
+    async def send_document(self, chat_id: int, filename: str, pdf: bytes) -> Outcome:
+        return await self._call(
+            "sendDocument",
+            data={"chat_id": str(chat_id)},
+            files={"document": (filename, pdf, "application/pdf")},
+        )
 
 
 class NoSmsProvider:
@@ -207,14 +243,22 @@ class Worker:
             claimed = list(await cur.fetchall())
         for row in claimed:
             msg = Message(
-                row["message_id"], row["channel"], row["body"], row["telegram_chat_id"], row["phone"]
+                row["message_id"],
+                row["channel"],
+                row["body"],
+                row["telegram_chat_id"],
+                row["phone"],
+                row["body_html"],
+                row["has_document"],
+                row["text_delivered"],
             )
             sender = self.senders.get(msg.channel)
-            outcome = (
-                await sender.send(msg)
-                if sender
-                else Outcome(False, f"channel {msg.channel} is not configured", permanent=True)
-            )
+            if sender is None:
+                outcome = Outcome(False, f"channel {msg.channel} is not configured", permanent=True)
+            elif msg.has_document:
+                outcome = await self._deliver_document(msg, sender)
+            else:
+                outcome = await sender.send(msg)
             async with self.pool.connection() as conn:
                 await conn.execute(
                     "SELECT outbox_complete(%s, %s, %s, %s, %s)",
@@ -228,6 +272,23 @@ class Worker:
                 error=outcome.error,
             )
         return len(claimed)
+
+    async def _deliver_document(self, msg: Message, sender: Sender) -> Outcome:
+        """Rich text first, then the PDF. A retry after a failed upload skips the text that was already delivered."""
+        if not isinstance(sender, TelegramSender) or msg.telegram_chat_id is None:
+            return Outcome(False, "documents are delivered through Telegram only", permanent=True)
+        if not msg.text_delivered:
+            text = await sender.send_rich(msg)
+            if not text.ok:
+                return text
+            async with self.pool.connection() as conn:
+                await conn.execute("SELECT outbox_mark_text_delivered(%s)", (msg.message_id,))
+        async with self.pool.connection() as conn:
+            cur = await conn.execute("SELECT filename, pdf FROM outbox_document(%s)", (msg.message_id,))
+            doc = await cur.fetchone()
+        if doc is None:
+            return Outcome(False, "document file is missing", permanent=True)
+        return await sender.send_document(msg.telegram_chat_id, doc["filename"], bytes(doc["pdf"]))
 
     async def run_forever(self, stop: asyncio.Event) -> None:
         while not stop.is_set():

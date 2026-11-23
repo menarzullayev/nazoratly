@@ -256,7 +256,7 @@ def build_server(backend: AgentBackend) -> FastMCP:
         ) or f"mcp-{int(time.time() * 1000)}"
 
     @mcp.tool(
-        description="Students with overdue tuition (only those with AI-processing consent), largest debt first."
+        description="Students with overdue tuition (only those with AI-processing consent), largest overdue amount first. For charges with a payment plan only the overdue installments count as overdue_total."
     )
     async def list_debtors(
         ctx: Context[Any, Any, Any],
@@ -267,14 +267,37 @@ def build_server(backend: AgentBackend) -> FastMCP:
 
         async def run(c: Conn) -> list[dict[str, Any]]:
             cur = await c.execute(
-                "SELECT student_id, full_name, count(*) AS open_charges, sum(outstanding) AS outstanding_total, max(days_overdue) AS max_days_overdue "
-                "FROM agent_v_debtors WHERE days_overdue >= %s GROUP BY student_id, full_name ORDER BY outstanding_total DESC, student_id LIMIT %s",
+                "SELECT student_id, full_name, count(*) AS open_charges, sum(outstanding) AS outstanding_total,"
+                " sum(overdue_amount) AS overdue_total, max(days_overdue) AS max_days_overdue "
+                "FROM agent_v_debtors WHERE days_overdue >= %s GROUP BY student_id, full_name ORDER BY overdue_total DESC, student_id LIMIT %s",
                 (min_days_overdue, limit),
             )
             return _plain(list(await cur.fetchall()))
 
         return await backend.call(
             who, rid, "list_debtors", "read", {"min_days_overdue": min_days_overdue, "limit": limit}, run
+        )
+
+    @mcp.tool(
+        description="Open installments of payment plans that are overdue or due within days_ahead days (only students with AI-processing consent), earliest first. days_overdue is negative while an installment is not yet due. Use it to draft a reminder that follows the installment."
+    )
+    async def list_due_installments(
+        ctx: Context[Any, Any, Any],
+        days_ahead: Annotated[int, Field(ge=0, le=14)] = 3,
+        limit: Limit = 50,
+    ) -> list[dict[str, Any]]:
+        who, rid = identity(ctx)
+
+        async def run(c: Conn) -> list[dict[str, Any]]:
+            cur = await c.execute(
+                "SELECT student_id, full_name, charge_id, seq, installments_count, due_date, amount, outstanding, days_overdue "
+                "FROM agent_v_installments_due WHERE due_date <= CURRENT_DATE + %s ORDER BY due_date, student_id, seq LIMIT %s",
+                (days_ahead, limit),
+            )
+            return _plain(list(await cur.fetchall()))
+
+        return await backend.call(
+            who, rid, "list_due_installments", "read", {"days_ahead": days_ahead, "limit": limit}, run
         )
 
     @mcp.tool(
