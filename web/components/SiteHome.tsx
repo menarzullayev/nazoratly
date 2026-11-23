@@ -2,7 +2,7 @@ import { DemoSection } from "@/components/demo/DemoSection";
 import { Hero } from "@/components/Hero";
 import { JsonLd } from "@/components/JsonLd";
 import { Nav } from "@/components/Nav";
-import { BotSection, Contact, Faq, HowItWorks, Pricing, Tech } from "@/components/sections/Sections";
+import { BotSection, Contact, Faq, Features, HowItWorks, Pricing, Tech } from "@/components/sections/Sections";
 import { getDict } from "@/i18n/get";
 import type { Locale } from "@/i18n/locales";
 
@@ -19,6 +19,7 @@ export function SiteHome({ locale }: { locale: Locale }) {
         <Hero hero={d.hero} />
         <div className="mx-auto max-w-6xl px-5">
           <DemoSection d={d} locale={locale} />
+          <Features d={d} />
           <HowItWorks d={d} />
           <BotSection d={d} />
           <Tech d={d} />

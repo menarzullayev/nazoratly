@@ -12,6 +12,7 @@ export const en: Dict = {
   nav: {
     label: "Sections",
     demo: "Demo",
+    features: "Features",
     how: "How it works",
     bot: "Telegram bot",
     tech: "Technology",
@@ -32,6 +33,17 @@ export const en: Dict = {
     note: "This is a simulation: nothing you enter is stored anywhere.",
     tabs: { attendance: "Attendance", payments: "Payment", reminders: "Reminder", payroll: "Payroll" },
     student: "Student",
+    roles: {
+      label: "Choose a role",
+      owner: "Owner",
+      teacher: "Teacher",
+      guardian: "Guardian",
+      teacherHint: "Teacher view: only the attendance of their own groups and their own payroll. Student payments and debts stay hidden.",
+      guardianHint: "Guardian view: only a guardian who gave consent sees the bot, and only their own child's balance. Reminders approved in the Owner role show up here.",
+      child: "Child",
+      command: "{{/qarz}}",
+      empty: "No reminders yet. In the Owner role, prepare a reminder and approve it.",
+    },
     attendance: {
       title: "Today's attendance",
       group: "Group",
@@ -85,6 +97,23 @@ export const en: Dict = {
       model: { per_lesson: "Per lesson", percent: "Share of tuition", fixed: "Fixed salary" },
     },
   },
+  features: {
+    title: "For the daily life of a center",
+    lead: "From admissions to bookkeeping: everything below exists in the product today. Most of it runs on the same rules in the Google Sheet and in the API.",
+    note: "On the first install of the sheet in a real Google environment, the screens (side panel, permission dialogs) are checked together.",
+    items: [
+      { title: "Admissions: trials and leads", text: "A trial enrollment creates no charge. Leads move through a funnel stage by stage. When the trial limit (free lessons or days) is reached the decision is yours: accept or drop. Nobody is accepted automatically." },
+      { title: "Excused absence: make-up lessons", text: "For an excused absence the center chooses a make-up right, a credit or nothing. A make-up right has an expiry and lapses. A make-up lesson counts for the teacher only if someone attended." },
+      { title: "Payment plans and PDF receipts", text: "Split a charge into dated installments: debt and overdue are calculated per installment. The PDF receipt carries the center name, its requisites and a number: it is an internal document, not a tax receipt. It reaches the guardian only after you approve it." },
+      { title: "Lesson packages", text: "A group is billed monthly or by package, for example 12 lessons. A payment adds lessons, attendance uses them, lessons unused at expiry burn. Debt shows as negative lessons, and a reminder draft is prepared when payment is needed." },
+      { title: "Dashboard", text: "Paid and unpaid students (with lists), new and departed students, trial-to-enrolled conversion, income, expenses and net result (6-month chart), the funnel and what is waiting for a decision." },
+      { title: "Accounting", text: "An immutable double-entry journal: payments, expenses and payroll post automatically, and a mistake is fixed only by a reversing entry. A hash chain detects changes. Period closing, suppliers, statement reconciliation, balance sheet and income statement. This is management accounting, not statutory accounts." },
+      { title: "Capacity and waiting list", text: "Set a group maximum. In a full group a new student joins the waiting list; when a seat frees up the next in line is shown and enrolled with one tap. Nobody is enrolled automatically." },
+      { title: "QR attendance", text: "Every student gets a QR card: print it or send it on Telegram (with your approval). Scanning the card marks the student present; manual marking stays." },
+      { title: "Interactive import", text: "Upload your existing list: columns are mapped automatically, every row is validated (phone, duplicate student, blanks), and you get an error list and a preview. If something fails, the import undoes what it wrote." },
+      { title: "Demo mode", text: "Sample data is flagged \"Demo\" and sits next to real data. Clearing removes only the flagged rows, and refuses with the reason if a real record points at one." },
+    ],
+  },
   how: {
     title: "How it works",
     steps: [
@@ -101,6 +130,7 @@ export const en: Dict = {
       "The /qarz command shows the student's balance as a table",
       "Reminders go only to guardians who consented",
       "The \"I paid\" button notifies the center",
+      "The PDF payment receipt and the student's QR card go to the guardian only after you approve them",
     ],
   },
   tech: {
@@ -133,6 +163,8 @@ export const en: Dict = {
       { q: "Does the AI message guardians on its own?", a: "No. It only drafts the text. You read and approve every message before it is sent." },
       { q: "Can I start with the Google Sheet?", a: "Yes, that is the best way to start: copy the sample and enter your own data." },
       { q: "What do I need to get started?", a: "A Google account and Telegram. A list of students is enough to connect guardians to the bot." },
+      { q: "Is the accounting legally valid?", a: "No, it is management accounting: it does not replace tax reporting, so confirm it with an accountant before use. In a Google Sheet the sheet owner can remove the journal protection: the hash chain detects that but cannot prevent it. Immutability enforced in the database is the API edition." },
+      { q: "Can I bring over my existing student list?", a: "Yes. The import maps the columns itself, validates every row and finds duplicate students; you review the error list and only then write it." },
     ],
   },
   contact: {

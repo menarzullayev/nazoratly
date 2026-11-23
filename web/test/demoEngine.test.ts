@@ -3,7 +3,11 @@ import {
   DEMO_TODAY,
   addPayment,
   approve,
+  consentingStudents,
   debtOf,
+  guardianBalance,
+  guardianInbox,
+  teacherGroups,
   markAttendance,
   messageFor,
   openCharges,
@@ -120,5 +124,42 @@ describe("reminders", () => {
     s = approve(s, s.drafts.find((d) => d.studentId === "S0005")!.id);
     const again = prepareReminders(s);
     expect(again.skipped.some((x) => x.studentId === "S0005" && x.reason === "cooldown")).toBe(true);
+  });
+});
+
+describe("roles", () => {
+  it("a teacher sees only the groups they lead", () => {
+    const s = fresh();
+    expect(teacherGroups(s, "T0001").map((g) => g.id)).toEqual(["G0001"]);
+    expect(teacherGroups(s, "T0002").map((g) => g.id)).toEqual(["G0002"]);
+    expect(teacherGroups(s, "T9999")).toEqual([]);
+  });
+
+  it("only guardians who linked the bot and consented can be messaged", () => {
+    expect(consentingStudents(fresh()).map((x) => x.id)).toEqual(["S0002", "S0005"]);
+  });
+
+  it("the guardian balance shows the child own debt and nobody else", () => {
+    const s = fresh();
+    const html = guardianBalance(s, "S0005");
+    expect(html).toContain("Bobur Saidov");
+    expect(html).toContain("1 800 000");
+    expect(html).not.toContain("Madina Tursunova");
+    expect(guardianBalance(s, "S0001")).toContain("Qarz yo'q");
+    expect(guardianBalance(s, "nope")).toContain("topilmadi");
+  });
+
+  it("the balance follows a payment", () => {
+    const paid = addPayment(fresh(), "S0005", 600_000, "cash").state;
+    expect(guardianBalance(paid, "S0005")).toContain("1 200 000");
+  });
+
+  it("the guardian inbox holds only reminders the owner approved for that child", () => {
+    let s = prepareReminders(fresh());
+    expect(guardianInbox(s, "S0005")).toEqual([]);
+    s = approve(s, s.drafts.find((d) => d.studentId === "S0005")!.id);
+    expect(guardianInbox(s, "S0005")).toHaveLength(1);
+    expect(guardianInbox(s, "S0005")[0]).toContain("Jami qoldiq");
+    expect(guardianInbox(s, "S0002")).toEqual([]);
   });
 });

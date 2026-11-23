@@ -11,6 +11,7 @@ export const uz = {
   nav: {
     label: "Bo'limlar",
     demo: "Demo",
+    features: "Imkoniyatlar",
     how: "Qanday ishlaydi",
     bot: "{{Telegram}} bot",
     tech: "Texnologiya",
@@ -31,6 +32,17 @@ export const uz = {
     note: "Bu simulyatsiya: kiritganlaringiz hech qayerga saqlanmaydi.",
     tabs: { attendance: "Davomat", payments: "To'lov", reminders: "Eslatma", payroll: "Oylik" },
     student: "O'quvchi",
+    roles: {
+      label: "Rolni tanlang",
+      owner: "Egasi",
+      teacher: "O'qituvchi",
+      guardian: "Vasiy",
+      teacherHint: "O'qituvchi ko'rinishi: faqat o'z guruhlarining davomati va o'z oyligi. O'quvchilarning to'lovi va qarzi ko'rinmaydi.",
+      guardianHint: "Vasiy ko'rinishi: faqat rozilik bergan vasiy botni ko'radi va faqat o'z farzandining qarzini ko'radi. Egasi rolida tasdiqlangan eslatmalar shu yerda paydo bo'ladi.",
+      child: "Farzand",
+      command: "{{/qarz}}",
+      empty: "Hali eslatma kelmagan. Egasi rolida eslatmani tayyorlab, tasdiqlang.",
+    },
     attendance: {
       title: "Bugungi davomat",
       group: "Guruh",
@@ -84,6 +96,23 @@ export const uz = {
       model: { per_lesson: "Dars uchun to'lov", percent: "Tushumdan foiz", fixed: "Qat'iy oylik" },
     },
   },
+  features: {
+    title: "Markazning kundalik hayoti uchun",
+    lead: "Qabuldan buxgalteriyagacha: quyidagilar tizimda hozir mavjud. Aksariyati {{Google Sheet}} va {{API}} variantida bir xil qoida bilan ishlaydi.",
+    note: "{{Google Sheet}}'ning haqiqiy Google muhitidagi birinchi o'rnatishida ko'rinishlar (yon panel, ruxsat oynalari) birga tekshiriladi.",
+    items: [
+      { title: "Qabul: sinov va lead'lar", text: "Sinov yozilishi hisob yaratmaydi. Lead'lar bosqichma-bosqich voronkada yuradi. Sinov chegarasi (bepul dars yoki kun) tugasa qaror sizniki: qabul qilish yoki bekor qilish. Hech kim o'zi qabul qilinmaydi." },
+      { title: "Sababli yo'qlik: qoplash darsi", text: "Sababli yo'qlik uchun markaz qoplash huquqi, kredit yoki hech narsani tanlaydi. Qoplash huquqi muddatli: muddati o'tsa kuyadi. Qoplash darsida kimdir kelgandagina o'qituvchiga dars hisoblanadi." },
+      { title: "To'lov rejasi va {{PDF}} kvitansiya", text: "Hisobni sanali qismlarga bo'ling: qarz va muddati o'tgan summa har qism bo'yicha hisoblanadi. {{PDF}} kvitansiya markaz nomi, rekvizitlari va raqami bilan chiqadi: bu ichki hujjat, soliq cheki emas. Vasiyga faqat tasdiqlagandan keyin boradi." },
+      { title: "Abonement (dars paketi)", text: "Guruh oylik yoki paket bo'yicha hisoblanadi, masalan 12 dars. To'lov dars beradi, davomat dars sarflaydi, muddati o'tgan darslar kuyadi. Qarz manfiy dars bo'lib ko'rinadi, to'lov kerak bo'lganda eslatma loyihasi tayyorlanadi." },
+      { title: "Boshqaruv paneli", text: "To'lagan va to'lamagan o'quvchilar (ro'yxati bilan), yangi va ketgan o'quvchilar, sinovdan yozilishga konversiya, tushum, xarajat va sof natija (6 oylik grafik), voronka va qaror kutayotganlar." },
+      { title: "Buxgalteriya", text: "O'zgarmas ikki yoqlama jurnal: to'lov, xarajat va oylik avtomatik o'tadi, xatoni faqat teskari yozuv tuzatadi. Hash zanjiri o'zgartirishni aniqlaydi. Davrni yopish, ta'minotchilar, ko'chirmani moslash, balans va foyda-zarar hisoboti. Bu boshqaruv hisobi: qonuniy hisob emas." },
+      { title: "Sig'im va navbat", text: "Guruhga chegara qo'ying. To'lgan guruhda yangi o'quvchi navbatga yoziladi; o'rin bo'shasa navbatdagi ko'rsatiladi va bir tugma bilan yoziladi. Hech kim avtomatik yozilmaydi." },
+      { title: "{{QR}} davomat", text: "Har o'quvchiga {{QR}} karta: bosib chiqarasiz yoki {{Telegram}}da yuborasiz (tasdiq bilan). Kartani skanerlash o'quvchini \"keldi\" deb belgilaydi; qo'lda belgilash ham qoladi." },
+      { title: "Interaktiv import", text: "Mavjud ro'yxatni yuklang: ustunlar avtomatik moslanadi, har qator tekshiriladi (telefon, takroriy o'quvchi, bo'sh maydon), xatolar ro'yxati va ko'rib chiqish chiqadi. Xato bo'lsa import yozganlarini qaytaradi." },
+      { title: "Demo rejim", text: "Namuna ma'lumot \"Demo\" deb belgilanadi va haqiqiy ma'lumot yonida turadi. Tozalash faqat belgilanganlarni o'chiradi; haqiqiy yozuv bog'langan bo'lsa sababini aytib rad etadi." },
+    ],
+  },
   how: {
     title: "Qanday ishlaydi",
     steps: [
@@ -100,6 +129,7 @@ export const uz = {
       "/qarz buyrug'i o'quvchi balansini jadval ko'rinishida beradi",
       "Eslatmalar faqat rozilik bergan vasiyga yuboriladi",
       "\"To'lov qildim\" tugmasi markazga bildirish beradi",
+      "To'lov kvitansiyasi ({{PDF}}) va o'quvchining {{QR}} kartasi vasiyga faqat siz tasdiqlagandan keyin yuboriladi",
     ],
   },
   tech: {
@@ -132,6 +162,8 @@ export const uz = {
       { q: "Sun'iy intellekt vasiylarga o'zi xabar yuboradimi?", a: "Yo'q. U faqat matn tayyorlaydi. Yuborishdan oldin har bir xabarni siz ko'rib, tasdiqlaysiz." },
       { q: "{{Google Sheet}} bilan boshlasa bo'ladimi?", a: "Ha, aynan shundan boshlash mumkin: namunani nusxalab, o'z ma'lumotlaringizni kiritasiz." },
       { q: "Boshlash uchun nima kerak?", a: "{{Google}} hisobi va {{Telegram}}. Vasiylarni botga ulash uchun o'quvchilar ro'yxati yetarli." },
+      { q: "Buxgalteriya qonuniy hisobmi?", a: "Yo'q, bu boshqaruv hisobi: soliq hisobotini almashtirmaydi, ishlatishdan oldin buxgalter bilan tasdiqlang. {{Google Sheet}}'da jurnal himoyasini jadval egasi olib tashlashi mumkin: hash zanjiri buni aniqlaydi, lekin to'sa olmaydi. Bazada o'zgarmaslik {{API}} variantida ta'minlanadi." },
+      { q: "Mavjud o'quvchilar ro'yxatini ko'chirsa bo'ladimi?", a: "Ha. Import ustunlarni o'zi moslaydi, har qatorni tekshiradi va takroriy o'quvchilarni topadi; xatolar ro'yxatini ko'rib chiqib, keyin yozasiz." },
     ],
   },
   contact: {

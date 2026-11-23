@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { DEMO_TODAY, markAttendance, type AttendanceStatus } from "@/demo/engine";
+import { DEMO_TODAY, markAttendance, teacherGroups, type AttendanceStatus } from "@/demo/engine";
 import type { TabProps } from "./Demo";
 
 const STATUSES: AttendanceStatus[] = ["present", "late", "absent"];
 
-export function AttendanceTab({ d, state, setState, show }: TabProps) {
-  const [groupId, setGroupId] = useState(state.groups[0]!.id);
+export function AttendanceTab({ d, state, setState, show, teacherId }: TabProps & { teacherId?: string }) {
+  const groups = teacherId ? teacherGroups(state, teacherId) : state.groups;
+  const [chosen, setGroupId] = useState(groups[0]!.id);
+  const groupId = groups.some((g) => g.id === chosen) ? chosen : groups[0]!.id;
   const roster = state.enrollments.filter((e) => e.groupId === groupId).map((e) => state.students.find((s) => s.id === e.studentId)!);
   const today = state.attendance.filter((a) => a.date === DEMO_TODAY && a.groupId === groupId);
   const statusOf = (studentId: string) => today.find((a) => a.studentId === studentId)?.status;
@@ -21,7 +23,7 @@ export function AttendanceTab({ d, state, setState, show }: TabProps) {
           {d.attendance.group}
         </label>
         <select id="att-group" value={groupId} onChange={(e) => setGroupId(e.target.value)} className="rounded-lg border border-line bg-bg px-3 py-2">
-          {state.groups.map((g) => (
+          {groups.map((g) => (
             <option key={g.id} value={g.id}>
               {show(g.name)}
             </option>

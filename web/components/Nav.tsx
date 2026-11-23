@@ -2,7 +2,7 @@ import { Wordmark } from "@/components/Wordmark";
 import type { Dict } from "@/i18n/get";
 import { LOCALES, NATIVE_NAME, hreflangOf, pathFor, type Locale } from "@/i18n/locales";
 
-const SECTIONS = ["demo", "how", "bot", "tech", "pricing", "faq", "contact"] as const;
+const SECTIONS = ["demo", "features", "how", "bot", "tech", "pricing", "faq", "contact"] as const;
 
 export function LangSwitch({ d, locale }: { d: Dict; locale: Locale }) {
   return (

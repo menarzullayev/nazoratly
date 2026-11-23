@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 const PATHS = ["/", "/uz-cyrl/", "/uz-new/", "/ru/", "/en/"];
-const IDS = ["demo", "how", "bot", "tech", "pricing", "faq", "contact"];
+const IDS = ["demo", "features", "how", "bot", "tech", "pricing", "faq", "contact"];
 
 for (const path of PATHS) {
   test.describe(path, () => {
@@ -10,6 +10,14 @@ for (const path of PATHS) {
       for (const id of IDS) await expect(page.locator(`section#${id}`)).toHaveCount(1);
       const hrefs = await page.locator('header nav a[href^="#"]').evaluateAll((els) => els.map((e) => e.getAttribute("href")!.slice(1)));
       expect(new Set(hrefs)).toEqual(new Set(IDS));
+    });
+
+    test("features section lists the ten implemented capabilities and no unbuilt promises", async ({ page }) => {
+      await page.goto(path);
+      const items = page.locator("#features li");
+      await expect(items).toHaveCount(10);
+      const text = (await page.locator("#features").innerText()).toLowerCase();
+      expect(text).not.toMatch(/github|open.?source|\bpayme\b|\bsms\b/);
     });
 
     test("pricing shows the agreed ranges", async ({ page }) => {

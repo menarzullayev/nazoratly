@@ -18,6 +18,22 @@ function Section({ id, title, lead, children }: { id: string; title: string; lea
   );
 }
 
+export function Features({ d }: { d: Dict }) {
+  return (
+    <Section id="features" title={d.features.title} lead={d.features.lead}>
+      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {d.features.items.map((it, i) => (
+          <li key={i} className="rounded-2xl border border-line bg-bg2 p-5">
+            <h3 className="font-semibold">{it.title}</h3>
+            <p className="mt-2 text-sm text-mute">{it.text}</p>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-5 text-sm text-mute">{d.features.note}</p>
+    </Section>
+  );
+}
+
 export function HowItWorks({ d }: { d: Dict }) {
   return (
     <Section id="how" title={d.how.title}>

@@ -1,6 +1,6 @@
 import { computeDebts, debtors, type StudentDebt } from "@domain/debt";
 import { nextIds } from "@domain/ids";
-import { reminderRich, type OpenCharge } from "@domain/messages";
+import { balanceRich, reminderRich, type OpenCharge } from "@domain/messages";
 import { collectedTuition, computePayroll, heldLessons, type PayrollResult } from "@domain/payroll";
 import { DEFAULT_TEMPLATE, planReminders, type SkipReason } from "@domain/reminders";
 import type { ReminderDraft } from "@domain/types";
@@ -127,4 +127,34 @@ export function payrollOf(s: DemoState, teacherId: string): PayrollResult {
     heldLessons: heldLessons(s.attendance, groupIds, DEMO_MONTH),
     collectedTuition: collectedTuition(debts(s).balances, s.enrollments, s.groups, teacherId, DEMO_MONTH),
   });
+}
+
+/** Groups a teacher leads: a teacher sees only these in the attendance view. */
+export function teacherGroups(s: DemoState, teacherId: string) {
+  return s.groups.filter((g) => g.teacherId === teacherId);
+}
+
+/** Guardians who linked the bot and agreed to notifications: the only ones the center can message. */
+export function consentingStudents(s: DemoState) {
+  return s.students.filter((x) => x.consentNotify && x.guardianChatId !== "");
+}
+
+/** The answer to `/qarz` in the bot for one guardian: only that guardian's own child. */
+export function guardianBalance(s: DemoState, studentId: string): string {
+  const student = s.students.find((x) => x.id === studentId);
+  if (!student) return balanceRich({ center: CENTER, students: [], payInfo: "" });
+  const d = debtOf(s, studentId);
+  return balanceRich({
+    center: CENTER,
+    students: [{ name: student.fullName, outstanding: d.outstanding, overdue: d.overdue, credit: d.credit, charges: openCharges(s, studentId) }],
+    payInfo: "",
+  });
+}
+
+/** Reminders the owner already approved for this child, oldest first: exactly what the guardian's chat contains. */
+export function guardianInbox(s: DemoState, studentId: string): string[] {
+  return s.drafts
+    .filter((x) => x.studentId === studentId && x.status === "sent")
+    .map((x) => messageFor(s, x.id))
+    .filter((m): m is string => m !== null);
 }
