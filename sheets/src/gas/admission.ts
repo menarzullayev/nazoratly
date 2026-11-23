@@ -34,7 +34,7 @@ function writeTable(name: string, head: string[], rows: (string | number)[][], c
   sh.activate();
 }
 
-function lessonsAttended(att: AttendanceRow[], e: Enrollment): number {
+export function lessonsAttended(att: AttendanceRow[], e: Enrollment): number {
   return att.filter((a) => a.studentId === e.studentId && a.groupId === e.groupId && a.date >= e.startedOn && (a.status === "present" || a.status === "late")).length;
 }
 

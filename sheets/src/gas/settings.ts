@@ -17,6 +17,7 @@ export interface Settings {
   makeupExpiryDays: number;
   makeupLapses: boolean;
   installmentRemindDays: number;
+  dashboardWindowDays: number;
   packageExpiryDays: number;
   packageLowLessons: number;
   requisites: string;
@@ -49,6 +50,7 @@ export function readSettings(): Settings {
     excusedMode: ((v) => (v.startsWith("kredit") ? "credit" : v === "yo'q" || v === "yoq" || v === "yo`q" ? "none" : "makeup"))((map.get("excusedMode") ?? "").toLowerCase()),
     makeupExpiryDays: num("makeupExpiryDays", 30, 0, 365),
     makeupLapses: !["yo'q", "yoq", "yo`q", "no", "false"].includes((map.get("makeupLapses") ?? "ha").toLowerCase()),
+    dashboardWindowDays: num("dashboardWindowDays", 7, 1, 60),
     installmentRemindDays: num("installmentRemindDays", 3, 0, 30),
     packageExpiryDays: num("packageExpiryDays", 60, 1, 730),
     packageLowLessons: num("packageLowLessons", 2, 0, 50),

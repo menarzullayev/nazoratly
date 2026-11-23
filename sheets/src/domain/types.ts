@@ -139,3 +139,13 @@ export interface Package {
   purchasedOn: ISODate;
   expiresOn: ISODate;
 }
+
+/** An operating expense (sheet "Xarajatlar"). Teacher pay is NOT recorded here: it comes from the payroll sheet. */
+export interface Expense {
+  id: string;
+  date: ISODate;
+  category: "rent" | "utilities" | "salary" | "marketing" | "equipment" | "tax" | "other";
+  amount: number;
+  note: string;
+  voided: boolean;
+}

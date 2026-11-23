@@ -55,3 +55,10 @@ Foydalanuvchi bilan hisobotlar o'zbek lotin tilida; kod/izoh/identifikatorlar in
 - KUTMOQDA (egasining ruxsati): 0014 ni lokal bazaga qo'llash (oldin `pg_dump`), `clasp push` + Sheet'da "Boshlang'ich sozlash" (yangi ustunlar/varaq).
 - Qaror: API mahsulotida eslatma LOYIHASINI agent yaratadi (Model B); server faqat matn taklifini beradi va MCP o'qish asbobini ochadi. Qaytarish (refund) va kuygan darslarni tiklash yo'q.
 - Keyingi: boshqaruv paneli, buxgalteriya (to'liq), sig'im/QR/import/demo rejim; sayt har bosqichdan keyin.
+
+## Holat 2026-11-23 (kech, 6): 5-bosqich (boshqaruv paneli), branch `feat/phase5-dashboard`
+- Qurildi: oltin qoidalar (`tests/golden/dashboard.json`, 49 test ikki tilda), API `GET /v1/dashboard` (to'rt blok: to'lagan/to'lamagan, yangi/ketgan + sinov konversiyasi, 6 oylik tushum/xarajat/sof natija, voronka + qaror kutayotganlar), Sheets (`Boshqaruv` varag'i kengaytirildi, `Xarajatlar` varag'i, `Panelda yaqinlashayotgan muddat oynasi` sozlamasi).
+- Migratsiya KERAK BO'LMADI (0015 ishlatilmadi): bazaga hech narsa qo'llash shart emas.
+- KUTMOQDA (egasining ruxsati): `clasp push` + Sheet'da "Boshlang'ich sozlash" (yangi `Xarajatlar` varag'i va sozlama qatori).
+- Qaror: xarajat = operatsion xarajat + tasdiqlangan/to'langan oylik (`/reports/summary` bilan bir xil); to'lamagan = ochiq qarz yoki manfiy dars; konversiya = qabul / (qabul + bekor), kutilayotgan sinovlar maxrajda emas. Sheets'da o'qituvchi oyligi `Xarajatlar`ga yozilmaydi (ikki marta sanalmasligi uchun).
+- Keyingi: buxgalteriya (to'liq), sig'im/QR/import/demo rejim; sayt har bosqichdan keyin.

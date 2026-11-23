@@ -1,0 +1,678 @@
+{
+  "payment_status": [
+    {
+      "name": "no students",
+      "in": { "students": [] },
+      "out": { "paid": 0, "unpaid": 0, "overdue": 0, "unpaid_students": [], "paid_ids": [] }
+    },
+    {
+      "name": "everyone with zero debt is paid",
+      "in": {
+        "students": [
+          { "id": "s1", "outstanding": "0", "overdue": "0", "package_debt_lessons": 0 },
+          { "id": "s2", "outstanding": "0", "overdue": "0", "package_debt_lessons": 0 }
+        ]
+      },
+      "out": { "paid": 2, "unpaid": 0, "overdue": 0, "unpaid_students": [], "paid_ids": ["s1", "s2"] }
+    },
+    {
+      "name": "open charge that is not yet due is unpaid but not overdue",
+      "in": { "students": [{ "id": "s1", "outstanding": "500000", "overdue": "0", "package_debt_lessons": 0 }] },
+      "out": {
+        "paid": 0,
+        "unpaid": 1,
+        "overdue": 0,
+        "unpaid_students": [{ "id": "s1", "outstanding": 500000, "overdue": 0, "package_debt_lessons": 0 }],
+        "paid_ids": []
+      }
+    },
+    {
+      "name": "overdue installment counts as overdue",
+      "in": { "students": [{ "id": "s1", "outstanding": "300000", "overdue": "100000", "package_debt_lessons": 0 }] },
+      "out": {
+        "paid": 0,
+        "unpaid": 1,
+        "overdue": 1,
+        "unpaid_students": [{ "id": "s1", "outstanding": 300000, "overdue": 100000, "package_debt_lessons": 0 }],
+        "paid_ids": []
+      }
+    },
+    {
+      "name": "package debt alone makes a student unpaid even with no money outstanding",
+      "in": { "students": [{ "id": "s1", "outstanding": "0", "overdue": "0", "package_debt_lessons": 2 }] },
+      "out": {
+        "paid": 0,
+        "unpaid": 1,
+        "overdue": 0,
+        "unpaid_students": [{ "id": "s1", "outstanding": 0, "overdue": 0, "package_debt_lessons": 2 }],
+        "paid_ids": []
+      }
+    },
+    {
+      "name": "unpaid students are ordered by outstanding (desc) then id; package-only debt comes last",
+      "in": {
+        "students": [
+          { "id": "s2", "outstanding": "100000", "overdue": "0", "package_debt_lessons": 0 },
+          { "id": "s3", "outstanding": "300000", "overdue": "300000", "package_debt_lessons": 0 },
+          { "id": "s1", "outstanding": "300000", "overdue": "0", "package_debt_lessons": 0 },
+          { "id": "s0", "outstanding": "0", "overdue": "0", "package_debt_lessons": 1 },
+          { "id": "s4", "outstanding": "0", "overdue": "0", "package_debt_lessons": 0 }
+        ]
+      },
+      "out": {
+        "paid": 1,
+        "unpaid": 4,
+        "overdue": 1,
+        "unpaid_students": [
+          { "id": "s1", "outstanding": 300000, "overdue": 0, "package_debt_lessons": 0 },
+          { "id": "s3", "outstanding": 300000, "overdue": 300000, "package_debt_lessons": 0 },
+          { "id": "s2", "outstanding": 100000, "overdue": 0, "package_debt_lessons": 0 },
+          { "id": "s0", "outstanding": 0, "overdue": 0, "package_debt_lessons": 1 }
+        ],
+        "paid_ids": ["s4"]
+      }
+    },
+    {
+      "name": "paid ids are sorted",
+      "in": {
+        "students": [
+          { "id": "b", "outstanding": "0", "overdue": "0", "package_debt_lessons": 0 },
+          { "id": "a", "outstanding": "0", "overdue": "0", "package_debt_lessons": 0 }
+        ]
+      },
+      "out": { "paid": 2, "unpaid": 0, "overdue": 0, "unpaid_students": [], "paid_ids": ["a", "b"] }
+    },
+    {
+      "name": "money with .00 decimals from the database is read as whole so'm",
+      "in": { "students": [{ "id": "s1", "outstanding": "250000.00", "overdue": "250000.00", "package_debt_lessons": 0 }] },
+      "out": {
+        "paid": 0,
+        "unpaid": 1,
+        "overdue": 1,
+        "unpaid_students": [{ "id": "s1", "outstanding": 250000, "overdue": 250000, "package_debt_lessons": 0 }],
+        "paid_ids": []
+      }
+    },
+    {
+      "name": "package debt and money debt together",
+      "in": { "students": [{ "id": "s1", "outstanding": "600000", "overdue": "600000", "package_debt_lessons": 3 }] },
+      "out": {
+        "paid": 0,
+        "unpaid": 1,
+        "overdue": 1,
+        "unpaid_students": [{ "id": "s1", "outstanding": 600000, "overdue": 600000, "package_debt_lessons": 3 }],
+        "paid_ids": []
+      }
+    }
+  ],
+  "student_movement": [
+    {
+      "name": "no enrollments",
+      "in": { "range": { "from": "2026-11-01", "to": "2026-11-30" }, "enrollments": [] },
+      "out": { "new": 0, "left": 0, "new_ids": [], "left_ids": [], "trials_started": 0, "accepted": 0, "dropped": 0, "running": 0, "conversion": 0.0 }
+    },
+    {
+      "name": "a plain active enrollment started in the range is a new student",
+      "in": {
+        "range": { "from": "2026-11-01", "to": "2026-11-30" },
+        "enrollments": [{ "student": "s1", "status": "active", "started_on": "2026-11-05", "accepted_on": null, "ended_on": null, "dropped_trial": false }]
+      },
+      "out": { "new": 1, "left": 0, "new_ids": ["s1"], "left_ids": [], "trials_started": 0, "accepted": 0, "dropped": 0, "running": 0, "conversion": 0.0 }
+    },
+    {
+      "name": "range edges are inclusive",
+      "in": {
+        "range": { "from": "2026-11-01", "to": "2026-11-30" },
+        "enrollments": [
+          { "student": "s1", "status": "active", "started_on": "2026-11-01", "accepted_on": null, "ended_on": null, "dropped_trial": false },
+          { "student": "s2", "status": "active", "started_on": "2026-11-30", "accepted_on": null, "ended_on": null, "dropped_trial": false },
+          { "student": "s3", "status": "active", "started_on": "2026-12-01", "accepted_on": null, "ended_on": null, "dropped_trial": false },
+          { "student": "s4", "status": "active", "started_on": "2026-10-31", "accepted_on": null, "ended_on": null, "dropped_trial": false }
+        ]
+      },
+      "out": { "new": 2, "left": 0, "new_ids": ["s1", "s2"], "left_ids": [], "trials_started": 0, "accepted": 0, "dropped": 0, "running": 0, "conversion": 0.0 }
+    },
+    {
+      "name": "a trial accepted after the range is not new in the range but its trial started in it",
+      "in": {
+        "range": { "from": "2026-11-01", "to": "2026-11-30" },
+        "enrollments": [{ "student": "s1", "status": "active", "started_on": "2026-11-25", "accepted_on": "2026-12-02", "ended_on": null, "dropped_trial": false }]
+      },
+      "out": { "new": 0, "left": 0, "new_ids": [], "left_ids": [], "trials_started": 1, "accepted": 1, "dropped": 0, "running": 0, "conversion": 100.0 }
+    },
+    {
+      "name": "a trial started before the range and accepted in it joins in the range",
+      "in": {
+        "range": { "from": "2026-11-01", "to": "2026-11-30" },
+        "enrollments": [{ "student": "s1", "status": "active", "started_on": "2026-10-28", "accepted_on": "2026-11-03", "ended_on": null, "dropped_trial": false }]
+      },
+      "out": { "new": 1, "left": 0, "new_ids": ["s1"], "left_ids": [], "trials_started": 0, "accepted": 0, "dropped": 0, "running": 0, "conversion": 0.0 }
+    },
+    {
+      "name": "a running trial is neither new nor left and is not held against conversion",
+      "in": {
+        "range": { "from": "2026-11-01", "to": "2026-11-30" },
+        "enrollments": [{ "student": "s1", "status": "trial", "started_on": "2026-11-10", "accepted_on": null, "ended_on": null, "dropped_trial": false }]
+      },
+      "out": { "new": 0, "left": 0, "new_ids": [], "left_ids": [], "trials_started": 1, "accepted": 0, "dropped": 0, "running": 1, "conversion": 0.0 }
+    },
+    {
+      "name": "a dropped trial is neither new nor left",
+      "in": {
+        "range": { "from": "2026-11-01", "to": "2026-11-30" },
+        "enrollments": [{ "student": "s1", "status": "finished", "started_on": "2026-11-05", "accepted_on": null, "ended_on": "2026-11-12", "dropped_trial": true }]
+      },
+      "out": { "new": 0, "left": 0, "new_ids": [], "left_ids": [], "trials_started": 1, "accepted": 0, "dropped": 1, "running": 0, "conversion": 0.0 }
+    },
+    {
+      "name": "a student whose only enrollment finished in the range has left",
+      "in": {
+        "range": { "from": "2026-11-01", "to": "2026-11-30" },
+        "enrollments": [{ "student": "s1", "status": "finished", "started_on": "2025-01-01", "accepted_on": null, "ended_on": "2026-11-15", "dropped_trial": false }]
+      },
+      "out": { "new": 0, "left": 1, "new_ids": [], "left_ids": ["s1"], "trials_started": 0, "accepted": 0, "dropped": 0, "running": 0, "conversion": 0.0 }
+    },
+    {
+      "name": "a student who left and came back is not counted as left",
+      "in": {
+        "range": { "from": "2026-11-01", "to": "2026-11-30" },
+        "enrollments": [
+          { "student": "s1", "status": "finished", "started_on": "2025-01-01", "accepted_on": null, "ended_on": "2026-11-10", "dropped_trial": false },
+          { "student": "s1", "status": "active", "started_on": "2026-11-20", "accepted_on": null, "ended_on": null, "dropped_trial": false }
+        ]
+      },
+      "out": { "new": 0, "left": 0, "new_ids": [], "left_ids": [], "trials_started": 0, "accepted": 0, "dropped": 0, "running": 0, "conversion": 0.0 }
+    },
+    {
+      "name": "two finished enrollments of one student count the student once, by the latest end date",
+      "in": {
+        "range": { "from": "2026-11-01", "to": "2026-11-30" },
+        "enrollments": [
+          { "student": "s1", "status": "finished", "started_on": "2025-01-01", "accepted_on": null, "ended_on": "2026-10-20", "dropped_trial": false },
+          { "student": "s1", "status": "finished", "started_on": "2025-02-01", "accepted_on": null, "ended_on": "2026-11-15", "dropped_trial": false }
+        ]
+      },
+      "out": { "new": 0, "left": 1, "new_ids": [], "left_ids": ["s1"], "trials_started": 0, "accepted": 0, "dropped": 0, "running": 0, "conversion": 0.0 }
+    },
+    {
+      "name": "left outside the range on either side is not counted",
+      "in": {
+        "range": { "from": "2026-11-01", "to": "2026-11-30" },
+        "enrollments": [
+          { "student": "s1", "status": "finished", "started_on": "2025-01-01", "accepted_on": null, "ended_on": "2026-10-31", "dropped_trial": false },
+          { "student": "s2", "status": "finished", "started_on": "2025-01-01", "accepted_on": null, "ended_on": "2026-12-01", "dropped_trial": false },
+          { "student": "s3", "status": "finished", "started_on": "2025-01-01", "accepted_on": null, "ended_on": "2026-11-30", "dropped_trial": false },
+          { "student": "s4", "status": "finished", "started_on": "2025-01-01", "accepted_on": null, "ended_on": "2026-11-01", "dropped_trial": false }
+        ]
+      },
+      "out": { "new": 0, "left": 2, "new_ids": [], "left_ids": ["s3", "s4"], "trials_started": 0, "accepted": 0, "dropped": 0, "running": 0, "conversion": 0.0 }
+    },
+    {
+      "name": "leaving one group while still active in another is not leaving",
+      "in": {
+        "range": { "from": "2026-11-01", "to": "2026-11-30" },
+        "enrollments": [
+          { "student": "s1", "status": "finished", "started_on": "2025-01-01", "accepted_on": null, "ended_on": "2026-11-15", "dropped_trial": false },
+          { "student": "s1", "status": "active", "started_on": "2025-06-01", "accepted_on": null, "ended_on": null, "dropped_trial": false }
+        ]
+      },
+      "out": { "new": 0, "left": 0, "new_ids": [], "left_ids": [], "trials_started": 0, "accepted": 0, "dropped": 0, "running": 0, "conversion": 0.0 }
+    },
+    {
+      "name": "a frozen enrollment is still open",
+      "in": {
+        "range": { "from": "2026-11-01", "to": "2026-11-30" },
+        "enrollments": [
+          { "student": "s1", "status": "frozen", "started_on": "2025-01-01", "accepted_on": null, "ended_on": null, "dropped_trial": false },
+          { "student": "s1", "status": "finished", "started_on": "2024-01-01", "accepted_on": null, "ended_on": "2026-11-15", "dropped_trial": false }
+        ]
+      },
+      "out": { "new": 0, "left": 0, "new_ids": [], "left_ids": [], "trials_started": 0, "accepted": 0, "dropped": 0, "running": 0, "conversion": 0.0 }
+    },
+    {
+      "name": "conversion is accepted over decided trials, one third rounds to 33.3",
+      "in": {
+        "range": { "from": "2026-11-01", "to": "2026-11-30" },
+        "enrollments": [
+          { "student": "s1", "status": "active", "started_on": "2026-11-02", "accepted_on": "2026-11-05", "ended_on": null, "dropped_trial": false },
+          { "student": "s2", "status": "finished", "started_on": "2026-11-03", "accepted_on": null, "ended_on": "2026-11-06", "dropped_trial": true },
+          { "student": "s3", "status": "finished", "started_on": "2026-11-04", "accepted_on": null, "ended_on": "2026-11-08", "dropped_trial": true },
+          { "student": "s4", "status": "trial", "started_on": "2026-11-20", "accepted_on": null, "ended_on": null, "dropped_trial": false }
+        ]
+      },
+      "out": { "new": 1, "left": 0, "new_ids": ["s1"], "left_ids": [], "trials_started": 4, "accepted": 1, "dropped": 2, "running": 1, "conversion": 33.3 }
+    },
+    {
+      "name": "two accepted out of three decided rounds to 66.7",
+      "in": {
+        "range": { "from": "2026-11-01", "to": "2026-11-30" },
+        "enrollments": [
+          { "student": "s1", "status": "active", "started_on": "2026-11-02", "accepted_on": "2026-11-05", "ended_on": null, "dropped_trial": false },
+          { "student": "s2", "status": "active", "started_on": "2026-11-03", "accepted_on": "2026-11-09", "ended_on": null, "dropped_trial": false },
+          { "student": "s3", "status": "finished", "started_on": "2026-11-04", "accepted_on": null, "ended_on": "2026-11-08", "dropped_trial": true }
+        ]
+      },
+      "out": { "new": 2, "left": 0, "new_ids": ["s1", "s2"], "left_ids": [], "trials_started": 3, "accepted": 2, "dropped": 1, "running": 0, "conversion": 66.7 }
+    },
+    {
+      "name": "a trial accepted and finished inside the range is both new and left",
+      "in": {
+        "range": { "from": "2026-11-01", "to": "2026-11-30" },
+        "enrollments": [{ "student": "s1", "status": "finished", "started_on": "2026-11-01", "accepted_on": "2026-11-05", "ended_on": "2026-11-20", "dropped_trial": false }]
+      },
+      "out": { "new": 1, "left": 1, "new_ids": ["s1"], "left_ids": ["s1"], "trials_started": 1, "accepted": 1, "dropped": 0, "running": 0, "conversion": 100.0 }
+    },
+    {
+      "name": "a finished enrollment with no end date (hand-edited data) cannot make a student leave",
+      "in": {
+        "range": { "from": "2026-11-01", "to": "2026-11-30" },
+        "enrollments": [{ "student": "s1", "status": "finished", "started_on": "2025-01-01", "accepted_on": null, "ended_on": null, "dropped_trial": false }]
+      },
+      "out": { "new": 0, "left": 0, "new_ids": [], "left_ids": [], "trials_started": 0, "accepted": 0, "dropped": 0, "running": 0, "conversion": 0.0 }
+    },
+    {
+      "name": "a student with two enrollments is new once, by the earliest join date",
+      "in": {
+        "range": { "from": "2026-11-01", "to": "2026-11-30" },
+        "enrollments": [
+          { "student": "s1", "status": "active", "started_on": "2026-11-20", "accepted_on": null, "ended_on": null, "dropped_trial": false },
+          { "student": "s1", "status": "active", "started_on": "2026-11-05", "accepted_on": null, "ended_on": null, "dropped_trial": false }
+        ]
+      },
+      "out": { "new": 1, "left": 0, "new_ids": ["s1"], "left_ids": [], "trials_started": 0, "accepted": 0, "dropped": 0, "running": 0, "conversion": 0.0 }
+    },
+    {
+      "name": "a dropped trial next to a real enrollment does not change the join date",
+      "in": {
+        "range": { "from": "2026-11-01", "to": "2026-11-30" },
+        "enrollments": [
+          { "student": "s1", "status": "active", "started_on": "2026-09-01", "accepted_on": null, "ended_on": null, "dropped_trial": false },
+          { "student": "s1", "status": "finished", "started_on": "2026-11-05", "accepted_on": null, "ended_on": "2026-11-07", "dropped_trial": true }
+        ]
+      },
+      "out": { "new": 0, "left": 0, "new_ids": [], "left_ids": [], "trials_started": 1, "accepted": 0, "dropped": 1, "running": 0, "conversion": 0.0 }
+    }
+  ],
+  "monthly_finance": [
+    {
+      "name": "nothing recorded gives six zero months ending with the current month",
+      "in": { "today": "2026-11-23", "payments": [], "expenses": [], "payroll": [] },
+      "out": {
+        "months": [
+          { "month": "2026-06-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-07-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-08-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-09-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-10-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-11-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 }
+        ],
+        "income": 0,
+        "expenses": 0,
+        "net": 0
+      }
+    },
+    {
+      "name": "income, operating expenses and payroll per month",
+      "in": {
+        "today": "2026-11-23",
+        "payments": [
+          { "on": "2026-11-23", "amount": "1000000" },
+          { "on": "2026-11-01", "amount": "500000" },
+          { "on": "2026-10-31", "amount": "200000" }
+        ],
+        "expenses": [
+          { "on": "2026-11-15", "amount": "300000" },
+          { "on": "2026-10-01", "amount": "100000" }
+        ],
+        "payroll": [
+          { "month": "2026-11-01", "amount": "400000" },
+          { "month": "2026-10-01", "amount": "50000" }
+        ]
+      },
+      "out": {
+        "months": [
+          { "month": "2026-06-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-07-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-08-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-09-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-10-01", "income": 200000, "operating": 100000, "payroll": 50000, "expenses": 150000, "net": 50000 },
+          { "month": "2026-11-01", "income": 1500000, "operating": 300000, "payroll": 400000, "expenses": 700000, "net": 800000 }
+        ],
+        "income": 1700000,
+        "expenses": 850000,
+        "net": 850000
+      }
+    },
+    {
+      "name": "rows outside the six months are ignored, the first day of the window is included",
+      "in": {
+        "today": "2026-11-23",
+        "payments": [
+          { "on": "2026-05-31", "amount": "111" },
+          { "on": "2026-06-01", "amount": "222" },
+          { "on": "2026-12-01", "amount": "333" }
+        ],
+        "expenses": [{ "on": "2026-05-31", "amount": "444" }],
+        "payroll": [{ "month": "2026-05-01", "amount": "555" }, { "month": "2026-12-01", "amount": "666" }]
+      },
+      "out": {
+        "months": [
+          { "month": "2026-06-01", "income": 222, "operating": 0, "payroll": 0, "expenses": 0, "net": 222 },
+          { "month": "2026-07-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-08-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-09-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-10-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-11-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 }
+        ],
+        "income": 222,
+        "expenses": 0,
+        "net": 222
+      }
+    },
+    {
+      "name": "the window crosses a year boundary",
+      "in": {
+        "today": "2027-02-10",
+        "payments": [
+          { "on": "2026-12-31", "amount": "100" },
+          { "on": "2027-01-01", "amount": "200" },
+          { "on": "2027-02-10", "amount": "300" }
+        ],
+        "expenses": [],
+        "payroll": []
+      },
+      "out": {
+        "months": [
+          { "month": "2026-09-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-10-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-11-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-12-01", "income": 100, "operating": 0, "payroll": 0, "expenses": 0, "net": 100 },
+          { "month": "2027-01-01", "income": 200, "operating": 0, "payroll": 0, "expenses": 0, "net": 200 },
+          { "month": "2027-02-01", "income": 300, "operating": 0, "payroll": 0, "expenses": 0, "net": 300 }
+        ],
+        "income": 600,
+        "expenses": 0,
+        "net": 600
+      }
+    },
+    {
+      "name": "expenses without income give a negative net",
+      "in": {
+        "today": "2026-11-23",
+        "payments": [],
+        "expenses": [{ "on": "2026-11-15", "amount": "300000" }],
+        "payroll": [{ "month": "2026-11-01", "amount": "200000" }]
+      },
+      "out": {
+        "months": [
+          { "month": "2026-06-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-07-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-08-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-09-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-10-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-11-01", "income": 0, "operating": 300000, "payroll": 200000, "expenses": 500000, "net": -500000 }
+        ],
+        "income": 0,
+        "expenses": 500000,
+        "net": -500000
+      }
+    },
+    {
+      "name": "several rows of the same month and day are summed",
+      "in": {
+        "today": "2026-11-30",
+        "payments": [
+          { "on": "2026-11-30", "amount": "100000" },
+          { "on": "2026-11-30", "amount": "250000" }
+        ],
+        "expenses": [
+          { "on": "2026-11-30", "amount": "10000" },
+          { "on": "2026-11-02", "amount": "20000" }
+        ],
+        "payroll": [{ "month": "2026-11-01", "amount": "30000" }, { "month": "2026-11-01", "amount": "40000" }]
+      },
+      "out": {
+        "months": [
+          { "month": "2026-06-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-07-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-08-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-09-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-10-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-11-01", "income": 350000, "operating": 30000, "payroll": 70000, "expenses": 100000, "net": 250000 }
+        ],
+        "income": 350000,
+        "expenses": 100000,
+        "net": 250000
+      }
+    },
+    {
+      "name": "today on January 31 starts the window in August",
+      "in": { "today": "2027-01-31", "payments": [{ "on": "2026-08-01", "amount": "5" }], "expenses": [], "payroll": [] },
+      "out": {
+        "months": [
+          { "month": "2026-08-01", "income": 5, "operating": 0, "payroll": 0, "expenses": 0, "net": 5 },
+          { "month": "2026-09-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-10-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-11-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2026-12-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 },
+          { "month": "2027-01-01", "income": 0, "operating": 0, "payroll": 0, "expenses": 0, "net": 0 }
+        ],
+        "income": 5,
+        "expenses": 0,
+        "net": 5
+      }
+    }
+  ],
+  "waiting": [
+    {
+      "name": "nothing waiting",
+      "in": {
+        "today": "2026-11-23", "window_days": 7, "free_lessons": 1, "free_days": 7, "makeup_lapses": true,
+        "trials": [], "packages": [], "rights": []
+      },
+      "out": { "trials": [], "packages": [], "rights": [], "total": 0 }
+    },
+    {
+      "name": "a trial that used its free lessons needs a decision",
+      "in": {
+        "today": "2026-11-23", "window_days": 7, "free_lessons": 1, "free_days": 7, "makeup_lapses": true,
+        "trials": [{ "id": "t1", "started_on": "2026-11-20", "lessons_attended": 1 }], "packages": [], "rights": []
+      },
+      "out": {
+        "trials": [{ "id": "t1", "started_on": "2026-11-20", "lessons_attended": 1, "days_elapsed": 3, "reason": "lessons" }],
+        "packages": [], "rights": [], "total": 1
+      }
+    },
+    {
+      "name": "a trial whose free days passed needs a decision, one day earlier it does not",
+      "in": {
+        "today": "2026-11-23", "window_days": 7, "free_lessons": 1, "free_days": 7, "makeup_lapses": true,
+        "trials": [
+          { "id": "t1", "started_on": "2026-11-16", "lessons_attended": 0 },
+          { "id": "t2", "started_on": "2026-11-17", "lessons_attended": 0 }
+        ],
+        "packages": [], "rights": []
+      },
+      "out": {
+        "trials": [{ "id": "t1", "started_on": "2026-11-16", "lessons_attended": 0, "days_elapsed": 7, "reason": "days" }],
+        "packages": [], "rights": [], "total": 1
+      }
+    },
+    {
+      "name": "trials are ordered by start date then id; lessons win over days as the reason",
+      "in": {
+        "today": "2026-11-23", "window_days": 7, "free_lessons": 1, "free_days": 7, "makeup_lapses": true,
+        "trials": [
+          { "id": "t2", "started_on": "2026-11-10", "lessons_attended": 0 },
+          { "id": "t1", "started_on": "2026-11-10", "lessons_attended": 2 },
+          { "id": "t3", "started_on": "2026-11-01", "lessons_attended": 0 }
+        ],
+        "packages": [], "rights": []
+      },
+      "out": {
+        "trials": [
+          { "id": "t3", "started_on": "2026-11-01", "lessons_attended": 0, "days_elapsed": 22, "reason": "days" },
+          { "id": "t1", "started_on": "2026-11-10", "lessons_attended": 2, "days_elapsed": 13, "reason": "lessons" },
+          { "id": "t2", "started_on": "2026-11-10", "lessons_attended": 0, "days_elapsed": 13, "reason": "days" }
+        ],
+        "packages": [], "rights": [], "total": 3
+      }
+    },
+    {
+      "name": "packages expiring from today to today plus the window are listed, nothing else",
+      "in": {
+        "today": "2026-11-23", "window_days": 7, "free_lessons": 1, "free_days": 7, "makeup_lapses": true,
+        "trials": [],
+        "packages": [
+          { "id": "p1", "available": 4, "next_expiry": "2026-11-23" },
+          { "id": "p2", "available": 4, "next_expiry": "2026-11-30" },
+          { "id": "p3", "available": 4, "next_expiry": "2026-12-01" },
+          { "id": "p4", "available": 4, "next_expiry": "2026-11-22" },
+          { "id": "p5", "available": 4, "next_expiry": null },
+          { "id": "p6", "available": 0, "next_expiry": "2026-11-25" }
+        ],
+        "rights": []
+      },
+      "out": {
+        "trials": [],
+        "packages": [
+          { "id": "p1", "available": 4, "next_expiry": "2026-11-23", "days_left": 0 },
+          { "id": "p2", "available": 4, "next_expiry": "2026-11-30", "days_left": 7 }
+        ],
+        "rights": [], "total": 2
+      }
+    },
+    {
+      "name": "packages are ordered by expiry then id",
+      "in": {
+        "today": "2026-11-23", "window_days": 7, "free_lessons": 1, "free_days": 7, "makeup_lapses": true,
+        "trials": [],
+        "packages": [
+          { "id": "p2", "available": 1, "next_expiry": "2026-11-26" },
+          { "id": "p1", "available": 9, "next_expiry": "2026-11-26" },
+          { "id": "p3", "available": 2, "next_expiry": "2026-11-24" }
+        ],
+        "rights": []
+      },
+      "out": {
+        "trials": [],
+        "packages": [
+          { "id": "p3", "available": 2, "next_expiry": "2026-11-24", "days_left": 1 },
+          { "id": "p1", "available": 9, "next_expiry": "2026-11-26", "days_left": 3 },
+          { "id": "p2", "available": 1, "next_expiry": "2026-11-26", "days_left": 3 }
+        ],
+        "rights": [], "total": 3
+      }
+    },
+    {
+      "name": "only open make-up rights that still can be used and lapse within the window are listed",
+      "in": {
+        "today": "2026-11-23", "window_days": 7, "free_lessons": 1, "free_days": 7, "makeup_lapses": true,
+        "trials": [], "packages": [],
+        "rights": [
+          { "id": "r1", "kind": "makeup", "status": "open", "expires_on": "2026-11-23" },
+          { "id": "r2", "kind": "makeup", "status": "open", "expires_on": "2026-11-30" },
+          { "id": "r3", "kind": "makeup", "status": "open", "expires_on": "2026-12-01" },
+          { "id": "r4", "kind": "makeup", "status": "open", "expires_on": "2026-11-22" },
+          { "id": "r5", "kind": "credit", "status": "open", "expires_on": "2026-11-25" },
+          { "id": "r6", "kind": "makeup", "status": "scheduled", "expires_on": "2026-11-25" },
+          { "id": "r7", "kind": "makeup", "status": "used", "expires_on": "2026-11-25" },
+          { "id": "r8", "kind": "makeup", "status": "cancelled", "expires_on": "2026-11-25" }
+        ]
+      },
+      "out": {
+        "trials": [], "packages": [],
+        "rights": [
+          { "id": "r1", "expires_on": "2026-11-23", "days_left": 0 },
+          { "id": "r2", "expires_on": "2026-11-30", "days_left": 7 }
+        ],
+        "total": 2
+      }
+    },
+    {
+      "name": "when rights never lapse nothing is lapsing",
+      "in": {
+        "today": "2026-11-23", "window_days": 7, "free_lessons": 1, "free_days": 7, "makeup_lapses": false,
+        "trials": [], "packages": [],
+        "rights": [{ "id": "r1", "kind": "makeup", "status": "open", "expires_on": "2026-11-24" }]
+      },
+      "out": { "trials": [], "packages": [], "rights": [], "total": 0 }
+    },
+    {
+      "name": "a one-day window lists today and tomorrow only",
+      "in": {
+        "today": "2026-11-23", "window_days": 1, "free_lessons": 1, "free_days": 7, "makeup_lapses": true,
+        "trials": [],
+        "packages": [
+          { "id": "p1", "available": 3, "next_expiry": "2026-11-24" },
+          { "id": "p2", "available": 3, "next_expiry": "2026-11-25" }
+        ],
+        "rights": [
+          { "id": "r1", "kind": "makeup", "status": "open", "expires_on": "2026-11-24" },
+          { "id": "r2", "kind": "makeup", "status": "open", "expires_on": "2026-11-25" }
+        ]
+      },
+      "out": {
+        "trials": [],
+        "packages": [{ "id": "p1", "available": 3, "next_expiry": "2026-11-24", "days_left": 1 }],
+        "rights": [{ "id": "r1", "expires_on": "2026-11-24", "days_left": 1 }],
+        "total": 2
+      }
+    },
+    {
+      "name": "rights are ordered by expiry then id",
+      "in": {
+        "today": "2026-11-23", "window_days": 7, "free_lessons": 1, "free_days": 7, "makeup_lapses": true,
+        "trials": [], "packages": [],
+        "rights": [
+          { "id": "r2", "kind": "makeup", "status": "open", "expires_on": "2026-11-27" },
+          { "id": "r1", "kind": "makeup", "status": "open", "expires_on": "2026-11-27" },
+          { "id": "r3", "kind": "makeup", "status": "open", "expires_on": "2026-11-24" }
+        ]
+      },
+      "out": {
+        "trials": [], "packages": [],
+        "rights": [
+          { "id": "r3", "expires_on": "2026-11-24", "days_left": 1 },
+          { "id": "r1", "expires_on": "2026-11-27", "days_left": 4 },
+          { "id": "r2", "expires_on": "2026-11-27", "days_left": 4 }
+        ],
+        "total": 3
+      }
+    },
+    {
+      "name": "all three lists together are counted in the total",
+      "in": {
+        "today": "2026-11-23", "window_days": 7, "free_lessons": 2, "free_days": 14, "makeup_lapses": true,
+        "trials": [{ "id": "t1", "started_on": "2026-11-23", "lessons_attended": 2 }],
+        "packages": [{ "id": "p1", "available": 1, "next_expiry": "2026-11-28" }],
+        "rights": [{ "id": "r1", "kind": "makeup", "status": "open", "expires_on": "2026-11-29" }]
+      },
+      "out": {
+        "trials": [{ "id": "t1", "started_on": "2026-11-23", "lessons_attended": 2, "days_elapsed": 0, "reason": "lessons" }],
+        "packages": [{ "id": "p1", "available": 1, "next_expiry": "2026-11-28", "days_left": 5 }],
+        "rights": [{ "id": "r1", "expires_on": "2026-11-29", "days_left": 6 }],
+        "total": 3
+      }
+    },
+    {
+      "name": "a trial under both limits is not waiting",
+      "in": {
+        "today": "2026-11-23", "window_days": 7, "free_lessons": 3, "free_days": 14, "makeup_lapses": true,
+        "trials": [{ "id": "t1", "started_on": "2026-11-15", "lessons_attended": 2 }], "packages": [], "rights": []
+      },
+      "out": { "trials": [], "packages": [], "rights": [], "total": 0 }
+    },
+    {
+      "name": "zero free lessons means a trial is due at once",
+      "in": {
+        "today": "2026-11-23", "window_days": 7, "free_lessons": 0, "free_days": 7, "makeup_lapses": true,
+        "trials": [{ "id": "t1", "started_on": "2026-11-23", "lessons_attended": 0 }], "packages": [], "rights": []
+      },
+      "out": {
+        "trials": [{ "id": "t1", "started_on": "2026-11-23", "lessons_attended": 0, "days_elapsed": 0, "reason": "lessons" }],
+        "packages": [], "rights": [], "total": 1
+      }
+    }
+  ]
+}

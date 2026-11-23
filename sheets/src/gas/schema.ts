@@ -32,6 +32,7 @@ const L = {
   payModel: { fixed: "Qat'iy oylik", per_lesson: "Dars uchun", percent: "Foiz" },
   teacherStatus: { active: "Faol", inactive: "Nofaol" },
   draftStatus: { pending: "Kutilmoqda", approved: "Tasdiqlangan", sent: "Yuborilgan", rejected: "Rad etilgan", failed: "Xato" },
+  expenseCategory: { rent: "Ijara", utilities: "Kommunal", salary: "Maosh (boshqa xodimlar)", marketing: "Reklama", equipment: "Jihoz", tax: "Soliq", other: "Boshqa" },
   payrollStatus: { draft: "Qoralama", approved: "Tasdiqlangan", paid: "To'langan" },
 } as const;
 
@@ -139,6 +140,19 @@ export const TEACHERS: TableDef = {
     { key: "payModel", header: "Oylik turi", width: 130, kind: "enum", labels: L.payModel },
     { key: "payRate", header: "Stavka", width: 120, kind: "int", help: "so'm (qat'iy/dars) yoki foiz" },
     { key: "status", header: "Holat", width: 100, kind: "enum", labels: L.teacherStatus },
+  ],
+};
+
+export const EXPENSES: TableDef = {
+  sheet: "Xarajatlar",
+  color: "#d93025",
+  cols: [
+    { key: "id", header: "ID", width: 70, kind: "text", help: "Avtomatik (X0001...) yoki bo'sh qoldiring" },
+    { key: "date", header: "Sana", width: 110, kind: "date" },
+    { key: "category", header: "Turi", width: 170, kind: "enum", labels: L.expenseCategory, help: "O'qituvchi oyligi 'Oylik' varag'idan olinadi: bu yerga yozmang (ikki marta hisoblanadi)" },
+    { key: "amount", header: "Summa", width: 120, kind: "int" },
+    { key: "note", header: "Izoh", width: 260, kind: "text" },
+    { key: "voided", header: "Bekor qilingan", width: 110, kind: "bool", help: "Xarajatni o'chirmang, 'Ha' qilib bekor qiling" },
   ],
 };
 
@@ -258,7 +272,7 @@ export const DOCUMENTS: TableDef = {
   ],
 };
 
-export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, PACKAGES, INSTALLMENTS, DOCUMENTS];
+export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, PACKAGES, INSTALLMENTS, DOCUMENTS, EXPENSES];
 
 export const SETTINGS_SHEET = "Sozlamalar";
 export const DEBTORS_SHEET = "Qarzdorlar";
@@ -279,6 +293,7 @@ export const SETTING_DEFAULTS: { key: string; label: string; value: string; help
   { key: "makeupLapses", label: "Muddati o'tgan huquq kuyadi", value: "Ha", help: "Ha / Yo'q" },
   { key: "packageExpiryDays", label: "Abonement muddati (kun)", value: "60", help: "Abonement sotilgan kundan boshlab shuncha kun amal qiladi, keyin ishlatilmagan darslar kuyadi (1-730)" },
   { key: "packageLowLessons", label: "Abonementda oz dars qolganda", value: "2", help: "Qolgan darslar shuncha yoki kam bo'lsa 'to'lov kerak' ro'yxatiga tushadi (0-50)" },
+  { key: "dashboardWindowDays", label: "Panelda yaqinlashayotgan muddat oynasi (kun)", value: "7", help: "Boshqaruv panelida shuncha kun ichida tugaydigan abonement va qoplash huquqlari 'qaror kutayotganlar' ga chiqadi (1-60)" },
   { key: "installmentRemindDays", label: "Qism haqida oldindan eslatma (kun)", value: "3", help: "To'lov qismi muddatiga shuncha kun qolganda eslatma loyihasi yaratiladi (0 = o'chirilgan)" },
   { key: "requisites", label: "Markaz rekvizitlari (hujjatlarda)", value: "", help: "Manzil, telefon, hisob raqami... Kvitansiya va to'lov hisobida markaz nomi ostida chiqadi. Hujjat ichki hujjat: fiskal chek emas" },
   { key: "payInfo", label: "To'lov rekvizitlari", value: "", help: "Karta raqami yoki hisob. Xabardagi 'Nusxalash' tugmasi shuni nusxalaydi (bo'sh = tugma yo'q)" },

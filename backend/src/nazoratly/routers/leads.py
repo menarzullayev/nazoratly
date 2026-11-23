@@ -360,6 +360,23 @@ class FunnelOut(Out):
     trial_to_enrolled: float
 
 
+async def load_funnel(conn: Conn, date_from: date, date_to: date) -> FunnelOut:
+    """Funnel of the leads created in the range (shared with the dashboard)."""
+    rows = await fetch_all(
+        conn,
+        "SELECT l.stage, src.name AS source, (l.created_at AT TIME ZONE 'Asia/Tashkent')::date AS created_on "
+        "FROM leads l LEFT JOIN lead_sources src ON src.org_id = l.org_id AND src.id = l.source_id "
+        "WHERE l.deleted_at IS NULL AND (l.created_at AT TIME ZONE 'Asia/Tashkent')::date BETWEEN %s AND %s",
+        (date_from, date_to),
+    )
+    report = funnel_report(
+        [LeadFact(r["stage"], r["source"], r["created_on"]) for r in rows],
+        date_from=date_from,
+        date_to=date_to,
+    )
+    return FunnelOut.model_validate(report)
+
+
 @router.get("/reports/funnel", response_model=FunnelOut, summary="Lead funnel for leads created in the range")
 async def funnel(
     p: Annotated[Principal, Depends(require("reports:read"))], db: DB, date_from: date, date_to: date
@@ -367,16 +384,4 @@ async def funnel(
     if date_to < date_from or (date_to - date_from).days > 1830:
         raise Unprocessable("date range must be 0-1830 days")
     async with db.tx(p.session()) as conn:
-        rows = await fetch_all(
-            conn,
-            "SELECT l.stage, src.name AS source, (l.created_at AT TIME ZONE 'Asia/Tashkent')::date AS created_on "
-            "FROM leads l LEFT JOIN lead_sources src ON src.org_id = l.org_id AND src.id = l.source_id "
-            "WHERE l.deleted_at IS NULL AND (l.created_at AT TIME ZONE 'Asia/Tashkent')::date BETWEEN %s AND %s",
-            (date_from, date_to),
-        )
-    report = funnel_report(
-        [LeadFact(r["stage"], r["source"], r["created_on"]) for r in rows],
-        date_from=date_from,
-        date_to=date_to,
-    )
-    return FunnelOut.model_validate(report)
+        return await load_funnel(conn, date_from, date_to)

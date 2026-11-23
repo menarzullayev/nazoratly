@@ -4,7 +4,7 @@ import { planCharges } from "../domain/billing";
 import { prevMonthStart, monthStart } from "../domain/dates";
 import { nextIds } from "../domain/ids";
 import type { AttendanceRow, Charge, Enrollment, Group, Student, Teacher } from "../domain/types";
-import { append, read, sheetOf, toDate, today, updateById } from "./repo";
+import { append, read, toDate, today, updateById } from "./repo";
 import {
   ALL_TABLES,
   ATTENDANCE,
@@ -12,6 +12,7 @@ import {
   DASHBOARD_SHEET,
   DEBTORS_SHEET,
   ENROLLMENTS,
+  EXPENSES,
   GROUPS,
   METHODS,
   PAYMENTS,
@@ -198,6 +199,14 @@ export function loadSampleData(): string {
     }
   }
   append(ATTENDANCE, attendance);
+  // sample expenses (only when the workbook already has the expenses sheet, i.e. after "Boshlang'ich sozlash")
+  const expenseRows = SpreadsheetApp.getActive().getSheetByName(EXPENSES.sheet)
+    ? months.flatMap((m, i) => [
+        { id: `X${String(i * 2 + 1).padStart(4, "0")}`, date: `${m.slice(0, 7)}-03`, category: "rent", amount: 3_000_000, note: "Ijara (namuna)", voided: false },
+        { id: `X${String(i * 2 + 2).padStart(4, "0")}`, date: `${m.slice(0, 7)}-05`, category: "utilities", amount: 450_000, note: "Kommunal (namuna)", voided: false },
+      ]).filter((x) => x.date <= today())
+    : [];
+  append(EXPENSES, expenseRows);
   void toDate;
   return `Namuna: ${students.length} o'quvchi, ${groups.length} guruh, ${charges.length} hisob, ${payments.length} to'lov, ${attendance.length} davomat yozuvi.`;
 }
@@ -215,7 +224,8 @@ export function resetSampleData(): string {
     keep.set(s.id, Object.fromEntries(TELEGRAM_FIELDS.map((f) => [f, s[f] ?? ""])));
   }
   for (const def of ALL_TABLES) {
-    const sh = sheetOf(def);
+    const sh = SpreadsheetApp.getActive().getSheetByName(def.sheet);
+    if (!sh) continue; // a table added by a newer version: its sheet appears after "Boshlang'ich sozlash"
     const rows = sh.getLastRow() - 1;
     if (rows > 0) sh.getRange(2, 1, rows, sh.getLastColumn()).clearContent();
   }
