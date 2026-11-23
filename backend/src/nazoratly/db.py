@@ -34,6 +34,7 @@ _RESOLVABLE = {
     "enrollments": False,
     "leads": True,
     "lead_sources": False,
+    "absence_entitlements": False,
     "lessons": False,
     "charges": False,
     "payments": False,

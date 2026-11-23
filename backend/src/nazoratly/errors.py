@@ -56,6 +56,10 @@ class AlreadyAccepted(Conflict):
     code = "already_accepted"
 
 
+class NotOpen(Conflict):
+    code = "not_open"
+
+
 class Unprocessable(ApiError):
     status_code, code = 422, "unprocessable"
 

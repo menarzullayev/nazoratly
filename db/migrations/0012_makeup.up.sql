@@ -14,6 +14,10 @@ ALTER TABLE org_settings ADD COLUMN makeup_expiry_days INTEGER NOT NULL DEFAULT 
   CHECK (makeup_expiry_days BETWEEN 0 AND 365);
 ALTER TABLE org_settings ADD COLUMN makeup_lapses BOOLEAN NOT NULL DEFAULT true;
 
+-- credits can cover a whole tuition fee: a fully covered charge is recorded with amount 0 (keeps generation idempotent)
+ALTER TABLE charges DROP CONSTRAINT charges_amount_check;
+ALTER TABLE charges ADD CONSTRAINT charges_amount_check CHECK (amount >= 0);
+
 ALTER TABLE lessons ADD COLUMN kind TEXT NOT NULL DEFAULT 'regular' CHECK (kind IN ('regular','makeup'));
 
 CREATE TABLE absence_entitlements (

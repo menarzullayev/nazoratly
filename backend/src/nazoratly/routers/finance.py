@@ -19,6 +19,7 @@ from nazoratly.db import Conn, execute, fetch_all, fetch_one, patch_row, resolve
 from nazoratly.deps import DB, Paging, Principal, require
 from nazoratly.errors import Conflict, NotFound, Unprocessable
 from nazoratly.idempotency import IdempotentRoute
+from nazoratly.rules.entitlements import apply_credits
 from nazoratly.schemas import Dec2, LongText, Model, Money, Out, Page, PositiveMoney, make_page
 
 router = APIRouter(prefix="/v1", tags=["finance"], route_class=IdempotentRoute)
@@ -161,23 +162,42 @@ async def generate_charges(
             if r["fee"] <= 0:
                 zero += 1
                 continue
+            credits = await fetch_all(
+                conn,
+                "SELECT id, amount FROM absence_entitlements WHERE student_id = %s AND kind = 'credit' AND status = 'open' "
+                "ORDER BY created_at, id FOR UPDATE",
+                (r["student_id"],),
+            )
+            applied = apply_credits(fee=r["fee"], credits=[c["amount"] for c in credits])
             cur = await conn.execute(
                 "INSERT INTO charges (org_id, student_id, enrollment_id, kind, period_month, description, amount, due_date, created_by_user_id) "
                 "VALUES (%s, %s, %s, 'tuition', %s, %s, %s, %s, %s) "
-                "ON CONFLICT (enrollment_id, period_month) WHERE kind = 'tuition' AND voided_at IS NULL DO NOTHING",
+                "ON CONFLICT (enrollment_id, period_month) WHERE kind = 'tuition' AND voided_at IS NULL DO NOTHING "
+                "RETURNING id",
                 (
                     p.org_id,
                     r["student_id"],
                     r["enrollment_id"],
                     first,
-                    f"Tuition {first:%Y-%m}",
-                    r["fee"],
+                    f"Tuition {first:%Y-%m}" + (f" (minus {applied.used} credit)" if applied.used else ""),
+                    applied.amount,
                     due,
                     p.user_id,
                 ),
             )
-            created += cur.rowcount
-            existing += 1 - cur.rowcount
+            inserted = await cur.fetchone()
+            if inserted is not None:
+                created += 1
+                for c in credits[
+                    : applied.used
+                ]:  # credits are consumed only together with the charge they reduce
+                    await execute(
+                        conn,
+                        "UPDATE absence_entitlements SET status = 'used', applied_charge_id = %s WHERE id = %s",
+                        (inserted["id"], c["id"]),
+                    )
+            else:
+                existing += 1
     return GenerateChargesOut(month=first, created=created, skipped_existing=existing, skipped_zero_fee=zero)
 
 
