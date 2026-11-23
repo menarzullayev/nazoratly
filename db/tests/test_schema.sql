@@ -283,4 +283,150 @@ DO $$ BEGIN
   DELETE FROM absence_entitlements; DELETE FROM org_settings;
 END $$;
 
+-- ---------------------------------------------------------------- 0013: payment plans
+-- plan checks run at commit; inside DO blocks SET CONSTRAINTS ALL IMMEDIATE forces them (and a failure rolls the block back)
+INSERT INTO charges (org_id, student_id, kind, period_month, amount, due_date) VALUES
+  (1,4,'tuition','2026-08-01',900000,CURRENT_DATE - 40),     -- planned charge
+  (1,4,'tuition','2026-09-01',600000,CURRENT_DATE - 5);      -- scratch charge for failing plans
+INSERT INTO data_consents (org_id, student_id, given_by_self, purpose, policy_version) VALUES
+  (1,4,true,'ai_assistant_processing','v1'), (1,4,true,'notifications','v1');
+DO $$
+DECLARE c1 BIGINT; c2 BIGINT;
+BEGIN
+  SELECT id INTO c1 FROM charges WHERE student_id = 4 AND period_month = '2026-08-01';
+  SELECT id INTO c2 FROM charges WHERE student_id = 4 AND period_month = '2026-09-01';
+  INSERT INTO charge_installments (org_id, charge_id, seq, due_date, amount) VALUES
+    (1,c1,1,CURRENT_DATE - 40,300000), (1,c1,2,CURRENT_DATE - 10,300000), (1,c1,3,CURRENT_DATE + 20,300000);
+  SET CONSTRAINTS ALL IMMEDIATE;
+  SET CONSTRAINTS ALL DEFERRED;
+
+  PERFORM public.t_expect('23514', format($q$DO $x$ BEGIN INSERT INTO charge_installments (org_id, charge_id, seq, due_date, amount) VALUES (1,%s,1,CURRENT_DATE,300000),(1,%s,2,CURRENT_DATE+1,299999); SET CONSTRAINTS ALL IMMEDIATE; END $x$ $q$, c2, c2));   -- sum is one so'm short
+  PERFORM public.t_expect('23514', format($q$DO $x$ BEGIN INSERT INTO charge_installments (org_id, charge_id, seq, due_date, amount) VALUES (1,%s,1,CURRENT_DATE+5,300000),(1,%s,2,CURRENT_DATE,300000); SET CONSTRAINTS ALL IMMEDIATE; END $x$ $q$, c2, c2));   -- descending dates
+  PERFORM public.t_expect('23514', format($q$DO $x$ BEGIN INSERT INTO charge_installments (org_id, charge_id, seq, due_date, amount) VALUES (1,%s,1,CURRENT_DATE,300000),(1,%s,2,CURRENT_DATE,300000); SET CONSTRAINTS ALL IMMEDIATE; END $x$ $q$, c2, c2));   -- same date twice
+  PERFORM public.t_expect('23514', format($q$DO $x$ BEGIN INSERT INTO charge_installments (org_id, charge_id, seq, due_date, amount) VALUES (1,%s,1,CURRENT_DATE,300000),(1,%s,3,CURRENT_DATE+1,300000); SET CONSTRAINTS ALL IMMEDIATE; END $x$ $q$, c2, c2));   -- seq gap
+  PERFORM public.t_expect('23514', format($q$DO $x$ BEGIN INSERT INTO charge_installments (org_id, charge_id, seq, due_date, amount) VALUES (1,%s,1,CURRENT_DATE,600000); SET CONSTRAINTS ALL IMMEDIATE; END $x$ $q$, c2));                                              -- one installment is not a plan
+  PERFORM public.t_expect('23514', format($q$INSERT INTO charge_installments (org_id, charge_id, seq, due_date, amount) VALUES (1,%s,25,CURRENT_DATE,1)$q$, c2));                                                                                                  -- seq 25
+  PERFORM public.t_expect('23514', format($q$INSERT INTO charge_installments (org_id, charge_id, seq, due_date, amount) VALUES (1,%s,1,CURRENT_DATE,0)$q$, c2));                                                                                                   -- zero amount
+  PERFORM public.t_expect('23505', format($q$INSERT INTO charge_installments (org_id, charge_id, seq, due_date, amount) VALUES (1,%s,1,CURRENT_DATE+90,1)$q$, c1));                                                                                                -- seq 1 exists
+  PERFORM public.t_expect('23514', format($q$DO $x$ BEGIN UPDATE charges SET voided_at = now(), void_reason = 'test' WHERE id = %s; INSERT INTO charge_installments (org_id, charge_id, seq, due_date, amount) VALUES (1,%s,1,CURRENT_DATE,300000),(1,%s,2,CURRENT_DATE+1,300000); SET CONSTRAINTS ALL IMMEDIATE; END $x$ $q$, c2, c2, c2));  -- voided charge has no plan
+  PERFORM public.t_expect('23514', format($q$DO $x$ BEGIN UPDATE charges SET amount = 1000000 WHERE id = %s; SET CONSTRAINTS ALL IMMEDIATE; END $x$ $q$, c1));            -- planned charge amount cannot drift from its plan
+  PERFORM public.t_expect('23514', format($q$DO $x$ BEGIN UPDATE charges SET voided_at = now(), void_reason = 'test' WHERE id = %s; SET CONSTRAINTS ALL IMMEDIATE; END $x$ $q$, c1));  -- planned charge cannot be voided
+  PERFORM public.t_expect('23503', $q$INSERT INTO charge_installments (org_id, charge_id, seq, due_date, amount) VALUES (2,1,1,CURRENT_DATE,1)$q$);                       -- charge 1 belongs to org 1
+
+  -- views: 450 000 paid on the 900 000 plan (installments: 300 000 due -40 days, 300 000 due -10 days, 300 000 due +20 days)
+  INSERT INTO payments (org_id, student_id, amount, method) VALUES (1,4,450000,'cash');
+  INSERT INTO payment_allocations (org_id, payment_id, charge_id, amount) VALUES (1, (SELECT max(id) FROM payments), c1, 450000);
+  IF (SELECT array_agg(paid ORDER BY seq)::text || array_agg(outstanding ORDER BY seq)::text FROM v_installment_balance WHERE charge_id = c1)
+     <> '{300000.00,150000.00,0.00}{0.00,150000.00,300000.00}' THEN RAISE EXCEPTION 'installment balances are wrong'; END IF;
+  IF (SELECT (outstanding, overdue_outstanding, next_due = CURRENT_DATE - 10)::text FROM v_charge_balance WHERE charge_id = c1) <> '(450000.00,150000.00,t)' THEN
+    RAISE EXCEPTION 'plan charge balance is wrong: %', (SELECT (outstanding, overdue_outstanding, next_due)::text FROM v_charge_balance WHERE charge_id = c1);
+  END IF;
+  IF (SELECT (outstanding, overdue_outstanding, next_due = CURRENT_DATE - 5)::text FROM v_charge_balance WHERE charge_id = c2) <> '(600000.00,600000.00,t)' THEN
+    RAISE EXCEPTION 'plain charge balance changed';
+  END IF;
+  IF (SELECT (outstanding_total, overdue_total)::text FROM v_student_balance WHERE student_id = 4) <> '(1050000.00,750000.00)' THEN
+    RAISE EXCEPTION 'student balance is wrong: %', (SELECT (outstanding_total, overdue_total)::text FROM v_student_balance WHERE student_id = 4);
+  END IF;
+  PERFORM set_config('app.org_id', '1', true);
+  IF (SELECT count(*) FROM agent_v_debtors WHERE charge_id = c1) <> 1
+     OR (SELECT (overdue_amount, days_overdue)::text FROM agent_v_debtors WHERE charge_id = c1) <> '(150000.00,10)'
+     OR (SELECT overdue_amount FROM agent_v_debtors WHERE charge_id = c2) <> 600000 THEN
+    RAISE EXCEPTION 'agent debtors view is wrong';
+  END IF;
+  IF (SELECT array_agg(seq ORDER BY seq)::text FROM agent_v_installments_due WHERE charge_id = c1) <> '{2}' THEN
+    RAISE EXCEPTION 'due installments view is wrong (installment 3 is 20 days away)';
+  END IF;
+  PERFORM set_config('app.org_id', '', true);
+  -- replace a plan in one transaction, the paid money stays on the charge
+  DELETE FROM charge_installments WHERE charge_id = c1;
+  INSERT INTO charge_installments (org_id, charge_id, seq, due_date, amount) VALUES (1,c1,1,CURRENT_DATE + 1,450000), (1,c1,2,CURRENT_DATE + 30,450000);
+  SET CONSTRAINTS ALL IMMEDIATE;
+  SET CONSTRAINTS ALL DEFERRED;
+  IF (SELECT overdue_outstanding FROM v_charge_balance WHERE charge_id = c1) <> 0 THEN RAISE EXCEPTION 'replaced plan has nothing overdue'; END IF;
+  DELETE FROM payment_allocations WHERE charge_id = c1;
+  DELETE FROM charge_installments WHERE charge_id = c1;
+  SET CONSTRAINTS ALL IMMEDIATE;
+  SET CONSTRAINTS ALL DEFERRED;
+END $$;
+
+-- ---------------------------------------------------------------- 0013: documents
+DO $$ BEGIN
+  INSERT INTO org_settings (org_id) VALUES (1);
+  UPDATE org_settings SET requisites = 'Toshkent, Chilonzor 9' WHERE org_id = 1;
+  PERFORM public.t_expect('23514', $q$UPDATE org_settings SET requisites = repeat('x', 1001) WHERE org_id = 1$q$);
+  DELETE FROM org_settings;
+END $$;
+BEGIN;
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '1'; SET LOCAL app.user_id = '1';
+DO $$
+DECLARE s1 INTEGER; s2 INTEGER; s3 INTEGER; d BIGINT;
+BEGIN
+  s1 := next_document_serial('receipt', 2026); s2 := next_document_serial('receipt', 2026); s3 := next_document_serial('invoice', 2026);
+  IF (s1, s2, s3) <> (1, 2, 1) THEN RAISE EXCEPTION 'serials per kind and year are wrong: % % %', s1, s2, s3; END IF;
+  IF next_document_serial('receipt', 2027) <> 1 THEN RAISE EXCEPTION 'a new year restarts the serial'; END IF;
+  PERFORM public.t_expect('23514', $q$SELECT next_document_serial('bogus', 2026)$q$);
+
+  INSERT INTO documents (org_id, kind, year, serial, number, student_id, payment_id, issued_on, total, snapshot)
+    VALUES (1,'receipt',2026,1,'KV-2026-000001',1,1,'2026-11-23',300000,'{"a":1}') RETURNING id INTO d;
+  INSERT INTO document_files (org_id, document_id, pdf) VALUES (1, d, '\x255044462d'::bytea);
+  PERFORM public.t_expect('23505', $q$INSERT INTO documents (org_id, kind, year, serial, number, student_id, payment_id, issued_on, total, snapshot) VALUES (1,'receipt',2026,2,'KV-2026-000001',1,1,'2026-11-23',1,'{}')$q$);    -- number is unique
+  PERFORM public.t_expect('23505', $q$INSERT INTO documents (org_id, kind, year, serial, number, student_id, payment_id, issued_on, total, snapshot) VALUES (1,'receipt',2026,2,'KV-2026-000002',1,1,'2026-11-23',1,'{}')$q$);    -- one receipt per payment
+  PERFORM public.t_expect('23514', $q$INSERT INTO documents (org_id, kind, year, serial, number, student_id, issued_on, total, snapshot) VALUES (1,'receipt',2026,3,'KV-2026-000003',1,'2026-11-23',1,'{}')$q$);            -- a receipt needs a payment
+  PERFORM public.t_expect('23514', $q$INSERT INTO documents (org_id, kind, year, serial, number, student_id, payment_id, issued_on, total, snapshot) VALUES (1,'invoice',2026,1,'TH-2026-000001',1,1,'2026-11-23',1,'{}')$q$);  -- an invoice has no payment
+  PERFORM public.t_expect('23514', $q$INSERT INTO document_files (org_id, document_id, pdf) VALUES (1, 999, ''::bytea)$q$);
+  PERFORM public.t_expect('42501', $q$UPDATE documents SET total = 1$q$);                    -- no update privilege
+  PERFORM public.t_expect('42501', $q$DELETE FROM documents$q$);                             -- no delete privilege
+  PERFORM public.t_expect('42501', $q$UPDATE document_files SET pdf = '\x00'::bytea$q$);
+  PERFORM public.t_expect('23503', $q$INSERT INTO documents (org_id, kind, year, serial, number, student_id, payment_id, issued_on, total, snapshot) VALUES (1,'invoice',2026,2,'TH-2026-000002',3,NULL,'2026-11-23',1,'{}')$q$); -- student 3 is org 2
+  ASSERT (SELECT count(*) FROM documents) = 1;
+END $$;
+COMMIT;
+BEGIN;
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '2';
+DO $$ BEGIN ASSERT (SELECT count(*) FROM documents) = 0 AND (SELECT count(*) FROM document_files) = 0 AND (SELECT count(*) FROM charge_installments) = 0, 'org 2 sees no documents or plans'; END $$;
+ROLLBACK;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM audit_log WHERE entity_type = 'documents' AND after_data ? 'pdf') THEN RAISE EXCEPTION 'audit log must not hold PDF bytes'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM audit_log WHERE entity_type = 'documents' AND action = 'insert') THEN RAISE EXCEPTION 'document insert must be audited'; END IF;
+END $$;
+
+-- even the owner role cannot change or delete an issued document (trigger), only the superuser clean-up below can
+DO $$ BEGIN
+  PERFORM public.t_expect('23001', $q$UPDATE documents SET total = 1$q$);
+  PERFORM public.t_expect('23001', $q$DELETE FROM documents$q$);
+  PERFORM public.t_expect('23001', $q$UPDATE document_files SET pdf = '\x00'::bytea$q$);
+END $$;
+
+-- outbox with a document and the worker functions
+DO $$
+DECLARE d BIGINT; m BIGINT; r RECORD;
+BEGIN
+  SELECT id INTO d FROM documents WHERE number = 'KV-2026-000001';
+  PERFORM public.t_expect('23514', format($q$INSERT INTO outbox_messages (org_id, student_id, guardian_id, channel, body, document_id, idempotency_key) VALUES (1,1,1,'sms','x',%s,'doc-sms')$q$, d));   -- document goes by Telegram only
+  PERFORM public.t_expect('23514', $q$INSERT INTO outbox_messages (org_id, student_id, guardian_id, channel, body, body_html, idempotency_key) VALUES (1,1,1,'telegram','x','<b>x</b>','html-only')$q$);   -- rich text belongs to a document
+  INSERT INTO outbox_messages (org_id, student_id, guardian_id, channel, body, body_html, document_id, idempotency_key)
+    VALUES (1,1,1,'telegram','Kvitansiya','<b>Kvitansiya</b>',d,'doc-test') RETURNING id INTO m;
+  UPDATE guardians SET telegram_chat_id = 555 WHERE id = 1;
+  SET LOCAL ROLE nazoratly_worker;
+  SELECT * INTO r FROM outbox_claim(5) WHERE message_id = m;
+  IF NOT (r.has_document AND r.body_html = '<b>Kvitansiya</b>' AND NOT r.text_delivered) THEN RAISE EXCEPTION 'claim does not carry the document flag'; END IF;
+  IF (SELECT filename FROM outbox_document(m)) <> 'KV-2026-000001.pdf' OR (SELECT octet_length(pdf) FROM outbox_document(m)) <> 5 THEN RAISE EXCEPTION 'worker cannot fetch the document'; END IF;
+  PERFORM outbox_mark_text_delivered(m);
+  PERFORM public.t_expect('42501', $q$SELECT * FROM documents$q$);                     -- the worker has no table access
+  RESET ROLE;
+  IF NOT (SELECT text_delivered FROM outbox_messages WHERE id = m) THEN RAISE EXCEPTION 'text_delivered not recorded'; END IF;
+  PERFORM outbox_complete(m, true);
+  IF (SELECT count(*) FROM outbox_document(m)) <> 0 THEN RAISE EXCEPTION 'a finished message must not expose the document again'; END IF;
+END $$;
+
+-- clean up (issued documents are immutable for everybody; this superuser clean-up disables the triggers) so the down-migration test starts clean
+ALTER TABLE documents DISABLE TRIGGER USER;
+ALTER TABLE document_files DISABLE TRIGGER USER;
+DELETE FROM outbox_messages WHERE document_id IS NOT NULL;
+DELETE FROM document_files; DELETE FROM documents; DELETE FROM document_counters;
+ALTER TABLE documents ENABLE TRIGGER USER;
+ALTER TABLE document_files ENABLE TRIGGER USER;
+UPDATE guardians SET telegram_chat_id = NULL WHERE id = 1;
+DELETE FROM payments WHERE student_id = 4; DELETE FROM charges WHERE student_id = 4; DELETE FROM data_consents WHERE student_id = 4;
+
 SELECT 'ALL SCHEMA TESTS PASSED' AS result;

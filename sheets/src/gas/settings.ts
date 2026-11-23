@@ -16,6 +16,8 @@ export interface Settings {
   excusedMode: "makeup" | "credit" | "none";
   makeupExpiryDays: number;
   makeupLapses: boolean;
+  installmentRemindDays: number;
+  requisites: string;
 }
 
 export function readSettings(): Settings {
@@ -45,6 +47,8 @@ export function readSettings(): Settings {
     excusedMode: ((v) => (v.startsWith("kredit") ? "credit" : v === "yo'q" || v === "yoq" || v === "yo`q" ? "none" : "makeup"))((map.get("excusedMode") ?? "").toLowerCase()),
     makeupExpiryDays: num("makeupExpiryDays", 30, 0, 365),
     makeupLapses: !["yo'q", "yoq", "yo`q", "no", "false"].includes((map.get("makeupLapses") ?? "ha").toLowerCase()),
+    installmentRemindDays: num("installmentRemindDays", 3, 0, 30),
+    requisites: map.get("requisites") ?? "",
     payInfo: map.get("payInfo") ?? "",
     ownerChatId: /^-?\d{5,}$/.test(map.get("ownerChatId") ?? "") ? (map.get("ownerChatId") as string) : "",
   };

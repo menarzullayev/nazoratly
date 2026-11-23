@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends
-from pydantic import Field
+from pydantic import Field, StringConstraints
 
 from nazoratly.db import Conn, execute, fetch_one
 from nazoratly.deps import DB, Principal, require
@@ -21,6 +21,9 @@ class SettingsOut(Out):
     excused_mode: Literal["makeup", "credit", "none"]
     makeup_expiry_days: int
     makeup_lapses: bool
+    requisites: str | None = Field(
+        description="the center's own requisites, printed on receipts and invoices"
+    )
 
 
 class SettingsPatch(Model):
@@ -29,6 +32,9 @@ class SettingsPatch(Model):
     excused_mode: Literal["makeup", "credit", "none"] | None = None
     makeup_expiry_days: Annotated[int, Field(ge=0, le=365)] | None = None
     makeup_lapses: bool | None = None
+    requisites: Annotated[str, StringConstraints(strip_whitespace=True, max_length=1000)] | None = Field(
+        default=None, description="empty string clears it"
+    )
 
 
 async def load_settings(conn: Conn, org_id: int) -> SettingsOut:
@@ -38,7 +44,7 @@ async def load_settings(conn: Conn, org_id: int) -> SettingsOut:
     )
     row = await fetch_one(
         conn,
-        "SELECT trial_free_lessons, trial_free_days, excused_mode, makeup_expiry_days, makeup_lapses FROM org_settings WHERE org_id = %s",
+        "SELECT trial_free_lessons, trial_free_days, excused_mode, makeup_expiry_days, makeup_lapses, requisites FROM org_settings WHERE org_id = %s",
         (org_id,),
     )
     assert row is not None
@@ -59,5 +65,8 @@ async def patch_settings(
     async with db.tx(p.session()) as conn:
         await load_settings(conn, p.org_id)
         for column, value in changes.items():  # column names come from the model above, never from the client
-            await execute(conn, f"UPDATE org_settings SET {column} = %s WHERE org_id = %s", (value, p.org_id))
+            stored = None if column == "requisites" and value == "" else value
+            await execute(
+                conn, f"UPDATE org_settings SET {column} = %s WHERE org_id = %s", (stored, p.org_id)
+            )
         return await load_settings(conn, p.org_id)

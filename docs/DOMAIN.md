@@ -64,3 +64,10 @@ Qarzdorlar (`charges_open_due`), o'quvchi balansi, kunlik/oylik tushum (`payment
 - `org_settings`: `excused_mode`, `makeup_expiry_days`, `makeup_lapses`; `lessons.kind` (`regular|makeup`); `charges.amount` endi `>= 0`.
 - `absence_entitlements`: bitta (yo'qotilgan dars, o'quvchi) uchun bitta qator; `kind makeup|credit` (kreditda `amount`), `status open|scheduled|used|cancelled`, `expires_on`, `makeup_lesson_id`, `applied_charge_id`. RLS + audit.
 - Pastga qaytarish: qoplash darslari yoki 0 so'mlik hisoblar bo'lsa to'xtaydi.
+
+## 9. To'lov rejalari va hujjatlar (migratsiya 0013)
+- `charge_installments`: bir hisobning sanali qismlari (2..24, `seq` 1..n, muddatlar qat'iy o'sadi, yig'indi = hisob summasi). Tekshiruv tranzaksiya oxirida (deferred constraint trigger), shuning uchun reja bir tranzaksiyada almashtiriladi. Hisob bekor qilinsa yoki summasi o'zgarsa reja bilan mos kelmasligi bazada rad etiladi.
+- Qarz hisoblanadi, saqlanmaydi: `v_installment_balance` hisobning to'langan pulini qismlarga eng eskisidan taqsimlaydi; `v_charge_balance` `overdue_outstanding` va `next_due` beradi, `v_student_balance`/`agent_v_debtors` shundan foydalanadi. Qoida Python/TypeScript'da `rules/installments.py` / `domain/installments.ts` va `tests/golden/installments.json` (30+ holat) bilan bir xil.
+- `documents` (+`document_files` PDF baytlari, auditga tushmaydi): raqamlar `document_counters` qatorini qulflab beriladi; hujjat o'zgarmas (trigger), bir to'lovga bitta kvitansiya. `org_settings.requisites` markaz rekvizitlari.
+- `outbox_messages` hujjat olib yuradi (`document_id`, `body_html`, `text_delivered`); worker `outbox_document()` va `outbox_mark_text_delivered()` orqali oladi (jadvalga kirishi yo'q).
+- Hujjatlar markazning ichki hujjati: fiskal da'vo yo'q (YaTT/MChJ yo'q), shuning uchun "hisob-faktura" so'zi ishlatilmaydi ("to'lov hisobi").

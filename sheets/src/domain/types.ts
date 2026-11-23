@@ -114,3 +114,11 @@ export interface Entitlement {
   appliedChargeId: string;
   lastMakeupOn: ISODate | "";
 }
+
+/** One dated part of a payment plan: a charge split into installments (sheet "To'lov rejalari"). */
+export interface Installment {
+  chargeId: string;
+  seq: number;
+  dueDate: ISODate;
+  amount: number;
+}

@@ -1,0 +1,23 @@
+{
+  "constants": [
+    { "name": "footer", "key": "footer", "out": "Ichki hujjat. Fiskal chek yoki soliq hisob-fakturasi emas." },
+    { "name": "receipt title", "key": "receipt_title", "out": "KVITANSIYA" },
+    { "name": "invoice title", "key": "invoice_title", "out": "TO'LOV HISOBI" }
+  ],
+  "number": [
+    { "name": "receipt serial 7", "in": { "kind": "receipt", "year": 2026, "serial": 7 }, "out": "KV-2026-000007" },
+    { "name": "invoice serial 123456", "in": { "kind": "invoice", "year": 2026, "serial": 123456 }, "out": "TH-2026-123456" },
+    { "name": "new year restarts", "in": { "kind": "receipt", "year": 2027, "serial": 1 }, "out": "KV-2027-000001" },
+    { "name": "more than six digits is not truncated", "in": { "kind": "invoice", "year": 2026, "serial": 1000000 }, "out": "TH-2026-1000000" }
+  ],
+  "format_som": [
+    { "name": "zero", "in": "0", "out": "0" },
+    { "name": "three digits", "in": "999", "out": "999" },
+    { "name": "thousand", "in": "1000", "out": "1 000" },
+    { "name": "million and a quarter", "in": "1250000", "out": "1 250 000" },
+    { "name": "half rounds up", "in": "1250000.50", "out": "1 250 001" },
+    { "name": "below half rounds down", "in": "1250000.49", "out": "1 250 000" },
+    { "name": "two digits", "in": "12", "out": "12" },
+    { "name": "negative", "in": "-5000", "out": "-5 000" }
+  ]
+}

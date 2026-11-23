@@ -212,7 +212,33 @@ export const ENTITLEMENTS: TableDef = {
   ],
 };
 
-export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS];
+export const INSTALLMENTS: TableDef = {
+  sheet: "To'lov rejalari",
+  color: "#d93025",
+  cols: [
+    { key: "chargeId", header: "Hisob ID", width: 90, kind: "text", help: "Qismlarga bo'linadigan hisob (menyu: To'lov rejasi > Reja tuzish)" },
+    { key: "seq", header: "Qism №", width: 80, kind: "int", help: "1, 2, 3 ... ketma-ket" },
+    { key: "dueDate", header: "To'lov muddati", width: 120, kind: "date", help: "Qismlar muddati o'sib borishi kerak" },
+    { key: "amount", header: "Summa", width: 110, kind: "int", help: "Qismlar yig'indisi hisob summasiga teng bo'lishi shart (menyu: Rejalarni tekshirish)" },
+  ],
+};
+
+export const DOCUMENTS: TableDef = {
+  sheet: "Hujjatlar",
+  color: "#5f6368",
+  cols: [
+    { key: "number", header: "Raqam", width: 130, kind: "text", help: "KV-yyyy-000001 kvitansiya, TH-yyyy-000001 to'lov hisobi" },
+    { key: "kind", header: "Turi", width: 110, kind: "enum", labels: { receipt: "Kvitansiya", invoice: "To'lov hisobi" } },
+    { key: "issuedOn", header: "Sana", width: 110, kind: "date" },
+    { key: "studentId", header: "O'quvchi ID", width: 100, kind: "text" },
+    { key: "paymentId", header: "To'lov ID", width: 90, kind: "text", help: "Kvitansiya uchun" },
+    { key: "amount", header: "Summa", width: 110, kind: "int" },
+    { key: "link", header: "PDF havolasi", width: 300, kind: "text", help: "Google Drive dagi PDF fayl (hujjat o'zgarmaydi)" },
+    { key: "sentOn", header: "Vasiyga yuborilgan", width: 130, kind: "date" },
+  ],
+};
+
+export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, INSTALLMENTS, DOCUMENTS];
 
 export const SETTINGS_SHEET = "Sozlamalar";
 export const DEBTORS_SHEET = "Qarzdorlar";
@@ -231,6 +257,8 @@ export const SETTING_DEFAULTS: { key: string; label: string; value: string; help
   { key: "excusedMode", label: "Sababli yo'qlik", value: "Qoplash", help: "Qoplash = qoplash huquqi, Kredit = keyingi oylik hisobdan ayiriladi, Yo'q = hech narsa" },
   { key: "makeupExpiryDays", label: "Qoplash muddati (kun)", value: "30", help: "Sababli yo'qlikdan keyin huquq shuncha kun amal qiladi (0-365)" },
   { key: "makeupLapses", label: "Muddati o'tgan huquq kuyadi", value: "Ha", help: "Ha / Yo'q" },
+  { key: "installmentRemindDays", label: "Qism haqida oldindan eslatma (kun)", value: "3", help: "To'lov qismi muddatiga shuncha kun qolganda eslatma loyihasi yaratiladi (0 = o'chirilgan)" },
+  { key: "requisites", label: "Markaz rekvizitlari (hujjatlarda)", value: "", help: "Manzil, telefon, hisob raqami... Kvitansiya va to'lov hisobida markaz nomi ostida chiqadi. Hujjat ichki hujjat: fiskal chek emas" },
   { key: "payInfo", label: "To'lov rekvizitlari", value: "", help: "Karta raqami yoki hisob. Xabardagi 'Nusxalash' tugmasi shuni nusxalaydi (bo'sh = tugma yo'q)" },
   { key: "ownerChatId", label: "Egasining Telegram chat ID si", value: "", help: "Vasiy 'To'lov qildim' bossa shu yerga xabar keladi (botga /start yozib, @userinfobot dan ID ni oling)" },
 ];
