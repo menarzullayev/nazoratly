@@ -84,7 +84,7 @@ DO $$ BEGIN
   PERFORM public.t_expect('23514', $q$UPDATE payments SET amount = 100000 WHERE id = 1$q$);                                         -- below allocated
   PERFORM public.t_expect('23514', $q$UPDATE charges SET amount = 100000 WHERE id = 1$q$);
   PERFORM public.t_expect('23514', $q$INSERT INTO charges (org_id, student_id, kind, period_month, amount, due_date) VALUES (1,1,'other','2026-11-15',10,'2026-12-01')$q$);
-  PERFORM public.t_expect('23514', $q$INSERT INTO charges (org_id, student_id, kind, period_month, amount, due_date) VALUES (1,1,'other','2026-11-01',0,'2026-12-01')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO charges (org_id, student_id, kind, period_month, amount, due_date) VALUES (1,1,'other','2026-11-01',-1,'2026-12-01')$q$);
   PERFORM public.t_expect('23505', $q$INSERT INTO charges (org_id, student_id, enrollment_id, kind, period_month, amount, due_date) VALUES (1,1,1,'tuition','2026-10-01',1,'2026-10-10')$q$); -- double billing
   INSERT INTO payments (org_id, student_id, amount, method, external_ref) VALUES (1,1,1000,'payme','tx-1');
   PERFORM public.t_expect('23505', $q$INSERT INTO payments (org_id, student_id, amount, method, external_ref) VALUES (1,1,1000,'payme','tx-1')$q$);   -- idempotent
