@@ -17,6 +17,8 @@ export interface Settings {
   makeupExpiryDays: number;
   makeupLapses: boolean;
   installmentRemindDays: number;
+  packageExpiryDays: number;
+  packageLowLessons: number;
   requisites: string;
 }
 
@@ -48,6 +50,8 @@ export function readSettings(): Settings {
     makeupExpiryDays: num("makeupExpiryDays", 30, 0, 365),
     makeupLapses: !["yo'q", "yoq", "yo`q", "no", "false"].includes((map.get("makeupLapses") ?? "ha").toLowerCase()),
     installmentRemindDays: num("installmentRemindDays", 3, 0, 30),
+    packageExpiryDays: num("packageExpiryDays", 60, 1, 730),
+    packageLowLessons: num("packageLowLessons", 2, 0, 50),
     requisites: map.get("requisites") ?? "",
     payInfo: map.get("payInfo") ?? "",
     ownerChatId: /^-?\d{5,}$/.test(map.get("ownerChatId") ?? "") ? (map.get("ownerChatId") as string) : "",

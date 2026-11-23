@@ -40,6 +40,7 @@ export function syncAttendance(date: string, groupId: string, marks: { studentId
       continue;
     }
     if (s.excusedMode === "none" || !group) continue;
+    if (group.billingMode === "package" && s.excusedMode === "credit") continue; // in a package group not consuming the lesson IS the credit
     if (!enrollments.some((e) => e.studentId === m.studentId && e.groupId === groupId && e.status === "active")) continue; // trials earn nothing
     const kind = s.excusedMode === "credit" ? "credit" : "makeup";
     let amount = 0;

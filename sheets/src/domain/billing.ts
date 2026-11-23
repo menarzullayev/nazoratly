@@ -19,6 +19,7 @@ export interface BillingPlan {
   create: PlannedCharge[];
   skippedExisting: number;
   skippedZeroFee: number;
+  skippedPackageGroups: number; // enrollments of package-billed groups: billed when a package is sold
 }
 
 /**
@@ -40,12 +41,16 @@ export function planCharges(args: {
   const groups = new Map(args.groups.map((g) => [g.id, g]));
   const students = new Map(args.students.map((s) => [s.id, s]));
   const billed = new Set(args.charges.filter((c) => !c.voided && c.month === first).map((c) => c.enrollmentId));
-  const plan: BillingPlan = { month: first, create: [], skippedExisting: 0, skippedZeroFee: 0 };
+  const plan: BillingPlan = { month: first, create: [], skippedExisting: 0, skippedZeroFee: 0, skippedPackageGroups: 0 };
   for (const e of args.enrollments) {
     const g = groups.get(e.groupId);
     const s = students.get(e.studentId);
     if (!g || !s || g.status === "cancelled" || s.status === "left") continue;
     if (e.status === "frozen" || e.status === "trial") continue;
+    if (g.billingMode === "package") {
+      if (e.startedOn < next && (e.endedOn === "" || e.endedOn >= first)) plan.skippedPackageGroups++;
+      continue;
+    }
     // a trial that was accepted is billed for its first month at acceptance; the monthly run starts after that month
     if (e.acceptedOn && first <= monthStart(e.acceptedOn)) continue;
     if (!(e.startedOn < next && (e.endedOn === "" || e.endedOn >= first))) continue;

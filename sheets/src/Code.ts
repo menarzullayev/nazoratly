@@ -3,6 +3,7 @@ import * as actions from "./gas/actions";
 import * as admission from "./gas/admission";
 import * as documents from "./gas/documents";
 import * as makeup from "./gas/makeup";
+import * as packages from "./gas/packages";
 import * as plans from "./gas/plans";
 import { setupWorkbook, loadSampleData, resetSampleData } from "./gas/setup";
 import { handleGet, handlePost } from "./gas/webhook";
@@ -42,6 +43,15 @@ g.onOpen = (): void => {
         .addItem("Huquqlarni ko'rish", "menuEntitlements")
         .addItem("Qoplash darsini rejalash", "menuScheduleMakeup")
         .addItem("Huquqni bekor qilish", "menuCancelEntitlement"),
+    )
+    .addSubMenu(
+      SpreadsheetApp.getUi()
+        .createMenu("Abonement (dars paketi)")
+        .addItem("Abonement sotish", "menuPackageSell")
+        .addItem("Abonement holati / to'lov kerak", "menuPackageStatus")
+        .addItem("Muddatni uzaytirish", "menuPackageExtend")
+        .addItem("To'lov eslatma loyihalarini yaratish", "menuPackageDrafts")
+        .addItem("Abonementlarni tekshirish", "menuPackageCheck"),
     )
     .addSubMenu(
       SpreadsheetApp.getUi()
@@ -98,6 +108,11 @@ g.menuPlanCreate = plans.menu.create;
 g.menuPlanView = plans.menu.view;
 g.menuPlanRemove = plans.menu.remove;
 g.menuPlanCheck = plans.menu.check;
+g.menuPackageSell = packages.menu.sell;
+g.menuPackageStatus = packages.menu.status;
+g.menuPackageExtend = packages.menu.extend;
+g.menuPackageDrafts = packages.menu.drafts;
+g.menuPackageCheck = packages.menu.check;
 g.menuDocReceipt = documents.menu.receipt;
 g.menuDocInvoice = documents.menu.invoice;
 g.menuDocSend = documents.menu.send;

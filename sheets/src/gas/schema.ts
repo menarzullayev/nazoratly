@@ -28,6 +28,7 @@ const L = {
   entStatus: { open: "Ochiq", scheduled: "Rejalangan", used: "Ishlatilgan", cancelled: "Bekor" },
   leadKind: { call: "Qo'ng'iroq", message: "Xabar", meeting: "Uchrashuv", trial: "Sinov", note: "Izoh" },
   attendance: { present: "Keldi", absent: "Kelmadi", late: "Kechikdi", excused: "Sababli" },
+  billing: { monthly: "Oylik", package: "Abonement" },
   payModel: { fixed: "Qat'iy oylik", per_lesson: "Dars uchun", percent: "Foiz" },
   teacherStatus: { active: "Faol", inactive: "Nofaol" },
   draftStatus: { pending: "Kutilmoqda", approved: "Tasdiqlangan", sent: "Yuborilgan", rejected: "Rad etilgan", failed: "Xato" },
@@ -65,6 +66,9 @@ export const GROUPS: TableDef = {
     { key: "monthlyFee", header: "Oylik narx (so'm)", width: 130, kind: "int" },
     { key: "schedule", header: "Jadval", width: 200, kind: "text", help: "Masalan: Du-Chor-Ju 18:00" },
     { key: "status", header: "Holat", width: 100, kind: "enum", labels: L.groupStatus },
+    { key: "billingMode", header: "Hisoblash turi", width: 120, kind: "enum", labels: L.billing, help: "Oylik: har oy hisob yaratiladi. Abonement: to'lov darslar sonini beradi (menyu: Abonement)" },
+    { key: "packageLessons", header: "Abonement darslari", width: 120, kind: "int", help: "Bitta abonementdagi darslar soni (faqat Abonement guruhlari)" },
+    { key: "packagePrice", header: "Abonement narxi (so'm)", width: 140, kind: "int", help: "Bitta abonement narxi (faqat Abonement guruhlari)" },
   ],
 };
 
@@ -81,6 +85,7 @@ export const ENROLLMENTS: TableDef = {
     { key: "status", header: "Holat", width: 110, kind: "enum", labels: L.enrollStatus, help: "Sinov: hisob yaratilmaydi. Qabul qilish: nazoratly > Qabul menyusi" },
     { key: "acceptedOn", header: "Qabul sanasi", width: 110, kind: "date", help: "Sinov qabul qilingan sana (avtomatik)" },
     { key: "firstMonthMode", header: "Birinchi oy", width: 120, kind: "enum", labels: L.firstMonth, help: "Qabul paytida tanlangan: to'liq oy / proratsiya / keyingi oydan (avtomatik)" },
+    { key: "droppedTrial", header: "Sinov bekor qilingan", width: 120, kind: "bool", help: "Sinov bekor qilinsa avtomatik 'Ha': sinov darslari bepul qoladi" },
   ],
 };
 
@@ -223,6 +228,21 @@ export const INSTALLMENTS: TableDef = {
   ],
 };
 
+export const PACKAGES: TableDef = {
+  sheet: "Abonementlar",
+  color: "#188038",
+  cols: [
+    { key: "id", header: "ID", width: 70, kind: "text", help: "Avtomatik (P0001...): menyu Abonement > Abonement sotish" },
+    { key: "studentId", header: "O'quvchi ID", width: 100, kind: "text" },
+    { key: "enrollmentId", header: "Yozilish ID", width: 100, kind: "text" },
+    { key: "chargeId", header: "Hisob ID", width: 90, kind: "text", help: "Abonement narxi shu hisobga yoziladi; to'langan pul darslarni beradi" },
+    { key: "lessons", header: "Darslar", width: 80, kind: "int" },
+    { key: "price", header: "Narx", width: 110, kind: "int" },
+    { key: "purchasedOn", header: "Sotilgan sana", width: 120, kind: "date" },
+    { key: "expiresOn", header: "Muddati", width: 120, kind: "date", help: "Shu kundan keyin ishlatilmagan darslar kuyadi (menyu: Muddatni uzaytirish)" },
+  ],
+};
+
 export const DOCUMENTS: TableDef = {
   sheet: "Hujjatlar",
   color: "#5f6368",
@@ -238,7 +258,7 @@ export const DOCUMENTS: TableDef = {
   ],
 };
 
-export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, INSTALLMENTS, DOCUMENTS];
+export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, PACKAGES, INSTALLMENTS, DOCUMENTS];
 
 export const SETTINGS_SHEET = "Sozlamalar";
 export const DEBTORS_SHEET = "Qarzdorlar";
@@ -257,6 +277,8 @@ export const SETTING_DEFAULTS: { key: string; label: string; value: string; help
   { key: "excusedMode", label: "Sababli yo'qlik", value: "Qoplash", help: "Qoplash = qoplash huquqi, Kredit = keyingi oylik hisobdan ayiriladi, Yo'q = hech narsa" },
   { key: "makeupExpiryDays", label: "Qoplash muddati (kun)", value: "30", help: "Sababli yo'qlikdan keyin huquq shuncha kun amal qiladi (0-365)" },
   { key: "makeupLapses", label: "Muddati o'tgan huquq kuyadi", value: "Ha", help: "Ha / Yo'q" },
+  { key: "packageExpiryDays", label: "Abonement muddati (kun)", value: "60", help: "Abonement sotilgan kundan boshlab shuncha kun amal qiladi, keyin ishlatilmagan darslar kuyadi (1-730)" },
+  { key: "packageLowLessons", label: "Abonementda oz dars qolganda", value: "2", help: "Qolgan darslar shuncha yoki kam bo'lsa 'to'lov kerak' ro'yxatiga tushadi (0-50)" },
   { key: "installmentRemindDays", label: "Qism haqida oldindan eslatma (kun)", value: "3", help: "To'lov qismi muddatiga shuncha kun qolganda eslatma loyihasi yaratiladi (0 = o'chirilgan)" },
   { key: "requisites", label: "Markaz rekvizitlari (hujjatlarda)", value: "", help: "Manzil, telefon, hisob raqami... Kvitansiya va to'lov hisobida markaz nomi ostida chiqadi. Hujjat ichki hujjat: fiskal chek emas" },
   { key: "payInfo", label: "To'lov rekvizitlari", value: "", help: "Karta raqami yoki hisob. Xabardagi 'Nusxalash' tugmasi shuni nusxalaydi (bo'sh = tugma yo'q)" },

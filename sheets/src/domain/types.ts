@@ -17,6 +17,9 @@ export interface Group {
   monthlyFee: number; // so'm, integer
   schedule?: string; // weekly schedule text, e.g. "Du-Chor-Ju 18:00"
   status: "planned" | "active" | "finished" | "cancelled";
+  billingMode?: "monthly" | "package"; // "" in the sheet reads as monthly
+  packageLessons?: number; // lessons in one package (package-billed groups)
+  packagePrice?: number; // so'm for one package (package-billed groups)
 }
 
 export interface Enrollment {
@@ -30,6 +33,8 @@ export interface Enrollment {
   /** Set when a trial was accepted; months up to and including this month are not billed by the monthly run. */
   acceptedOn?: ISODate | "";
   firstMonthMode?: "full" | "prorated" | "free_until_next" | "";
+  /** A trial that was dropped: its lessons were free and stay free. */
+  droppedTrial?: boolean;
 }
 
 export interface Charge {
@@ -121,4 +126,16 @@ export interface Installment {
   seq: number;
   dueDate: ISODate;
   amount: number;
+}
+
+/** A lesson package sold to an enrollment (sheet "Abonementlar"): a charge plus lessons and an expiry. */
+export interface Package {
+  id: string;
+  studentId: string;
+  enrollmentId: string;
+  chargeId: string;
+  lessons: number;
+  price: number;
+  purchasedOn: ISODate;
+  expiresOn: ISODate;
 }

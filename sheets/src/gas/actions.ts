@@ -68,7 +68,7 @@ export function generateMonthlyCharges(): void {
     const reduced = reduceByCredits(plan.create, ids);
     append(CHARGES, plan.create.map((c, i) => ({ ...c, amount: reduced.amounts[i]!, id: ids[i]!, voided: false })));
     markCreditsUsed(reduced.consumed);
-    return `${month.slice(0, 7)}: ${plan.create.length} ta yangi hisob yaratildi (kreditdan ayirilgan: ${reduced.consumed.length}).\nAvval yaratilgan: ${plan.skippedExisting}.\nNarxi 0 bo'lgani uchun o'tkazib yuborilgan: ${plan.skippedZeroFee}.`;
+    return `${month.slice(0, 7)}: ${plan.create.length} ta yangi hisob yaratildi (kreditdan ayirilgan: ${reduced.consumed.length}).\nAvval yaratilgan: ${plan.skippedExisting}.\nNarxi 0 bo'lgani uchun o'tkazib yuborilgan: ${plan.skippedZeroFee}.\nAbonement guruhlari (abonement sotilganda hisob yaratiladi): ${plan.skippedPackageGroups}.`;
   });
   ui().alert("Oylik hisoblar", summary, ui().ButtonSet.OK);
 }
