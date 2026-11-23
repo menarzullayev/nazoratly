@@ -12,6 +12,7 @@ DO $$ BEGIN
 END $$;
 
 DROP VIEW agent_v_package_consumption;
+DROP VIEW agent_v_package_enrollments;
 DROP VIEW agent_v_package_packages;
 DROP VIEW v_package_consumption;
 DROP VIEW v_lesson_packages;

@@ -15,7 +15,19 @@ from nazoratly.deps import DB, Paging, Principal, require
 from nazoratly.errors import Conflict, Forbidden, NotFound, Unprocessable
 from nazoratly.idempotency import IdempotentRoute
 from nazoratly.routers.students import like_pattern
-from nazoratly.schemas import Dec2, LongText, Message, Model, Money, Name, Out, Page, Phone, make_page
+from nazoratly.schemas import (
+    Dec2,
+    LongText,
+    Message,
+    Model,
+    Money,
+    Name,
+    Out,
+    Page,
+    Phone,
+    PositiveMoney,
+    make_page,
+)
 
 router = APIRouter(prefix="/v1", tags=["academics"], route_class=IdempotentRoute)
 
@@ -374,6 +386,18 @@ class ScheduleSlot(Model):
         return self
 
 
+BillingMode = Literal["monthly", "package"]
+
+
+def billing_shape_error(mode: str, lessons: int | None, price: Decimal | None) -> str | None:
+    """A package-billed group needs lessons and price; a monthly group carries neither."""
+    if mode == "package" and (lessons is None or price is None):
+        return "a package-billed group needs package_lessons and package_price"
+    if mode == "monthly" and (lessons is not None or price is not None):
+        return "package_lessons and package_price are only for package-billed groups"
+    return None
+
+
 class ScheduleSlotOut(Out):
     weekday: int
     start_time: time
@@ -391,11 +415,22 @@ class GroupIn(Model):
     start_date: date
     end_date: date | None = None
     status: GroupStatus = "planned"
+    billing_mode: BillingMode = "monthly"
+    package_lessons: Annotated[int, Field(ge=1, le=200)] | None = Field(
+        default=None, description="lessons in one package (package-billed groups only)"
+    )
+    package_price: PositiveMoney | None = Field(
+        default=None, description="price of one package (package-billed groups only)"
+    )
 
     @model_validator(mode="after")
     def _dates(self) -> GroupIn:
         if self.end_date is not None and self.end_date < self.start_date:
             raise ValueError("end_date cannot be before start_date")
+        if (
+            msg := billing_shape_error(self.billing_mode, self.package_lessons, self.package_price)
+        ) is not None:
+            raise ValueError(msg)
         return self
 
 
@@ -408,6 +443,9 @@ class GroupPatch(Model):
     start_date: date | None = None
     end_date: date | None = None
     status: GroupStatus | None = None
+    billing_mode: BillingMode | None = None
+    package_lessons: Annotated[int, Field(ge=1, le=200)] | None = None
+    package_price: PositiveMoney | None = None
 
 
 class GroupOut(Out):
@@ -423,6 +461,9 @@ class GroupOut(Out):
     start_date: date
     end_date: date | None
     status: str
+    billing_mode: BillingMode
+    package_lessons: int | None
+    package_price: Dec2 | None
     active_students: int
 
 
@@ -432,7 +473,7 @@ class GroupDetail(GroupOut):
 
 _GROUP_SQL = (
     "SELECT g.public_id AS id, g.name, c.public_id AS course_id, c.name AS course_name, t.public_id AS teacher_id,"
-    " t.full_name AS teacher_name, b.public_id AS branch_id, g.monthly_fee, g.capacity, g.start_date, g.end_date, g.status,"
+    " t.full_name AS teacher_name, b.public_id AS branch_id, g.monthly_fee, g.capacity, g.start_date, g.end_date, g.status, g.billing_mode, g.package_lessons, g.package_price,"
     " (SELECT count(*) FROM enrollments e WHERE e.group_id = g.id AND e.status = 'active') AS active_students "
     "FROM study_groups g JOIN courses c ON c.org_id = g.org_id AND c.id = g.course_id "
     "LEFT JOIN teachers t ON t.org_id = g.org_id AND t.id = g.teacher_id "
@@ -471,8 +512,9 @@ async def create_group(
             fee = c["default_monthly_fee"]
         row = await fetch_one(
             conn,
-            "INSERT INTO study_groups (org_id, branch_id, course_id, teacher_id, name, monthly_fee, capacity, start_date, end_date, status) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+            "INSERT INTO study_groups (org_id, branch_id, course_id, teacher_id, name, monthly_fee, capacity, start_date, end_date, status, "
+            "billing_mode, package_lessons, package_price) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
             (
                 p.org_id,
                 bid,
@@ -484,6 +526,9 @@ async def create_group(
                 body.start_date,
                 body.end_date,
                 body.status,
+                body.billing_mode,
+                body.package_lessons,
+                body.package_price,
             ),
         )
         assert row is not None
@@ -559,6 +604,27 @@ async def patch_group(
             assert cur is not None
             if cur["n"] > changes["capacity"]:
                 raise Conflict("Capacity is below the current number of active students")
+        if {"billing_mode", "package_lessons", "package_price"} & changes.keys():
+            cur_billing = await fetch_one(
+                conn,
+                "SELECT billing_mode, package_lessons, package_price FROM study_groups WHERE id = %s",
+                (gid,),
+            )
+            assert cur_billing is not None
+            mode = changes.get("billing_mode", cur_billing["billing_mode"])
+            if mode == "monthly" and changes.get("billing_mode") == "monthly":
+                changes.setdefault(
+                    "package_lessons", None
+                )  # switching back to monthly drops the package fields
+                changes.setdefault("package_price", None)
+            msg = billing_shape_error(
+                mode,
+                changes.get("package_lessons", cur_billing["package_lessons"]),
+                changes.get("package_price", cur_billing["package_price"]),
+            )
+            if msg is not None:
+                raise Unprocessable(msg)
+            changes["billing_mode"] = mode
         await patch_row(conn, "study_groups", gid, changes)
         return await _group_detail(conn, gid)
 

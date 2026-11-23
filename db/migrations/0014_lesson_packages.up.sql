@@ -100,7 +100,20 @@ LEFT JOIN org_settings s ON s.org_id = a.org_id
 WHERE l.kind = 'regular' AND l.status <> 'cancelled'
   AND (a.status IN ('present','late','absent') OR (a.status = 'excused' AND COALESCE(s.excused_mode, 'makeup') = 'none'));
 
+GRANT SELECT ON v_lesson_packages, v_package_consumption TO nazoratly_app;
+
 -- ---- agent views: only students with AI-processing consent, only the caller's center -----------------------------
+-- active enrollments in package groups (the base list: a student with no package yet is also "payment needed")
+CREATE VIEW agent_v_package_enrollments AS
+SELECT e.org_id, e.student_id, s.full_name, e.id AS enrollment_id, g.id AS group_id, g.name AS group_name,
+       g.package_lessons, g.package_price
+FROM enrollments e
+JOIN students s ON s.org_id = e.org_id AND s.id = e.student_id
+JOIN study_groups g ON g.org_id = e.org_id AND g.id = e.group_id AND g.billing_mode = 'package' AND g.deleted_at IS NULL
+WHERE e.org_id = app_org_id() AND e.status = 'active' AND s.deleted_at IS NULL
+  AND EXISTS (SELECT 1 FROM data_consents dc WHERE dc.org_id = s.org_id AND dc.student_id = s.id
+              AND dc.purpose = 'ai_assistant_processing' AND dc.revoked_at IS NULL);
+
 CREATE VIEW agent_v_package_packages AS
 SELECT p.org_id, p.student_id, s.full_name, p.enrollment_id, g.id AS group_id, g.name AS group_name,
        g.package_lessons, g.package_price, p.lessons, p.price, p.paid, p.purchased_on, p.expires_on
@@ -120,4 +133,4 @@ WHERE c.org_id = app_org_id() AND s.deleted_at IS NULL
   AND EXISTS (SELECT 1 FROM data_consents dc WHERE dc.org_id = s.org_id AND dc.student_id = s.id
               AND dc.purpose = 'ai_assistant_processing' AND dc.revoked_at IS NULL);
 
-GRANT SELECT ON agent_v_package_packages, agent_v_package_consumption TO nazoratly_agent;
+GRANT SELECT ON agent_v_package_enrollments, agent_v_package_packages, agent_v_package_consumption TO nazoratly_agent;

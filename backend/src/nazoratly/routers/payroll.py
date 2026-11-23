@@ -154,7 +154,7 @@ async def generate_payroll(
                 "JOIN charges c ON c.org_id = pa.org_id AND c.id = pa.charge_id "
                 "JOIN enrollments e ON e.org_id = c.org_id AND e.id = c.enrollment_id "
                 "JOIN study_groups g ON g.org_id = e.org_id AND g.id = e.group_id "
-                "WHERE c.kind = 'tuition' AND c.voided_at IS NULL AND c.period_month = %s AND g.teacher_id = %s",
+                "WHERE c.kind IN ('tuition', 'package') AND c.voided_at IS NULL AND c.period_month = %s AND g.teacher_id = %s",
                 (first, tid),
             )
             assert base is not None

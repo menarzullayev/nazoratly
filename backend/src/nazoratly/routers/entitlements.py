@@ -62,13 +62,15 @@ async def sync_entitlement(
         return
     enr = await fetch_one(
         conn,
-        "SELECT e.id, round(COALESCE(e.monthly_fee_override, g.monthly_fee) * (1 - e.discount_percent / 100), 2) AS fee "
+        "SELECT e.id, g.billing_mode, round(COALESCE(e.monthly_fee_override, g.monthly_fee) * (1 - e.discount_percent / 100), 2) AS fee "
         "FROM enrollments e JOIN study_groups g ON g.org_id = e.org_id AND g.id = e.group_id "
         "WHERE e.student_id = %s AND e.group_id = %s AND e.status = 'active'",
         (student_id, lesson["group_id"]),
     )
     if enr is None:  # trials, frozen and finished enrollments earn nothing
         return
+    if enr["billing_mode"] == "package" and cfg.excused_mode == "credit":
+        return  # in a package group not consuming the lesson IS the credit (see rules/packages.py)
     kind: Literal["makeup", "credit"] = "makeup" if cfg.excused_mode == "makeup" else "credit"
     amount: Decimal | None = None
     if kind == "credit":
