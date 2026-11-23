@@ -3,12 +3,12 @@ detection; commit writes all clean rows in ONE transaction (or nothing). The pag
 
 from __future__ import annotations
 
-from datetime import date
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends
 from pydantic import Field
 
+from nazoratly.accounting import org_today
 from nazoratly.deps import DB, Principal, require
 from nazoratly.errors import Unprocessable
 from nazoratly.idempotency import IdempotentRoute
@@ -126,7 +126,7 @@ async def preview(
             text=body.text,
             has_header=body.has_header,
             mapping=body.mapping,
-            today=date.today(),
+            today=await org_today(conn),
         )
     return _preview(analysis)
 
@@ -147,7 +147,7 @@ async def commit(
     `on_error = abort` nothing is written at all. Duplicates are skipped unless `duplicates = create`. Any failure while
     writing rolls the whole import back."""
     async with db.tx(p.session()) as conn:
-        today = date.today()
+        today = await org_today(conn)
         analysis = await analyse(
             conn,
             entity=entity,

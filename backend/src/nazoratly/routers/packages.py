@@ -14,7 +14,7 @@ from typing import Annotated, Any, Literal
 from fastapi import APIRouter, Depends, Query
 from pydantic import Field
 
-from nazoratly.accounting import post_payment
+from nazoratly.accounting import org_today, post_payment
 from nazoratly.db import Conn, execute, fetch_all, fetch_one, resolve
 from nazoratly.deps import DB, Paging, Principal, require
 from nazoratly.errors import Conflict, Unprocessable
@@ -123,7 +123,7 @@ async def sell_package(
         if e["status"] != "active":
             raise Conflict("Packages are sold only to active enrollments (accept a trial first)")
         cfg = await load_settings(conn, p.org_id)
-        purchased = body.purchased_on or date.today()
+        purchased = body.purchased_on or await org_today(conn)
         lessons: int = e["package_lessons"]
         price: Decimal = e["package_price"]
         charge = await fetch_one(

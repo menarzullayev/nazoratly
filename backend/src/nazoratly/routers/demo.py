@@ -3,13 +3,13 @@ deletes only flagged rows of the caller's center and refuses when a real row ref
 
 from __future__ import annotations
 
-from datetime import date
 from typing import Annotated
 
 import psycopg
 from fastapi import APIRouter, Depends
 
 from nazoratly import demo
+from nazoratly.accounting import org_today
 from nazoratly.db import execute, fetch_one
 from nazoratly.deps import DB, Principal, require
 from nazoratly.errors import ApiError, Conflict
@@ -79,7 +79,7 @@ async def enable(p: Annotated[Principal, Depends(require("org:manage"))], db: DB
         assert existing is not None
         if existing["n"]:
             raise Conflict("Demo rows exist from before; clear them first")
-        made = await demo.seed(conn, p.org_id, date.today())
+        made = await demo.seed(conn, p.org_id, await org_today(conn))
         await execute(conn, "UPDATE org_settings SET demo_mode = true WHERE org_id = %s", (p.org_id,))
     return DemoOut(demo_mode=True, counts=made)
 

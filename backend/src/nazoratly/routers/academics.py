@@ -10,6 +10,7 @@ from typing import Annotated, Any, Literal
 from fastapi import APIRouter, Depends, Query
 from pydantic import Field, model_validator
 
+from nazoratly.accounting import org_today
 from nazoratly.db import Conn, execute, fetch_all, fetch_one, patch_row, resolve, resolve_opt
 from nazoratly.deps import DB, Paging, Principal, require
 from nazoratly.errors import Conflict, Forbidden, GroupFull, NotFound, Unprocessable
@@ -897,7 +898,7 @@ async def patch_enrollment(
             and changes.get("ended_on") is None
             and cur["ended_on"] is None
         ):
-            changes["ended_on"] = date.today()
+            changes["ended_on"] = await org_today(conn)
         if cur["status"] == "trial" and changes.get("status") is not None:
             raise Conflict("A trial is accepted or dropped through /accept and /drop")
         if changes.get("status") == "active" and cur["status"] == "finished":

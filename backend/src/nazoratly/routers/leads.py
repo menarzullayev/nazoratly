@@ -9,6 +9,7 @@ from typing import Annotated, Any, Literal
 from fastapi import APIRouter, Depends, Query
 from pydantic import Field
 
+from nazoratly.accounting import org_today
 from nazoratly.db import Conn, execute, fetch_all, fetch_one, patch_row, resolve, resolve_opt
 from nazoratly.deps import DB, Paging, Principal, require
 from nazoratly.errors import Conflict, Unprocessable
@@ -327,7 +328,7 @@ async def enroll_trial(
             org_id=p.org_id,
             student_id=sid,
             group_id=gid,
-            started_on=body.started_on or date.today(),
+            started_on=body.started_on or await org_today(conn),
             status="trial",
         )
         await execute(
