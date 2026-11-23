@@ -30,6 +30,161 @@
         "title": "AbsenceRow",
         "type": "object"
       },
+      "AcceptIn": {
+        "additionalProperties": false,
+        "properties": {
+          "accepted_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "defaults to today",
+            "title": "Accepted On"
+          },
+          "mode": {
+            "enum": [
+              "full",
+              "prorated",
+              "free_until_next"
+            ],
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mode"
+        ],
+        "title": "AcceptIn",
+        "type": "object"
+      },
+      "AcceptOut": {
+        "properties": {
+          "accepted_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted On"
+          },
+          "charge_amount": {
+            "title": "Charge Amount",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "discount_percent": {
+            "title": "Discount Percent",
+            "type": "string"
+          },
+          "effective_monthly_fee": {
+            "title": "Effective Monthly Fee",
+            "type": "string"
+          },
+          "ended_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended On"
+          },
+          "fallback_to_full": {
+            "title": "Fallback To Full",
+            "type": "boolean"
+          },
+          "first_month_mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Month Mode"
+          },
+          "group_id": {
+            "format": "uuid",
+            "title": "Group Id",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "monthly_fee_override": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthly Fee Override"
+          },
+          "started_on": {
+            "format": "date",
+            "title": "Started On",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "student_id",
+          "student_name",
+          "group_id",
+          "group_name",
+          "started_on",
+          "ended_on",
+          "status",
+          "monthly_fee_override",
+          "discount_percent",
+          "effective_monthly_fee",
+          "accepted_on",
+          "first_month_mode",
+          "created_at",
+          "fallback_to_full",
+          "charge_amount"
+        ],
+        "title": "AcceptOut",
+        "type": "object"
+      },
       "AccessOut": {
         "properties": {
           "access_token": {
@@ -1278,6 +1433,25 @@
         "title": "DraftOut",
         "type": "object"
       },
+      "DropIn": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "title": "DropIn",
+        "type": "object"
+      },
       "EnrollmentIn": {
         "additionalProperties": false,
         "properties": {
@@ -1320,6 +1494,15 @@
             "title": "Started On",
             "type": "string"
           },
+          "status": {
+            "default": "active",
+            "enum": [
+              "trial",
+              "active"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
           "student_id": {
             "format": "uuid",
             "title": "Student Id",
@@ -1335,6 +1518,18 @@
       },
       "EnrollmentOut": {
         "properties": {
+          "accepted_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted On"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -1359,6 +1554,17 @@
               }
             ],
             "title": "Ended On"
+          },
+          "first_month_mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Month Mode"
           },
           "group_id": {
             "format": "uuid",
@@ -1416,6 +1622,8 @@
           "monthly_fee_override",
           "discount_percent",
           "effective_monthly_fee",
+          "accepted_on",
+          "first_month_mode",
           "created_at"
         ],
         "title": "EnrollmentOut",
@@ -4013,6 +4221,37 @@
         "title": "Page[PayrollOut]",
         "type": "object"
       },
+      "Page_PendingTrial_": {
+        "properties": {
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PendingTrial"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset",
+          "has_more"
+        ],
+        "title": "Page[PendingTrial]",
+        "type": "object"
+      },
       "Page_RoomOut_": {
         "properties": {
           "has_more": {
@@ -4581,6 +4820,67 @@
         "title": "PayrollOut",
         "type": "object"
       },
+      "PendingTrial": {
+        "properties": {
+          "days_elapsed": {
+            "title": "Days Elapsed",
+            "type": "integer"
+          },
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "group_id": {
+            "format": "uuid",
+            "title": "Group Id",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "lessons_attended": {
+            "title": "Lessons Attended",
+            "type": "integer"
+          },
+          "reason": {
+            "enum": [
+              "lessons",
+              "days"
+            ],
+            "title": "Reason",
+            "type": "string"
+          },
+          "started_on": {
+            "format": "date",
+            "title": "Started On",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "enrollment_id",
+          "student_id",
+          "student_name",
+          "group_id",
+          "group_name",
+          "started_on",
+          "lessons_attended",
+          "days_elapsed",
+          "reason"
+        ],
+        "title": "PendingTrial",
+        "type": "object"
+      },
       "ProviderIn": {
         "additionalProperties": false,
         "properties": {
@@ -5067,6 +5367,57 @@
           "room_id"
         ],
         "title": "ScheduleSlotOut",
+        "type": "object"
+      },
+      "SettingsOut": {
+        "properties": {
+          "trial_free_days": {
+            "title": "Trial Free Days",
+            "type": "integer"
+          },
+          "trial_free_lessons": {
+            "title": "Trial Free Lessons",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "trial_free_lessons",
+          "trial_free_days"
+        ],
+        "title": "SettingsOut",
+        "type": "object"
+      },
+      "SettingsPatch": {
+        "additionalProperties": false,
+        "properties": {
+          "trial_free_days": {
+            "anyOf": [
+              {
+                "maximum": 365.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trial Free Days"
+          },
+          "trial_free_lessons": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trial Free Lessons"
+          }
+        },
+        "title": "SettingsPatch",
         "type": "object"
       },
       "StaffIn": {
@@ -8186,6 +8537,122 @@
         ]
       }
     },
+    "/v1/enrollments/{enrollment_id}/accept": {
+      "post": {
+        "operationId": "accept_trial_v1_enrollments__enrollment_id__accept_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "enrollment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Enrollment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Accept a trial: becomes active and the first month is billed by the chosen mode",
+        "tags": [
+          "admission"
+        ]
+      }
+    },
+    "/v1/enrollments/{enrollment_id}/drop": {
+      "post": {
+        "operationId": "drop_trial_v1_enrollments__enrollment_id__drop_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "enrollment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Enrollment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DropIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Drop a trial",
+        "tags": [
+          "admission"
+        ]
+      }
+    },
     "/v1/expenses": {
       "get": {
         "operationId": "list_expenses_v1_expenses_get",
@@ -8831,6 +9298,7 @@
               "anyOf": [
                 {
                   "enum": [
+                    "trial",
                     "active",
                     "frozen",
                     "finished"
@@ -11683,6 +12151,76 @@
         ]
       }
     },
+    "/v1/settings": {
+      "get": {
+        "operationId": "get_settings_v1_settings_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Center settings (trial limits)",
+        "tags": [
+          "settings"
+        ]
+      },
+      "patch": {
+        "operationId": "patch_settings_v1_settings_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingsPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Patch Settings",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
     "/v1/staff": {
       "get": {
         "operationId": "list_staff_v1_staff_get",
@@ -12861,6 +13399,68 @@
         "summary": "Patch Teacher",
         "tags": [
           "academics"
+        ]
+      }
+    },
+    "/v1/trials/pending": {
+      "get": {
+        "operationId": "pending_trials_v1_trials_pending_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 1000000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_PendingTrial_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Trials waiting for the owner's decision",
+        "tags": [
+          "admission"
         ]
       }
     }

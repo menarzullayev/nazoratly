@@ -16,6 +16,7 @@ ALTER TABLE enrollments ADD CONSTRAINT enrollments_status_check
 ALTER TABLE enrollments ADD COLUMN accepted_on DATE;
 ALTER TABLE enrollments ADD COLUMN first_month_mode TEXT
   CHECK (first_month_mode IN ('full','prorated','free_until_next'));
+ALTER TABLE enrollments ADD COLUMN dropped_reason TEXT;
 ALTER TABLE enrollments ADD CONSTRAINT enrollments_trial_not_accepted
   CHECK (status <> 'trial' OR (accepted_on IS NULL AND first_month_mode IS NULL));
 ALTER TABLE enrollments ADD CONSTRAINT enrollments_mode_needs_acceptance
