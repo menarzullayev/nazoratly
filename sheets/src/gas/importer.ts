@@ -216,6 +216,7 @@ export function importCommit(input: { entity: ImportEntity; text: string; hasHea
 }
 
 function write(a: Analysis, rows: Row[]): Record<string, number> {
+  if (rows.length === 0) return {};
   const t = today();
   const added: { remove: () => void }[] = [];
   const created: Record<string, number> = {};

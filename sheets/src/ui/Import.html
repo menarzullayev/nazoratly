@@ -83,8 +83,15 @@
     } catch (e) { banner("err", (e && e.message) || "Xato"); }
     finally { $("check").disabled = false; }
   }
+  var armed = null;
   async function commit() {
-    if (!window.confirm("Tayyor qatorlar jadvalga yoziladi. Davom etamizmi?")) return;
+    // window.confirm is not available inside Google's HTML dialogs: the button asks for a second click instead
+    if (!armed) {
+      $("commit").textContent = "Aniq yozilsinmi? Qayta bosing";
+      armed = setTimeout(function () { armed = null; $("commit").textContent = "Yozish"; }, 6000);
+      return;
+    }
+    clearTimeout(armed); armed = null; $("commit").textContent = "Yozish";
     $("commit").disabled = true;
     try {
       var r = await run("importCommit", payload({ onError: $("onerr").value, duplicates: $("dups").value }));

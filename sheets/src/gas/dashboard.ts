@@ -11,6 +11,7 @@ import { lessonsAttended } from "./admission";
 import { loadBalances } from "./packages";
 import { read, readIfPresent, today } from "./repo";
 import { ATTENDANCE, CHARGES, DASHBOARD_SHEET, ENROLLMENTS, ENTITLEMENTS, EXPENSES, GROUPS, INSTALLMENTS, LEADS, PAYMENTS, PAYROLL, STUDENTS } from "./schema";
+import { loadOffers } from "./waitlist";
 import { readSettings } from "./settings";
 
 /** Rows shown per student list; counts are always complete. */
@@ -174,7 +175,8 @@ export function buildBlocks(): DashboardBlocks {
   const enrById = new Map(enrollments.map((e) => [e.id, e]));
   const rightById = new Map(readIfPresent<Entitlement>(ENTITLEMENTS).map((r) => [r.id, r]));
   const balById = new Map(balances.map((b) => [b.enrollmentId, b]));
-  grid.title(`Qaror kutayotganlar: jami ${wait.total} (muddat oynasi: ${settings.dashboardWindowDays} kun)`);
+  const seatOffers = loadOffers();
+  grid.title(`Qaror kutayotganlar: jami ${wait.total + seatOffers.offers.length} (muddat oynasi: ${settings.dashboardWindowDays} kun)`);
   grid.header(["Sinovlar: o'quvchi", "Guruh", "Sabab", "Sinov kunlari"]);
   for (const t of wait.trials) {
     const e = enrById.get(t.id)!;
@@ -195,6 +197,13 @@ export function buildBlocks(): DashboardBlocks {
     grid.line([link(e.studentId, names.get(e.studentId) ?? e.studentId), groups.get(e.groupId) ?? e.groupId, r.expiresOn, r.daysLeft]);
   }
   if (!wait.rights.length) grid.line(["Kuyayotgan qoplash huquqi yo'q"]);
+  grid.blank();
+  grid.header(["Bo'shagan o'rinlar: navbatdagi o'quvchi", "Guruh", "Navbatdagi o'rni", "Bo'sh o'rin soni"]);
+  for (const o of seatOffers.offers) {
+    const w = seatOffers.entries.get(o.entryId)!;
+    grid.line([link(w.studentId, names.get(w.studentId) ?? w.studentId), seatOffers.groups.get(o.groupId)?.name ?? o.groupId, o.position, o.freeSeats]);
+  }
+  if (!seatOffers.offers.length) grid.line(["Bo'shagan o'rin yo'q"]);
   return { grid, financeFirstRow, invalidEnrollments };
 }
 
