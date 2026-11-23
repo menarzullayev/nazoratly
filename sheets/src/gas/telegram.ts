@@ -1,3 +1,5 @@
+import { stripHtml } from "../domain/messages";
+
 /** Telegram Bot API through UrlFetchApp. The token lives only in Script Properties and is never logged or shown. */
 export interface TgResult {
   ok: boolean;
@@ -54,6 +56,23 @@ export function tg(method: string, payload: Record<string, unknown> = {}): TgRes
     return { ok: false, errorCode: res.getResponseCode(), description: String(data.description ?? "Telegram xatosi").slice(0, 200) };
   }
   return { ok: false, description: "Telegram band, keyinroq urinib ko'ring" };
+}
+
+/**
+ * Rich message (Bot API 10.1+). If Telegram rejects the effect, retry without it; if it rejects the rich message
+ * itself (400/404), fall back to plain text so a reminder is never lost. 403 (blocked) is final.
+ */
+export function sendRich(chatId: string, html: string, extra: Record<string, unknown> = {}): TgResult {
+  let r = tg("sendRichMessage", { chat_id: chatId, rich_message: { html }, ...extra });
+  if (!r.ok && extra.message_effect_id && (r.errorCode === 400 || r.errorCode === 404)) {
+    const { message_effect_id: _drop, ...rest } = extra;
+    void _drop;
+    r = tg("sendRichMessage", { chat_id: chatId, rich_message: { html }, ...rest });
+  }
+  if (r.ok || (r.errorCode !== 400 && r.errorCode !== 404)) return r;
+  const { reply_markup, ...plainExtra } = extra as Record<string, unknown>;
+  void reply_markup;
+  return sendMessage(chatId, stripHtml(html), plainExtra);
 }
 
 export const sendMessage = (chatId: string, text: string, extra: Record<string, unknown> = {}): TgResult =>

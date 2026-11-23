@@ -20,6 +20,11 @@ export function nextMonthStart(d: ISODate): ISODate {
   return m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, "0")}-01`;
 }
 
+export function prevMonthStart(d: ISODate): ISODate {
+  const [y, m] = [Number(d.slice(0, 4)), Number(d.slice(5, 7))];
+  return m === 1 ? `${y - 1}-12-01` : `${y}-${String(m - 1).padStart(2, "0")}-01`;
+}
+
 export function withDay(month: ISODate, day: number): ISODate {
   return `${month.slice(0, 7)}-${String(day).padStart(2, "0")}`;
 }

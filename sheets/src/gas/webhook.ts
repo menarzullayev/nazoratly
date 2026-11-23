@@ -3,8 +3,8 @@ import { parseUpdate } from "../domain/telegramUpdates";
 import { read, today, updateById } from "./repo";
 import { STUDENTS } from "./schema";
 import { readSettings } from "./settings";
-import { tg, webhookSecret, sendMessage } from "./telegram";
-import { withLock } from "./actions";
+import { sendRich, tg, webhookSecret, sendMessage } from "./telegram";
+import { balanceHtmlForChat, withLock } from "./actions";
 import type { Student } from "../domain/types";
 
 type StudentRow = Student & { linkCode?: string };
@@ -56,6 +56,21 @@ export function handlePost(e: GoogleAppsScript.Events.DoPost): GoogleAppsScript.
         chat_id: u.chatId, message_id: u.messageId,
         text: linked ? "Rahmat! Ulandingiz. To'xtatish uchun /stop yuboring." : "Bu havola eskirgan yoki ishlatilgan. Markazdan yangisini so'rang.",
       });
+    }
+  } else if (u.kind === "command") {
+    const s = readSettings();
+    if (u.name === "balance") sendRich(u.chatId, balanceHtmlForChat(u.chatId));
+    else if (u.name === "privacy") sendMessage(u.chatId, s.policyText || "Maxfiylik siyosati hali kiritilmagan. Markazga murojaat qiling.");
+    else sendMessage(u.chatId, "/qarz: qarzdorlik holati\n/privacy: maxfiylik siyosati\n/stop: xabarlarni to'xtatish");
+  } else if (u.kind === "paid") {
+    const s = withLock(() => read<StudentRow>(STUDENTS).find((x) => x.id === u.studentId && x.guardianChatId === u.chatId));
+    if (!s) {
+      tg("answerCallbackQuery", { callback_query_id: u.callbackId, text: "Bu o'quvchi sizga ulanmagan", show_alert: true });
+    } else {
+      withLock(() => updateById(STUDENTS, "id", s.id, { note: `${(s as { note?: string }).note ?? ""} [${today()}: vasiy "to'lov qildim" dedi]`.trim() }));
+      tg("answerCallbackQuery", { callback_query_id: u.callbackId, text: "Rahmat! Markaz to'lovni tekshiradi.", show_alert: true });
+      const owner = readSettings().ownerChatId;
+      if (owner) sendMessage(owner, `${s.fullName}: vasiy "To'lov qildim" tugmasini bosdi. To'lovni tekshirib kiriting.`);
     }
   } else if (u.kind === "stop") {
     const hits = withLock(() => read<StudentRow>(STUDENTS).filter((x) => x.guardianChatId === u.chatId));
