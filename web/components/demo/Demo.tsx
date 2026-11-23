@@ -2,7 +2,7 @@
 
 import { useId, useRef, useState, type KeyboardEvent } from "react";
 import { seedState, type DemoState } from "@/demo/engine";
-import type { Dict } from "@/i18n/get";
+import { getDict, type Dict } from "@/i18n/get";
 import type { Locale } from "@/i18n/locales";
 import { convert } from "@/lib/translit";
 import { AttendanceTab } from "./AttendanceTab";
@@ -31,7 +31,8 @@ function showFor(locale: Locale): Show {
   return locale === "uz-cyrl" ? (s) => convert(s, "cyrl") : locale === "uz-new" ? (s) => convert(s, "new") : (s) => s;
 }
 
-export function Demo({ demo, brand, locale }: { demo: Dict["demo"]; brand: string; locale: Locale }) {
+export function Demo({ locale }: { locale: Locale }) {
+  const { demo, brand } = getDict(locale);
   const [state, setState] = useState<DemoState>(() => seedState());
   const [role, setRole] = useState<Role>("owner");
   const [teacherId, setTeacherId] = useState(() => seedState().teachers[0]!.id);

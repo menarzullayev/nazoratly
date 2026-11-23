@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { ChaosLite } from "@/scenes/chaos/lite";
-import type { Tier } from "@/lib/capability";
+import { hasWebGL2, type Tier } from "@/lib/capability";
 import { applyProgress, createProgress } from "@/lib/progress";
 import { SceneBoundary } from "./SceneBoundary";
 
@@ -12,8 +12,46 @@ const ChaosScene = dynamic(() => import("@/scenes/chaos/ChaosScene"), { ssr: fal
 interface Props {
   accent: string;
   tier: Tier;
+  /** False until the real tier is known; the pinned layout is reserved from the first paint so nothing below moves. */
+  resolved: boolean;
+  /** Called when the idle WebGL2 probe fails. */
+  onNoWebGL: () => void;
   /** Text laid over the scene (the hero copy). */
   children: ReactNode;
+}
+
+/**
+ * True once the page has loaded and the browser is idle (or the visitor first interacts), so the heavy WebGL chunk and its
+ * context setup never compete with the first paint and hydration. Until then the DOM story (the poster) is shown.
+ */
+function useAfterFirstPaintIdle(wanted: boolean): boolean {
+  const [go, setGo] = useState(false);
+  useEffect(() => {
+    if (!wanted || go) return;
+    let cancelled = false;
+    let idle: number | ReturnType<typeof setTimeout> = 0;
+    const events = ["pointerdown", "keydown", "wheel", "touchstart"] as const;
+    const fire = () => {
+      if (cancelled) return;
+      cleanup();
+      setGo(true);
+    };
+    const schedule = () => {
+      idle = "requestIdleCallback" in window ? window.requestIdleCallback(fire, { timeout: 2500 }) : setTimeout(fire, 1200);
+    };
+    const cleanup = () => {
+      cancelled = true;
+      if ("cancelIdleCallback" in window) window.cancelIdleCallback(idle as number);
+      clearTimeout(idle);
+      window.removeEventListener("load", schedule);
+      for (const e of events) window.removeEventListener(e, fire);
+    };
+    for (const e of events) window.addEventListener(e, fire, { once: true, passive: true });
+    if (document.readyState === "complete") schedule();
+    else window.addEventListener("load", schedule, { once: true });
+    return cleanup;
+  }, [wanted, go]);
+  return go;
 }
 
 /**
@@ -21,12 +59,21 @@ interface Props {
  * attribute and to a ref the WebGL scene reads in its render loop. The `static` tier skips all of it and shows the
  * finished state (progress 1) in a single screen.
  */
-export function ScrollStage({ accent, tier, children }: Props) {
+export function ScrollStage({ accent, tier, resolved, onNoWebGL, children }: Props) {
   const section = useRef<HTMLElement>(null);
   const stage = useRef<HTMLDivElement>(null);
   const [progress] = useState(() => createProgress(tier === "static" ? 1 : 0));
   const [lost, setLost] = useState(false);
   const effective: Tier = lost && tier === "full" ? "lite" : tier;
+  const idle = useAfterFirstPaintIdle(effective === "full");
+  const [glOk, setGlOk] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!idle || effective !== "full") return;
+    const ok = hasWebGL2();
+    setGlOk(ok);
+    if (!ok) onNoWebGL();
+  }, [idle, effective, onNoWebGL]);
+  const sceneGo = idle && glOk === true;
 
   const write = useCallback((p: number) => applyProgress(progress, stage.current, p), [progress]);
 
@@ -54,7 +101,7 @@ export function ScrollStage({ accent, tier, children }: Props) {
     // Smooth scrolling only where WebGL runs (desktop); phones keep native scrolling and load no extra library.
     let lenisStop = () => {};
     let cancelled = false;
-    if (effective === "full") {
+    if (effective === "full" && sceneGo) {
       void import("lenis").then(({ default: Lenis }) => {
         if (cancelled) return;
         const lenis = new Lenis({ lerp: 0.12 });
@@ -75,14 +122,14 @@ export function ScrollStage({ accent, tier, children }: Props) {
       if (raf) cancelAnimationFrame(raf);
       lenisStop();
     };
-  }, [effective, write]);
+  }, [effective, sceneGo, write]);
 
   const onLost = useCallback(() => setLost(true), []);
   const sceneProps = { progress, accent, onLost };
   const lite = <ChaosLite accent={accent} />;
 
   return (
-    <section ref={section} style={{ height: effective === "static" ? "100svh" : "320svh" }} className="relative">
+    <section ref={section} className={`relative ${resolved && effective === "static" ? "h-svh" : "h-[320svh] motion-reduce:h-svh"}`}>
       <div
         ref={stage}
         data-stage="chaos"
@@ -92,7 +139,7 @@ export function ScrollStage({ accent, tier, children }: Props) {
         className="sticky top-0 h-svh overflow-hidden"
       >
         <div className="absolute inset-x-0 bottom-0 top-[40%]">
-          {effective === "full" ? (
+          {effective === "full" && sceneGo ? (
             <SceneBoundary fallback={lite}>
               <ChaosScene {...sceneProps} />
             </SceneBoundary>
