@@ -64,6 +64,22 @@ class NothingOwed(Conflict):
     code = "nothing_owed"
 
 
+class GroupFull(Conflict):
+    code = "group_full"
+
+
+class SeatAvailable(Conflict):
+    code = "seat_available"
+
+
+class AlreadyWaiting(Conflict):
+    code = "already_waiting"
+
+
+class AlreadyEnrolled(Conflict):
+    code = "already_enrolled"
+
+
 class Unprocessable(ApiError):
     status_code, code = 422, "unprocessable"
 

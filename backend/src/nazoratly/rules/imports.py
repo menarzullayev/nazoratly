@@ -21,18 +21,72 @@ REQUIRED: dict[str, list[str]] = {
     "groups": ["name", "course", "monthly_fee", "start_date"],
     "leads": ["full_name"],
 }
-_PHONE = ["phone", "telefon", "tel", "raqam", "telefon raqam", "telefon raqami", "phone number", "телефон", "номер"]
+_PHONE = [
+    "phone",
+    "telefon",
+    "tel",
+    "raqam",
+    "telefon raqam",
+    "telefon raqami",
+    "phone number",
+    "телефон",
+    "номер",
+]
 ALIASES: dict[str, dict[str, list[str]]] = {
     "students": {
-        "full_name": ["full name", "fullname", "name", "ism", "ismi", "ism familiya", "familiya ism", "fio", "f i o",
-                      "oquvchi", "o'quvchi", "student", "имя", "фио", "ф и о", "ученик", "o'quvchi ismi"],
+        "full_name": [
+            "full name",
+            "fullname",
+            "name",
+            "ism",
+            "ismi",
+            "ism familiya",
+            "familiya ism",
+            "fio",
+            "f i o",
+            "oquvchi",
+            "o'quvchi",
+            "student",
+            "имя",
+            "фио",
+            "ф и о",
+            "ученик",
+            "o'quvchi ismi",
+        ],
         "phone": _PHONE,
-        "birth_date": ["birth date", "birthdate", "birthday", "dob", "tugilgan sana", "tug'ilgan sana",
-                       "tug'ilgan kun", "tugilgan kun", "дата рождения", "рождения"],
-        "guardian_name": ["guardian", "guardian name", "vasiy", "vasiy ismi", "ota ona", "ota onasi", "parent",
-                          "parent name", "родитель", "опекун"],
-        "guardian_phone": ["guardian phone", "vasiy telefon", "vasiy telefoni", "ota ona telefon",
-                           "ota ona telefoni", "parent phone", "телефон родителя"],
+        "birth_date": [
+            "birth date",
+            "birthdate",
+            "birthday",
+            "dob",
+            "tugilgan sana",
+            "tug'ilgan sana",
+            "tug'ilgan kun",
+            "tugilgan kun",
+            "дата рождения",
+            "рождения",
+        ],
+        "guardian_name": [
+            "guardian",
+            "guardian name",
+            "vasiy",
+            "vasiy ismi",
+            "ota ona",
+            "ota onasi",
+            "parent",
+            "parent name",
+            "родитель",
+            "опекун",
+        ],
+        "guardian_phone": [
+            "guardian phone",
+            "vasiy telefon",
+            "vasiy telefoni",
+            "ota ona telefon",
+            "ota ona telefoni",
+            "parent phone",
+            "телефон родителя",
+        ],
         "group": ["group", "guruh", "группа"],
         "notes": ["notes", "note", "izoh", "izohlar", "комментарий", "примечание"],
     },
@@ -40,8 +94,19 @@ ALIASES: dict[str, dict[str, list[str]]] = {
         "name": ["name", "group", "group name", "guruh", "guruh nomi", "nomi", "название", "группа"],
         "course": ["course", "kurs", "fan", "курс", "subject"],
         "teacher": ["teacher", "oqituvchi", "o'qituvchi", "ustoz", "учитель", "преподаватель"],
-        "monthly_fee": ["monthly fee", "fee", "price", "narx", "oylik", "oylik to'lov", "oylik tolov", "tolov",
-                        "to'lov", "цена", "стоимость"],
+        "monthly_fee": [
+            "monthly fee",
+            "fee",
+            "price",
+            "narx",
+            "oylik",
+            "oylik to'lov",
+            "oylik tolov",
+            "tolov",
+            "to'lov",
+            "цена",
+            "стоимость",
+        ],
         "capacity": ["capacity", "sigim", "sig'im", "max", "limit", "o'rinlar", "orinlar", "вместимость"],
         "start_date": ["start date", "start", "boshlanish", "boshlanish sanasi", "boshlanadi", "дата начала"],
     },
@@ -135,7 +200,7 @@ def detect_columns(entity: str, headers: list[str]) -> dict[str, int | None]:
             elif any(len(a) >= 4 and a in h for a in al):
                 scored.append((0.6, ci, fi, fld))
     scored.sort(key=lambda t: (-t[0], t[2], t[1]))
-    out: dict[str, int | None] = {f: None for f in FIELDS[entity]}
+    out: dict[str, int | None] = dict.fromkeys(FIELDS[entity])
     used: set[int] = set()
     for _score, ci, _fi, fld in scored:
         if out[fld] is None and ci not in used:

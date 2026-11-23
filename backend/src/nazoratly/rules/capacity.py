@@ -57,7 +57,9 @@ def can_join_waitlist(*, capacity: int | None, occupied: int, waiting: int) -> b
     return free == 0 or waiting > 0
 
 
-def direct_enroll_allowed(*, capacity: int | None, occupied: int, waiting: int, ignore_waitlist: bool) -> bool:
+def direct_enroll_allowed(
+    *, capacity: int | None, occupied: int, waiting: int, ignore_waitlist: bool
+) -> bool:
     """Enrolling somebody who is not the next in line: needs a free seat that no waiting student is entitled to."""
     free = free_seats(capacity, occupied)
     if free is None:

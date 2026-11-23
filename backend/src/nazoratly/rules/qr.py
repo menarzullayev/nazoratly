@@ -7,6 +7,8 @@ import re
 from dataclasses import dataclass
 from typing import Literal
 
+from reportlab.graphics.barcode import qrencoder
+
 ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # 32 symbols, no I O 0 1
 PREFIX = "NZQ1-"
 CODE_LEN = 20
@@ -69,8 +71,6 @@ def scan_decision(
 
 def qr_matrix(text: str) -> list[list[int]]:
     """Reference matrix (1 = dark) from reportlab's encoder, error correction M, smallest version that fits."""
-    from reportlab.graphics.barcode import qrencoder
-
     qr = qrencoder.QRCode(None, qrencoder.QRErrorCorrectLevel.M)
     qr.addData(text)
     qr.make()

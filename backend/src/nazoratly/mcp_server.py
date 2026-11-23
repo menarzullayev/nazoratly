@@ -34,6 +34,7 @@ from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from nazoratly.packages import load_balances, severity
+from nazoratly.rules import capacity as seats
 from nazoratly.rules.packages import package_reminder_text
 from nazoratly.security import sha256
 
@@ -344,6 +345,45 @@ def build_server(backend: AgentBackend) -> FastMCP:
             )
 
         return await backend.call(who, rid, "list_packages_needing_payment", "read", {"limit": limit}, run)
+
+    @mcp.tool(
+        description="Seats that freed up in full groups: the next students in line on the waiting list (only students with AI-processing consent), with a suggested message for the guardian. You may draft it with draft_reminder; a human approves every message and enrolls the student."
+    )
+    async def list_waitlist_offers(ctx: Context[Any, Any, Any], limit: Limit = 50) -> list[dict[str, Any]]:
+        who, rid = identity(ctx)
+
+        async def run(c: Conn) -> list[dict[str, Any]]:
+            cur = await c.execute(
+                "SELECT entry_id, group_id, group_name, capacity, occupied, position, student_id, full_name "
+                "FROM agent_v_waitlist ORDER BY group_id, position"
+            )
+            out: list[dict[str, Any]] = []
+            for r in await cur.fetchall():
+                free = seats.free_seats(r["capacity"], r["occupied"])
+                if not free or not seats.can_enroll_from_waitlist(
+                    capacity=r["capacity"], occupied=r["occupied"], position=r["position"]
+                ):
+                    continue
+                out.append(
+                    {
+                        "student_id": r["student_id"],
+                        "student_name": r["full_name"],
+                        "group_id": r["group_id"],
+                        "group_name": r["group_name"],
+                        "position": r["position"],
+                        "free_seats": free,
+                        "offer_text": seats.offer_text(
+                            guardian="hurmatli ota-ona",
+                            student=r["full_name"],
+                            group=r["group_name"],
+                            free_seats=free,
+                            center="",
+                        ).strip(),
+                    }
+                )
+            return _plain(out[:limit])
+
+        return await backend.call(who, rid, "list_waitlist_offers", "read", {"limit": limit}, run)
 
     @mcp.tool(
         description="Attendance counts per student for a date range (students with AI-processing consent only)."

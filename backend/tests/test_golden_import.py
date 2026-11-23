@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from nazoratly.rules import imports as I  # noqa: E741
+from nazoratly.rules import imports as I
 
 GOLDEN = json.loads(
     (Path(__file__).resolve().parents[2] / "tests" / "golden" / "import.json").read_text(encoding="utf-8")
@@ -49,7 +49,9 @@ def test_parse_whole(case: dict[str, Any]) -> None:
 def test_validate_row(case: dict[str, Any]) -> None:
     i = case["in"]
     r = I.validate_row(i["entity"], i["raw"], today=date.fromisoformat(i["today"]))
-    assert {"values": r.values, "errors": [{"field": e.field, "code": e.code} for e in r.errors]} == case["out"]
+    assert {"values": r.values, "errors": [{"field": e.field, "code": e.code} for e in r.errors]} == case[
+        "out"
+    ]
 
 
 @pytest.mark.parametrize("case", GOLDEN["duplicate_keys"], ids=lambda c: c["name"])

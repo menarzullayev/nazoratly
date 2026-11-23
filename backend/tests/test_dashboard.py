@@ -46,7 +46,7 @@ async def test_an_empty_center_returns_zeros_and_six_months(tenant: Tenant) -> N
     assert r["finance"]["months"][-1]["month"][:7] == r["as_of"][:7]
     assert r["finance"]["income"] == "0.00" and r["finance"]["net"] == "0.00"
     assert all(v == 0 for v in r["funnel"]["stages"].values())
-    assert r["waiting"] == {"trials": [], "packages": [], "rights": [], "total": 0}
+    assert r["waiting"] == {"trials": [], "packages": [], "rights": [], "seats": [], "total": 0}
     assert r["range"]["date_from"] == r["as_of"][:8] + "01" and r["range"]["date_to"] == r["as_of"]
     assert r["window_days"] == 7
 

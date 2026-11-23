@@ -57,6 +57,7 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S105", "S106", "S107", "PLR2004", "S311", "PLC0415", "RUF059", "SIM117", "RUF001"]  # RUF001: Uzbek oʻ/gʻ test data
 "src/nazoratly/observability.py" = ["PLC0415"]
+"src/nazoratly/rules/imports.py" = ["RUF001"]  # Cyrillic header aliases and typographic apostrophes are the point
 "src/nazoratly/config.py" = ["PLC0415"]
 "src/nazoratly/mcp_server.py" = ["PLC0415"]
 "src/nazoratly/worker.py" = ["PLC0415"]  # exporters are optional, imported only when configured
