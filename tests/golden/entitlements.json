@@ -1,0 +1,33 @@
+{
+  "expires_on": [
+    { "name": "30 days", "in": { "missed_on": "2026-11-10", "expiry_days": 30 }, "out": "2026-12-10" },
+    { "name": "zero days expires the same day", "in": { "missed_on": "2026-11-10", "expiry_days": 0 }, "out": "2026-11-10" },
+    { "name": "across the year end", "in": { "missed_on": "2026-12-20", "expiry_days": 30 }, "out": "2027-01-19" },
+    { "name": "leap year", "in": { "missed_on": "2028-02-15", "expiry_days": 30 }, "out": "2028-03-16" }
+  ],
+  "state": [
+    { "name": "open before expiry", "in": { "status": "open", "expires_on": "2026-12-10", "today": "2026-12-01", "lapses": true }, "out": "open" },
+    { "name": "open on the expiry day is still open", "in": { "status": "open", "expires_on": "2026-12-10", "today": "2026-12-10", "lapses": true }, "out": "open" },
+    { "name": "open the day after expiry lapses", "in": { "status": "open", "expires_on": "2026-12-10", "today": "2026-12-11", "lapses": true }, "out": "lapsed" },
+    { "name": "does not lapse when lapsing is off", "in": { "status": "open", "expires_on": "2026-12-10", "today": "2027-06-01", "lapses": false }, "out": "open" },
+    { "name": "scheduled never lapses", "in": { "status": "scheduled", "expires_on": "2026-12-10", "today": "2027-06-01", "lapses": true }, "out": "scheduled" },
+    { "name": "used stays used", "in": { "status": "used", "expires_on": "2026-12-10", "today": "2027-06-01", "lapses": true }, "out": "used" },
+    { "name": "cancelled stays cancelled", "in": { "status": "cancelled", "expires_on": "2026-12-10", "today": "2027-06-01", "lapses": true }, "out": "cancelled" }
+  ],
+  "lesson_credit_amount": [
+    { "name": "even split", "in": { "monthly_fee": 600000, "lessons_in_month": 12 }, "out": 50000 },
+    { "name": "rounds half up", "in": { "monthly_fee": 500000, "lessons_in_month": 12 }, "out": 41667 },
+    { "name": "no lessons means no credit", "in": { "monthly_fee": 600000, "lessons_in_month": 0 }, "out": 0 },
+    { "name": "one third", "in": { "monthly_fee": 1000, "lessons_in_month": 3 }, "out": 333 },
+    { "name": "exact half rounds up", "in": { "monthly_fee": 10, "lessons_in_month": 4 }, "out": 3 },
+    { "name": "one lesson is the whole fee", "in": { "monthly_fee": 400000, "lessons_in_month": 1 }, "out": 400000 }
+  ],
+  "apply_credits": [
+    { "name": "two credits off a full fee", "in": { "fee": 600000, "credits": [50000, 50000] }, "out": { "amount": 500000, "used": 2 } },
+    { "name": "no credits", "in": { "fee": 600000, "credits": [] }, "out": { "amount": 600000, "used": 0 } },
+    { "name": "stops once the fee is zero", "in": { "fee": 100000, "credits": [50000, 50000, 50000] }, "out": { "amount": 0, "used": 2 } },
+    { "name": "a larger credit is consumed fully, the excess is lost", "in": { "fee": 100000, "credits": [150000] }, "out": { "amount": 0, "used": 1 } },
+    { "name": "zero fee uses nothing", "in": { "fee": 0, "credits": [50000] }, "out": { "amount": 0, "used": 0 } },
+    { "name": "second credit exceeds the remainder", "in": { "fee": 100000, "credits": [30000, 80000] }, "out": { "amount": 0, "used": 2 } }
+  ]
+}
