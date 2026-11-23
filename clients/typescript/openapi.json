@@ -6216,6 +6216,25 @@
         ]
       }
     },
+    "/hooks/telegram": {
+      "post": {
+        "operationId": "telegram_relay_hooks_telegram_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Telegram webhook relay (forwards updates to Apps Script)",
+        "tags": [
+          "webhook relays"
+        ]
+      }
+    },
     "/pay/click/{center_id}": {
       "post": {
         "operationId": "click_endpoint_pay_click__center_id__post",
