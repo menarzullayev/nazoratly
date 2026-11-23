@@ -40,7 +40,7 @@ export function PayrollTab({ d, state, show }: TabProps) {
         </div>
         <div className="rounded-xl border border-accent p-3">
           <dt className="text-xs text-mute">{d.payroll.total}</dt>
-          <dd role="status" className="text-lg font-semibold text-accent">
+          <dd aria-live="polite" className="text-lg font-semibold text-accent">
             {formatSom(p.total)}
           </dd>
         </div>

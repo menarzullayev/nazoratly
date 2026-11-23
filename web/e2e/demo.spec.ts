@@ -49,11 +49,11 @@ for (const p of PAGES) {
     test("payroll follows the attendance", async ({ page }) => {
       const demo = page.locator("#demo");
       await demo.getByRole("tab", { name: p.tabs.payroll }).click();
-      await expect(demo.getByRole("status")).toContainText("270 000");
+      await expect(demo.locator("dd[aria-live]")).toContainText("270 000");
       await demo.getByRole("tab", { name: p.tabs.attendance }).click();
       await demo.getByRole("group").first().getByRole("button").first().click();
       await demo.getByRole("tab", { name: p.tabs.payroll }).click();
-      await expect(demo.getByRole("status")).toContainText("360 000");
+      await expect(demo.locator("dd[aria-live]")).toContainText("360 000");
     });
   });
 }

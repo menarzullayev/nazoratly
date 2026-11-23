@@ -10,3 +10,10 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font-body); -
 
 @keyframes nz-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
 .nz-pulse { animation: nz-pulse 1.4s ease-in-out infinite; }
+
+@keyframes nz-reveal { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .nz-reveal { animation: nz-reveal linear both; animation-timeline: view(); animation-range: entry 0% entry 45%; }
+  }
+}

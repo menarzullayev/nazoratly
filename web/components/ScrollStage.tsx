@@ -35,39 +35,45 @@ export function ScrollStage({ accent, tier, children }: Props) {
       write(1);
       return;
     }
-    write(0);
-    let cleanup = () => {};
+    const el = section.current;
+    if (!el) return;
+    let raf = 0;
+    const compute = () => {
+      raf = 0;
+      const r = el.getBoundingClientRect();
+      const total = r.height - window.innerHeight;
+      write(total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 1);
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(compute);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    compute();
+
+    // Smooth scrolling only where WebGL runs (desktop); phones keep native scrolling and load no extra library.
+    let lenisStop = () => {};
     let cancelled = false;
-    void (async () => {
-      const [{ gsap }, { ScrollTrigger }, { default: Lenis }] = await Promise.all([
-        import("gsap"),
-        import("gsap/ScrollTrigger"),
-        import("lenis"),
-      ]);
-      if (cancelled || !section.current) return;
-      gsap.registerPlugin(ScrollTrigger);
-      const lenis = new Lenis({ lerp: 0.12 });
-      lenis.on("scroll", ScrollTrigger.update);
-      const tick = (time: number) => lenis.raf(time * 1000);
-      gsap.ticker.add(tick);
-      gsap.ticker.lagSmoothing(0);
-      const trigger = ScrollTrigger.create({
-        trigger: section.current,
-        start: "top top",
-        end: "bottom bottom",
-        scrub: true,
-        onUpdate: (self) => write(self.progress),
-        onRefresh: (self) => write(self.progress),
+    if (effective === "full") {
+      void import("lenis").then(({ default: Lenis }) => {
+        if (cancelled) return;
+        const lenis = new Lenis({ lerp: 0.12 });
+        let id = requestAnimationFrame(function loop(t) {
+          lenis.raf(t);
+          id = requestAnimationFrame(loop);
+        });
+        lenisStop = () => {
+          cancelAnimationFrame(id);
+          lenis.destroy();
+        };
       });
-      cleanup = () => {
-        trigger.kill();
-        gsap.ticker.remove(tick);
-        lenis.destroy();
-      };
-    })();
+    }
     return () => {
       cancelled = true;
-      cleanup();
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+      lenisStop();
     };
   }, [effective, write]);
 

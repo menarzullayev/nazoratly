@@ -18,6 +18,8 @@ export function metadataFor(locale: Locale): Metadata {
         "x-default": pathFor("uz"),
       },
     },
-    openGraph: { title: d.meta.title, description: d.meta.description, type: "website", locale: hreflangOf(locale).replace("-", "_") },
+    icons: { icon: "/icon.svg" },
+    twitter: { card: "summary_large_image", title: d.meta.title, description: d.meta.description, images: ["/og.png"] },
+    openGraph: { title: d.meta.title, description: d.meta.description, type: "website", images: [{ url: "/og.png", width: 1200, height: 630 }], locale: hreflangOf(locale).replace("-", "_") },
   };
 }
