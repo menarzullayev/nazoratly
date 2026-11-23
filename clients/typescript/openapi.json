@@ -1661,6 +1661,134 @@
         "title": "ChargePatch",
         "type": "object"
       },
+      "ClearOut": {
+        "properties": {
+          "deleted": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Deleted",
+            "type": "object"
+          },
+          "demo_mode": {
+            "title": "Demo Mode",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "demo_mode",
+          "deleted"
+        ],
+        "title": "ClearOut",
+        "type": "object"
+      },
+      "CommitIn": {
+        "additionalProperties": false,
+        "properties": {
+          "duplicates": {
+            "default": "skip",
+            "enum": [
+              "skip",
+              "create"
+            ],
+            "title": "Duplicates",
+            "type": "string"
+          },
+          "has_header": {
+            "default": true,
+            "title": "Has Header",
+            "type": "boolean"
+          },
+          "mapping": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "field -> column index (0-based); omitted fields keep the automatic guess",
+            "title": "Mapping"
+          },
+          "on_error": {
+            "default": "skip",
+            "description": "abort: write nothing when any row has an error",
+            "enum": [
+              "skip",
+              "abort"
+            ],
+            "title": "On Error",
+            "type": "string"
+          },
+          "text": {
+            "description": "CSV / TSV text, first line = header",
+            "maxLength": 950000,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "CommitIn",
+        "type": "object"
+      },
+      "CommitOut": {
+        "properties": {
+          "created": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Created",
+            "type": "object"
+          },
+          "entity": {
+            "enum": [
+              "students",
+              "groups",
+              "leads"
+            ],
+            "title": "Entity",
+            "type": "string"
+          },
+          "rows": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "skipped_duplicates": {
+            "title": "Skipped Duplicates",
+            "type": "integer"
+          },
+          "skipped_errors": {
+            "title": "Skipped Errors",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "entity",
+          "created",
+          "skipped_errors",
+          "skipped_duplicates",
+          "rows"
+        ],
+        "title": "CommitOut",
+        "type": "object"
+      },
       "ConsentIn": {
         "additionalProperties": false,
         "properties": {
@@ -2040,6 +2168,27 @@
         "title": "DebtorRow",
         "type": "object"
       },
+      "DemoOut": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "demo_mode": {
+            "title": "Demo Mode",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "demo_mode",
+          "counts"
+        ],
+        "title": "DemoOut",
+        "type": "object"
+      },
       "DocumentDetail": {
         "properties": {
           "created_at": {
@@ -2287,6 +2436,63 @@
         "title": "DropIn",
         "type": "object"
       },
+      "DuplicateOut": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "file",
+              "existing"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "of_row": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Of Row"
+          }
+        },
+        "required": [
+          "kind",
+          "of_row"
+        ],
+        "title": "DuplicateOut",
+        "type": "object"
+      },
+      "EnrollFromWaitlistIn": {
+        "additionalProperties": false,
+        "properties": {
+          "started_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started On"
+          },
+          "status": {
+            "default": "active",
+            "enum": [
+              "trial",
+              "active"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "title": "EnrollFromWaitlistIn",
+        "type": "object"
+      },
       "EnrollTrialIn": {
         "additionalProperties": false,
         "properties": {
@@ -2359,6 +2565,12 @@
             ],
             "default": "0",
             "title": "Discount Percent"
+          },
+          "ignore_waitlist": {
+            "default": false,
+            "description": "owner override: take a free seat although waiting students are entitled to it",
+            "title": "Ignore Waitlist",
+            "type": "boolean"
           },
           "monthly_fee_override": {
             "anyOf": [
@@ -4099,6 +4311,49 @@
         "title": "Health",
         "type": "object"
       },
+      "ImportIn": {
+        "additionalProperties": false,
+        "properties": {
+          "has_header": {
+            "default": true,
+            "title": "Has Header",
+            "type": "boolean"
+          },
+          "mapping": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "field -> column index (0-based); omitted fields keep the automatic guess",
+            "title": "Mapping"
+          },
+          "text": {
+            "description": "CSV / TSV text, first line = header",
+            "maxLength": 950000,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "ImportIn",
+        "type": "object"
+      },
       "IncomeStatementOut": {
         "properties": {
           "date_from": {
@@ -5746,6 +6001,62 @@
         "title": "NamedAmount",
         "type": "object"
       },
+      "OfferOut": {
+        "properties": {
+          "entry_id": {
+            "format": "uuid",
+            "title": "Entry Id",
+            "type": "string"
+          },
+          "free_seats": {
+            "title": "Free Seats",
+            "type": "integer"
+          },
+          "group_id": {
+            "format": "uuid",
+            "title": "Group Id",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "guardian": {
+            "title": "Guardian",
+            "type": "string"
+          },
+          "offer_text": {
+            "title": "Offer Text",
+            "type": "string"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entry_id",
+          "group_id",
+          "group_name",
+          "student_id",
+          "student_name",
+          "position",
+          "free_seats",
+          "guardian",
+          "offer_text"
+        ],
+        "title": "OfferOut",
+        "type": "object"
+      },
       "OnlineTxOut": {
         "properties": {
           "amount": {
@@ -7181,6 +7492,37 @@
         "title": "Page[ToolCallOut]",
         "type": "object"
       },
+      "Page_WaitlistOut_": {
+        "properties": {
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WaitlistOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset",
+          "has_more"
+        ],
+        "title": "Page[WaitlistOut]",
+        "type": "object"
+      },
       "PasswordChangeIn": {
         "additionalProperties": false,
         "properties": {
@@ -7966,6 +8308,88 @@
         "title": "PlanOut",
         "type": "object"
       },
+      "PreviewOut": {
+        "properties": {
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "entity": {
+            "enum": [
+              "students",
+              "groups",
+              "leads"
+            ],
+            "title": "Entity",
+            "type": "string"
+          },
+          "fields": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "mapping": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Mapping",
+            "type": "object"
+          },
+          "required": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Required",
+            "type": "array"
+          },
+          "required_missing": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Required Missing",
+            "type": "array"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/RowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "rows_truncated": {
+            "title": "Rows Truncated",
+            "type": "boolean"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/nazoratly__routers__imports__SummaryOut"
+          }
+        },
+        "required": [
+          "entity",
+          "columns",
+          "mapping",
+          "fields",
+          "required",
+          "required_missing",
+          "summary",
+          "rows",
+          "rows_truncated"
+        ],
+        "title": "PreviewOut",
+        "type": "object"
+      },
       "ProviderIn": {
         "additionalProperties": false,
         "properties": {
@@ -8045,6 +8469,48 @@
           "callback_url"
         ],
         "title": "ProviderOut",
+        "type": "object"
+      },
+      "QrIn": {
+        "additionalProperties": false,
+        "properties": {
+          "rotate": {
+            "default": false,
+            "title": "Rotate",
+            "type": "boolean"
+          }
+        },
+        "title": "QrIn",
+        "type": "object"
+      },
+      "QrOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "issued_at": {
+            "format": "date-time",
+            "title": "Issued At",
+            "type": "string"
+          },
+          "rotated": {
+            "title": "Rotated",
+            "type": "boolean"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "student_id",
+          "code",
+          "issued_at",
+          "rotated"
+        ],
+        "title": "QrOut",
         "type": "object"
       },
       "RangeOut": {
@@ -8483,6 +8949,148 @@
         "title": "RosterOut",
         "type": "object"
       },
+      "RowErrorOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "field": {
+            "title": "Field",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "code",
+          "message"
+        ],
+        "title": "RowErrorOut",
+        "type": "object"
+      },
+      "RowOut": {
+        "properties": {
+          "duplicate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DuplicateOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/RowErrorOut"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "row": {
+            "title": "Row",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "error",
+              "duplicate"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "values": {
+            "additionalProperties": true,
+            "title": "Values",
+            "type": "object"
+          }
+        },
+        "required": [
+          "row",
+          "status",
+          "values",
+          "errors",
+          "duplicate"
+        ],
+        "title": "RowOut",
+        "type": "object"
+      },
+      "ScanIn": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "lesson_id": {
+            "format": "uuid",
+            "title": "Lesson Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "lesson_id"
+        ],
+        "title": "ScanIn",
+        "type": "object"
+      },
+      "ScanOut": {
+        "properties": {
+          "lesson_id": {
+            "format": "uuid",
+            "title": "Lesson Id",
+            "type": "string"
+          },
+          "previous_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Status"
+          },
+          "result": {
+            "enum": [
+              "marked",
+              "already_present"
+            ],
+            "title": "Result",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result",
+          "student_id",
+          "student_name",
+          "lesson_id",
+          "status",
+          "previous_status"
+        ],
+        "title": "ScanOut",
+        "type": "object"
+      },
       "ScheduleIn": {
         "additionalProperties": false,
         "properties": {
@@ -8601,6 +9209,52 @@
         "title": "ScheduleSlotOut",
         "type": "object"
       },
+      "SendCardIn": {
+        "additionalProperties": false,
+        "properties": {
+          "guardian_id": {
+            "format": "uuid",
+            "title": "Guardian Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "guardian_id"
+        ],
+        "title": "SendCardIn",
+        "type": "object"
+      },
+      "SendCardOut": {
+        "properties": {
+          "guardian_id": {
+            "format": "uuid",
+            "title": "Guardian Id",
+            "type": "string"
+          },
+          "message_id": {
+            "format": "uuid",
+            "title": "Message Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message_id",
+          "student_id",
+          "guardian_id",
+          "status"
+        ],
+        "title": "SendCardOut",
+        "type": "object"
+      },
       "SendIn": {
         "additionalProperties": false,
         "properties": {
@@ -8649,6 +9303,11 @@
       },
       "SettingsOut": {
         "properties": {
+          "demo_mode": {
+            "description": "the center is in demo mode (switched through /v1/demo)",
+            "title": "Demo Mode",
+            "type": "boolean"
+          },
           "excused_mode": {
             "enum": [
               "makeup",
@@ -8703,6 +9362,7 @@
           "makeup_lapses",
           "package_expiry_days",
           "package_low_lessons",
+          "demo_mode",
           "requisites"
         ],
         "title": "SettingsOut",
@@ -9796,61 +10456,6 @@
         "title": "StudentRef",
         "type": "object"
       },
-      "SummaryOut": {
-        "properties": {
-          "charged": {
-            "description": "tuition and other charges billed for the month (not voided)",
-            "title": "Charged",
-            "type": "string"
-          },
-          "expenses": {
-            "description": "operating expenses of the month (not voided)",
-            "title": "Expenses",
-            "type": "string"
-          },
-          "month": {
-            "format": "date",
-            "title": "Month",
-            "type": "string"
-          },
-          "net": {
-            "description": "revenue - expenses - payroll",
-            "title": "Net",
-            "type": "string"
-          },
-          "outstanding_now": {
-            "description": "all open receivables right now, any month",
-            "title": "Outstanding Now",
-            "type": "string"
-          },
-          "overdue_now": {
-            "title": "Overdue Now",
-            "type": "string"
-          },
-          "payroll": {
-            "description": "teacher payroll of the month in status approved or paid",
-            "title": "Payroll",
-            "type": "string"
-          },
-          "revenue": {
-            "description": "payments received during the month (not voided)",
-            "title": "Revenue",
-            "type": "string"
-          }
-        },
-        "required": [
-          "month",
-          "charged",
-          "revenue",
-          "outstanding_now",
-          "overdue_now",
-          "expenses",
-          "payroll",
-          "net"
-        ],
-        "title": "SummaryOut",
-        "type": "object"
-      },
       "SupplierIn": {
         "additionalProperties": false,
         "properties": {
@@ -10677,6 +11282,13 @@
             "title": "Rights",
             "type": "array"
           },
+          "seats": {
+            "items": {
+              "$ref": "#/components/schemas/WaitingSeat"
+            },
+            "title": "Seats",
+            "type": "array"
+          },
           "total": {
             "title": "Total",
             "type": "integer"
@@ -10693,6 +11305,7 @@
           "trials",
           "packages",
           "rights",
+          "seats",
           "total"
         ],
         "title": "WaitingBlock",
@@ -10785,6 +11398,53 @@
         "title": "WaitingRight",
         "type": "object"
       },
+      "WaitingSeat": {
+        "description": "A seat that freed up: the next student in line for a group (the owner enrolls with one click).",
+        "properties": {
+          "entry_id": {
+            "format": "uuid",
+            "title": "Entry Id",
+            "type": "string"
+          },
+          "free_seats": {
+            "title": "Free Seats",
+            "type": "integer"
+          },
+          "group_id": {
+            "format": "uuid",
+            "title": "Group Id",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entry_id",
+          "student_id",
+          "student_name",
+          "group_id",
+          "group_name",
+          "position",
+          "free_seats"
+        ],
+        "title": "WaitingSeat",
+        "type": "object"
+      },
       "WaitingTrial": {
         "properties": {
           "days_elapsed": {
@@ -10840,6 +11500,177 @@
         "title": "WaitingTrial",
         "type": "object"
       },
+      "WaitlistIn": {
+        "additionalProperties": false,
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "student_id"
+        ],
+        "title": "WaitlistIn",
+        "type": "object"
+      },
+      "WaitlistOut": {
+        "properties": {
+          "group_id": {
+            "format": "uuid",
+            "title": "Group Id",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "joined_at": {
+            "format": "date-time",
+            "title": "Joined At",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "status": {
+            "enum": [
+              "waiting",
+              "enrolled",
+              "removed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "group_id",
+          "group_name",
+          "student_id",
+          "student_name",
+          "status",
+          "position",
+          "note",
+          "joined_at",
+          "resolved_at"
+        ],
+        "title": "WaitlistOut",
+        "type": "object"
+      },
+      "nazoratly__routers__finance__SummaryOut": {
+        "properties": {
+          "charged": {
+            "description": "tuition and other charges billed for the month (not voided)",
+            "title": "Charged",
+            "type": "string"
+          },
+          "expenses": {
+            "description": "operating expenses of the month (not voided)",
+            "title": "Expenses",
+            "type": "string"
+          },
+          "month": {
+            "format": "date",
+            "title": "Month",
+            "type": "string"
+          },
+          "net": {
+            "description": "revenue - expenses - payroll",
+            "title": "Net",
+            "type": "string"
+          },
+          "outstanding_now": {
+            "description": "all open receivables right now, any month",
+            "title": "Outstanding Now",
+            "type": "string"
+          },
+          "overdue_now": {
+            "title": "Overdue Now",
+            "type": "string"
+          },
+          "payroll": {
+            "description": "teacher payroll of the month in status approved or paid",
+            "title": "Payroll",
+            "type": "string"
+          },
+          "revenue": {
+            "description": "payments received during the month (not voided)",
+            "title": "Revenue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "month",
+          "charged",
+          "revenue",
+          "outstanding_now",
+          "overdue_now",
+          "expenses",
+          "payroll",
+          "net"
+        ],
+        "title": "SummaryOut",
+        "type": "object"
+      },
       "nazoratly__routers__finance__VoidIn": {
         "additionalProperties": false,
         "properties": {
@@ -10860,6 +11691,34 @@
           "reason"
         ],
         "title": "VoidIn",
+        "type": "object"
+      },
+      "nazoratly__routers__imports__SummaryOut": {
+        "properties": {
+          "duplicates": {
+            "title": "Duplicates",
+            "type": "integer"
+          },
+          "errors": {
+            "title": "Errors",
+            "type": "integer"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "ok",
+          "errors",
+          "duplicates"
+        ],
+        "title": "SummaryOut",
         "type": "object"
       },
       "nazoratly__routers__packages__BalanceOut": {
@@ -13498,6 +14357,52 @@
         ]
       }
     },
+    "/v1/attendance/scan": {
+      "post": {
+        "operationId": "scan_v1_attendance_scan_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Scan a student's QR code at a lesson: marks `present` when the student belongs to the lesson",
+        "tags": [
+          "qr attendance"
+        ]
+      }
+    },
     "/v1/audit": {
       "get": {
         "operationId": "audit_log_v1_audit_get",
@@ -15086,6 +15991,110 @@
         "summary": "Owner dashboard: paid/unpaid, new/left and trial conversion, six-month finance, funnel and waiting items",
         "tags": [
           "dashboard"
+        ]
+      }
+    },
+    "/v1/demo": {
+      "get": {
+        "operationId": "status_v1_demo_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Is demo mode on, and how many demo rows exist",
+        "tags": [
+          "demo mode"
+        ]
+      }
+    },
+    "/v1/demo/clear": {
+      "post": {
+        "operationId": "clear_v1_demo_clear_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClearOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete the demo rows (only flagged ones); refused with the reason while a real record references one",
+        "tags": [
+          "demo mode"
+        ]
+      }
+    },
+    "/v1/demo/disable": {
+      "post": {
+        "operationId": "disable_v1_demo_disable_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClearOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Switch demo mode off: clears the demo rows first (the mode stays on when that is refused)",
+        "tags": [
+          "demo mode"
+        ]
+      }
+    },
+    "/v1/demo/enable": {
+      "post": {
+        "operationId": "enable_v1_demo_enable_post",
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Switch demo mode on: write the sample data",
+        "tags": [
+          "demo mode"
         ]
       }
     },
@@ -16691,6 +17700,50 @@
         ]
       }
     },
+    "/v1/groups/{group_id}/qr-cards": {
+      "get": {
+        "operationId": "group_cards_v1_groups__group_id__qr_cards_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "group_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Group Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "QR cards of every active and trial student of a group on A4 sheets (PDF)",
+        "tags": [
+          "qr attendance"
+        ]
+      }
+    },
     "/v1/groups/{group_id}/schedule": {
       "put": {
         "operationId": "put_schedule_v1_groups__group_id__schedule_put",
@@ -16750,6 +17803,149 @@
         "summary": "Replace the weekly schedule",
         "tags": [
           "academics"
+        ]
+      }
+    },
+    "/v1/groups/{group_id}/waitlist": {
+      "get": {
+        "operationId": "group_waitlist_v1_groups__group_id__waitlist_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "group_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Group Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "default": "waiting",
+              "enum": [
+                "waiting",
+                "enrolled",
+                "removed"
+              ],
+              "title": "Status",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 1000000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_WaitlistOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "The waiting list of a group, in order",
+        "tags": [
+          "waiting list"
+        ]
+      },
+      "post": {
+        "operationId": "join_waitlist_v1_groups__group_id__waitlist_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "group_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Group Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WaitlistIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WaitlistOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Put a student on the waiting list of a full group",
+        "tags": [
+          "waiting list"
         ]
       }
     },
@@ -17042,6 +18238,131 @@
         "summary": "Patch Guardian",
         "tags": [
           "students"
+        ]
+      }
+    },
+    "/v1/imports/{entity}/commit": {
+      "post": {
+        "description": "The file is analysed again here (the preview is never trusted). Rows with errors are skipped, or with\n`on_error = abort` nothing is written at all. Duplicates are skipped unless `duplicates = create`. Any failure while\nwriting rolls the whole import back.",
+        "operationId": "commit_v1_imports__entity__commit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entity",
+            "required": true,
+            "schema": {
+              "enum": [
+                "students",
+                "groups",
+                "leads"
+              ],
+              "title": "Entity",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommitIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommitOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Write the clean rows of the file in one transaction (all or nothing)",
+        "tags": [
+          "import"
+        ]
+      }
+    },
+    "/v1/imports/{entity}/preview": {
+      "post": {
+        "operationId": "preview_v1_imports__entity__preview_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entity",
+            "required": true,
+            "schema": {
+              "enum": [
+                "students",
+                "groups",
+                "leads"
+              ],
+              "title": "Entity",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Check an uploaded CSV/TSV: column mapping, per-row errors, duplicates (writes nothing)",
+        "tags": [
+          "import"
         ]
       }
     },
@@ -20008,7 +21329,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SummaryOut"
+                  "$ref": "#/components/schemas/nazoratly__routers__finance__SummaryOut"
                 }
               }
             },
@@ -21273,6 +22594,167 @@
         ]
       }
     },
+    "/v1/students/{student_id}/qr": {
+      "post": {
+        "operationId": "student_qr_v1_students__student_id__qr_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "student_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Student Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QrIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QrOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "The student's QR code (created on first use; `rotate` replaces it and the old card stops working)",
+        "tags": [
+          "qr attendance"
+        ]
+      }
+    },
+    "/v1/students/{student_id}/qr-card": {
+      "get": {
+        "operationId": "student_card_v1_students__student_id__qr_card_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "student_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Student Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Printable QR card of a student (PDF); the code is created on first use",
+        "tags": [
+          "qr attendance"
+        ]
+      }
+    },
+    "/v1/students/{student_id}/qr-card/send": {
+      "post": {
+        "description": "This call IS the approval. The database applies the same rules as for every message: the guardian must be linked\nto the student, receive reminders and have a Telegram chat, and the student needs an active notifications consent.",
+        "operationId": "send_card_v1_students__student_id__qr_card_send_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "student_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Student Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendCardIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendCardOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Approve and queue the QR card for a guardian's Telegram (a message plus the PDF)",
+        "tags": [
+          "qr attendance"
+        ]
+      }
+    },
     "/v1/teachers": {
       "get": {
         "operationId": "list_teachers_v1_teachers_get",
@@ -21608,6 +23090,142 @@
         "summary": "Trials waiting for the owner's decision",
         "tags": [
           "admission"
+        ]
+      }
+    },
+    "/v1/waitlist/offers": {
+      "get": {
+        "operationId": "offers_v1_waitlist_offers_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OfferOut"
+                  },
+                  "title": "Response Offers V1 Waitlist Offers Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Seats that freed up: the next students in line, with a suggested message for the guardian",
+        "tags": [
+          "waiting list"
+        ]
+      }
+    },
+    "/v1/waitlist/{entry_id}": {
+      "delete": {
+        "operationId": "remove_from_waitlist_v1_waitlist__entry_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entry_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Entry Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WaitlistOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Take a student off the waiting list",
+        "tags": [
+          "waiting list"
+        ]
+      }
+    },
+    "/v1/waitlist/{entry_id}/enroll": {
+      "post": {
+        "operationId": "enroll_from_waitlist_v1_waitlist__entry_id__enroll_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entry_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Entry Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnrollFromWaitlistIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Enroll the next student in line (one click); only while a seat is free for their place",
+        "tags": [
+          "waiting list"
         ]
       }
     }

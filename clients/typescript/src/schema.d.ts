@@ -708,6 +708,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/attendance/scan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Scan a student's QR code at a lesson: marks `present` when the student belongs to the lesson */
+        post: operations["scan_v1_attendance_scan_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/audit": {
         parameters: {
             query?: never;
@@ -1018,6 +1035,74 @@ export interface paths {
         get: operations["dashboard_v1_dashboard_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/demo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Is demo mode on, and how many demo rows exist */
+        get: operations["status_v1_demo_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/demo/clear": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Delete the demo rows (only flagged ones); refused with the reason while a real record references one */
+        post: operations["clear_v1_demo_clear_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/demo/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Switch demo mode off: clears the demo rows first (the mode stays on when that is refused) */
+        post: operations["disable_v1_demo_disable_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/demo/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Switch demo mode on: write the sample data */
+        post: operations["enable_v1_demo_enable_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1357,6 +1442,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/groups/{group_id}/qr-cards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** QR cards of every active and trial student of a group on A4 sheets (PDF) */
+        get: operations["group_cards_v1_groups__group_id__qr_cards_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/groups/{group_id}/schedule": {
         parameters: {
             query?: never;
@@ -1368,6 +1470,24 @@ export interface paths {
         /** Replace the weekly schedule */
         put: operations["put_schedule_v1_groups__group_id__schedule_put"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/groups/{group_id}/waitlist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The waiting list of a group, in order */
+        get: operations["group_waitlist_v1_groups__group_id__waitlist_get"];
+        put?: never;
+        /** Put a student on the waiting list of a full group */
+        post: operations["join_waitlist_v1_groups__group_id__waitlist_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1409,6 +1529,45 @@ export interface paths {
         head?: never;
         /** Patch Guardian */
         patch: operations["patch_guardian_v1_guardians__guardian_id__patch"];
+        trace?: never;
+    };
+    "/v1/imports/{entity}/commit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Write the clean rows of the file in one transaction (all or nothing)
+         * @description The file is analysed again here (the preview is never trusted). Rows with errors are skipped, or with
+         *     `on_error = abort` nothing is written at all. Duplicates are skipped unless `duplicates = create`. Any failure while
+         *     writing rolls the whole import back.
+         */
+        post: operations["commit_v1_imports__entity__commit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/imports/{entity}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Check an uploaded CSV/TSV: column mapping, per-row errors, duplicates (writes nothing) */
+        post: operations["preview_v1_imports__entity__preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/lead-sources": {
@@ -2335,6 +2494,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/students/{student_id}/qr": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The student's QR code (created on first use; `rotate` replaces it and the old card stops working) */
+        post: operations["student_qr_v1_students__student_id__qr_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/students/{student_id}/qr-card": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Printable QR card of a student (PDF); the code is created on first use */
+        get: operations["student_card_v1_students__student_id__qr_card_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/students/{student_id}/qr-card/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve and queue the QR card for a guardian's Telegram (a message plus the PDF)
+         * @description This call IS the approval. The database applies the same rules as for every message: the guardian must be linked
+         *     to the student, receive reminders and have a Telegram chat, and the student needs an active notifications consent.
+         */
+        post: operations["send_card_v1_students__student_id__qr_card_send_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/teachers": {
         parameters: {
             query?: never;
@@ -2383,6 +2597,57 @@ export interface paths {
         get: operations["pending_trials_v1_trials_pending_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/waitlist/offers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Seats that freed up: the next students in line, with a suggested message for the guardian */
+        get: operations["offers_v1_waitlist_offers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/waitlist/{entry_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Take a student off the waiting list */
+        delete: operations["remove_from_waitlist_v1_waitlist__entry_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/waitlist/{entry_id}/enroll": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enroll the next student in line (one click); only while a seat is free for their place */
+        post: operations["enroll_from_waitlist_v1_waitlist__entry_id__enroll_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3053,6 +3318,68 @@ export interface components {
             /** Due Date */
             due_date?: string | null;
         };
+        /** ClearOut */
+        ClearOut: {
+            /** Deleted */
+            deleted: {
+                [key: string]: number;
+            };
+            /** Demo Mode */
+            demo_mode: boolean;
+        };
+        /** CommitIn */
+        CommitIn: {
+            /**
+             * Duplicates
+             * @default skip
+             * @enum {string}
+             */
+            duplicates: "skip" | "create";
+            /**
+             * Has Header
+             * @default true
+             */
+            has_header: boolean;
+            /**
+             * Mapping
+             * @description field -> column index (0-based); omitted fields keep the automatic guess
+             */
+            mapping?: {
+                [key: string]: number | null;
+            } | null;
+            /**
+             * On Error
+             * @description abort: write nothing when any row has an error
+             * @default skip
+             * @enum {string}
+             */
+            on_error: "skip" | "abort";
+            /**
+             * Text
+             * @description CSV / TSV text, first line = header
+             */
+            text: string;
+        };
+        /** CommitOut */
+        CommitOut: {
+            /** Created */
+            created: {
+                [key: string]: number;
+            };
+            /**
+             * Entity
+             * @enum {string}
+             */
+            entity: "students" | "groups" | "leads";
+            /** Rows */
+            rows: {
+                [key: string]: unknown;
+            }[];
+            /** Skipped Duplicates */
+            skipped_duplicates: number;
+            /** Skipped Errors */
+            skipped_errors: number;
+        };
         /** ConsentIn */
         ConsentIn: {
             /** Evidence */
@@ -3178,6 +3505,15 @@ export interface components {
             /** Student Name */
             student_name: string;
         };
+        /** DemoOut */
+        DemoOut: {
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Demo Mode */
+            demo_mode: boolean;
+        };
         /** DocumentDetail */
         DocumentDetail: {
             /**
@@ -3302,6 +3638,27 @@ export interface components {
             /** Reason */
             reason?: string | null;
         };
+        /** DuplicateOut */
+        DuplicateOut: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "file" | "existing";
+            /** Of Row */
+            of_row: number | null;
+        };
+        /** EnrollFromWaitlistIn */
+        EnrollFromWaitlistIn: {
+            /** Started On */
+            started_on?: string | null;
+            /**
+             * Status
+             * @default active
+             * @enum {string}
+             */
+            status: "trial" | "active";
+        };
         /** EnrollTrialIn */
         EnrollTrialIn: {
             /**
@@ -3338,6 +3695,12 @@ export interface components {
              * @default 0
              */
             discount_percent: number | string;
+            /**
+             * Ignore Waitlist
+             * @description owner override: take a free seat although waiting students are entitled to it
+             * @default false
+             */
+            ignore_waitlist: boolean;
             /** Monthly Fee Override */
             monthly_fee_override?: (number | string) | null;
             /**
@@ -3941,6 +4304,26 @@ export interface components {
             /** Version */
             version: string;
         };
+        /** ImportIn */
+        ImportIn: {
+            /**
+             * Has Header
+             * @default true
+             */
+            has_header: boolean;
+            /**
+             * Mapping
+             * @description field -> column index (0-based); omitted fields keep the automatic guess
+             */
+            mapping?: {
+                [key: string]: number | null;
+            } | null;
+            /**
+             * Text
+             * @description CSV / TSV text, first line = header
+             */
+            text: string;
+        };
         /** IncomeStatementOut */
         IncomeStatementOut: {
             /**
@@ -4536,6 +4919,36 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** OfferOut */
+        OfferOut: {
+            /**
+             * Entry Id
+             * Format: uuid
+             */
+            entry_id: string;
+            /** Free Seats */
+            free_seats: number;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Group Name */
+            group_name: string;
+            /** Guardian */
+            guardian: string;
+            /** Offer Text */
+            offer_text: string;
+            /** Position */
+            position: number;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+        };
         /** OnlineTxOut */
         OnlineTxOut: {
             /** Amount */
@@ -5088,6 +5501,17 @@ export interface components {
             /** Offset */
             offset: number;
         };
+        /** Page[WaitlistOut] */
+        Page_WaitlistOut_: {
+            /** Has More */
+            has_more: boolean;
+            /** Items */
+            items: components["schemas"]["WaitlistOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
         /** PasswordChangeIn */
         PasswordChangeIn: {
             /** Current Password */
@@ -5394,6 +5818,31 @@ export interface components {
             /** Paid */
             paid: string;
         };
+        /** PreviewOut */
+        PreviewOut: {
+            /** Columns */
+            columns: string[];
+            /**
+             * Entity
+             * @enum {string}
+             */
+            entity: "students" | "groups" | "leads";
+            /** Fields */
+            fields: string[];
+            /** Mapping */
+            mapping: {
+                [key: string]: number | null;
+            };
+            /** Required */
+            required: string[];
+            /** Required Missing */
+            required_missing: string[];
+            /** Rows */
+            rows: components["schemas"]["RowOut"][];
+            /** Rows Truncated */
+            rows_truncated: boolean;
+            summary: components["schemas"]["nazoratly__routers__imports__SummaryOut"];
+        };
         /** ProviderIn */
         ProviderIn: {
             /**
@@ -5433,6 +5882,31 @@ export interface components {
             reversal_enabled: boolean;
             /** Status */
             status: string;
+        };
+        /** QrIn */
+        QrIn: {
+            /**
+             * Rotate
+             * @default false
+             */
+            rotate: boolean;
+        };
+        /** QrOut */
+        QrOut: {
+            /** Code */
+            code: string;
+            /**
+             * Issued At
+             * Format: date-time
+             */
+            issued_at: string;
+            /** Rotated */
+            rotated: boolean;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
         };
         /** RangeOut */
         RangeOut: {
@@ -5597,6 +6071,66 @@ export interface components {
             /** Lesson Status */
             lesson_status: string;
         };
+        /** RowErrorOut */
+        RowErrorOut: {
+            /** Code */
+            code: string;
+            /** Field */
+            field: string;
+            /** Message */
+            message: string;
+        };
+        /** RowOut */
+        RowOut: {
+            duplicate: components["schemas"]["DuplicateOut"] | null;
+            /** Errors */
+            errors: components["schemas"]["RowErrorOut"][];
+            /** Row */
+            row: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "error" | "duplicate";
+            /** Values */
+            values: {
+                [key: string]: unknown;
+            };
+        };
+        /** ScanIn */
+        ScanIn: {
+            /** Code */
+            code: string;
+            /**
+             * Lesson Id
+             * Format: uuid
+             */
+            lesson_id: string;
+        };
+        /** ScanOut */
+        ScanOut: {
+            /**
+             * Lesson Id
+             * Format: uuid
+             */
+            lesson_id: string;
+            /** Previous Status */
+            previous_status: string | null;
+            /**
+             * Result
+             * @enum {string}
+             */
+            result: "marked" | "already_present";
+            /** Status */
+            status: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+        };
         /** ScheduleIn */
         ScheduleIn: {
             /**
@@ -5654,6 +6188,34 @@ export interface components {
             /** Weekday */
             weekday: number;
         };
+        /** SendCardIn */
+        SendCardIn: {
+            /**
+             * Guardian Id
+             * Format: uuid
+             */
+            guardian_id: string;
+        };
+        /** SendCardOut */
+        SendCardOut: {
+            /**
+             * Guardian Id
+             * Format: uuid
+             */
+            guardian_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+            /** Status */
+            status: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+        };
         /** SendIn */
         SendIn: {
             /**
@@ -5684,6 +6246,11 @@ export interface components {
         };
         /** SettingsOut */
         SettingsOut: {
+            /**
+             * Demo Mode
+             * @description the center is in demo mode (switched through /v1/demo)
+             */
+            demo_mode: boolean;
             /**
              * Excused Mode
              * @enum {string}
@@ -6064,46 +6631,6 @@ export interface components {
             /** Name */
             name: string;
         };
-        /** SummaryOut */
-        SummaryOut: {
-            /**
-             * Charged
-             * @description tuition and other charges billed for the month (not voided)
-             */
-            charged: string;
-            /**
-             * Expenses
-             * @description operating expenses of the month (not voided)
-             */
-            expenses: string;
-            /**
-             * Month
-             * Format: date
-             */
-            month: string;
-            /**
-             * Net
-             * @description revenue - expenses - payroll
-             */
-            net: string;
-            /**
-             * Outstanding Now
-             * @description all open receivables right now, any month
-             */
-            outstanding_now: string;
-            /** Overdue Now */
-            overdue_now: string;
-            /**
-             * Payroll
-             * @description teacher payroll of the month in status approved or paid
-             */
-            payroll: string;
-            /**
-             * Revenue
-             * @description payments received during the month (not voided)
-             */
-            revenue: string;
-        };
         /** SupplierIn */
         SupplierIn: {
             /** Name */
@@ -6375,6 +6902,8 @@ export interface components {
             packages: components["schemas"]["WaitingPackage"][];
             /** Rights */
             rights: components["schemas"]["WaitingRight"][];
+            /** Seats */
+            seats: components["schemas"]["WaitingSeat"][];
             /** Total */
             total: number;
             /** Trials */
@@ -6430,6 +6959,35 @@ export interface components {
             /** Student Name */
             student_name: string;
         };
+        /**
+         * WaitingSeat
+         * @description A seat that freed up: the next student in line for a group (the owner enrolls with one click).
+         */
+        WaitingSeat: {
+            /**
+             * Entry Id
+             * Format: uuid
+             */
+            entry_id: string;
+            /** Free Seats */
+            free_seats: number;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Group Name */
+            group_name: string;
+            /** Position */
+            position: number;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+        };
         /** WaitingTrial */
         WaitingTrial: {
             /** Days Elapsed */
@@ -6461,6 +7019,94 @@ export interface components {
             /** Student Name */
             student_name: string;
         };
+        /** WaitlistIn */
+        WaitlistIn: {
+            /** Note */
+            note?: string | null;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+        };
+        /** WaitlistOut */
+        WaitlistOut: {
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Joined At
+             * Format: date-time
+             */
+            joined_at: string;
+            /** Note */
+            note: string | null;
+            /** Position */
+            position: number | null;
+            /** Resolved At */
+            resolved_at: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "waiting" | "enrolled" | "removed";
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+        };
+        /** SummaryOut */
+        nazoratly__routers__finance__SummaryOut: {
+            /**
+             * Charged
+             * @description tuition and other charges billed for the month (not voided)
+             */
+            charged: string;
+            /**
+             * Expenses
+             * @description operating expenses of the month (not voided)
+             */
+            expenses: string;
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+            /**
+             * Net
+             * @description revenue - expenses - payroll
+             */
+            net: string;
+            /**
+             * Outstanding Now
+             * @description all open receivables right now, any month
+             */
+            outstanding_now: string;
+            /** Overdue Now */
+            overdue_now: string;
+            /**
+             * Payroll
+             * @description teacher payroll of the month in status approved or paid
+             */
+            payroll: string;
+            /**
+             * Revenue
+             * @description payments received during the month (not voided)
+             */
+            revenue: string;
+        };
         /** VoidIn */
         nazoratly__routers__finance__VoidIn: {
             /** Reason */
@@ -6471,6 +7117,17 @@ export interface components {
              * @default false
              */
             release_allocations: boolean;
+        };
+        /** SummaryOut */
+        nazoratly__routers__imports__SummaryOut: {
+            /** Duplicates */
+            duplicates: number;
+            /** Errors */
+            errors: number;
+            /** Ok */
+            ok: number;
+            /** Total */
+            total: number;
         };
         /** BalanceOut */
         nazoratly__routers__packages__BalanceOut: {
@@ -8010,6 +8667,39 @@ export interface operations {
             };
         };
     };
+    scan_v1_attendance_scan_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScanIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScanOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     audit_log_v1_audit_get: {
         parameters: {
             query?: {
@@ -8934,6 +9624,86 @@ export interface operations {
             };
         };
     };
+    status_v1_demo_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemoOut"];
+                };
+            };
+        };
+    };
+    clear_v1_demo_clear_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClearOut"];
+                };
+            };
+        };
+    };
+    disable_v1_demo_disable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClearOut"];
+                };
+            };
+        };
+    };
+    enable_v1_demo_enable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemoOut"];
+                };
+            };
+        };
+    };
     list_documents_v1_documents_get: {
         parameters: {
             query?: {
@@ -9776,6 +10546,37 @@ export interface operations {
             };
         };
     };
+    group_cards_v1_groups__group_id__qr_cards_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     put_schedule_v1_groups__group_id__schedule_put: {
         parameters: {
             query?: never;
@@ -9798,6 +10599,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GroupDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    group_waitlist_v1_groups__group_id__waitlist_get: {
+        parameters: {
+            query?: {
+                status?: "waiting" | "enrolled" | "removed";
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                group_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_WaitlistOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    join_waitlist_v1_groups__group_id__waitlist_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WaitlistIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitlistOut"];
                 };
             };
             /** @description Validation Error */
@@ -9962,6 +10833,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GuardianOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    commit_v1_imports__entity__commit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entity: "students" | "groups" | "leads";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommitIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommitOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_v1_imports__entity__preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entity: "students" | "groups" | "leads";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreviewOut"];
                 };
             };
             /** @description Validation Error */
@@ -11534,7 +12475,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SummaryOut"];
+                    "application/json": components["schemas"]["nazoratly__routers__finance__SummaryOut"];
                 };
             };
             /** @description Validation Error */
@@ -12290,6 +13231,107 @@ export interface operations {
             };
         };
     };
+    student_qr_v1_students__student_id__qr_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QrIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QrOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    student_card_v1_students__student_id__qr_card_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_card_v1_students__student_id__qr_card_send_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendCardIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SendCardOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_teachers_v1_teachers_get: {
         parameters: {
             query?: {
@@ -12472,6 +13514,92 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Page_PendingTrial_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    offers_v1_waitlist_offers_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfferOut"][];
+                };
+            };
+        };
+    };
+    remove_from_waitlist_v1_waitlist__entry_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitlistOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    enroll_from_waitlist_v1_waitlist__entry_id__enroll_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnrollFromWaitlistIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentOut"];
                 };
             };
             /** @description Validation Error */
