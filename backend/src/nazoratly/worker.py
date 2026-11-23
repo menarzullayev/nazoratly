@@ -9,9 +9,12 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import os
 import signal
 import sys
+import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Protocol
 
 import httpx
@@ -294,12 +297,30 @@ class Worker:
         while not stop.is_set():
             try:
                 n = await self.run_once()
+                touch_heartbeat()
             except Exception as exc:
                 log.error("worker_cycle_failed", error=type(exc).__name__)
                 n = 0
             if n == 0:
                 with contextlib.suppress(TimeoutError):
                     await asyncio.wait_for(stop.wait(), timeout=self.settings.worker_poll_interval_s)
+
+
+HEARTBEAT_PATH = Path(os.environ.get("NAZORATLY_WORKER_HEARTBEAT", "/tmp/nazoratly-worker.alive"))  # noqa: S108
+HEARTBEAT_MAX_AGE_S = 90.0
+
+
+def touch_heartbeat(path: Path = HEARTBEAT_PATH) -> None:
+    """Written after every polling cycle that finished without an error; the container healthcheck reads it."""
+    with contextlib.suppress(OSError):
+        path.touch()
+
+
+def heartbeat_fresh(path: Path = HEARTBEAT_PATH, max_age_s: float = HEARTBEAT_MAX_AGE_S) -> bool:
+    try:
+        return time.time() - path.stat().st_mtime <= max_age_s
+    except OSError:
+        return False
 
 
 async def _main() -> None:
@@ -319,6 +340,8 @@ async def _main() -> None:
 
 
 def main() -> None:
+    if "--healthcheck" in sys.argv[1:]:  # used by the container healthcheck
+        sys.exit(0 if heartbeat_fresh() else 1)
     import structlog as _s
 
     _s.configure(

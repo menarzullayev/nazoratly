@@ -306,3 +306,53 @@ async def test_eskiz_failures(pg_server: dict[str, Any], tenant: Tenant) -> None
         await w.close()
     r1, r2 = await _status(tenant, rejected["id"]), await _status(tenant, flaky["id"])
     assert {r1["status"], r2["status"]} == {"failed", "queued"}  # 4xx permanent, 5xx retried later
+
+
+def test_heartbeat_fresh_stale_and_missing(tmp_path: Any) -> None:
+    import os
+    import time
+
+    from nazoratly.worker import heartbeat_fresh, touch_heartbeat
+
+    beat = tmp_path / "alive"
+    assert heartbeat_fresh(beat, 90) is False  # never written: unhealthy
+    touch_heartbeat(beat)
+    assert heartbeat_fresh(beat, 90) is True
+    old = time.time() - 600
+    os.utime(beat, (old, old))
+    assert heartbeat_fresh(beat, 90) is False  # a stalled worker stops touching the file
+
+
+def test_healthcheck_cli_exit_codes(tmp_path: Any) -> None:
+    import os
+    import subprocess
+    import sys
+
+    beat = tmp_path / "alive"
+    env = {**os.environ, "NAZORATLY_WORKER_HEARTBEAT": str(beat)}
+    cmd = [sys.executable, "-m", "nazoratly.worker", "--healthcheck"]
+    assert subprocess.run(cmd, env=env, check=False).returncode == 1  # noqa: S603
+    beat.touch()
+    assert subprocess.run(cmd, env=env, check=False).returncode == 0  # noqa: S603
+
+
+async def test_run_forever_writes_heartbeat(
+    pg_server: dict[str, Any], tmp_path: Any, monkeypatch: Any
+) -> None:
+    import nazoratly.worker as w
+
+    beat = tmp_path / "alive"
+    monkeypatch.setattr(w, "HEARTBEAT_PATH", beat)
+    monkeypatch.setattr(w, "touch_heartbeat", lambda path=beat: beat.touch())
+    worker = _worker(pg_server, lambda r: httpx.Response(200, json={"ok": True}))
+    await worker.open()
+    stop = asyncio.Event()
+    task = asyncio.create_task(worker.run_forever(stop))
+    for _ in range(50):
+        if beat.exists():
+            break
+        await asyncio.sleep(0.1)
+    stop.set()
+    await task
+    await worker.close()
+    assert beat.exists()
