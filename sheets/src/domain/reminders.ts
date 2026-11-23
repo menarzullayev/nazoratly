@@ -1,3 +1,4 @@
+import { offerText } from "./capacity";
 import { daysBetween } from "./dates";
 import type { StudentDebt } from "./debt";
 import { packageReminderText, type EnrollmentBalance } from "./packages";
@@ -187,6 +188,43 @@ export function planPackageReminders(args: {
       const last = lastDraft.get(studentId);
       if (last && daysBetween(last, args.today) < args.cooldownDays) plan.skipped.push({ studentId, reason: "cooldown" });
       else plan.drafts.push({ studentId, text: packageReminderText({ need: b.need, guardian: s.guardianName || "ota-ona", student: s.fullName, balance: b.balance.balance, debtAmount: b.debtAmount, center: args.centerName }) });
+    }
+  }
+  return plan;
+}
+
+/**
+ * Reminder DRAFTS for the next student in line when a seat freed up (guardian message from `offerText`). Same consent /
+ * chat / cooldown rules as every reminder; nothing is sent from here and nobody is enrolled by it.
+ */
+export function planSeatReminders(args: {
+  offers: { studentId: string; groupName: string; freeSeats: number }[];
+  students: Student[];
+  drafts: ReminderDraft[];
+  today: ISODate;
+  cooldownDays: number;
+  centerName: string;
+}): ReminderPlan {
+  const students = new Map(args.students.map((s) => [s.id, s]));
+  const lastDraft = new Map<string, ISODate>();
+  for (const d of args.drafts) {
+    if (d.status === "rejected") continue;
+    const prev = lastDraft.get(d.studentId);
+    if (!prev || d.createdOn > prev) lastDraft.set(d.studentId, d.createdOn);
+  }
+  const plan: ReminderPlan = { drafts: [], skipped: [] };
+  const done = new Set<string>();
+  for (const o of args.offers) {
+    if (done.has(o.studentId)) continue; // one draft per student even when two groups offer a seat
+    done.add(o.studentId);
+    const s = students.get(o.studentId);
+    if (!s || s.status === "left" || s.status === "paused") plan.skipped.push({ studentId: o.studentId, reason: "student_inactive" });
+    else if (!s.consentNotify) plan.skipped.push({ studentId: o.studentId, reason: "no_consent" });
+    else if (!s.guardianChatId) plan.skipped.push({ studentId: o.studentId, reason: "no_chat" });
+    else {
+      const last = lastDraft.get(o.studentId);
+      if (last && daysBetween(last, args.today) < args.cooldownDays) plan.skipped.push({ studentId: o.studentId, reason: "cooldown" });
+      else plan.drafts.push({ studentId: o.studentId, text: offerText({ guardian: s.guardianName || "ota-ona", student: s.fullName, group: o.groupName, freeSeats: o.freeSeats, center: args.centerName }) });
     }
   }
   return plan;

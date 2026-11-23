@@ -5,6 +5,7 @@ import { prevMonthStart, monthStart } from "../domain/dates";
 import { nextIds } from "../domain/ids";
 import type { AttendanceRow, Charge, Enrollment, Group, Student, Teacher } from "../domain/types";
 import { append, read, readIfPresent, toDate, today, updateById } from "./repo";
+import { clearDemoData, hasDemoRows } from "./demo";
 import { ensureChart, protectLedgerSheets } from "./ledger";
 import {
   ALL_TABLES,
@@ -15,14 +16,14 @@ import {
   ENROLLMENTS,
   EXPENSES,
   GROUPS,
-  JOURNAL,
-  LEDGER_TABLES,
+  LEADS,
   METHODS,
   PAYMENTS,
   SETTINGS_SHEET,
   SETTING_DEFAULTS,
   STUDENTS,
   TEACHERS,
+  WAITLIST,
   type ColDef,
   type TableDef,
 } from "./schema";
@@ -132,38 +133,51 @@ export function setupWorkbook(): void {
   void METHODS;
 }
 
-/** A small, realistic data set for demos. Refuses to run when the workbook already has students. */
+/**
+ * A small, realistic data set for demos. Every row carries the Demo flag ("Demo" column), so "Demo ma'lumotni tozalash"
+ * can remove it again without touching real rows, and demo money is left out of the journal. Ids are taken after the
+ * existing ones, so the sample can sit next to real data. Refuses to run when demo rows already exist.
+ */
 export function loadSampleData(): string {
-  if (read<Student>(STUDENTS).length > 0) throw new Error("O'quvchilar varag'i bo'sh emas: namuna ma'lumot faqat bo'sh jadvalga yuklanadi.");
+  if (hasDemoRows()) throw new Error("Demo ma'lumot allaqachon yuklangan. Yangilash uchun 'Namuna ma'lumotni yangilash', olib tashlash uchun 'Demo ma'lumotni tozalash'.");
+  const D = { demo: true } as const;
+  const ids = (prefix: string, def: TableDef, n: number): string[] => nextIds(prefix, readIfPresent<{ id: string }>(def).map((r) => r.id), n);
+  const tIds = ids("T", TEACHERS, 2);
+  const gIds = ids("G", GROUPS, 2);
   const teachers: Teacher[] = [
-    { id: "T0001", fullName: "Dilnoza Karimova", payModel: "per_lesson", payRate: 90_000, status: "active" },
-    { id: "T0002", fullName: "Sardor Aliyev", payModel: "percent", payRate: 40, status: "active" },
+    { id: tIds[0]!, fullName: "Dilnoza Karimova", payModel: "per_lesson", payRate: 90_000, status: "active", ...D },
+    { id: tIds[1]!, fullName: "Sardor Aliyev", payModel: "percent", payRate: 40, status: "active", ...D },
   ];
   const groups: Group[] = [
-    { id: "G0001", name: "IELTS 6.5 (kechki)", teacherId: "T0001", monthlyFee: 600_000, status: "active" },
-    { id: "G0002", name: "Matematika 9-sinf", teacherId: "T0002", monthlyFee: 400_000, status: "active" },
+    { id: gIds[0]!, name: "IELTS 6.5 (kechki)", teacherId: tIds[0]!, monthlyFee: 600_000, status: "active", capacity: 4, ...D },
+    { id: gIds[1]!, name: "Matematika 9-sinf", teacherId: tIds[1]!, monthlyFee: 400_000, status: "active", capacity: 5, ...D },
   ];
   const names = ["Aziz Rahimov", "Madina Tursunova", "Jasur Qodirov", "Nigora Ismoilova", "Bobur Saidov", "Lola Xasanova", "Otabek Mirzaev", "Zarina Yusupova"];
-  const students: (Student & Record<string, unknown>)[] = names.map((fullName, i) => ({
-    id: `S${String(i + 1).padStart(4, "0")}`,
+  const waiting = ["Kamola Nurmatova", "Davron Sodiqov", "Feruza Olimova"];
+  const sIds = ids("S", STUDENTS, names.length + waiting.length);
+  const students: (Student & Record<string, unknown>)[] = [...names, ...waiting].map((fullName, i) => ({
+    id: sIds[i]!,
     fullName,
-    status: "active",
+    status: i < names.length ? "active" : "lead",
     guardianName: `${fullName.split(" ")[0]} ota-onasi`,
     guardianChatId: "",
     consentNotify: false,
-    phone: `+99890123${String(4000 + i)}`,
+    phone: i < names.length ? `+99890123${String(4000 + i)}` : "",
+    ...D,
   }));
   const cur = monthStart(today());
   const prev1 = prevMonthStart(cur);
   const prev2 = prevMonthStart(prev1);
-  const enrollments: Enrollment[] = students.map((s, i) => ({
-    id: `E${String(i + 1).padStart(4, "0")}`,
-    studentId: s.id,
-    groupId: i % 2 === 0 ? "G0001" : "G0002",
+  const eIds = ids("E", ENROLLMENTS, names.length);
+  const enrollments: Enrollment[] = names.map((_, i) => ({
+    id: eIds[i]!,
+    studentId: sIds[i]!,
+    groupId: i % 2 === 0 ? gIds[0]! : gIds[1]!,
     startedOn: `${prev2.slice(0, 7)}-05`,
     endedOn: "",
     discountPercent: i === 3 ? 10 : 0,
     status: "active",
+    ...D,
   }));
   append(TEACHERS, teachers);
   append(GROUPS, groups);
@@ -171,15 +185,18 @@ export function loadSampleData(): string {
   append(ENROLLMENTS, enrollments);
 
   const months = [prev2, prev1, cur];
-  let charges: Charge[] = [];
+  let charges: Charge[] = readIfPresent<Charge>(CHARGES);
+  const before = charges.length;
+  const demoStudents = students.slice(0, names.length);
   for (const m of months) {
-    const plan = planCharges({ month: m, dueDay: 10, enrollments, groups, students, charges });
-    const ids = nextIds("C", charges.map((c) => c.id), plan.create.length);
-    charges = [...charges, ...plan.create.map((c, i) => ({ id: ids[i]!, studentId: c.studentId, enrollmentId: c.enrollmentId, month: c.month, amount: c.amount, dueDate: c.dueDate, voided: false, note: c.note }))];
+    const plan = planCharges({ month: m, dueDay: 10, enrollments, groups, students: demoStudents, charges });
+    const cids = nextIds("C", charges.map((c) => c.id), plan.create.length);
+    charges = [...charges, ...plan.create.map((c, i) => ({ id: cids[i]!, studentId: c.studentId, enrollmentId: c.enrollmentId, month: c.month, amount: c.amount, dueDate: c.dueDate, voided: false, note: c.note, ...D }))];
   }
-  append(CHARGES, charges);
+  const newCharges = charges.slice(before);
+  append(CHARGES, newCharges);
   // most pay on time, two are behind
-  const payments = students.flatMap((s, i) => {
+  const payments = demoStudents.flatMap((s, i) => {
     const e = enrollments[i]!;
     const fee = effectiveFee(groups.find((g) => g.id === e.groupId)!, e);
     const paidMonths = i === 1 ? 1 : i === 4 ? 0 : i === 5 ? 2 : 3;
@@ -191,56 +208,65 @@ export function loadSampleData(): string {
       method: ["Naqd", "Karta", "Payme", "Click"][(i + k) % 4]!,
       voided: false,
       note: "",
+      ...D,
     }));
   });
-  const pids = nextIds("P", [], payments.length);
+  const pids = nextIds("P", readIfPresent<{ id: string }>(PAYMENTS).map((p) => p.id), payments.length);
   append(PAYMENTS, payments.map((p, i) => ({ ...p, id: pids[i]! })));
 
   const attendance: AttendanceRow[] = [];
   for (const day of [5, 12, 19].map((d) => `${prev1.slice(0, 7)}-${String(d).padStart(2, "0")}`)) {
-    for (const [i, s] of students.entries()) {
+    for (const [i, s] of demoStudents.entries()) {
       const e = enrollments[i]!;
       const status = (i + day.length + Number(day.slice(-1))) % 7 === 0 ? "absent" : (i + Number(day.slice(-1))) % 5 === 0 ? "late" : "present";
-      attendance.push({ date: day, groupId: e.groupId, studentId: s.id, status, minutesLate: status === "late" ? 10 : 0 });
+      attendance.push({ date: day, groupId: e.groupId, studentId: s.id, status, minutesLate: status === "late" ? 10 : 0, ...D });
     }
   }
   append(ATTENDANCE, attendance);
   // sample expenses (only when the workbook already has the expenses sheet, i.e. after "Boshlang'ich sozlash")
+  const xIds = nextIds("X", readIfPresent<{ id: string }>(EXPENSES).map((x) => x.id), months.length * 2);
   const expenseRows = SpreadsheetApp.getActive().getSheetByName(EXPENSES.sheet)
     ? months.flatMap((m, i) => [
-        { id: `X${String(i * 2 + 1).padStart(4, "0")}`, date: `${m.slice(0, 7)}-03`, category: "rent", amount: 3_000_000, note: "Ijara (namuna)", voided: false },
-        { id: `X${String(i * 2 + 2).padStart(4, "0")}`, date: `${m.slice(0, 7)}-05`, category: "utilities", amount: 450_000, note: "Kommunal (namuna)", voided: false },
+        { id: xIds[i * 2]!, date: `${m.slice(0, 7)}-03`, category: "rent", amount: 3_000_000, note: "Ijara (namuna)", voided: false, ...D },
+        { id: xIds[i * 2 + 1]!, date: `${m.slice(0, 7)}-05`, category: "utilities", amount: 450_000, note: "Kommunal (namuna)", voided: false, ...D },
       ]).filter((x) => x.date <= today())
     : [];
   append(EXPENSES, expenseRows);
+  // leads and the waiting list (these sheets exist after "Boshlang'ich sozlash"; an older workbook simply skips them)
+  let extra = "";
+  if (SpreadsheetApp.getActive().getSheetByName(LEADS.sheet)) {
+    const lIds = ids("L", LEADS, 4);
+    const leads = [["Sherzod Abdullayev", "new", "Instagram"], ["Mohira Ergasheva", "contacted", "Tanish"], ["Anvar Toshpulatov", "trial_scheduled", "Instagram"], ["Dildora Karimova", "lost", "Telegram"]] as const;
+    append(LEADS, leads.map(([fullName, stage, source], i) => ({ id: lIds[i]!, fullName, phone: `+99893555${1000 + i}`, source, stage, nextFollowUpOn: "", note: "", createdOn: today(), studentId: "", ...D })));
+  }
+  if (SpreadsheetApp.getActive().getSheetByName(WAITLIST.sheet)) {
+    const wIds = ids("W", WAITLIST, waiting.length);
+    append(WAITLIST, waiting.map((_, i) => ({ id: wIds[i]!, groupId: i < 2 ? gIds[0]! : gIds[1]!, studentId: sIds[names.length + i]!, joinedOn: today(), status: "waiting", note: "demo", ...D })));
+    extra = ` (+${waiting.length} navbatda)`;
+  }
   void toDate;
-  return `Namuna: ${students.length} o'quvchi, ${groups.length} guruh, ${charges.length} hisob, ${payments.length} to'lov, ${attendance.length} davomat yozuvi.`;
+  return `Namuna: ${names.length} o'quvchi${extra}, ${groups.length} guruh, ${newCharges.length} hisob, ${payments.length} to'lov, ${attendance.length} davomat yozuvi. Barcha qatorlar "Demo" belgili: pul yozuvlari jurnalga tushmaydi.`;
 }
 
 const TELEGRAM_FIELDS = ["guardianChatId", "consentNotify", "consentDate", "consentPolicy", "linkCode", "linkUrl"] as const;
 
 /**
- * Wipes every data table (not Sozlamalar) and loads fresh sample data relative to today. Guardian Telegram links
- * and consent of students that exist in the new sample (same id) are carried over, so a live demo bot keeps working.
+ * "Namuna ma'lumotni yangilash": removes the demo rows (only those: real data and Sozlamalar stay; refused with the
+ * reason when a real record references one), then loads fresh sample data relative to today. Guardian Telegram links of
+ * demo students (matched by name) are carried over, so a live demo bot keeps working.
  */
 export function resetSampleData(): string {
-  if (readIfPresent<{ seq: number }>(JOURNAL).length > 0) {
-    throw new Error("Jurnalda yozuvlar bor: jurnal o'zgarmas, shuning uchun namuna ma'lumotni yangilab bo'lmaydi. Yangi fayl oching.");
-  }
   const keep = new Map<string, Record<string, unknown>>();
   for (const s of read<Student & Record<string, unknown>>(STUDENTS)) {
-    if (!s.guardianChatId) continue;
-    keep.set(s.id, Object.fromEntries(TELEGRAM_FIELDS.map((f) => [f, s[f] ?? ""])));
+    if (s.demo !== true || !s.guardianChatId) continue;
+    keep.set(s.fullName, Object.fromEntries(TELEGRAM_FIELDS.map((f) => [f, s[f] ?? ""])));
   }
-  for (const def of ALL_TABLES) {
-    if (LEDGER_TABLES.includes(def)) continue; // the chart, cash accounts and (empty) journal are never wiped
-    const sh = SpreadsheetApp.getActive().getSheetByName(def.sheet);
-    if (!sh) continue; // a table added by a newer version: its sheet appears after "Boshlang'ich sozlash"
-    const rows = sh.getLastRow() - 1;
-    if (rows > 0) sh.getRange(2, 1, rows, sh.getLastColumn()).clearContent();
-  }
+  clearDemoData();
   const msg = loadSampleData();
   let restored = 0;
-  for (const [id, patch] of keep) if (updateById(STUDENTS, "id", id, patch)) restored++;
+  for (const s of read<Student>(STUDENTS)) {
+    const patch = s.demo === true ? keep.get(s.fullName) : undefined;
+    if (patch && updateById(STUDENTS, "id", s.id, patch)) restored++;
+  }
   return `${msg}${restored ? ` Telegram ulanishlari saqlandi: ${restored} ta o'quvchi.` : ""}`;
 }

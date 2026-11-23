@@ -33,10 +33,10 @@ describe("codec", () => {
   });
 
   it("round-trips rows and survives reordered columns", () => {
-    const header = ["Holat", "O'quvchi ID", "Sana", "Guruh ID", "Kechikish (daq)", "Qo'shimcha"];
-    const values: Cell[][] = [header, ["Kechikdi", "S0001", new Date("2026-03-02T12:00:00Z"), "G0001", 10, "izoh"], ["", "", "", "", "", ""]];
+    const header = ["Holat", "O'quvchi ID", "Sana", "Guruh ID", "Kechikish (daq)", "Qo'shimcha", "Demo"];
+    const values: Cell[][] = [header, ["Kechikdi", "S0001", new Date("2026-03-02T12:00:00Z"), "G0001", 10, "izoh", ""], ["", "", "", "", "", "", ""]];
     const rows = decodeRows<Record<string, unknown>>(ATTENDANCE, values, fmt);
-    expect(rows).toEqual([{ date: "2026-03-02", groupId: "G0001", studentId: "S0001", status: "late", minutesLate: 10 }]);
+    expect(rows).toEqual([{ date: "2026-03-02", groupId: "G0001", studentId: "S0001", status: "late", minutesLate: 10, demo: false }]);
     const back = encodeRow(ATTENDANCE, header, rows[0]!, (iso) => new Date(`${iso}T12:00:00Z`));
     expect(back[0]).toBe("Kechikdi");
     expect(back[2]).toEqual(new Date("2026-03-02T12:00:00Z"));

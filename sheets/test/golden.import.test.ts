@@ -9,7 +9,7 @@ type G = {
   normalize_phone: { name: string; in: { text: string }; out: string | null }[];
   parse_date: { name: string; in: { text: string }; out: string | null }[];
   parse_whole: { name: string; in: { text: string }; out: number | null }[];
-  validate_row: { name: string; in: { entity: ImportEntity; raw: Record<string, string>; today: string }; out: { values: Vals; errors: { field: string; code: string }[] } }[];
+  validate_row: { name: string; in: { entity: ImportEntity; raw: Record<string, string>; today: string; required?: string[] }; out: { values: Vals; errors: { field: string; code: string }[] } }[];
   duplicate_keys: { name: string; in: { entity: ImportEntity; values: Vals }; out: string[] }[];
   find_duplicates: { name: string; in: { entity: ImportEntity; rows: (Vals | null)[]; existing: string[] }; out: ({ kind: string; of: number | null } | null)[] }[];
 };
@@ -25,7 +25,7 @@ describe("golden: import rules", () => {
   it.each(golden.normalize_phone)("normalizePhone: $name", (c) => expect(normalizePhone(c.in.text)).toBe(c.out));
   it.each(golden.parse_date)("parseDate: $name", (c) => expect(parseDate(c.in.text)).toBe(c.out));
   it.each(golden.parse_whole)("parseWhole: $name", (c) => expect(parseWhole(c.in.text)).toBe(c.out));
-  it.each(golden.validate_row)("validateRow: $name", (c) => expect(validateRow(c.in.entity, c.in.raw, c.in.today)).toEqual(c.out));
+  it.each(golden.validate_row)("validateRow: $name", (c) => expect(validateRow(c.in.entity, c.in.raw, c.in.today, c.in.required)).toEqual(c.out));
   it.each(golden.duplicate_keys)("duplicateKeys: $name", (c) => expect(duplicateKeys(c.in.entity, c.in.values)).toEqual(c.out));
   it.each(golden.find_duplicates)("findDuplicates: $name", (c) => expect(findDuplicates(c.in.entity, c.in.rows, new Set(c.in.existing))).toEqual(c.out));
 });

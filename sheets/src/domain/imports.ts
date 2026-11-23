@@ -188,13 +188,14 @@ export interface RowCheck {
 }
 
 /** Normalises one row. `raw` holds the cell text per field (missing = empty). Errors are per field and coded. */
-export function validateRow(entity: ImportEntity, raw: Record<string, string>, today: ISODate): RowCheck {
+export function validateRow(entity: ImportEntity, raw: Record<string, string>, today: ISODate, required?: string[]): RowCheck {
   const out: RowCheck = { values: {}, errors: [] };
+  const need = new Set(required ?? REQUIRED[entity]);
   const get = (f: string): string => (raw[f] ?? "").trim();
-  const text = (f: string, required = false): void => {
+  const text = (f: string): void => {
     const v = get(f);
     if (!v) {
-      if (required) out.errors.push({ field: f, code: "required" });
+      if (need.has(f)) out.errors.push({ field: f, code: "required" });
     } else if (v.length > MAX_TEXT) out.errors.push({ field: f, code: "too_long" });
     else out.values[f] = v;
   };
@@ -205,10 +206,10 @@ export function validateRow(entity: ImportEntity, raw: Record<string, string>, t
     if (p === null) out.errors.push({ field: f, code: "invalid_phone" });
     else out.values[f] = p;
   };
-  const day = (f: string, required = false, past = false): void => {
+  const day = (f: string, past = false): void => {
     const v = get(f);
     if (!v) {
-      if (required) out.errors.push({ field: f, code: "required" });
+      if (need.has(f)) out.errors.push({ field: f, code: "required" });
       return;
     }
     const d = parseDate(v);
@@ -217,10 +218,10 @@ export function validateRow(entity: ImportEntity, raw: Record<string, string>, t
     else if (past && d < "1900-01-01") out.errors.push({ field: f, code: "invalid_date" });
     else out.values[f] = d;
   };
-  const whole = (f: string, lo: number, hi: number, required = false): void => {
+  const whole = (f: string, lo: number, hi: number): void => {
     const v = get(f);
     if (!v) {
-      if (required) out.errors.push({ field: f, code: "required" });
+      if (need.has(f)) out.errors.push({ field: f, code: "required" });
       return;
     }
     const n = parseWhole(v);
@@ -229,22 +230,22 @@ export function validateRow(entity: ImportEntity, raw: Record<string, string>, t
     else out.values[f] = n;
   };
   if (entity === "students") {
-    text("full_name", true);
+    text("full_name");
     phone("phone");
-    day("birth_date", false, true);
+    day("birth_date", true);
     text("guardian_name");
     phone("guardian_phone");
     text("group");
     text("notes");
   } else if (entity === "groups") {
-    text("name", true);
-    text("course", true);
+    text("name");
+    text("course");
     text("teacher");
-    whole("monthly_fee", 0, 999_999_999_999, true);
+    whole("monthly_fee", 0, 999_999_999_999);
     whole("capacity", 1, 10_000);
-    day("start_date", true);
+    day("start_date");
   } else {
-    text("full_name", true);
+    text("full_name");
     phone("phone");
     text("source");
     text("note");

@@ -8,6 +8,8 @@ export interface Student {
   guardianName: string;
   guardianChatId: string; // Telegram chat id, empty until the guardian linked the bot
   consentNotify: boolean; // guardian agreed to Telegram notifications
+  qrCode?: string; // attendance QR code (NZQ1-...), empty until the card was issued
+  demo?: boolean; // sample row
 }
 
 export interface Group {
@@ -20,6 +22,8 @@ export interface Group {
   billingMode?: "monthly" | "package"; // "" in the sheet reads as monthly
   packageLessons?: number; // lessons in one package (package-billed groups)
   packagePrice?: number; // so'm for one package (package-billed groups)
+  capacity?: number; // most students (trials count); empty = unlimited
+  demo?: boolean;
 }
 
 export interface Enrollment {
@@ -35,6 +39,7 @@ export interface Enrollment {
   firstMonthMode?: "full" | "prorated" | "free_until_next" | "";
   /** A trial that was dropped: its lessons were free and stay free. */
   droppedTrial?: boolean;
+  demo?: boolean;
 }
 
 export interface Charge {
@@ -46,6 +51,7 @@ export interface Charge {
   dueDate: ISODate;
   voided: boolean;
   note: string;
+  demo?: boolean;
 }
 
 export interface Payment {
@@ -56,6 +62,7 @@ export interface Payment {
   method: string;
   voided: boolean;
   note: string;
+  demo?: boolean;
 }
 
 export interface AttendanceRow {
@@ -64,6 +71,7 @@ export interface AttendanceRow {
   studentId: string;
   status: "present" | "absent" | "late" | "excused";
   minutesLate: number;
+  demo?: boolean;
 }
 
 export interface Teacher {
@@ -72,6 +80,7 @@ export interface Teacher {
   payModel: "fixed" | "per_lesson" | "percent";
   payRate: number; // so'm per month / per lesson, or percent
   status: "active" | "inactive";
+  demo?: boolean;
 }
 
 export interface ReminderDraft {
@@ -95,6 +104,7 @@ export interface Lead {
   note: string;
   createdOn: ISODate;
   studentId: string; // set when the lead was turned into a trial
+  demo?: boolean;
 }
 
 export interface LeadLogRow {
@@ -150,4 +160,15 @@ export interface Expense {
   voided: boolean;
   paidFrom?: "cash" | "bank"; // where the money left from (default cash)
   billId?: string; // set when the expense accrues a supplier bill
+  demo?: boolean;
+}
+
+export interface WaitlistRow {
+  id: string;
+  groupId: string;
+  studentId: string;
+  joinedOn: ISODate;
+  status: "waiting" | "enrolled" | "removed";
+  note: string;
+  demo?: boolean;
 }

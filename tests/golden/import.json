@@ -1215,6 +1215,86 @@
      }
     ]
    }
+  },
+  {
+   "name": "groups without course and start date when only name and fee are required",
+   "in": {
+    "entity": "groups",
+    "raw": {
+     "name": "Math",
+     "monthly_fee": "400000"
+    },
+    "today": "2026-11-23",
+    "required": [
+     "name",
+     "monthly_fee"
+    ]
+   },
+   "out": {
+    "values": {
+     "name": "Math",
+     "monthly_fee": 400000
+    },
+    "errors": []
+   }
+  },
+  {
+   "name": "groups: a required override still requires the fee",
+   "in": {
+    "entity": "groups",
+    "raw": {
+     "name": "Math"
+    },
+    "today": "2026-11-23",
+    "required": [
+     "name",
+     "monthly_fee"
+    ]
+   },
+   "out": {
+    "values": {
+     "name": "Math"
+    },
+    "errors": [
+     {
+      "field": "monthly_fee",
+      "code": "required"
+     }
+    ]
+   }
+  },
+  {
+   "name": "students: nothing required accepts an empty row",
+   "in": {
+    "entity": "students",
+    "raw": {},
+    "today": "2026-11-23",
+    "required": []
+   },
+   "out": {
+    "values": {},
+    "errors": []
+   }
+  },
+  {
+   "name": "students: an empty required list still validates what is present",
+   "in": {
+    "entity": "students",
+    "raw": {
+     "phone": "123"
+    },
+    "today": "2026-11-23",
+    "required": []
+   },
+   "out": {
+    "values": {},
+    "errors": [
+     {
+      "field": "phone",
+      "code": "invalid_phone"
+     }
+    ]
+   }
   }
  ],
  "duplicate_keys": [

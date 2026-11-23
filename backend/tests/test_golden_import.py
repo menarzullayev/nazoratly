@@ -48,7 +48,7 @@ def test_parse_whole(case: dict[str, Any]) -> None:
 @pytest.mark.parametrize("case", GOLDEN["validate_row"], ids=lambda c: c["name"])
 def test_validate_row(case: dict[str, Any]) -> None:
     i = case["in"]
-    r = I.validate_row(i["entity"], i["raw"], today=date.fromisoformat(i["today"]))
+    r = I.validate_row(i["entity"], i["raw"], today=date.fromisoformat(i["today"]), required=i.get("required"))
     assert {"values": r.values, "errors": [{"field": e.field, "code": e.code} for e in r.errors]} == case[
         "out"
     ]

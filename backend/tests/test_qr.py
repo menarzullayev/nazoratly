@@ -135,6 +135,8 @@ async def test_card_is_sent_to_the_guardian_through_the_outbox(
         await tenant.post(f"/v1/students/{st['id']}/qr-card/send", {"guardian_id": guardian["id"]}), 201
     )
     assert third["message_id"] != sent["message_id"]
+    await _run(pg_server, fake)  # drain the queue: the DB is shared with the other worker tests
+    assert [c["method"] for c in fake.calls][-2:] == ["sendMessage", "sendDocument"]
 
 
 async def test_card_delivery_rules(tenant: Tenant, tenant_b: Tenant) -> None:

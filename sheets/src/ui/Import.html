@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>/*STYLE*/</style>
+</head>
+<body>
+<h1>Import</h1>
+<div class="row">
+  <div><label for="entity">Nimani import qilamiz</label>
+    <select id="entity"><option value="students">O'quvchilar</option><option value="groups">Guruhlar</option><option value="leads">Lead'lar</option></select></div>
+  <div><label for="file">CSV yoki TSV fayl</label><input id="file" type="file" accept=".csv,.tsv,.txt,text/csv,text/plain"></div>
+</div>
+<label for="text" style="margin-top:8px">...yoki jadvalni shu yerga qo'ying (birinchi qator: ustun nomlari; Google Sheets'dan nusxa ko'chirsangiz bo'ladi)</label>
+<textarea id="text" rows="5" spellcheck="false" style="width:100%;font-family:monospace"></textarea>
+<div class="row" style="margin-top:8px">
+  <label><input id="header" type="checkbox" checked> Birinchi qator ustun nomlari</label>
+  <button id="check" class="primary" type="button">Tekshirish</button>
+</div>
+<p id="hint" class="muted"></p>
+<div id="msg" role="status" aria-live="polite"></div>
+<div id="mapping" class="row"></div>
+<div id="stats" class="muted"></div>
+<div style="max-height:220px;overflow:auto"><table id="rows" style="width:100%;font-size:12px"></table></div>
+<div id="step4" class="hidden" style="margin-top:10px">
+  <div class="row">
+    <div><label for="onerr">Xatoli qatorlar</label>
+      <select id="onerr"><option value="skip">O'tkazib yuborilsin</option><option value="abort">Biror xato bo'lsa, hech narsa yozilmasin</option></select></div>
+    <div><label for="dups">Takroriy qatorlar</label>
+      <select id="dups"><option value="skip">O'tkazib yuborilsin</option><option value="create">Baribir yaratilsin</option></select></div>
+    <button id="commit" class="primary" type="button">Yozish</button>
+  </div>
+</div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var mapping = null, last = null;
+  var FIELD = { full_name: "Ism familiya", phone: "Telefon", birth_date: "Tug'ilgan sana", guardian_name: "Vasiy ismi", guardian_phone: "Vasiy telefoni", group: "Guruh", notes: "Izoh", name: "Guruh nomi", course: "Kurs (Sheets'da saqlanmaydi)", teacher: "O'qituvchi", monthly_fee: "Oylik narx", capacity: "Sig'im", start_date: "Boshlanish sanasi (Sheets'da saqlanmaydi)", source: "Manba", note: "Izoh" };
+  var HINT = { students: "Ustunlar: ism (majburiy), telefon, tug'ilgan sana va vasiy telefoni (izohga yoziladi), guruh (mavjud guruh nomi), vasiy ismi, izoh.", groups: "Ustunlar: guruh nomi va oylik narx (majburiy), o'qituvchi (mavjud ism), sig'im.", leads: "Ustunlar: ism (majburiy), telefon, manba, izoh." };
+  function run(name) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return new Promise(function (resolve, reject) { google.script.run.withSuccessHandler(resolve).withFailureHandler(function (e) { reject(e); })[name].apply(google.script.run, args); });
+  }
+  function banner(kind, text) { var d = document.createElement("div"); d.className = "banner " + kind; d.textContent = text; $("msg").replaceChildren(d); }
+  function payload(extra) { var o = { entity: $("entity").value, text: $("text").value, hasHeader: $("header").checked }; if (mapping) o.mapping = mapping; for (var k in extra || {}) o[k] = extra[k]; return o; }
+  function cell(text, bold) { var td = document.createElement("td"); td.textContent = text; if (bold) td.style.fontWeight = "bold"; return td; }
+  function render(p) {
+    var box = $("mapping"); box.replaceChildren();
+    p.fields.forEach(function (f) {
+      var wrap = document.createElement("div"), lab = document.createElement("label"), sel = document.createElement("select");
+      lab.textContent = (FIELD[f] || f) + (p.required.indexOf(f) >= 0 ? " *" : ""); lab.htmlFor = "m-" + f; sel.id = "m-" + f;
+      var o0 = document.createElement("option"); o0.value = ""; o0.textContent = "(yo'q)"; sel.appendChild(o0);
+      p.columns.forEach(function (c, i) { var o = document.createElement("option"); o.value = String(i); o.textContent = (i + 1) + ". " + (c || "(bo'sh)"); sel.appendChild(o); });
+      sel.value = p.mapping[f] === null || p.mapping[f] === undefined ? "" : String(p.mapping[f]);
+      sel.addEventListener("change", function () { mapping = {}; p.fields.forEach(function (g) { var v = $("m-" + g).value; mapping[g] = v === "" ? null : Number(v); }); check(); });
+      wrap.appendChild(lab); wrap.appendChild(sel); box.appendChild(wrap);
+    });
+    var s = p.summary;
+    $("stats").textContent = "Jami: " + s.total + " · tayyor: " + s.ok + " · takroriy: " + s.duplicates + " · xato: " + s.errors + (p.truncated ? " (jadvalda birinchi " + p.rows.length + " qator)" : "");
+    var t = $("rows"); t.replaceChildren();
+    p.rows.forEach(function (r) {
+      var tr = document.createElement("tr");
+      var notes = r.errors.map(function (e) { return (FIELD[e.field] || e.field) + ": " + e.message; });
+      if (r.duplicate) notes.push(r.duplicate.kind === "existing" ? "jadvalda allaqachon bor" : "faylda " + r.duplicate.ofRow + "-qatorda takrorlangan");
+      var vals = Object.keys(r.values).map(function (k) { return (FIELD[k] || k) + ": " + r.values[k]; }).join("; ");
+      tr.appendChild(cell(String(r.row))); tr.appendChild(cell(r.status === "ok" ? "tayyor" : r.status === "duplicate" ? "takroriy" : "xato", true)); tr.appendChild(cell(vals)); tr.appendChild(cell(notes.join("; ")));
+      t.appendChild(tr);
+    });
+    $("step4").classList.toggle("hidden", p.requiredMissing.length > 0);
+    $("commit").disabled = s.ok + ($("dups").value === "create" ? s.duplicates : 0) === 0;
+  }
+  async function check() {
+    $("msg").replaceChildren();
+    if (!$("text").value.trim()) { banner("warn", "Avval fayl tanlang yoki jadvalni qo'ying."); return; }
+    $("check").disabled = true;
+    try {
+      var p = await run("importPreview", payload());
+      last = p; if (!mapping) mapping = JSON.parse(JSON.stringify(p.mapping));
+      render(p);
+      if (p.requiredMissing.length) banner("warn", "Majburiy ustunlar topilmadi: " + p.requiredMissing.map(function (f) { return FIELD[f] || f; }).join(", ") + ". Yuqorida ustunni tanlang.");
+    } catch (e) { banner("err", (e && e.message) || "Xato"); }
+    finally { $("check").disabled = false; }
+  }
+  async function commit() {
+    if (!window.confirm("Tayyor qatorlar jadvalga yoziladi. Davom etamizmi?")) return;
+    $("commit").disabled = true;
+    try {
+      var r = await run("importCommit", payload({ onError: $("onerr").value, duplicates: $("dups").value }));
+      var made = Object.keys(r.created).map(function (k) { return r.created[k] + " ta " + k; }).join(", ") || "hech narsa yaratilmadi";
+      banner("ok", "Yozildi: " + made + ". O'tkazib yuborildi: " + r.skippedErrors + " xato, " + r.skippedDuplicates + " takroriy.");
+      $("step4").classList.add("hidden");
+    } catch (e) { banner("err", "Yozilmadi. " + ((e && e.message) || "Xato")); $("commit").disabled = false; }
+  }
+  function reset() { mapping = null; last = null; $("mapping").replaceChildren(); $("rows").replaceChildren(); $("stats").textContent = ""; $("step4").classList.add("hidden"); }
+  $("hint").textContent = HINT.students;
+  $("entity").addEventListener("change", function () { $("hint").textContent = HINT[this.value]; reset(); });
+  $("header").addEventListener("change", reset);
+  $("text").addEventListener("input", reset);
+  $("file").addEventListener("change", function () {
+    var f = this.files && this.files[0]; if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function () { $("text").value = String(rd.result); reset(); check(); };
+    rd.onerror = function () { banner("err", "Faylni o'qib bo'lmadi."); };
+    rd.readAsText(f, "utf-8");
+  });
+  $("check").addEventListener("click", function () { mapping = null; check(); });
+  $("dups").addEventListener("change", function () { if (last) $("commit").disabled = last.summary.ok + (this.value === "create" ? last.summary.duplicates : 0) === 0; });
+  $("commit").addEventListener("click", commit);
+})();
+</script>
+</body>
+</html>

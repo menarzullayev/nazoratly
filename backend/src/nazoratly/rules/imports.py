@@ -271,14 +271,18 @@ class RowCheck:
     errors: list[RowError] = field(default_factory=list)
 
 
-def validate_row(entity: str, raw: dict[str, str], *, today: date) -> RowCheck:
-    """Normalises one row. `raw` holds the cell text per field (missing = empty). Errors are per field and coded."""
+def validate_row(
+    entity: str, raw: dict[str, str], *, today: date, required: list[str] | None = None
+) -> RowCheck:
+    """Normalises one row. `raw` holds the cell text per field (missing = empty). Errors are per field and coded.
+    `required` overrides the required fields of the entity (the Sheets edition does not store a course or a start date)."""
     out = RowCheck()
+    need = set(REQUIRED[entity] if required is None else required)
 
-    def text(f: str, *, required: bool = False) -> None:
+    def text(f: str) -> None:
         v = raw.get(f, "").strip()
         if not v:
-            if required:
+            if f in need:
                 out.errors.append(RowError(f, "required"))
             return
         if len(v) > _MAX_TEXT:
@@ -296,10 +300,10 @@ def validate_row(entity: str, raw: dict[str, str], *, today: date) -> RowCheck:
         else:
             out.values[f] = p
 
-    def day(f: str, *, required: bool = False, past: bool = False) -> None:
+    def day(f: str, *, past: bool = False) -> None:
         v = raw.get(f, "").strip()
         if not v:
-            if required:
+            if f in need:
                 out.errors.append(RowError(f, "required"))
             return
         d = parse_date(v)
@@ -312,10 +316,10 @@ def validate_row(entity: str, raw: dict[str, str], *, today: date) -> RowCheck:
         else:
             out.values[f] = d
 
-    def whole(f: str, *, lo: int, hi: int, required: bool = False) -> None:
+    def whole(f: str, *, lo: int, hi: int) -> None:
         v = raw.get(f, "").strip()
         if not v:
-            if required:
+            if f in need:
                 out.errors.append(RowError(f, "required"))
             return
         n = parse_whole(v)
@@ -327,7 +331,7 @@ def validate_row(entity: str, raw: dict[str, str], *, today: date) -> RowCheck:
             out.values[f] = n
 
     if entity == "students":
-        text("full_name", required=True)
+        text("full_name")
         phone("phone")
         day("birth_date", past=True)
         text("guardian_name")
@@ -335,14 +339,14 @@ def validate_row(entity: str, raw: dict[str, str], *, today: date) -> RowCheck:
         text("group")
         text("notes")
     elif entity == "groups":
-        text("name", required=True)
-        text("course", required=True)
+        text("name")
+        text("course")
         text("teacher")
-        whole("monthly_fee", lo=0, hi=999_999_999_999, required=True)
+        whole("monthly_fee", lo=0, hi=999_999_999_999)
         whole("capacity", lo=1, hi=10_000)
-        day("start_date", required=True)
+        day("start_date")
     else:
-        text("full_name", required=True)
+        text("full_name")
         phone("phone")
         text("source")
         text("note")
