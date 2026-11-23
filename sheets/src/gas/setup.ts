@@ -4,7 +4,8 @@ import { planCharges } from "../domain/billing";
 import { prevMonthStart, monthStart } from "../domain/dates";
 import { nextIds } from "../domain/ids";
 import type { AttendanceRow, Charge, Enrollment, Group, Student, Teacher } from "../domain/types";
-import { append, read, toDate, today, updateById } from "./repo";
+import { append, read, readIfPresent, toDate, today, updateById } from "./repo";
+import { ensureChart, protectLedgerSheets } from "./ledger";
 import {
   ALL_TABLES,
   ATTENDANCE,
@@ -14,6 +15,8 @@ import {
   ENROLLMENTS,
   EXPENSES,
   GROUPS,
+  JOURNAL,
+  LEDGER_TABLES,
   METHODS,
   PAYMENTS,
   SETTINGS_SHEET,
@@ -44,7 +47,7 @@ function validationFor(col: ColDef): GoogleAppsScript.Spreadsheet.DataValidation
     return SpreadsheetApp.newDataValidation().requireDate().setAllowInvalid(false).setHelpText("To'g'ri sana kiriting (yyyy-mm-dd)").build();
   }
   if (col.kind === "int") {
-    return SpreadsheetApp.newDataValidation().requireNumberGreaterThanOrEqualTo(col.key === "bonus" ? -1_000_000_000 : 0).setAllowInvalid(false).setHelpText("Butun son").build();
+    return SpreadsheetApp.newDataValidation().requireNumberGreaterThanOrEqualTo(col.key === "bonus" || col.signed ? -1_000_000_000 : 0).setAllowInvalid(false).setHelpText("Butun son").build();
   }
   return null;
 }
@@ -66,6 +69,7 @@ export function setupTable(def: TableDef): void {
     if (rule) body.setDataValidation(rule);
     if (c.kind === "date") body.setNumberFormat("yyyy-mm-dd");
     if (c.kind === "int") body.setNumberFormat("#,##0");
+    if (c.plain) body.setNumberFormat("@");
   });
   sh.getRange(2, 1, Math.max(sh.getMaxRows() - 1, 1), n).setFontFamily(FONT).setVerticalAlignment("middle");
   // Warning-only protection: structure rows are hard to break by accident, the owner can still edit.
@@ -116,6 +120,8 @@ export function setupSettings(): void {
 export function setupWorkbook(): void {
   for (const def of ALL_TABLES) setupTable(def);
   setupSettings();
+  ensureChart(); // chart of accounts and the two default cash accounts (first time only)
+  protectLedgerSheets(); // the ledger sheets are written by the script only
   const ss = SpreadsheetApp.getActive();
   const dashboard = ss.getSheetByName(DASHBOARD_SHEET) ?? ss.insertSheet(DASHBOARD_SHEET, 0);
   dashboard.setTabColor("#1a73e8");
@@ -218,12 +224,16 @@ const TELEGRAM_FIELDS = ["guardianChatId", "consentNotify", "consentDate", "cons
  * and consent of students that exist in the new sample (same id) are carried over, so a live demo bot keeps working.
  */
 export function resetSampleData(): string {
+  if (readIfPresent<{ seq: number }>(JOURNAL).length > 0) {
+    throw new Error("Jurnalda yozuvlar bor: jurnal o'zgarmas, shuning uchun namuna ma'lumotni yangilab bo'lmaydi. Yangi fayl oching.");
+  }
   const keep = new Map<string, Record<string, unknown>>();
   for (const s of read<Student & Record<string, unknown>>(STUDENTS)) {
     if (!s.guardianChatId) continue;
     keep.set(s.id, Object.fromEntries(TELEGRAM_FIELDS.map((f) => [f, s[f] ?? ""])));
   }
   for (const def of ALL_TABLES) {
+    if (LEDGER_TABLES.includes(def)) continue; // the chart, cash accounts and (empty) journal are never wiped
     const sh = SpreadsheetApp.getActive().getSheetByName(def.sheet);
     if (!sh) continue; // a table added by a newer version: its sheet appears after "Boshlang'ich sozlash"
     const rows = sh.getLastRow() - 1;

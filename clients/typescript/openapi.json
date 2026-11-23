@@ -212,6 +212,121 @@
         "title": "AccessOut",
         "type": "object"
       },
+      "AccountIn": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "pattern": "^[0-9]{3,8}$",
+            "title": "Code",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "asset",
+              "liability",
+              "equity",
+              "income",
+              "expense"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "type"
+        ],
+        "title": "AccountIn",
+        "type": "object"
+      },
+      "AccountOut": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "normal_side": {
+            "enum": [
+              "debit",
+              "credit"
+            ],
+            "title": "Normal Side",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "asset",
+              "liability",
+              "equity",
+              "income",
+              "expense"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "type",
+          "normal_side",
+          "active"
+        ],
+        "title": "AccountOut",
+        "type": "object"
+      },
+      "AccountPatch": {
+        "additionalProperties": false,
+        "properties": {
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "AccountPatch",
+        "type": "object"
+      },
       "AgentCreated": {
         "properties": {
           "created_at": {
@@ -417,6 +532,86 @@
           "revoked_at"
         ],
         "title": "AgentOut",
+        "type": "object"
+      },
+      "AgingOut": {
+        "properties": {
+          "as_of": {
+            "format": "date",
+            "title": "As Of",
+            "type": "string"
+          },
+          "buckets": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Buckets",
+            "type": "object"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/AgingRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "as_of",
+          "rows",
+          "buckets",
+          "total"
+        ],
+        "title": "AgingOut",
+        "type": "object"
+      },
+      "AgingRow": {
+        "properties": {
+          "bucket": {
+            "title": "Bucket",
+            "type": "string"
+          },
+          "days_overdue": {
+            "title": "Days Overdue",
+            "type": "integer"
+          },
+          "due_date": {
+            "format": "date",
+            "title": "Due Date",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "number": {
+            "title": "Number",
+            "type": "string"
+          },
+          "outstanding": {
+            "title": "Outstanding",
+            "type": "string"
+          },
+          "supplier_name": {
+            "title": "Supplier Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "supplier_name",
+          "number",
+          "due_date",
+          "outstanding",
+          "days_overdue",
+          "bucket"
+        ],
+        "title": "AgingRow",
         "type": "object"
       },
       "AllocateIn": {
@@ -657,6 +852,411 @@
         "title": "AuditOut",
         "type": "object"
       },
+      "AutoMatchIn": {
+        "additionalProperties": false,
+        "properties": {
+          "tolerance_days": {
+            "default": 3,
+            "maximum": 30.0,
+            "minimum": 0.0,
+            "title": "Tolerance Days",
+            "type": "integer"
+          }
+        },
+        "title": "AutoMatchIn",
+        "type": "object"
+      },
+      "BalanceSheetOut": {
+        "properties": {
+          "as_of": {
+            "format": "date",
+            "title": "As Of",
+            "type": "string"
+          },
+          "assets": {
+            "items": {
+              "$ref": "#/components/schemas/NamedAmount"
+            },
+            "title": "Assets",
+            "type": "array"
+          },
+          "balanced": {
+            "title": "Balanced",
+            "type": "boolean"
+          },
+          "current_result": {
+            "title": "Current Result",
+            "type": "string"
+          },
+          "equity": {
+            "items": {
+              "$ref": "#/components/schemas/NamedAmount"
+            },
+            "title": "Equity",
+            "type": "array"
+          },
+          "liabilities": {
+            "items": {
+              "$ref": "#/components/schemas/NamedAmount"
+            },
+            "title": "Liabilities",
+            "type": "array"
+          },
+          "total_assets": {
+            "title": "Total Assets",
+            "type": "string"
+          },
+          "total_equity": {
+            "title": "Total Equity",
+            "type": "string"
+          },
+          "total_liabilities": {
+            "title": "Total Liabilities",
+            "type": "string"
+          }
+        },
+        "required": [
+          "as_of",
+          "assets",
+          "liabilities",
+          "equity",
+          "current_result",
+          "total_assets",
+          "total_liabilities",
+          "total_equity",
+          "balanced"
+        ],
+        "title": "BalanceSheetOut",
+        "type": "object"
+      },
+      "BillIn": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "UZS amount, 2 decimals",
+            "title": "Amount"
+          },
+          "bill_date": {
+            "format": "date",
+            "title": "Bill Date",
+            "type": "string"
+          },
+          "category": {
+            "enum": [
+              "rent",
+              "utilities",
+              "salary",
+              "marketing",
+              "equipment",
+              "tax",
+              "other"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "due_date": {
+            "format": "date",
+            "title": "Due Date",
+            "type": "string"
+          },
+          "number": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Number",
+            "type": "string"
+          },
+          "supplier_id": {
+            "format": "uuid",
+            "title": "Supplier Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "supplier_id",
+          "number",
+          "bill_date",
+          "due_date",
+          "category",
+          "amount"
+        ],
+        "title": "BillIn",
+        "type": "object"
+      },
+      "BillOut": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "bill_date": {
+            "format": "date",
+            "title": "Bill Date",
+            "type": "string"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "due_date": {
+            "format": "date",
+            "title": "Due Date",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "number": {
+            "title": "Number",
+            "type": "string"
+          },
+          "outstanding": {
+            "title": "Outstanding",
+            "type": "string"
+          },
+          "paid": {
+            "title": "Paid",
+            "type": "string"
+          },
+          "payments": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/BillPaymentOut"
+            },
+            "title": "Payments",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "open",
+              "partial",
+              "overdue",
+              "paid",
+              "voided"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "supplier_id": {
+            "format": "uuid",
+            "title": "Supplier Id",
+            "type": "string"
+          },
+          "supplier_name": {
+            "title": "Supplier Name",
+            "type": "string"
+          },
+          "void_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Void Reason"
+          },
+          "voided": {
+            "title": "Voided",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "supplier_id",
+          "supplier_name",
+          "number",
+          "bill_date",
+          "due_date",
+          "category",
+          "amount",
+          "paid",
+          "outstanding",
+          "status",
+          "description",
+          "voided",
+          "void_reason"
+        ],
+        "title": "BillOut",
+        "type": "object"
+      },
+      "BillPaymentIn": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "UZS amount, 2 decimals",
+            "title": "Amount"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "paid_from": {
+            "default": "cash",
+            "enum": [
+              "cash",
+              "bank"
+            ],
+            "title": "Paid From",
+            "type": "string"
+          },
+          "paid_on": {
+            "format": "date",
+            "title": "Paid On",
+            "type": "string"
+          }
+        },
+        "required": [
+          "amount",
+          "paid_on"
+        ],
+        "title": "BillPaymentIn",
+        "type": "object"
+      },
+      "BillPaymentOut": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "bill_id": {
+            "format": "uuid",
+            "title": "Bill Id",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "paid_from": {
+            "title": "Paid From",
+            "type": "string"
+          },
+          "paid_on": {
+            "format": "date",
+            "title": "Paid On",
+            "type": "string"
+          },
+          "void_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Void Reason"
+          },
+          "voided": {
+            "title": "Voided",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "bill_id",
+          "amount",
+          "paid_on",
+          "paid_from",
+          "note",
+          "voided",
+          "void_reason"
+        ],
+        "title": "BillPaymentOut",
+        "type": "object"
+      },
+      "BlockedOut": {
+        "properties": {
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "source_key": {
+            "title": "Source Key",
+            "type": "string"
+          },
+          "source_type": {
+            "title": "Source Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_type",
+          "source_key",
+          "date",
+          "reason"
+        ],
+        "title": "BlockedOut",
+        "type": "object"
+      },
       "BranchIn": {
         "additionalProperties": false,
         "properties": {
@@ -766,6 +1366,73 @@
           }
         },
         "title": "BranchPatch",
+        "type": "object"
+      },
+      "CashAccountIn": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "description": "ledger account code; an existing unused asset account is reused, else it is created",
+            "pattern": "^[0-9]{3,8}$",
+            "title": "Code",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "cash",
+              "bank"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "kind",
+          "code"
+        ],
+        "title": "CashAccountIn",
+        "type": "object"
+      },
+      "CashAccountOut": {
+        "properties": {
+          "account_code": {
+            "title": "Account Code",
+            "type": "string"
+          },
+          "balance": {
+            "description": "debit minus credit of the ledger account",
+            "title": "Balance",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "account_code",
+          "balance"
+        ],
+        "title": "CashAccountOut",
         "type": "object"
       },
       "ChargeIn": {
@@ -2061,6 +2728,156 @@
         "title": "EntitlementOut",
         "type": "object"
       },
+      "EntryIn": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/EntryLineIn"
+            },
+            "maxItems": 100,
+            "minItems": 2,
+            "title": "Lines",
+            "type": "array"
+          },
+          "memo": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Memo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "memo",
+          "lines"
+        ],
+        "title": "EntryIn",
+        "type": "object"
+      },
+      "EntryLineIn": {
+        "additionalProperties": false,
+        "properties": {
+          "account": {
+            "description": "account code",
+            "pattern": "^[0-9]{3,8}$",
+            "title": "Account",
+            "type": "string"
+          },
+          "credit": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "description": "UZS amount, 2 decimals",
+            "title": "Credit"
+          },
+          "debit": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "description": "UZS amount, 2 decimals",
+            "title": "Debit"
+          }
+        },
+        "required": [
+          "account"
+        ],
+        "title": "EntryLineIn",
+        "type": "object"
+      },
+      "EntryOut": {
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "entry_no": {
+            "title": "Entry No",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/LineOut"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "memo": {
+            "title": "Memo",
+            "type": "string"
+          },
+          "reversed_by_entry_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reversed By Entry Id"
+          },
+          "reverses_entry_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reverses Entry Id"
+          },
+          "source_key": {
+            "title": "Source Key",
+            "type": "string"
+          },
+          "source_type": {
+            "title": "Source Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "entry_no",
+          "date",
+          "memo",
+          "source_type",
+          "source_key",
+          "reverses_entry_id",
+          "reversed_by_entry_id",
+          "lines"
+        ],
+        "title": "EntryOut",
+        "type": "object"
+      },
       "EqualSplitIn": {
         "additionalProperties": false,
         "properties": {
@@ -2136,6 +2953,16 @@
             ],
             "title": "Description"
           },
+          "paid_from": {
+            "default": "cash",
+            "description": "where the money left from: the cash desk or the bank",
+            "enum": [
+              "cash",
+              "bank"
+            ],
+            "title": "Paid From",
+            "type": "string"
+          },
           "spent_at": {
             "format": "date",
             "title": "Spent At",
@@ -2188,10 +3015,27 @@
             "title": "Id",
             "type": "string"
           },
+          "paid_from": {
+            "title": "Paid From",
+            "type": "string"
+          },
           "spent_at": {
             "format": "date",
             "title": "Spent At",
             "type": "string"
+          },
+          "supplier_bill_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "set when the expense accrues a supplier bill",
+            "title": "Supplier Bill Id"
           },
           "void_reason": {
             "anyOf": [
@@ -2216,6 +3060,8 @@
           "spent_at",
           "description",
           "branch_id",
+          "paid_from",
+          "supplier_bill_id",
           "voided",
           "void_reason"
         ],
@@ -3253,6 +4099,57 @@
         "title": "Health",
         "type": "object"
       },
+      "IncomeStatementOut": {
+        "properties": {
+          "date_from": {
+            "format": "date",
+            "title": "Date From",
+            "type": "string"
+          },
+          "date_to": {
+            "format": "date",
+            "title": "Date To",
+            "type": "string"
+          },
+          "expenses": {
+            "items": {
+              "$ref": "#/components/schemas/NamedAmount"
+            },
+            "title": "Expenses",
+            "type": "array"
+          },
+          "income": {
+            "items": {
+              "$ref": "#/components/schemas/NamedAmount"
+            },
+            "title": "Income",
+            "type": "array"
+          },
+          "net": {
+            "title": "Net",
+            "type": "string"
+          },
+          "total_expenses": {
+            "title": "Total Expenses",
+            "type": "string"
+          },
+          "total_income": {
+            "title": "Total Income",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date_from",
+          "date_to",
+          "income",
+          "expenses",
+          "total_income",
+          "total_expenses",
+          "net"
+        ],
+        "title": "IncomeStatementOut",
+        "type": "object"
+      },
       "InstallmentDueRow": {
         "properties": {
           "amount": {
@@ -4025,6 +4922,51 @@
         "title": "LeadPatch",
         "type": "object"
       },
+      "LedgerOut": {
+        "properties": {
+          "account": {
+            "title": "Account",
+            "type": "string"
+          },
+          "closing": {
+            "title": "Closing",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "opening": {
+            "title": "Opening",
+            "type": "string"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/StatementRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "side": {
+            "enum": [
+              "debit",
+              "credit"
+            ],
+            "title": "Side",
+            "type": "string"
+          }
+        },
+        "required": [
+          "account",
+          "name",
+          "side",
+          "opening",
+          "rows",
+          "closing"
+        ],
+        "title": "LedgerOut",
+        "type": "object"
+      },
       "LessonIn": {
         "additionalProperties": false,
         "properties": {
@@ -4281,6 +5223,39 @@
         "title": "LessonPatch",
         "type": "object"
       },
+      "LineOut": {
+        "properties": {
+          "account_code": {
+            "title": "Account Code",
+            "type": "string"
+          },
+          "account_name": {
+            "title": "Account Name",
+            "type": "string"
+          },
+          "credit": {
+            "title": "Credit",
+            "type": "string"
+          },
+          "debit": {
+            "title": "Debit",
+            "type": "string"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "seq",
+          "account_code",
+          "account_name",
+          "debit",
+          "credit"
+        ],
+        "title": "LineOut",
+        "type": "object"
+      },
       "LinkIn": {
         "additionalProperties": false,
         "properties": {
@@ -4449,6 +5424,22 @@
           "status"
         ],
         "title": "MarkIn",
+        "type": "object"
+      },
+      "MatchIn": {
+        "additionalProperties": false,
+        "properties": {
+          "seq": {
+            "description": "journal line number (seq) on the statement account",
+            "minimum": 1.0,
+            "title": "Seq",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "seq"
+        ],
+        "title": "MatchIn",
         "type": "object"
       },
       "MeOut": {
@@ -4730,6 +5721,29 @@
           "conversion"
         ],
         "title": "MovementBlock",
+        "type": "object"
+      },
+      "NamedAmount": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "amount"
+        ],
+        "title": "NamedAmount",
         "type": "object"
       },
       "OnlineTxOut": {
@@ -5361,6 +6375,37 @@
         "title": "Page[AuditOut]",
         "type": "object"
       },
+      "Page_BillOut_": {
+        "properties": {
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BillOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset",
+          "has_more"
+        ],
+        "title": "Page[BillOut]",
+        "type": "object"
+      },
       "Page_BranchOut_": {
         "properties": {
           "has_more": {
@@ -5576,6 +6621,37 @@
           "has_more"
         ],
         "title": "Page[EntitlementOut]",
+        "type": "object"
+      },
+      "Page_EntryOut_": {
+        "properties": {
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/EntryOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset",
+          "has_more"
+        ],
+        "title": "Page[EntryOut]",
         "type": "object"
       },
       "Page_ExpenseOut_": {
@@ -5979,6 +7055,37 @@
           "has_more"
         ],
         "title": "Page[StaffOut]",
+        "type": "object"
+      },
+      "Page_StatementOut_": {
+        "properties": {
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StatementOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset",
+          "has_more"
+        ],
+        "title": "Page[StatementOut]",
         "type": "object"
       },
       "Page_StudentOut_": {
@@ -6658,6 +7765,39 @@
         "title": "PayrollOut",
         "type": "object"
       },
+      "PendingOut": {
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "post",
+              "reverse"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "source_key": {
+            "title": "Source Key",
+            "type": "string"
+          },
+          "source_type": {
+            "title": "Source Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "source_type",
+          "source_key",
+          "date"
+        ],
+        "title": "PendingOut",
+        "type": "object"
+      },
       "PendingTrial": {
         "properties": {
           "days_elapsed": {
@@ -6717,6 +7857,44 @@
           "reason"
         ],
         "title": "PendingTrial",
+        "type": "object"
+      },
+      "PeriodOut": {
+        "properties": {
+          "head_hash": {
+            "title": "Head Hash",
+            "type": "string"
+          },
+          "last_seq": {
+            "title": "Last Seq",
+            "type": "integer"
+          },
+          "month": {
+            "title": "Month",
+            "type": "string"
+          },
+          "period_hash": {
+            "title": "Period Hash",
+            "type": "string"
+          },
+          "total_credit": {
+            "title": "Total Credit",
+            "type": "string"
+          },
+          "total_debit": {
+            "title": "Total Debit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "month",
+          "last_seq",
+          "head_hash",
+          "total_debit",
+          "total_credit",
+          "period_hash"
+        ],
+        "title": "PeriodOut",
         "type": "object"
       },
       "PlanIn": {
@@ -6904,6 +8082,47 @@
         "title": "ReceiptIn",
         "type": "object"
       },
+      "ReconciliationOut": {
+        "properties": {
+          "difference": {
+            "title": "Difference",
+            "type": "string"
+          },
+          "foots": {
+            "title": "Foots",
+            "type": "boolean"
+          },
+          "ledger_balance": {
+            "title": "Ledger Balance",
+            "type": "string"
+          },
+          "reconciled": {
+            "title": "Reconciled",
+            "type": "boolean"
+          },
+          "unmatched_ledger": {
+            "items": {
+              "$ref": "#/components/schemas/UnmatchedLedgerLine"
+            },
+            "title": "Unmatched Ledger",
+            "type": "array"
+          },
+          "unmatched_statement": {
+            "title": "Unmatched Statement",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ledger_balance",
+          "difference",
+          "foots",
+          "unmatched_statement",
+          "unmatched_ledger",
+          "reconciled"
+        ],
+        "title": "ReconciliationOut",
+        "type": "object"
+      },
       "RefreshIn": {
         "additionalProperties": false,
         "properties": {
@@ -7014,6 +8233,38 @@
           "total"
         ],
         "title": "RevenuePoint",
+        "type": "object"
+      },
+      "ReverseIn": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "defaults to today; must be in an open month",
+            "title": "Date"
+          },
+          "memo": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Memo"
+          }
+        },
+        "title": "ReverseIn",
         "type": "object"
       },
       "ReverseOut": {
@@ -7868,6 +9119,277 @@
         "title": "StaffUser",
         "type": "object"
       },
+      "StatementIn": {
+        "additionalProperties": false,
+        "properties": {
+          "cash_account_id": {
+            "format": "uuid",
+            "title": "Cash Account Id",
+            "type": "string"
+          },
+          "closing_balance": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "UZS amount, 2 decimals, may be negative",
+            "title": "Closing Balance"
+          },
+          "opening_balance": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "UZS amount, 2 decimals, may be negative",
+            "title": "Opening Balance"
+          },
+          "period_from": {
+            "format": "date",
+            "title": "Period From",
+            "type": "string"
+          },
+          "period_to": {
+            "format": "date",
+            "title": "Period To",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cash_account_id",
+          "period_from",
+          "period_to",
+          "opening_balance",
+          "closing_balance"
+        ],
+        "title": "StatementIn",
+        "type": "object"
+      },
+      "StatementLineIn": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "money in positive, out negative; not zero",
+            "title": "Amount"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "description": {
+            "default": "",
+            "maxLength": 500,
+            "title": "Description",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "amount"
+        ],
+        "title": "StatementLineIn",
+        "type": "object"
+      },
+      "StatementLineOut": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "matched_seq": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched Seq"
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "description",
+          "amount",
+          "matched_seq"
+        ],
+        "title": "StatementLineOut",
+        "type": "object"
+      },
+      "StatementLinesIn": {
+        "additionalProperties": false,
+        "properties": {
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/StatementLineIn"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Lines",
+            "type": "array"
+          }
+        },
+        "required": [
+          "lines"
+        ],
+        "title": "StatementLinesIn",
+        "type": "object"
+      },
+      "StatementOut": {
+        "properties": {
+          "account_code": {
+            "title": "Account Code",
+            "type": "string"
+          },
+          "cash_account": {
+            "title": "Cash Account",
+            "type": "string"
+          },
+          "cash_account_id": {
+            "format": "uuid",
+            "title": "Cash Account Id",
+            "type": "string"
+          },
+          "closing_balance": {
+            "title": "Closing Balance",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "lines": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/StatementLineOut"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "opening_balance": {
+            "title": "Opening Balance",
+            "type": "string"
+          },
+          "period_from": {
+            "format": "date",
+            "title": "Period From",
+            "type": "string"
+          },
+          "period_to": {
+            "format": "date",
+            "title": "Period To",
+            "type": "string"
+          },
+          "reconciliation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReconciliationOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "enum": [
+              "open",
+              "finalized"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "cash_account_id",
+          "cash_account",
+          "account_code",
+          "period_from",
+          "period_to",
+          "opening_balance",
+          "closing_balance",
+          "status"
+        ],
+        "title": "StatementOut",
+        "type": "object"
+      },
+      "StatementRow": {
+        "properties": {
+          "balance": {
+            "title": "Balance",
+            "type": "string"
+          },
+          "credit": {
+            "title": "Credit",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "debit": {
+            "title": "Debit",
+            "type": "string"
+          },
+          "entry_no": {
+            "title": "Entry No",
+            "type": "integer"
+          },
+          "memo": {
+            "title": "Memo",
+            "type": "string"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "seq",
+          "entry_no",
+          "date",
+          "memo",
+          "debit",
+          "credit",
+          "balance"
+        ],
+        "title": "StatementRow",
+        "type": "object"
+      },
       "StudentBalanceOut": {
         "properties": {
           "credit": {
@@ -8329,6 +9851,155 @@
         "title": "SummaryOut",
         "type": "object"
       },
+      "SupplierIn": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "SupplierIn",
+        "type": "object"
+      },
+      "SupplierOut": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "outstanding": {
+            "description": "unpaid amount of its bills",
+            "title": "Outstanding",
+            "type": "string"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "phone",
+          "note",
+          "active",
+          "outstanding"
+        ],
+        "title": "SupplierOut",
+        "type": "object"
+      },
+      "SupplierPatch": {
+        "additionalProperties": false,
+        "properties": {
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          }
+        },
+        "title": "SupplierPatch",
+        "type": "object"
+      },
       "SwitchIn": {
         "additionalProperties": false,
         "properties": {
@@ -8342,6 +10013,32 @@
           "org_id"
         ],
         "title": "SwitchIn",
+        "type": "object"
+      },
+      "SyncOut": {
+        "properties": {
+          "blocked": {
+            "items": {
+              "$ref": "#/components/schemas/BlockedOut"
+            },
+            "title": "Blocked",
+            "type": "array"
+          },
+          "posted": {
+            "title": "Posted",
+            "type": "integer"
+          },
+          "reversed": {
+            "title": "Reversed",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "posted",
+          "reversed",
+          "blocked"
+        ],
+        "title": "SyncOut",
         "type": "object"
       },
       "TeacherIn": {
@@ -8706,6 +10403,138 @@
         "title": "ToolCallOut",
         "type": "object"
       },
+      "TrialBalanceOut": {
+        "properties": {
+          "as_of": {
+            "format": "date",
+            "title": "As Of",
+            "type": "string"
+          },
+          "balanced": {
+            "title": "Balanced",
+            "type": "boolean"
+          },
+          "date_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date From"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/TrialRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "total_balance_credit": {
+            "title": "Total Balance Credit",
+            "type": "string"
+          },
+          "total_balance_debit": {
+            "title": "Total Balance Debit",
+            "type": "string"
+          },
+          "total_credit": {
+            "title": "Total Credit",
+            "type": "string"
+          },
+          "total_debit": {
+            "title": "Total Debit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "as_of",
+          "date_from",
+          "rows",
+          "total_debit",
+          "total_credit",
+          "total_balance_debit",
+          "total_balance_credit",
+          "balanced"
+        ],
+        "title": "TrialBalanceOut",
+        "type": "object"
+      },
+      "TrialRow": {
+        "properties": {
+          "balance_credit": {
+            "title": "Balance Credit",
+            "type": "string"
+          },
+          "balance_debit": {
+            "title": "Balance Debit",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "credit": {
+            "title": "Credit",
+            "type": "string"
+          },
+          "debit": {
+            "title": "Debit",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "type",
+          "debit",
+          "credit",
+          "balance_debit",
+          "balance_credit"
+        ],
+        "title": "TrialRow",
+        "type": "object"
+      },
+      "UnmatchedLedgerLine": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "memo": {
+            "title": "Memo",
+            "type": "string"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "seq",
+          "date",
+          "memo",
+          "amount"
+        ],
+        "title": "UnmatchedLedgerLine",
+        "type": "object"
+      },
       "UnpaidStudent": {
         "properties": {
           "id": {
@@ -8780,26 +10609,56 @@
         "title": "ValidationError",
         "type": "object"
       },
-      "VoidIn": {
-        "additionalProperties": false,
+      "VerifyOut": {
         "properties": {
-          "reason": {
-            "maxLength": 500,
-            "minLength": 3,
-            "title": "Reason",
-            "type": "string"
+          "broken_seq": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "the first broken journal line",
+            "title": "Broken Seq"
           },
-          "release_allocations": {
-            "default": false,
-            "description": "also remove payment allocations (returns the money to the payer's credit)",
-            "title": "Release Allocations",
+          "lines": {
+            "title": "Lines",
+            "type": "integer"
+          },
+          "ok": {
+            "title": "Ok",
             "type": "boolean"
+          },
+          "period_issues": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Period Issues",
+            "type": "array"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
           }
         },
         "required": [
-          "reason"
+          "ok",
+          "lines",
+          "broken_seq",
+          "reason",
+          "period_issues"
         ],
-        "title": "VoidIn",
+        "title": "VerifyOut",
         "type": "object"
       },
       "WaitingBlock": {
@@ -8981,6 +10840,28 @@
         "title": "WaitingTrial",
         "type": "object"
       },
+      "nazoratly__routers__finance__VoidIn": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "maxLength": 500,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          },
+          "release_allocations": {
+            "default": false,
+            "description": "also remove payment allocations (returns the money to the payer's credit)",
+            "title": "Release Allocations",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "VoidIn",
+        "type": "object"
+      },
       "nazoratly__routers__packages__BalanceOut": {
         "properties": {
           "available": {
@@ -9068,6 +10949,22 @@
           "next_expiry"
         ],
         "title": "BalanceOut",
+        "type": "object"
+      },
+      "nazoratly__routers__payables__VoidIn": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "maxLength": 500,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "VoidIn",
         "type": "object"
       },
       "nazoratly__routers__students__BalanceOut": {
@@ -9259,6 +11156,1959 @@
         "summary": "Readiness: the database answers",
         "tags": [
           "ops"
+        ]
+      }
+    },
+    "/v1/accounting/accounts": {
+      "get": {
+        "operationId": "list_accounts_v1_accounting_accounts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "include_inactive",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Include Inactive",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AccountOut"
+                  },
+                  "title": "Response List Accounts V1 Accounting Accounts Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Chart of accounts",
+        "tags": [
+          "accounting"
+        ]
+      },
+      "post": {
+        "operationId": "create_account_v1_accounting_accounts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Add an account to the chart",
+        "tags": [
+          "accounting"
+        ]
+      }
+    },
+    "/v1/accounting/accounts/{account_id}": {
+      "patch": {
+        "operationId": "patch_account_v1_accounting_accounts__account_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Rename or deactivate an account",
+        "tags": [
+          "accounting"
+        ]
+      }
+    },
+    "/v1/accounting/bill-payments/{payment_id}/void": {
+      "post": {
+        "operationId": "void_bill_payment_v1_accounting_bill_payments__payment_id__void_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "payment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Payment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/nazoratly__routers__payables__VoidIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Void a settlement (its entry is reversed)",
+        "tags": [
+          "payables"
+        ]
+      }
+    },
+    "/v1/accounting/bills": {
+      "get": {
+        "operationId": "list_bills_v1_accounting_bills_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "supplier_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Supplier Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "open",
+                    "partial",
+                    "overdue",
+                    "paid",
+                    "voided"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 1000000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_BillOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Supplier bills ordered by due date",
+        "tags": [
+          "payables"
+        ]
+      },
+      "post": {
+        "operationId": "create_bill_v1_accounting_bills_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Record a supplier bill (it accrues an expense)",
+        "tags": [
+          "payables"
+        ]
+      }
+    },
+    "/v1/accounting/bills/{bill_id}": {
+      "get": {
+        "operationId": "get_bill_v1_accounting_bills__bill_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bill_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Bill Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Bill",
+        "tags": [
+          "payables"
+        ]
+      }
+    },
+    "/v1/accounting/bills/{bill_id}/payments": {
+      "post": {
+        "operationId": "pay_bill_v1_accounting_bills__bill_id__payments_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bill_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Bill Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillPaymentIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Settle a bill (partly or fully)",
+        "tags": [
+          "payables"
+        ]
+      }
+    },
+    "/v1/accounting/bills/{bill_id}/void": {
+      "post": {
+        "operationId": "void_bill_v1_accounting_bills__bill_id__void_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bill_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Bill Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/nazoratly__routers__payables__VoidIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Void a bill that has no live settlements",
+        "tags": [
+          "payables"
+        ]
+      }
+    },
+    "/v1/accounting/cash-accounts": {
+      "get": {
+        "operationId": "list_cash_accounts_v1_accounting_cash_accounts_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CashAccountOut"
+                  },
+                  "title": "Response List Cash Accounts V1 Accounting Cash Accounts Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cash desks and bank accounts",
+        "tags": [
+          "accounting"
+        ]
+      },
+      "post": {
+        "operationId": "create_cash_account_v1_accounting_cash_accounts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CashAccountIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CashAccountOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Add a cash desk or bank account",
+        "tags": [
+          "accounting"
+        ]
+      }
+    },
+    "/v1/accounting/entries": {
+      "get": {
+        "operationId": "list_entries_v1_accounting_entries_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "description": "only entries that touch this account code",
+            "in": "query",
+            "name": "account",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "only entries that touch this account code",
+              "title": "Account"
+            }
+          },
+          {
+            "in": "query",
+            "name": "source_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 1000000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_EntryOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Journal entries, newest first",
+        "tags": [
+          "accounting"
+        ]
+      },
+      "post": {
+        "operationId": "create_entry_v1_accounting_entries_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntryIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Post a manual balanced entry",
+        "tags": [
+          "accounting"
+        ]
+      }
+    },
+    "/v1/accounting/entries/{entry_id}": {
+      "get": {
+        "operationId": "get_entry_v1_accounting_entries__entry_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entry_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Entry Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Entry",
+        "tags": [
+          "accounting"
+        ]
+      }
+    },
+    "/v1/accounting/entries/{entry_id}/reverse": {
+      "post": {
+        "operationId": "reverse_entry_v1_accounting_entries__entry_id__reverse_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entry_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Entry Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReverseIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Correct an entry: post its exact reversal (entries are never edited or deleted)",
+        "tags": [
+          "accounting"
+        ]
+      }
+    },
+    "/v1/accounting/ledger": {
+      "get": {
+        "operationId": "ledger_v1_accounting_ledger_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "account",
+            "required": true,
+            "schema": {
+              "pattern": "^[0-9]{3,8}$",
+              "title": "Account",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LedgerOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Account statement with a running balance",
+        "tags": [
+          "accounting"
+        ]
+      }
+    },
+    "/v1/accounting/pending": {
+      "get": {
+        "operationId": "pending_v1_accounting_pending_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PendingOut"
+                  },
+                  "title": "Response Pending V1 Accounting Pending Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Source documents without a journal entry yet",
+        "tags": [
+          "accounting"
+        ]
+      }
+    },
+    "/v1/accounting/periods": {
+      "get": {
+        "operationId": "list_periods_v1_accounting_periods_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PeriodOut"
+                  },
+                  "title": "Response List Periods V1 Accounting Periods Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Closed months",
+        "tags": [
+          "accounting"
+        ]
+      }
+    },
+    "/v1/accounting/periods/{month}/close": {
+      "post": {
+        "operationId": "close_period_v1_accounting_periods__month__close_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "month",
+            "required": true,
+            "schema": {
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "title": "Month",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PeriodOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Close a month that has ended (final: corrections are reversing entries in an open month)",
+        "tags": [
+          "accounting"
+        ]
+      }
+    },
+    "/v1/accounting/reports/balance-sheet": {
+      "get": {
+        "operationId": "balance_sheet_v1_accounting_reports_balance_sheet_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "as_of",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "As Of"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BalanceSheetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Balance sheet as of a date",
+        "tags": [
+          "accounting"
+        ]
+      }
+    },
+    "/v1/accounting/reports/income-statement": {
+      "get": {
+        "operationId": "income_statement_v1_accounting_reports_income_statement_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Date From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Date To",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncomeStatementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Income statement for a period",
+        "tags": [
+          "accounting"
+        ]
+      }
+    },
+    "/v1/accounting/reports/payables-aging": {
+      "get": {
+        "operationId": "payables_aging_v1_accounting_reports_payables_aging_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "as_of",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "As Of"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "What is owed to suppliers, by days overdue",
+        "tags": [
+          "payables"
+        ]
+      }
+    },
+    "/v1/accounting/reports/trial-balance": {
+      "get": {
+        "operationId": "trial_balance_v1_accounting_reports_trial_balance_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "as_of",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "As Of"
+            }
+          },
+          {
+            "description": "only movements from this date (default: from the start)",
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "only movements from this date (default: from the start)",
+              "title": "Date From"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrialBalanceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Trial balance",
+        "tags": [
+          "accounting"
+        ]
+      }
+    },
+    "/v1/accounting/statements": {
+      "get": {
+        "operationId": "list_statements_v1_accounting_statements_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cash_account_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cash Account Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 1000000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_StatementOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Statements (lines are not included in the list)",
+        "tags": [
+          "reconciliation"
+        ]
+      },
+      "post": {
+        "operationId": "create_statement_v1_accounting_statements_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StatementIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Start a statement reconciliation",
+        "tags": [
+          "reconciliation"
+        ]
+      }
+    },
+    "/v1/accounting/statements/{statement_id}": {
+      "get": {
+        "operationId": "get_statement_v1_accounting_statements__statement_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "statement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Statement Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "A statement with its lines and the reconciliation state",
+        "tags": [
+          "reconciliation"
+        ]
+      }
+    },
+    "/v1/accounting/statements/{statement_id}/auto-match": {
+      "post": {
+        "operationId": "auto_match_v1_accounting_statements__statement_id__auto_match_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "statement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Statement Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoMatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Match lines to the ledger automatically",
+        "tags": [
+          "reconciliation"
+        ]
+      }
+    },
+    "/v1/accounting/statements/{statement_id}/finalize": {
+      "post": {
+        "operationId": "finalize_v1_accounting_statements__statement_id__finalize_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "statement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Statement Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Finalize: only when it foots, everything is matched and the balance equals the ledger",
+        "tags": [
+          "reconciliation"
+        ]
+      }
+    },
+    "/v1/accounting/statements/{statement_id}/lines": {
+      "post": {
+        "operationId": "add_lines_v1_accounting_statements__statement_id__lines_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "statement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Statement Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StatementLinesIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Add statement lines",
+        "tags": [
+          "reconciliation"
+        ]
+      }
+    },
+    "/v1/accounting/statements/{statement_id}/lines/{line_id}/match": {
+      "post": {
+        "operationId": "match_line_v1_accounting_statements__statement_id__lines__line_id__match_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "statement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Statement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "line_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Line Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Match one line by hand",
+        "tags": [
+          "reconciliation"
+        ]
+      }
+    },
+    "/v1/accounting/statements/{statement_id}/lines/{line_id}/unmatch": {
+      "post": {
+        "operationId": "unmatch_line_v1_accounting_statements__statement_id__lines__line_id__unmatch_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "statement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Statement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "line_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Line Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Remove a match",
+        "tags": [
+          "reconciliation"
+        ]
+      }
+    },
+    "/v1/accounting/suppliers": {
+      "get": {
+        "operationId": "list_suppliers_v1_accounting_suppliers_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SupplierOut"
+                  },
+                  "title": "Response List Suppliers V1 Accounting Suppliers Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Suppliers",
+        "tags": [
+          "payables"
+        ]
+      },
+      "post": {
+        "operationId": "create_supplier_v1_accounting_suppliers_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupplierIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Supplier",
+        "tags": [
+          "payables"
+        ]
+      }
+    },
+    "/v1/accounting/suppliers/{supplier_id}": {
+      "patch": {
+        "operationId": "patch_supplier_v1_accounting_suppliers__supplier_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "supplier_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Supplier Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupplierPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Patch Supplier",
+        "tags": [
+          "payables"
+        ]
+      }
+    },
+    "/v1/accounting/sync": {
+      "post": {
+        "operationId": "sync_v1_accounting_sync_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Post what is missing (idempotent: a second run posts nothing)",
+        "tags": [
+          "accounting"
+        ]
+      }
+    },
+    "/v1/accounting/verify": {
+      "get": {
+        "operationId": "verify_v1_accounting_verify_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Verify the hash chain and the closed periods",
+        "tags": [
+          "accounting"
         ]
       }
     },
@@ -10776,7 +14626,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/VoidIn"
+                "$ref": "#/components/schemas/nazoratly__routers__finance__VoidIn"
               }
             }
           },
@@ -12203,7 +16053,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/VoidIn"
+                "$ref": "#/components/schemas/nazoratly__routers__finance__VoidIn"
               }
             }
           },
@@ -15251,7 +19101,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/VoidIn"
+                "$ref": "#/components/schemas/nazoratly__routers__finance__VoidIn"
               }
             }
           },

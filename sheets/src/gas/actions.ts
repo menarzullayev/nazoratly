@@ -16,6 +16,7 @@ import { applyBotProfile } from "./botProfile";
 import { makeupDays, markCreditsUsed, reduceByCredits, syncAttendance } from "./makeup";
 import { pickWebAppUrl, isWebAppUrl } from "../domain/urls";
 import { getToken, props, sendMessage, sendRich, setToken, tg, webhookSecret } from "./telegram";
+import { tryPostPayments } from "./ledger";
 
 type StudentRow = Student & { phone?: string; consentDate?: string; consentPolicy?: string; linkCode?: string; linkUrl?: string };
 
@@ -264,7 +265,7 @@ export function getBalance(studentId: string): StudentDebt & { fullName: string 
   return { ...d, fullName: s.fullName };
 }
 
-export function recordPayment(input: { studentId: string; amount: number; method: string; paidOn: string; note: string; notifyGuardian: boolean }): { id: string; balance: StudentDebt; telegram: string } {
+export function recordPayment(input: { studentId: string; amount: number; method: string; paidOn: string; note: string; notifyGuardian: boolean }): { id: string; balance: StudentDebt; telegram: string; ledger: string } {
   if (!Number.isInteger(input.amount) || input.amount <= 0 || input.amount > 1_000_000_000) throw new Error("Summa musbat butun son bo'lishi kerak");
   if (!isIsoDate(input.paidOn)) throw new Error("Sana noto'g'ri");
   if (input.note.length > 500) throw new Error("Izoh 500 belgidan oshmasin");
@@ -276,6 +277,7 @@ export function recordPayment(input: { studentId: string; amount: number; method
     append(PAYMENTS, [{ id: pid, studentId: input.studentId, paidOn: input.paidOn, amount: input.amount, method: input.method || "Naqd", note: input.note, voided: false }]);
     return pid;
   });
+  const ledgerNote = tryPostPayments(); // "" when posted or when accounting is not set up; a message when the person cannot write the journal
   const balance = getBalance(input.studentId);
   let telegram = "";
   if (input.notifyGuardian) {
@@ -289,7 +291,7 @@ export function recordPayment(input: { studentId: string; amount: number; method
       telegram = r.ok ? "Vasiyga chek yuborildi" : `Telegram xatosi: ${r.description}`;
     }
   }
-  return { id, balance, telegram };
+  return { id, balance, telegram, ledger: ledgerNote };
 }
 
 // ------------------------------------------------------------------ payroll

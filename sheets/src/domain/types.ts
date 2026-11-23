@@ -148,4 +148,6 @@ export interface Expense {
   amount: number;
   note: string;
   voided: boolean;
+  paidFrom?: "cash" | "bank"; // where the money left from (default cash)
+  billId?: string; // set when the expense accrues a supplier bill
 }

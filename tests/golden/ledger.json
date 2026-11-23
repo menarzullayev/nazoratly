@@ -1,0 +1,2828 @@
+{
+ "sha256": [
+  {
+   "text": "",
+   "hex": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+   "text": "abc",
+   "hex": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+  },
+  {
+   "text": "Салом",
+   "hex": "71ce1c42a9510e698774d0e414377c8383f4871bab8268b9febb4943ae7fe865"
+  },
+  {
+   "text": "😀",
+   "hex": "f0443a342c5ef54783a111b51ba56c938e474c32324d90c3a60c9c8e3a37e2d9"
+  },
+  {
+   "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "hex": "41edece42d63e8d9bf515a9ba6932e1c20cbc9f5a5d134645adb5db1b9737ea3"
+  },
+  {
+   "text": "The quick brown fox jumps over the lazy dog",
+   "hex": "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592"
+  },
+  {
+   "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "hex": "d5e285683cd4efc02d021a5c62014694958901005d6f71e89e0989fac77e4072"
+  },
+  {
+   "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "hex": "04c26261370ee7541549d16dee320c723e3fd14671e66a099afe0a377c16888e"
+  },
+  {
+   "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "hex": "75220b47218278e656f2013bb8f0c455a25eaf01e86c64924e9d48d89776d6f2"
+  },
+  {
+   "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "hex": "7ce100971f64e7001e8fe5a51973ecdfe1ced42befe7ee8d5fd6219506b5393c"
+  },
+  {
+   "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "hex": "9537c5fdf120482f7d58d25e9ed583f52c02b4e304ea814db1633ad565aed7e9"
+  }
+ ],
+ "canonical": [
+  {
+   "name": "plain line",
+   "prev": "0000000000000000000000000000000000000000000000000000000000000000",
+   "line": {
+    "seq": 1,
+    "entry_no": 1,
+    "date": "2026-10-05",
+    "account": "1000",
+    "debit": "500000.00",
+    "credit": "0.00",
+    "source_type": "payment",
+    "source_key": "P0001",
+    "memo": "To'lov P0001"
+   },
+   "canonical": "v1|0000000000000000000000000000000000000000000000000000000000000000|1|1|2026-10-05|1000|500000.00|0.00|payment|P0001|To'lov P0001",
+   "hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df"
+  },
+  {
+   "name": "pipe in memo cannot forge a field",
+   "prev": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "line": {
+    "seq": 2,
+    "entry_no": 1,
+    "date": "2026-10-05",
+    "account": "4000",
+    "debit": "0.00",
+    "credit": "500000.00",
+    "source_type": "payment",
+    "source_key": "P0001",
+    "memo": "x|y|z"
+   },
+   "canonical": "v1|aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa|2|1|2026-10-05|4000|0.00|500000.00|payment|P0001|x\\py\\pz",
+   "hash": "c03048b07c6de4a7bcf3641d8cfdaf14e1b4ee5602de63e9c81b6766dd8ae376"
+  },
+  {
+   "name": "backslash and newline",
+   "prev": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+   "line": {
+    "seq": 3,
+    "entry_no": 2,
+    "date": "2026-10-06",
+    "account": "5000",
+    "debit": "1.50",
+    "credit": "0.00",
+    "source_type": "manual",
+    "source_key": "",
+    "memo": "line1\nline2\r\\end"
+   },
+   "canonical": "v1|bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb|3|2|2026-10-06|5000|1.50|0.00|manual||line1\\nline2\\r\\\\end",
+   "hash": "deba15974431e44eb1ca11660028b9ed5e2ee3875d364ecc1689c891e21d0442"
+  },
+  {
+   "name": "cyrillic and emoji",
+   "prev": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+   "line": {
+    "seq": 4,
+    "entry_no": 3,
+    "date": "2026-10-07",
+    "account": "1010",
+    "debit": "10.05",
+    "credit": "0.00",
+    "source_type": "manual",
+    "source_key": "k|1",
+    "memo": "Тўлов ☺ 😀 Салом"
+   },
+   "canonical": "v1|cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc|4|3|2026-10-07|1010|10.05|0.00|manual|k\\p1|Тўлов ☺ 😀 Салом",
+   "hash": "c3450878a411ecab345b025a87143ca222790ccd12aceec14d98231bd2d611a5"
+  },
+  {
+   "name": "tiyin amounts",
+   "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+   "line": {
+    "seq": 5,
+    "entry_no": 4,
+    "date": "2026-10-08",
+    "account": "2100",
+    "debit": "0.00",
+    "credit": "0.01",
+    "source_type": "payroll_accrual",
+    "source_key": "2026-10:T0001",
+    "memo": ""
+   },
+   "canonical": "v1|dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd|5|4|2026-10-08|2100|0.00|0.01|payroll_accrual|2026-10:T0001|",
+   "hash": "97ead1672a955d793c3156dc6ff8ccefcf44de509c353f103ded75edb5467cb6"
+  },
+  {
+   "name": "large amount",
+   "prev": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+   "line": {
+    "seq": 6,
+    "entry_no": 5,
+    "date": "2026-10-09",
+    "account": "1000",
+    "debit": "999999999999.99",
+    "credit": "0.00",
+    "source_type": "payment",
+    "source_key": "P9",
+    "memo": "max"
+   },
+   "canonical": "v1|eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee|6|5|2026-10-09|1000|999999999999.99|0.00|payment|P9|max",
+   "hash": "2a92c4dea08ba5a9753479c4c7e429b8f10a79ce0fb932630d399b911f739182"
+  }
+ ],
+ "seal": [
+  {
+   "name": "first entry on an empty journal",
+   "head": {
+    "seq": 0,
+    "entry_no": 0,
+    "hash": "0000000000000000000000000000000000000000000000000000000000000000"
+   },
+   "entry": {
+    "date": "2026-10-05",
+    "memo": "To'lov P0001",
+    "source_type": "payment",
+    "source_key": "P0001",
+    "lines": [
+     [
+      "1000",
+      "500000.00",
+      "0.00"
+     ],
+     [
+      "4000",
+      "0.00",
+      "500000.00"
+     ]
+    ]
+   },
+   "out": [
+    {
+     "seq": 1,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "1000",
+     "debit": "500000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df"
+    },
+    {
+     "seq": 2,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "500000.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df",
+     "hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c"
+    }
+   ]
+  },
+  {
+   "name": "second entry continues the chain",
+   "head": {
+    "seq": 2,
+    "entry_no": 1,
+    "hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c"
+   },
+   "entry": {
+    "date": "2026-10-12",
+    "memo": "Ijara | oktyabr",
+    "source_type": "expense",
+    "source_key": "X0001",
+    "lines": [
+     [
+      "5000",
+      "120000.50",
+      "0.00"
+     ],
+     [
+      "1000",
+      "0.00",
+      "120000.50"
+     ]
+    ]
+   },
+   "out": [
+    {
+     "seq": 3,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "5000",
+     "debit": "120000.50",
+     "credit": "0.00",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c",
+     "hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90"
+    },
+    {
+     "seq": 4,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "1000",
+     "debit": "0.00",
+     "credit": "120000.50",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90",
+     "hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a"
+    }
+   ]
+  },
+  {
+   "name": "three lines continue from an arbitrary head",
+   "head": {
+    "seq": 7,
+    "entry_no": 3,
+    "hash": "9999999999999999999999999999999999999999999999999999999999999999"
+   },
+   "entry": {
+    "date": "2026-11-03",
+    "memo": "split",
+    "source_type": "manual",
+    "source_key": "",
+    "lines": [
+     [
+      "1000",
+      "10.00",
+      "0.00"
+     ],
+     [
+      "1010",
+      "20.00",
+      "0.00"
+     ],
+     [
+      "4000",
+      "0.00",
+      "30.00"
+     ]
+    ]
+   },
+   "out": [
+    {
+     "seq": 8,
+     "entry_no": 4,
+     "date": "2026-11-03",
+     "account": "1000",
+     "debit": "10.00",
+     "credit": "0.00",
+     "source_type": "manual",
+     "source_key": "",
+     "memo": "split",
+     "prev_hash": "9999999999999999999999999999999999999999999999999999999999999999",
+     "hash": "90846a7e29a139804d0991ca73073f4883350e56ab689938005aeedbca7b7c79"
+    },
+    {
+     "seq": 9,
+     "entry_no": 4,
+     "date": "2026-11-03",
+     "account": "1010",
+     "debit": "20.00",
+     "credit": "0.00",
+     "source_type": "manual",
+     "source_key": "",
+     "memo": "split",
+     "prev_hash": "90846a7e29a139804d0991ca73073f4883350e56ab689938005aeedbca7b7c79",
+     "hash": "f3f14418d231c11f013e86c74a2e74d2d0b5ba1d6756bc33ef918c79287bde69"
+    },
+    {
+     "seq": 10,
+     "entry_no": 4,
+     "date": "2026-11-03",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "30.00",
+     "source_type": "manual",
+     "source_key": "",
+     "memo": "split",
+     "prev_hash": "f3f14418d231c11f013e86c74a2e74d2d0b5ba1d6756bc33ef918c79287bde69",
+     "hash": "686b262d277f4cfc152858aed9e96814160dbbbff28218686057f37dd6be00c7"
+    }
+   ]
+  }
+ ],
+ "validate": [
+  {
+   "name": "valid entry",
+   "lines": [
+    [
+     "1000",
+     "10.00",
+     "0.00"
+    ],
+    [
+     "4000",
+     "0.00",
+     "10.00"
+    ]
+   ],
+   "accounts": {
+    "1000": true,
+    "1010": true,
+    "4000": true,
+    "9000": false
+   },
+   "date": "2026-11-03",
+   "closed_months": [],
+   "errors": []
+  },
+  {
+   "name": "valid with three lines",
+   "lines": [
+    [
+     "1000",
+     "10.00",
+     "0.00"
+    ],
+    [
+     "1010",
+     "20.00",
+     "0.00"
+    ],
+    [
+     "4000",
+     "0.00",
+     "30.00"
+    ]
+   ],
+   "accounts": {
+    "1000": true,
+    "1010": true,
+    "4000": true,
+    "9000": false
+   },
+   "date": "2026-11-03",
+   "closed_months": [
+    "2026-10"
+   ],
+   "errors": []
+  },
+  {
+   "name": "one line",
+   "lines": [
+    [
+     "1000",
+     "10.00",
+     "0.00"
+    ]
+   ],
+   "accounts": {
+    "1000": true,
+    "1010": true,
+    "4000": true,
+    "9000": false
+   },
+   "date": "2026-11-03",
+   "closed_months": [],
+   "errors": [
+    "too_few_lines",
+    "unbalanced"
+   ]
+  },
+  {
+   "name": "no lines",
+   "lines": [],
+   "accounts": {
+    "1000": true,
+    "1010": true,
+    "4000": true,
+    "9000": false
+   },
+   "date": "2026-11-03",
+   "closed_months": [],
+   "errors": [
+    "too_few_lines"
+   ]
+  },
+  {
+   "name": "unbalanced",
+   "lines": [
+    [
+     "1000",
+     "10.00",
+     "0.00"
+    ],
+    [
+     "4000",
+     "0.00",
+     "9.99"
+    ]
+   ],
+   "accounts": {
+    "1000": true,
+    "1010": true,
+    "4000": true,
+    "9000": false
+   },
+   "date": "2026-11-03",
+   "closed_months": [],
+   "errors": [
+    "unbalanced"
+   ]
+  },
+  {
+   "name": "both sides on one line",
+   "lines": [
+    [
+     "1000",
+     "10.00",
+     "10.00"
+    ],
+    [
+     "4000",
+     "0.00",
+     "0.00"
+    ]
+   ],
+   "accounts": {
+    "1000": true,
+    "1010": true,
+    "4000": true,
+    "9000": false
+   },
+   "date": "2026-11-03",
+   "closed_months": [],
+   "errors": [
+    "bad_line"
+   ]
+  },
+  {
+   "name": "zero line",
+   "lines": [
+    [
+     "1000",
+     "0.00",
+     "0.00"
+    ],
+    [
+     "4000",
+     "0.00",
+     "0.00"
+    ]
+   ],
+   "accounts": {
+    "1000": true,
+    "1010": true,
+    "4000": true,
+    "9000": false
+   },
+   "date": "2026-11-03",
+   "closed_months": [],
+   "errors": [
+    "bad_line"
+   ]
+  },
+  {
+   "name": "negative amount",
+   "lines": [
+    [
+     "1000",
+     "-10.00",
+     "0.00"
+    ],
+    [
+     "4000",
+     "0.00",
+     "-10.00"
+    ]
+   ],
+   "accounts": {
+    "1000": true,
+    "1010": true,
+    "4000": true,
+    "9000": false
+   },
+   "date": "2026-11-03",
+   "closed_months": [],
+   "errors": [
+    "bad_line"
+   ]
+  },
+  {
+   "name": "unknown account",
+   "lines": [
+    [
+     "1000",
+     "10.00",
+     "0.00"
+    ],
+    [
+     "7777",
+     "0.00",
+     "10.00"
+    ]
+   ],
+   "accounts": {
+    "1000": true,
+    "1010": true,
+    "4000": true,
+    "9000": false
+   },
+   "date": "2026-11-03",
+   "closed_months": [],
+   "errors": [
+    "unknown_account"
+   ]
+  },
+  {
+   "name": "inactive account",
+   "lines": [
+    [
+     "1000",
+     "10.00",
+     "0.00"
+    ],
+    [
+     "9000",
+     "0.00",
+     "10.00"
+    ]
+   ],
+   "accounts": {
+    "1000": true,
+    "1010": true,
+    "4000": true,
+    "9000": false
+   },
+   "date": "2026-11-03",
+   "closed_months": [],
+   "errors": [
+    "inactive_account"
+   ]
+  },
+  {
+   "name": "closed month",
+   "lines": [
+    [
+     "1000",
+     "10.00",
+     "0.00"
+    ],
+    [
+     "4000",
+     "0.00",
+     "10.00"
+    ]
+   ],
+   "accounts": {
+    "1000": true,
+    "1010": true,
+    "4000": true,
+    "9000": false
+   },
+   "date": "2026-10-31",
+   "closed_months": [
+    "2026-10"
+   ],
+   "errors": [
+    "closed_period"
+   ]
+  },
+  {
+   "name": "several problems are all listed",
+   "lines": [
+    [
+     "1000",
+     "10.00",
+     "0.00"
+    ],
+    [
+     "7777",
+     "0.00",
+     "9.00"
+    ]
+   ],
+   "accounts": {
+    "1000": true,
+    "1010": true,
+    "4000": true,
+    "9000": false
+   },
+   "date": "2026-10-31",
+   "closed_months": [
+    "2026-10"
+   ],
+   "errors": [
+    "unknown_account",
+    "unbalanced",
+    "closed_period"
+   ]
+  }
+ ],
+ "verify": [
+  {
+   "name": "empty journal",
+   "lines": [],
+   "periods": [],
+   "out": {
+    "ok": true,
+    "broken_seq": null,
+    "reason": null,
+    "period_issues": []
+   }
+  },
+  {
+   "name": "valid chain of three entries",
+   "lines": [
+    {
+     "seq": 1,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "1000",
+     "debit": "500000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df"
+    },
+    {
+     "seq": 2,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "500000.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df",
+     "hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c"
+    },
+    {
+     "seq": 3,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "5000",
+     "debit": "120000.50",
+     "credit": "0.00",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c",
+     "hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90"
+    },
+    {
+     "seq": 4,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "1000",
+     "debit": "0.00",
+     "credit": "120000.50",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90",
+     "hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a"
+    },
+    {
+     "seq": 5,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "1010",
+     "debit": "300000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a",
+     "hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6"
+    },
+    {
+     "seq": 6,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "300000.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6",
+     "hash": "eb80c24142baee5d906e7109f8177a50120c8d64b4b300559a32320601c8db57"
+    }
+   ],
+   "periods": [],
+   "out": {
+    "ok": true,
+    "broken_seq": null,
+    "reason": null,
+    "period_issues": []
+   }
+  },
+  {
+   "name": "tampered amount keeps the entry balanced but breaks the hash",
+   "lines": [
+    {
+     "seq": 1,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "1000",
+     "debit": "500000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df"
+    },
+    {
+     "seq": 2,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "500000.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df",
+     "hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c"
+    },
+    {
+     "seq": 3,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "5000",
+     "debit": "120001.50",
+     "credit": "0.00",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c",
+     "hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90"
+    },
+    {
+     "seq": 4,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "1000",
+     "debit": "0.00",
+     "credit": "120001.50",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90",
+     "hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a"
+    },
+    {
+     "seq": 5,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "1010",
+     "debit": "300000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a",
+     "hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6"
+    },
+    {
+     "seq": 6,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "300000.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6",
+     "hash": "eb80c24142baee5d906e7109f8177a50120c8d64b4b300559a32320601c8db57"
+    }
+   ],
+   "periods": [],
+   "out": {
+    "ok": false,
+    "broken_seq": 3,
+    "reason": "hash_mismatch",
+    "period_issues": []
+   }
+  },
+  {
+   "name": "tampered date",
+   "lines": [
+    {
+     "seq": 1,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "1000",
+     "debit": "500000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df"
+    },
+    {
+     "seq": 2,
+     "entry_no": 1,
+     "date": "2026-10-06",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "500000.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df",
+     "hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c"
+    },
+    {
+     "seq": 3,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "5000",
+     "debit": "120000.50",
+     "credit": "0.00",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c",
+     "hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90"
+    },
+    {
+     "seq": 4,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "1000",
+     "debit": "0.00",
+     "credit": "120000.50",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90",
+     "hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a"
+    },
+    {
+     "seq": 5,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "1010",
+     "debit": "300000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a",
+     "hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6"
+    },
+    {
+     "seq": 6,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "300000.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6",
+     "hash": "eb80c24142baee5d906e7109f8177a50120c8d64b4b300559a32320601c8db57"
+    }
+   ],
+   "periods": [],
+   "out": {
+    "ok": false,
+    "broken_seq": 2,
+    "reason": "hash_mismatch",
+    "period_issues": []
+   }
+  },
+  {
+   "name": "tampered memo",
+   "lines": [
+    {
+     "seq": 1,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "1000",
+     "debit": "500000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df"
+    },
+    {
+     "seq": 2,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "500000.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df",
+     "hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c"
+    },
+    {
+     "seq": 3,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "5000",
+     "debit": "120000.50",
+     "credit": "0.00",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c",
+     "hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90"
+    },
+    {
+     "seq": 4,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "1000",
+     "debit": "0.00",
+     "credit": "120000.50",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "forged memo",
+     "prev_hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90",
+     "hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a"
+    },
+    {
+     "seq": 5,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "1010",
+     "debit": "300000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a",
+     "hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6"
+    },
+    {
+     "seq": 6,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "300000.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6",
+     "hash": "eb80c24142baee5d906e7109f8177a50120c8d64b4b300559a32320601c8db57"
+    }
+   ],
+   "periods": [],
+   "out": {
+    "ok": false,
+    "broken_seq": 4,
+    "reason": "hash_mismatch",
+    "period_issues": []
+   }
+  },
+  {
+   "name": "tampered account",
+   "lines": [
+    {
+     "seq": 1,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "1010",
+     "debit": "500000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df"
+    },
+    {
+     "seq": 2,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "500000.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df",
+     "hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c"
+    },
+    {
+     "seq": 3,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "5000",
+     "debit": "120000.50",
+     "credit": "0.00",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c",
+     "hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90"
+    },
+    {
+     "seq": 4,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "1000",
+     "debit": "0.00",
+     "credit": "120000.50",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90",
+     "hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a"
+    },
+    {
+     "seq": 5,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "1010",
+     "debit": "300000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a",
+     "hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6"
+    },
+    {
+     "seq": 6,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "300000.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6",
+     "hash": "eb80c24142baee5d906e7109f8177a50120c8d64b4b300559a32320601c8db57"
+    }
+   ],
+   "periods": [],
+   "out": {
+    "ok": false,
+    "broken_seq": 1,
+    "reason": "hash_mismatch",
+    "period_issues": []
+   }
+  },
+  {
+   "name": "deleted line leaves a seq gap",
+   "lines": [
+    {
+     "seq": 1,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "1000",
+     "debit": "500000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df"
+    },
+    {
+     "seq": 2,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "500000.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df",
+     "hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c"
+    },
+    {
+     "seq": 4,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "1000",
+     "debit": "0.00",
+     "credit": "120000.50",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90",
+     "hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a"
+    },
+    {
+     "seq": 5,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "1010",
+     "debit": "300000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a",
+     "hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6"
+    },
+    {
+     "seq": 6,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "300000.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6",
+     "hash": "eb80c24142baee5d906e7109f8177a50120c8d64b4b300559a32320601c8db57"
+    }
+   ],
+   "periods": [],
+   "out": {
+    "ok": false,
+    "broken_seq": 4,
+    "reason": "seq_gap",
+    "period_issues": []
+   }
+  },
+  {
+   "name": "deleted entry with renumbered rows breaks the next prev hash",
+   "lines": [
+    {
+     "seq": 1,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "1000",
+     "debit": "500000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df"
+    },
+    {
+     "seq": 2,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "500000.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df",
+     "hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c"
+    },
+    {
+     "seq": 3,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "1010",
+     "debit": "300000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a",
+     "hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6"
+    },
+    {
+     "seq": 4,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "300000.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6",
+     "hash": "eb80c24142baee5d906e7109f8177a50120c8d64b4b300559a32320601c8db57"
+    }
+   ],
+   "periods": [],
+   "out": {
+    "ok": false,
+    "broken_seq": 3,
+    "reason": "prev_mismatch",
+    "period_issues": []
+   }
+  },
+  {
+   "name": "swapped rows",
+   "lines": [
+    {
+     "seq": 1,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "1000",
+     "debit": "500000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df"
+    },
+    {
+     "seq": 3,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "5000",
+     "debit": "120000.50",
+     "credit": "0.00",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c",
+     "hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90"
+    },
+    {
+     "seq": 2,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "500000.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df",
+     "hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c"
+    },
+    {
+     "seq": 4,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "1000",
+     "debit": "0.00",
+     "credit": "120000.50",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90",
+     "hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a"
+    },
+    {
+     "seq": 5,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "1010",
+     "debit": "300000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a",
+     "hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6"
+    },
+    {
+     "seq": 6,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "300000.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6",
+     "hash": "eb80c24142baee5d906e7109f8177a50120c8d64b4b300559a32320601c8db57"
+    }
+   ],
+   "periods": [],
+   "out": {
+    "ok": false,
+    "broken_seq": 3,
+    "reason": "seq_gap",
+    "period_issues": []
+   }
+  },
+  {
+   "name": "re-hashed tampered row breaks the next row",
+   "lines": [
+    {
+     "seq": 1,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "1000",
+     "debit": "500000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df"
+    },
+    {
+     "seq": 2,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "500000.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df",
+     "hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c"
+    },
+    {
+     "seq": 3,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "5000",
+     "debit": "999.00",
+     "credit": "0.00",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c",
+     "hash": "142b8a8e808d14a8982e1de198da2d6c701719c9515327aa4039c0ba1399c9cd"
+    },
+    {
+     "seq": 4,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "1000",
+     "debit": "0.00",
+     "credit": "999.00",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90",
+     "hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a"
+    },
+    {
+     "seq": 5,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "1010",
+     "debit": "300000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a",
+     "hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6"
+    },
+    {
+     "seq": 6,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "300000.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6",
+     "hash": "eb80c24142baee5d906e7109f8177a50120c8d64b4b300559a32320601c8db57"
+    }
+   ],
+   "periods": [],
+   "out": {
+    "ok": false,
+    "broken_seq": 4,
+    "reason": "prev_mismatch",
+    "period_issues": []
+   }
+  },
+  {
+   "name": "unbalanced entry (correctly hashed)",
+   "lines": [
+    {
+     "seq": 1,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "1000",
+     "debit": "100.00",
+     "credit": "0.00",
+     "source_type": "manual",
+     "source_key": "",
+     "memo": "bad",
+     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "hash": "7b26321030d6773014e0c91472187f11f432d3fbf14a4c1285c9d25e4f345f04"
+    },
+    {
+     "seq": 2,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "90.00",
+     "source_type": "manual",
+     "source_key": "",
+     "memo": "bad",
+     "prev_hash": "7b26321030d6773014e0c91472187f11f432d3fbf14a4c1285c9d25e4f345f04",
+     "hash": "19011b8360d9fcffb0102bfa1493f1aef616203acb6a80162d8612d99fab3a49"
+    }
+   ],
+   "periods": [],
+   "out": {
+    "ok": false,
+    "broken_seq": 1,
+    "reason": "unbalanced_entry",
+    "period_issues": []
+   }
+  },
+  {
+   "name": "a line with both sides is rejected",
+   "lines": [
+    {
+     "seq": 1,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "1000",
+     "debit": "100.00",
+     "credit": "100.00",
+     "source_type": "manual",
+     "source_key": "",
+     "memo": "bad",
+     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "hash": "77d48c820151aa334721cf9cdad5b1de4c06deb4e8dca6cd1fa97af2133d13b0"
+    },
+    {
+     "seq": 2,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "0.00",
+     "source_type": "manual",
+     "source_key": "",
+     "memo": "bad",
+     "prev_hash": "77d48c820151aa334721cf9cdad5b1de4c06deb4e8dca6cd1fa97af2133d13b0",
+     "hash": "42a6ddefd3b3b5608e447295ac6ed2332e27ba0483717e7bc081e9025f573352"
+    }
+   ],
+   "periods": [],
+   "out": {
+    "ok": false,
+    "broken_seq": 1,
+    "reason": "bad_line",
+    "period_issues": []
+   }
+  },
+  {
+   "name": "negative amounts are rejected",
+   "lines": [
+    {
+     "seq": 1,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "1000",
+     "debit": "-100.00",
+     "credit": "0.00",
+     "source_type": "manual",
+     "source_key": "",
+     "memo": "bad",
+     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "hash": "5a1924a0cfa2e669b928a9af5774c4057d11eb4d16711ca96a89cfeaea16a567"
+    },
+    {
+     "seq": 2,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "-100.00",
+     "source_type": "manual",
+     "source_key": "",
+     "memo": "bad",
+     "prev_hash": "5a1924a0cfa2e669b928a9af5774c4057d11eb4d16711ca96a89cfeaea16a567",
+     "hash": "6363a9e8c3d7fd4fa614f83161117e61b32b7db35c4e69c290ae7dd56c113cdd"
+    }
+   ],
+   "periods": [],
+   "out": {
+    "ok": false,
+    "broken_seq": 1,
+    "reason": "bad_line",
+    "period_issues": []
+   }
+  },
+  {
+   "name": "entry numbers must be consecutive",
+   "lines": [
+    {
+     "seq": 1,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "1000",
+     "debit": "500000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df"
+    },
+    {
+     "seq": 2,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "500000.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df",
+     "hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c"
+    },
+    {
+     "seq": 3,
+     "entry_no": 3,
+     "date": "2026-10-12",
+     "account": "5000",
+     "debit": "120000.50",
+     "credit": "0.00",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c",
+     "hash": "5c368ef35270fa7cf627a215edcc3b45a965a013d038d20343ce7f5c5b3d82c8"
+    },
+    {
+     "seq": 4,
+     "entry_no": 3,
+     "date": "2026-10-12",
+     "account": "1000",
+     "debit": "0.00",
+     "credit": "120000.50",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "5c368ef35270fa7cf627a215edcc3b45a965a013d038d20343ce7f5c5b3d82c8",
+     "hash": "52184659bf0d1cfbe066abdd7a05baaf1cf0e814656bc14ee677f49567237969"
+    },
+    {
+     "seq": 5,
+     "entry_no": 4,
+     "date": "2026-11-03",
+     "account": "1010",
+     "debit": "300000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "52184659bf0d1cfbe066abdd7a05baaf1cf0e814656bc14ee677f49567237969",
+     "hash": "ea021e974ac44805816dfcbdc7c0b65192b5ef872ca838eb11abbde4ede9e060"
+    },
+    {
+     "seq": 6,
+     "entry_no": 4,
+     "date": "2026-11-03",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "300000.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "ea021e974ac44805816dfcbdc7c0b65192b5ef872ca838eb11abbde4ede9e060",
+     "hash": "2d23cf24060c30dc2098418e0f7bfcb102aece50ba4c8202a1b7c097921923f2"
+    }
+   ],
+   "periods": [],
+   "out": {
+    "ok": false,
+    "broken_seq": 3,
+    "reason": "entry_order",
+    "period_issues": []
+   }
+  },
+  {
+   "name": "closed period matches",
+   "lines": [
+    {
+     "seq": 1,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "1000",
+     "debit": "500000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df"
+    },
+    {
+     "seq": 2,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "500000.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df",
+     "hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c"
+    },
+    {
+     "seq": 3,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "5000",
+     "debit": "120000.50",
+     "credit": "0.00",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c",
+     "hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90"
+    },
+    {
+     "seq": 4,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "1000",
+     "debit": "0.00",
+     "credit": "120000.50",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90",
+     "hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a"
+    },
+    {
+     "seq": 5,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "1010",
+     "debit": "300000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a",
+     "hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6"
+    },
+    {
+     "seq": 6,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "300000.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6",
+     "hash": "eb80c24142baee5d906e7109f8177a50120c8d64b4b300559a32320601c8db57"
+    }
+   ],
+   "periods": [
+    {
+     "month": "2026-10",
+     "last_seq": 4,
+     "head_hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a",
+     "total_debit": "620000.50",
+     "total_credit": "620000.50",
+     "period_hash": "3236b3b2c9515a6d826490d7100d8323d37e3acca00cb00caf361b710bf70656"
+    }
+   ],
+   "out": {
+    "ok": true,
+    "broken_seq": null,
+    "reason": null,
+    "period_issues": []
+   }
+  },
+  {
+   "name": "period head differs from the journal",
+   "lines": [
+    {
+     "seq": 1,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "1000",
+     "debit": "500000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df"
+    },
+    {
+     "seq": 2,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "500000.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df",
+     "hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c"
+    },
+    {
+     "seq": 3,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "5000",
+     "debit": "120000.50",
+     "credit": "0.00",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c",
+     "hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90"
+    },
+    {
+     "seq": 4,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "1000",
+     "debit": "0.00",
+     "credit": "120000.50",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90",
+     "hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a"
+    },
+    {
+     "seq": 5,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "1010",
+     "debit": "300000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a",
+     "hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6"
+    },
+    {
+     "seq": 6,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "300000.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6",
+     "hash": "eb80c24142baee5d906e7109f8177a50120c8d64b4b300559a32320601c8db57"
+    }
+   ],
+   "periods": [
+    {
+     "month": "2026-10",
+     "last_seq": 4,
+     "head_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+     "total_debit": "620000.50",
+     "total_credit": "620000.50",
+     "period_hash": "d14034c33edb01631ce07f2e261912d47383f1ed16c28f18707100f20cb8597b"
+    }
+   ],
+   "out": {
+    "ok": false,
+    "broken_seq": null,
+    "reason": null,
+    "period_issues": [
+     {
+      "month": "2026-10",
+      "reason": "period_head_mismatch",
+      "seq": 4
+     }
+    ]
+   }
+  },
+  {
+   "name": "stored period hash altered",
+   "lines": [
+    {
+     "seq": 1,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "1000",
+     "debit": "500000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df"
+    },
+    {
+     "seq": 2,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "500000.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df",
+     "hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c"
+    },
+    {
+     "seq": 3,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "5000",
+     "debit": "120000.50",
+     "credit": "0.00",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c",
+     "hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90"
+    },
+    {
+     "seq": 4,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "1000",
+     "debit": "0.00",
+     "credit": "120000.50",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90",
+     "hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a"
+    },
+    {
+     "seq": 5,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "1010",
+     "debit": "300000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a",
+     "hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6"
+    },
+    {
+     "seq": 6,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "300000.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6",
+     "hash": "eb80c24142baee5d906e7109f8177a50120c8d64b4b300559a32320601c8db57"
+    }
+   ],
+   "periods": [
+    {
+     "month": "2026-10",
+     "last_seq": 4,
+     "head_hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a",
+     "total_debit": "620000.50",
+     "total_credit": "620000.50",
+     "period_hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    }
+   ],
+   "out": {
+    "ok": false,
+    "broken_seq": null,
+    "reason": null,
+    "period_issues": [
+     {
+      "month": "2026-10",
+      "reason": "period_hash_mismatch",
+      "seq": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "period totals differ",
+   "lines": [
+    {
+     "seq": 1,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "1000",
+     "debit": "500000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df"
+    },
+    {
+     "seq": 2,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "500000.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df",
+     "hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c"
+    },
+    {
+     "seq": 3,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "5000",
+     "debit": "120000.50",
+     "credit": "0.00",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c",
+     "hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90"
+    },
+    {
+     "seq": 4,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "1000",
+     "debit": "0.00",
+     "credit": "120000.50",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90",
+     "hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a"
+    },
+    {
+     "seq": 5,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "1010",
+     "debit": "300000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a",
+     "hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6"
+    },
+    {
+     "seq": 6,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "300000.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6",
+     "hash": "eb80c24142baee5d906e7109f8177a50120c8d64b4b300559a32320601c8db57"
+    }
+   ],
+   "periods": [
+    {
+     "month": "2026-10",
+     "last_seq": 4,
+     "head_hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a",
+     "total_debit": "620000.00",
+     "total_credit": "620000.50",
+     "period_hash": "19d99ce9fdf9ec6453dd33a0038d96abaf0c7f717696b69ba0bb13eefa4d70ee"
+    }
+   ],
+   "out": {
+    "ok": false,
+    "broken_seq": null,
+    "reason": null,
+    "period_issues": [
+     {
+      "month": "2026-10",
+      "reason": "period_totals_mismatch",
+      "seq": 4
+     }
+    ]
+   }
+  },
+  {
+   "name": "an entry dated in the closed month was added after the close",
+   "lines": [
+    {
+     "seq": 1,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "1000",
+     "debit": "500000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df"
+    },
+    {
+     "seq": 2,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "500000.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df",
+     "hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c"
+    },
+    {
+     "seq": 3,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "5000",
+     "debit": "120000.50",
+     "credit": "0.00",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c",
+     "hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90"
+    },
+    {
+     "seq": 4,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "1000",
+     "debit": "0.00",
+     "credit": "120000.50",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90",
+     "hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a"
+    },
+    {
+     "seq": 5,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "1010",
+     "debit": "300000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a",
+     "hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6"
+    },
+    {
+     "seq": 6,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "300000.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6",
+     "hash": "eb80c24142baee5d906e7109f8177a50120c8d64b4b300559a32320601c8db57"
+    }
+   ],
+   "periods": [
+    {
+     "month": "2026-10",
+     "last_seq": 2,
+     "head_hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c",
+     "total_debit": "500000.00",
+     "total_credit": "500000.00",
+     "period_hash": "f2c7b596a440dca39224048ddefb40078e7e520119d102e55d4af178aecb8f90"
+    }
+   ],
+   "out": {
+    "ok": false,
+    "broken_seq": null,
+    "reason": null,
+    "period_issues": [
+     {
+      "month": "2026-10",
+      "reason": "late_entry",
+      "seq": 3
+     }
+    ]
+   }
+  },
+  {
+   "name": "period points past the end of the journal",
+   "lines": [
+    {
+     "seq": 1,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "1000",
+     "debit": "500000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df"
+    },
+    {
+     "seq": 2,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "500000.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df",
+     "hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c"
+    },
+    {
+     "seq": 3,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "5000",
+     "debit": "120000.50",
+     "credit": "0.00",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c",
+     "hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90"
+    },
+    {
+     "seq": 4,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "1000",
+     "debit": "0.00",
+     "credit": "120000.50",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90",
+     "hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a"
+    },
+    {
+     "seq": 5,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "1010",
+     "debit": "300000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a",
+     "hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6"
+    },
+    {
+     "seq": 6,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "300000.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6",
+     "hash": "eb80c24142baee5d906e7109f8177a50120c8d64b4b300559a32320601c8db57"
+    }
+   ],
+   "periods": [
+    {
+     "month": "2026-10",
+     "last_seq": 10,
+     "head_hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a",
+     "total_debit": "620000.50",
+     "total_credit": "620000.50",
+     "period_hash": "d7a754aa0a36deeed0493a2c92f9fe06d1a0e6758b05f7be0fa19f2b61fa0e2d"
+    }
+   ],
+   "out": {
+    "ok": false,
+    "broken_seq": null,
+    "reason": null,
+    "period_issues": [
+     {
+      "month": "2026-10",
+      "reason": "period_missing",
+      "seq": 10
+     }
+    ]
+   }
+  },
+  {
+   "name": "history rewritten and re-hashed from the start is caught by the closed period",
+   "lines": [
+    {
+     "seq": 1,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "1000",
+     "debit": "400000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "hash": "4a213d3dbf51a14206576cea94d66fecb2a4e2c15210562909acefe7dc77dba9"
+    },
+    {
+     "seq": 2,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "400000.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "4a213d3dbf51a14206576cea94d66fecb2a4e2c15210562909acefe7dc77dba9",
+     "hash": "f73ea8ea0402deb8221e6cb28c4ccfa341bf169870ceb1aaf2aeb8d565a8fe59"
+    },
+    {
+     "seq": 3,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "5000",
+     "debit": "120000.50",
+     "credit": "0.00",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "f73ea8ea0402deb8221e6cb28c4ccfa341bf169870ceb1aaf2aeb8d565a8fe59",
+     "hash": "bb3becd367631335eeda9874a7417d17b459fb77d429c83c8b8594c4e3b92eb6"
+    },
+    {
+     "seq": 4,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "1000",
+     "debit": "0.00",
+     "credit": "120000.50",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "bb3becd367631335eeda9874a7417d17b459fb77d429c83c8b8594c4e3b92eb6",
+     "hash": "14a3198c3f05da7e71b5719c67300e0264dff95a2497df5cc67e7363660f0041"
+    },
+    {
+     "seq": 5,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "1010",
+     "debit": "300000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "14a3198c3f05da7e71b5719c67300e0264dff95a2497df5cc67e7363660f0041",
+     "hash": "d63012bc78a905614bcee9fbd55166df3f48a46b356e813ad7dc195a88b53a69"
+    },
+    {
+     "seq": 6,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "300000.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "d63012bc78a905614bcee9fbd55166df3f48a46b356e813ad7dc195a88b53a69",
+     "hash": "3078da847441cd055f53e7345ed4390c446f49f6cec8447c5f63178f153b2e9d"
+    }
+   ],
+   "periods": [
+    {
+     "month": "2026-10",
+     "last_seq": 4,
+     "head_hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a",
+     "total_debit": "620000.50",
+     "total_credit": "620000.50",
+     "period_hash": "3236b3b2c9515a6d826490d7100d8323d37e3acca00cb00caf361b710bf70656"
+    }
+   ],
+   "out": {
+    "ok": false,
+    "broken_seq": null,
+    "reason": null,
+    "period_issues": [
+     {
+      "month": "2026-10",
+      "reason": "period_head_mismatch",
+      "seq": 4
+     }
+    ]
+   }
+  },
+  {
+   "name": "tampered row and a bad period are both reported",
+   "lines": [
+    {
+     "seq": 1,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "1000",
+     "debit": "501.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df"
+    },
+    {
+     "seq": 2,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "1.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df",
+     "hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c"
+    },
+    {
+     "seq": 3,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "5000",
+     "debit": "120000.50",
+     "credit": "0.00",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c",
+     "hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90"
+    },
+    {
+     "seq": 4,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "1000",
+     "debit": "0.00",
+     "credit": "120000.50",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90",
+     "hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a"
+    },
+    {
+     "seq": 5,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "1010",
+     "debit": "300000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a",
+     "hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6"
+    },
+    {
+     "seq": 6,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "300000.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6",
+     "hash": "eb80c24142baee5d906e7109f8177a50120c8d64b4b300559a32320601c8db57"
+    }
+   ],
+   "periods": [
+    {
+     "month": "2026-10",
+     "last_seq": 4,
+     "head_hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a",
+     "total_debit": "620000.50",
+     "total_credit": "620000.50",
+     "period_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    }
+   ],
+   "out": {
+    "ok": false,
+    "broken_seq": 1,
+    "reason": "hash_mismatch",
+    "period_issues": [
+     {
+      "month": "2026-10",
+      "reason": "period_hash_mismatch",
+      "seq": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "a month closed on an empty journal",
+   "lines": [],
+   "periods": [
+    {
+     "month": "2026-09",
+     "last_seq": 0,
+     "head_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "total_debit": "0.00",
+     "total_credit": "0.00",
+     "period_hash": "016d5a255c22581294d7f6b61018835169ea48c7c6266714d3f0358433614192"
+    }
+   ],
+   "out": {
+    "ok": true,
+    "broken_seq": null,
+    "reason": null,
+    "period_issues": []
+   }
+  },
+  {
+   "name": "two periods, the later one stays consistent",
+   "lines": [
+    {
+     "seq": 1,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "1000",
+     "debit": "500000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df"
+    },
+    {
+     "seq": 2,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "500000.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df",
+     "hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c"
+    },
+    {
+     "seq": 3,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "5000",
+     "debit": "120000.50",
+     "credit": "0.00",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c",
+     "hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90"
+    },
+    {
+     "seq": 4,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "1000",
+     "debit": "0.00",
+     "credit": "120000.50",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90",
+     "hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a"
+    },
+    {
+     "seq": 5,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "1010",
+     "debit": "300000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a",
+     "hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6"
+    },
+    {
+     "seq": 6,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "300000.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6",
+     "hash": "eb80c24142baee5d906e7109f8177a50120c8d64b4b300559a32320601c8db57"
+    }
+   ],
+   "periods": [
+    {
+     "month": "2026-09",
+     "last_seq": 0,
+     "head_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "total_debit": "0.00",
+     "total_credit": "0.00",
+     "period_hash": "016d5a255c22581294d7f6b61018835169ea48c7c6266714d3f0358433614192"
+    },
+    {
+     "month": "2026-10",
+     "last_seq": 4,
+     "head_hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a",
+     "total_debit": "620000.50",
+     "total_credit": "620000.50",
+     "period_hash": "3236b3b2c9515a6d826490d7100d8323d37e3acca00cb00caf361b710bf70656"
+    }
+   ],
+   "out": {
+    "ok": true,
+    "broken_seq": null,
+    "reason": null,
+    "period_issues": []
+   }
+  }
+ ],
+ "period": [
+  {
+   "name": "close 2026-10",
+   "month": "2026-10",
+   "lines": [
+    {
+     "seq": 1,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "1000",
+     "debit": "500000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df"
+    },
+    {
+     "seq": 2,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "500000.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df",
+     "hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c"
+    },
+    {
+     "seq": 3,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "5000",
+     "debit": "120000.50",
+     "credit": "0.00",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c",
+     "hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90"
+    },
+    {
+     "seq": 4,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "1000",
+     "debit": "0.00",
+     "credit": "120000.50",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90",
+     "hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a"
+    }
+   ],
+   "out": {
+    "month": "2026-10",
+    "last_seq": 4,
+    "head_hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a",
+    "total_debit": "620000.50",
+    "total_credit": "620000.50",
+    "period_hash": "3236b3b2c9515a6d826490d7100d8323d37e3acca00cb00caf361b710bf70656"
+   }
+  },
+  {
+   "name": "close 2026-11",
+   "month": "2026-11",
+   "lines": [
+    {
+     "seq": 1,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "1000",
+     "debit": "500000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+     "hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df"
+    },
+    {
+     "seq": 2,
+     "entry_no": 1,
+     "date": "2026-10-05",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "500000.00",
+     "source_type": "payment",
+     "source_key": "P0001",
+     "memo": "To'lov P0001",
+     "prev_hash": "9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df",
+     "hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c"
+    },
+    {
+     "seq": 3,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "5000",
+     "debit": "120000.50",
+     "credit": "0.00",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c",
+     "hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90"
+    },
+    {
+     "seq": 4,
+     "entry_no": 2,
+     "date": "2026-10-12",
+     "account": "1000",
+     "debit": "0.00",
+     "credit": "120000.50",
+     "source_type": "expense",
+     "source_key": "X0001",
+     "memo": "Ijara | oktyabr",
+     "prev_hash": "28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90",
+     "hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a"
+    },
+    {
+     "seq": 5,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "1010",
+     "debit": "300000.00",
+     "credit": "0.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a",
+     "hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6"
+    },
+    {
+     "seq": 6,
+     "entry_no": 3,
+     "date": "2026-11-03",
+     "account": "4000",
+     "debit": "0.00",
+     "credit": "300000.00",
+     "source_type": "payment",
+     "source_key": "P0002",
+     "memo": "Karta",
+     "prev_hash": "b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6",
+     "hash": "eb80c24142baee5d906e7109f8177a50120c8d64b4b300559a32320601c8db57"
+    }
+   ],
+   "out": {
+    "month": "2026-11",
+    "last_seq": 6,
+    "head_hash": "eb80c24142baee5d906e7109f8177a50120c8d64b4b300559a32320601c8db57",
+    "total_debit": "920000.50",
+    "total_credit": "920000.50",
+    "period_hash": "14e8acc7fb30e9096a35134271f2509c7b2b7306ac4e59b80adc3e25cd3e4efb"
+   }
+  },
+  {
+   "name": "close on an empty journal",
+   "month": "2026-09",
+   "lines": [],
+   "out": {
+    "month": "2026-09",
+    "last_seq": 0,
+    "head_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "total_debit": "0.00",
+    "total_credit": "0.00",
+    "period_hash": "016d5a255c22581294d7f6b61018835169ea48c7c6266714d3f0358433614192"
+   }
+  }
+ ],
+ "reverse": [
+  {
+   "lines": [
+    [
+     "1000",
+     "10.00",
+     "0.00"
+    ],
+    [
+     "4000",
+     "0.00",
+     "10.00"
+    ]
+   ],
+   "out": [
+    [
+     "1000",
+     "0.00",
+     "10.00"
+    ],
+    [
+     "4000",
+     "10.00",
+     "0.00"
+    ]
+   ]
+  },
+  {
+   "lines": [
+    [
+     "1000",
+     "10.00",
+     "0.00"
+    ],
+    [
+     "1010",
+     "20.00",
+     "0.00"
+    ],
+    [
+     "4000",
+     "0.00",
+     "30.00"
+    ]
+   ],
+   "out": [
+    [
+     "1000",
+     "0.00",
+     "10.00"
+    ],
+    [
+     "1010",
+     "0.00",
+     "20.00"
+    ],
+    [
+     "4000",
+     "30.00",
+     "0.00"
+    ]
+   ]
+  }
+ ]
+}

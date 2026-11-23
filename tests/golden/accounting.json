@@ -1,0 +1,2250 @@
+{
+ "chart": [
+  {
+   "code": "1000",
+   "name": "Kassa",
+   "type": "asset"
+  },
+  {
+   "code": "1010",
+   "name": "Bank hisobi",
+   "type": "asset"
+  },
+  {
+   "code": "2000",
+   "name": "Yetkazib beruvchilarga qarz",
+   "type": "liability"
+  },
+  {
+   "code": "2100",
+   "name": "O'qituvchilarga oylik qarzi",
+   "type": "liability"
+  },
+  {
+   "code": "3000",
+   "name": "Egasi kapitali",
+   "type": "equity"
+  },
+  {
+   "code": "4000",
+   "name": "O'quv to'lovlari",
+   "type": "income"
+  },
+  {
+   "code": "4100",
+   "name": "Boshqa daromadlar",
+   "type": "income"
+  },
+  {
+   "code": "5000",
+   "name": "Ijara",
+   "type": "expense"
+  },
+  {
+   "code": "5010",
+   "name": "Kommunal xizmatlar",
+   "type": "expense"
+  },
+  {
+   "code": "5020",
+   "name": "Boshqa xodimlar maoshi",
+   "type": "expense"
+  },
+  {
+   "code": "5030",
+   "name": "Reklama",
+   "type": "expense"
+  },
+  {
+   "code": "5040",
+   "name": "Jihoz",
+   "type": "expense"
+  },
+  {
+   "code": "5050",
+   "name": "Soliqlar",
+   "type": "expense"
+  },
+  {
+   "code": "5090",
+   "name": "Boshqa xarajatlar",
+   "type": "expense"
+  },
+  {
+   "code": "5100",
+   "name": "O'qituvchilar oyligi",
+   "type": "expense"
+  }
+ ],
+ "posting": [
+  {
+   "name": "payment in cash",
+   "event": {
+    "event": "payment",
+    "method": "cash",
+    "amount": "500000.00"
+   },
+   "out": [
+    [
+     "1000",
+     "500000.00",
+     "0.00"
+    ],
+    [
+     "4000",
+     "0.00",
+     "500000.00"
+    ]
+   ]
+  },
+  {
+   "name": "payment by card",
+   "event": {
+    "event": "payment",
+    "method": "card",
+    "amount": "250000.50"
+   },
+   "out": [
+    [
+     "1010",
+     "250000.50",
+     "0.00"
+    ],
+    [
+     "4000",
+     "0.00",
+     "250000.50"
+    ]
+   ]
+  },
+  {
+   "name": "payment by bank transfer",
+   "event": {
+    "event": "payment",
+    "method": "bank_transfer",
+    "amount": "100.00"
+   },
+   "out": [
+    [
+     "1010",
+     "100.00",
+     "0.00"
+    ],
+    [
+     "4000",
+     "0.00",
+     "100.00"
+    ]
+   ]
+  },
+  {
+   "name": "payment through payme",
+   "event": {
+    "event": "payment",
+    "method": "payme",
+    "amount": "100.00"
+   },
+   "out": [
+    [
+     "1010",
+     "100.00",
+     "0.00"
+    ],
+    [
+     "4000",
+     "0.00",
+     "100.00"
+    ]
+   ]
+  },
+  {
+   "name": "payment through click",
+   "event": {
+    "event": "payment",
+    "method": "click",
+    "amount": "100.00"
+   },
+   "out": [
+    [
+     "1010",
+     "100.00",
+     "0.00"
+    ],
+    [
+     "4000",
+     "0.00",
+     "100.00"
+    ]
+   ]
+  },
+  {
+   "name": "payment by other method",
+   "event": {
+    "event": "payment",
+    "method": "other",
+    "amount": "100.00"
+   },
+   "out": [
+    [
+     "1010",
+     "100.00",
+     "0.00"
+    ],
+    [
+     "4000",
+     "0.00",
+     "100.00"
+    ]
+   ]
+  },
+  {
+   "name": "rent paid in cash",
+   "event": {
+    "event": "expense",
+    "category": "rent",
+    "amount": "1000000.00",
+    "paid_from": "cash"
+   },
+   "out": [
+    [
+     "5000",
+     "1000000.00",
+     "0.00"
+    ],
+    [
+     "1000",
+     "0.00",
+     "1000000.00"
+    ]
+   ]
+  },
+  {
+   "name": "utilities paid from the bank",
+   "event": {
+    "event": "expense",
+    "category": "utilities",
+    "amount": "85000.00",
+    "paid_from": "bank"
+   },
+   "out": [
+    [
+     "5010",
+     "85000.00",
+     "0.00"
+    ],
+    [
+     "1010",
+     "0.00",
+     "85000.00"
+    ]
+   ]
+  },
+  {
+   "name": "other staff pay",
+   "event": {
+    "event": "expense",
+    "category": "salary",
+    "amount": "10.00",
+    "paid_from": "cash"
+   },
+   "out": [
+    [
+     "5020",
+     "10.00",
+     "0.00"
+    ],
+    [
+     "1000",
+     "0.00",
+     "10.00"
+    ]
+   ]
+  },
+  {
+   "name": "marketing",
+   "event": {
+    "event": "expense",
+    "category": "marketing",
+    "amount": "10.00",
+    "paid_from": "cash"
+   },
+   "out": [
+    [
+     "5030",
+     "10.00",
+     "0.00"
+    ],
+    [
+     "1000",
+     "0.00",
+     "10.00"
+    ]
+   ]
+  },
+  {
+   "name": "equipment",
+   "event": {
+    "event": "expense",
+    "category": "equipment",
+    "amount": "10.00",
+    "paid_from": "cash"
+   },
+   "out": [
+    [
+     "5040",
+     "10.00",
+     "0.00"
+    ],
+    [
+     "1000",
+     "0.00",
+     "10.00"
+    ]
+   ]
+  },
+  {
+   "name": "tax",
+   "event": {
+    "event": "expense",
+    "category": "tax",
+    "amount": "10.00",
+    "paid_from": "bank"
+   },
+   "out": [
+    [
+     "5050",
+     "10.00",
+     "0.00"
+    ],
+    [
+     "1010",
+     "0.00",
+     "10.00"
+    ]
+   ]
+  },
+  {
+   "name": "other expense",
+   "event": {
+    "event": "expense",
+    "category": "other",
+    "amount": "10.00",
+    "paid_from": "cash"
+   },
+   "out": [
+    [
+     "5090",
+     "10.00",
+     "0.00"
+    ],
+    [
+     "1000",
+     "0.00",
+     "10.00"
+    ]
+   ]
+  },
+  {
+   "name": "expense without paid_from defaults to cash",
+   "event": {
+    "event": "expense",
+    "category": "rent",
+    "amount": "5.00"
+   },
+   "out": [
+    [
+     "5000",
+     "5.00",
+     "0.00"
+    ],
+    [
+     "1000",
+     "0.00",
+     "5.00"
+    ]
+   ]
+  },
+  {
+   "name": "expense that accrues a supplier bill credits payables",
+   "event": {
+    "event": "expense",
+    "category": "rent",
+    "amount": "200000.00",
+    "paid_from": "cash",
+    "bill": true
+   },
+   "out": [
+    [
+     "5000",
+     "200000.00",
+     "0.00"
+    ],
+    [
+     "2000",
+     "0.00",
+     "200000.00"
+    ]
+   ]
+  },
+  {
+   "name": "bill settled in cash",
+   "event": {
+    "event": "bill_payment",
+    "amount": "400000.00",
+    "paid_from": "cash"
+   },
+   "out": [
+    [
+     "2000",
+     "400000.00",
+     "0.00"
+    ],
+    [
+     "1000",
+     "0.00",
+     "400000.00"
+    ]
+   ]
+  },
+  {
+   "name": "bill settled from the bank",
+   "event": {
+    "event": "bill_payment",
+    "amount": "400000.00",
+    "paid_from": "bank"
+   },
+   "out": [
+    [
+     "2000",
+     "400000.00",
+     "0.00"
+    ],
+    [
+     "1010",
+     "0.00",
+     "400000.00"
+    ]
+   ]
+  },
+  {
+   "name": "payroll approved",
+   "event": {
+    "event": "payroll_accrual",
+    "amount": "3000000.00"
+   },
+   "out": [
+    [
+     "5100",
+     "3000000.00",
+     "0.00"
+    ],
+    [
+     "2100",
+     "0.00",
+     "3000000.00"
+    ]
+   ]
+  },
+  {
+   "name": "payroll paid",
+   "event": {
+    "event": "payroll_payment",
+    "amount": "3000000.00"
+   },
+   "out": [
+    [
+     "2100",
+     "3000000.00",
+     "0.00"
+    ],
+    [
+     "1000",
+     "0.00",
+     "3000000.00"
+    ]
+   ]
+  },
+  {
+   "name": "zero amount posts nothing",
+   "event": {
+    "event": "payment",
+    "method": "cash",
+    "amount": "0.00"
+   },
+   "out": []
+  },
+  {
+   "name": "negative amount posts nothing",
+   "event": {
+    "event": "expense",
+    "category": "rent",
+    "amount": "-5.00",
+    "paid_from": "cash"
+   },
+   "out": []
+  }
+ ],
+ "pending": [
+  {
+   "name": "nothing posted yet: payment and expense in date order",
+   "today": "2026-11-23",
+   "posted": [],
+   "sources": [
+    {
+     "type": "expense",
+     "key": "X1",
+     "date": "2026-11-02",
+     "amount": "100.00",
+     "voided": false,
+     "category": "rent",
+     "paid_from": "cash"
+    },
+    {
+     "type": "payment",
+     "key": "P1",
+     "date": "2026-11-01",
+     "amount": "500.00",
+     "voided": false,
+     "method": "cash"
+    }
+   ],
+   "out": [
+    {
+     "kind": "post",
+     "source_type": "payment",
+     "source_key": "P1",
+     "date": "2026-11-01",
+     "lines": [
+      [
+       "1000",
+       "500.00",
+       "0.00"
+      ],
+      [
+       "4000",
+       "0.00",
+       "500.00"
+      ]
+     ]
+    },
+    {
+     "kind": "post",
+     "source_type": "expense",
+     "source_key": "X1",
+     "date": "2026-11-02",
+     "lines": [
+      [
+       "5000",
+       "100.00",
+       "0.00"
+      ],
+      [
+       "1000",
+       "0.00",
+       "100.00"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "name": "already posted: nothing to do",
+   "today": "2026-11-23",
+   "posted": [
+    [
+     "payment",
+     "P1"
+    ]
+   ],
+   "sources": [
+    {
+     "type": "payment",
+     "key": "P1",
+     "date": "2026-11-01",
+     "amount": "500.00",
+     "voided": false,
+     "method": "cash"
+    }
+   ],
+   "out": []
+  },
+  {
+   "name": "voided and posted: reverse today",
+   "today": "2026-11-23",
+   "posted": [
+    [
+     "payment",
+     "P1"
+    ]
+   ],
+   "sources": [
+    {
+     "type": "payment",
+     "key": "P1",
+     "date": "2026-11-01",
+     "amount": "500.00",
+     "voided": true,
+     "method": "cash"
+    }
+   ],
+   "out": [
+    {
+     "kind": "reverse",
+     "source_type": "payment_void",
+     "source_key": "P1",
+     "date": "2026-11-23",
+     "lines": []
+    }
+   ]
+  },
+  {
+   "name": "voided and reversed already",
+   "today": "2026-11-23",
+   "posted": [
+    [
+     "payment",
+     "P1"
+    ],
+    [
+     "payment_void",
+     "P1"
+    ]
+   ],
+   "sources": [
+    {
+     "type": "payment",
+     "key": "P1",
+     "date": "2026-11-01",
+     "amount": "500.00",
+     "voided": true,
+     "method": "cash"
+    }
+   ],
+   "out": []
+  },
+  {
+   "name": "voided and never posted: nothing",
+   "today": "2026-11-23",
+   "posted": [],
+   "sources": [
+    {
+     "type": "payment",
+     "key": "P1",
+     "date": "2026-11-01",
+     "amount": "500.00",
+     "voided": true,
+     "method": "cash"
+    }
+   ],
+   "out": []
+  },
+  {
+   "name": "zero amount is skipped",
+   "today": "2026-11-23",
+   "posted": [],
+   "sources": [
+    {
+     "type": "payment",
+     "key": "P1",
+     "date": "2026-11-01",
+     "amount": "0.00",
+     "voided": false,
+     "method": "cash"
+    }
+   ],
+   "out": []
+  },
+  {
+   "name": "payroll accrual posted, payment missing",
+   "today": "2026-11-23",
+   "posted": [
+    [
+     "payroll_accrual",
+     "2026-10:T1"
+    ]
+   ],
+   "sources": [
+    {
+     "type": "payroll_accrual",
+     "key": "2026-10:T1",
+     "date": "2026-10-31",
+     "amount": "900.00",
+     "voided": false
+    },
+    {
+     "type": "payroll_payment",
+     "key": "2026-10:T1",
+     "date": "2026-11-05",
+     "amount": "900.00",
+     "voided": false
+    }
+   ],
+   "out": [
+    {
+     "kind": "post",
+     "source_type": "payroll_payment",
+     "source_key": "2026-10:T1",
+     "date": "2026-11-05",
+     "lines": [
+      [
+       "2100",
+       "900.00",
+       "0.00"
+      ],
+      [
+       "1000",
+       "0.00",
+       "900.00"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "name": "same date: payment before expense, then by key",
+   "today": "2026-11-23",
+   "posted": [],
+   "sources": [
+    {
+     "type": "expense",
+     "key": "X2",
+     "date": "2026-11-01",
+     "amount": "5.00",
+     "voided": false,
+     "category": "tax",
+     "paid_from": "bank"
+    },
+    {
+     "type": "payment",
+     "key": "P2",
+     "date": "2026-11-01",
+     "amount": "7.00",
+     "voided": false,
+     "method": "click"
+    },
+    {
+     "type": "payment",
+     "key": "P1",
+     "date": "2026-11-01",
+     "amount": "6.00",
+     "voided": false,
+     "method": "cash"
+    }
+   ],
+   "out": [
+    {
+     "kind": "post",
+     "source_type": "payment",
+     "source_key": "P1",
+     "date": "2026-11-01",
+     "lines": [
+      [
+       "1000",
+       "6.00",
+       "0.00"
+      ],
+      [
+       "4000",
+       "0.00",
+       "6.00"
+      ]
+     ]
+    },
+    {
+     "kind": "post",
+     "source_type": "payment",
+     "source_key": "P2",
+     "date": "2026-11-01",
+     "lines": [
+      [
+       "1010",
+       "7.00",
+       "0.00"
+      ],
+      [
+       "4000",
+       "0.00",
+       "7.00"
+      ]
+     ]
+    },
+    {
+     "kind": "post",
+     "source_type": "expense",
+     "source_key": "X2",
+     "date": "2026-11-01",
+     "lines": [
+      [
+       "5050",
+       "5.00",
+       "0.00"
+      ],
+      [
+       "1010",
+       "0.00",
+       "5.00"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "name": "expense of a supplier bill credits payables",
+   "today": "2026-11-23",
+   "posted": [],
+   "sources": [
+    {
+     "type": "expense",
+     "key": "X3",
+     "date": "2026-11-01",
+     "amount": "50.00",
+     "voided": false,
+     "category": "equipment",
+     "paid_from": "cash",
+     "bill": true
+    }
+   ],
+   "out": [
+    {
+     "kind": "post",
+     "source_type": "expense",
+     "source_key": "X3",
+     "date": "2026-11-01",
+     "lines": [
+      [
+       "5040",
+       "50.00",
+       "0.00"
+      ],
+      [
+       "2000",
+       "0.00",
+       "50.00"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "name": "voided bill payment is reversed",
+   "today": "2026-11-23",
+   "posted": [
+    [
+     "bill_payment",
+     "BP1"
+    ]
+   ],
+   "sources": [
+    {
+     "type": "bill_payment",
+     "key": "BP1",
+     "date": "2026-11-01",
+     "amount": "50.00",
+     "voided": true,
+     "paid_from": "bank"
+    }
+   ],
+   "out": [
+    {
+     "kind": "reverse",
+     "source_type": "bill_payment_void",
+     "source_key": "BP1",
+     "date": "2026-11-23",
+     "lines": []
+    }
+   ]
+  },
+  {
+   "name": "a post and a reversal are ordered by date",
+   "today": "2026-11-23",
+   "posted": [
+    [
+     "payment",
+     "P1"
+    ]
+   ],
+   "sources": [
+    {
+     "type": "payment",
+     "key": "P1",
+     "date": "2026-11-01",
+     "amount": "5.00",
+     "voided": true,
+     "method": "cash"
+    },
+    {
+     "type": "payment",
+     "key": "P2",
+     "date": "2026-11-30",
+     "amount": "9.00",
+     "voided": false,
+     "method": "cash"
+    }
+   ],
+   "out": [
+    {
+     "kind": "reverse",
+     "source_type": "payment_void",
+     "source_key": "P1",
+     "date": "2026-11-23",
+     "lines": []
+    },
+    {
+     "kind": "post",
+     "source_type": "payment",
+     "source_key": "P2",
+     "date": "2026-11-30",
+     "lines": [
+      [
+       "1000",
+       "9.00",
+       "0.00"
+      ],
+      [
+       "4000",
+       "0.00",
+       "9.00"
+      ]
+     ]
+    }
+   ]
+  }
+ ],
+ "trial_balance": [
+  {
+   "name": "empty ledger",
+   "totals": {},
+   "out": {
+    "rows": [],
+    "total_debit": "0.00",
+    "total_credit": "0.00",
+    "total_balance_debit": "0.00",
+    "total_balance_credit": "0.00",
+    "balanced": true
+   }
+  },
+  {
+   "name": "payment and rent",
+   "totals": {
+    "1000": [
+     "500000.00",
+     "120000.50"
+    ],
+    "4000": [
+     "0.00",
+     "500000.00"
+    ],
+    "5000": [
+     "120000.50",
+     "0.00"
+    ]
+   },
+   "out": {
+    "rows": [
+     {
+      "code": "1000",
+      "name": "Kassa",
+      "type": "asset",
+      "debit": "500000.00",
+      "credit": "120000.50",
+      "balance_debit": "379999.50",
+      "balance_credit": "0.00"
+     },
+     {
+      "code": "4000",
+      "name": "O'quv to'lovlari",
+      "type": "income",
+      "debit": "0.00",
+      "credit": "500000.00",
+      "balance_debit": "0.00",
+      "balance_credit": "500000.00"
+     },
+     {
+      "code": "5000",
+      "name": "Ijara",
+      "type": "expense",
+      "debit": "120000.50",
+      "credit": "0.00",
+      "balance_debit": "120000.50",
+      "balance_credit": "0.00"
+     }
+    ],
+    "total_debit": "620000.50",
+    "total_credit": "620000.50",
+    "total_balance_debit": "500000.00",
+    "total_balance_credit": "500000.00",
+    "balanced": true
+   }
+  },
+  {
+   "name": "credit balance on an asset (contra)",
+   "totals": {
+    "1000": [
+     "0.00",
+     "100000.00"
+    ],
+    "3000": [
+     "100000.00",
+     "0.00"
+    ]
+   },
+   "out": {
+    "rows": [
+     {
+      "code": "1000",
+      "name": "Kassa",
+      "type": "asset",
+      "debit": "0.00",
+      "credit": "100000.00",
+      "balance_debit": "0.00",
+      "balance_credit": "100000.00"
+     },
+     {
+      "code": "3000",
+      "name": "Egasi kapitali",
+      "type": "equity",
+      "debit": "100000.00",
+      "credit": "0.00",
+      "balance_debit": "100000.00",
+      "balance_credit": "0.00"
+     }
+    ],
+    "total_debit": "100000.00",
+    "total_credit": "100000.00",
+    "total_balance_debit": "100000.00",
+    "total_balance_credit": "100000.00",
+    "balanced": true
+   }
+  },
+  {
+   "name": "unbalanced input is reported",
+   "totals": {
+    "1000": [
+     "100.00",
+     "0.00"
+    ],
+    "4000": [
+     "0.00",
+     "90.00"
+    ]
+   },
+   "out": {
+    "rows": [
+     {
+      "code": "1000",
+      "name": "Kassa",
+      "type": "asset",
+      "debit": "100.00",
+      "credit": "0.00",
+      "balance_debit": "100.00",
+      "balance_credit": "0.00"
+     },
+     {
+      "code": "4000",
+      "name": "O'quv to'lovlari",
+      "type": "income",
+      "debit": "0.00",
+      "credit": "90.00",
+      "balance_debit": "0.00",
+      "balance_credit": "90.00"
+     }
+    ],
+    "total_debit": "100.00",
+    "total_credit": "90.00",
+    "total_balance_debit": "100.00",
+    "total_balance_credit": "90.00",
+    "balanced": false
+   }
+  },
+  {
+   "name": "unknown account code keeps its code as name",
+   "totals": {
+    "9999": [
+     "1.00",
+     "0.00"
+    ],
+    "1000": [
+     "0.00",
+     "1.00"
+    ]
+   },
+   "out": {
+    "rows": [
+     {
+      "code": "1000",
+      "name": "Kassa",
+      "type": "asset",
+      "debit": "0.00",
+      "credit": "1.00",
+      "balance_debit": "0.00",
+      "balance_credit": "1.00"
+     },
+     {
+      "code": "9999",
+      "name": "9999",
+      "type": "?",
+      "debit": "1.00",
+      "credit": "0.00",
+      "balance_debit": "1.00",
+      "balance_credit": "0.00"
+     }
+    ],
+    "total_debit": "1.00",
+    "total_credit": "1.00",
+    "total_balance_debit": "1.00",
+    "total_balance_credit": "1.00",
+    "balanced": true
+   }
+  },
+  {
+   "name": "accounts without activity are left out",
+   "totals": {
+    "1010": [
+     "0.00",
+     "0.00"
+    ],
+    "1000": [
+     "5.00",
+     "0.00"
+    ],
+    "4000": [
+     "0.00",
+     "5.00"
+    ]
+   },
+   "out": {
+    "rows": [
+     {
+      "code": "1000",
+      "name": "Kassa",
+      "type": "asset",
+      "debit": "5.00",
+      "credit": "0.00",
+      "balance_debit": "5.00",
+      "balance_credit": "0.00"
+     },
+     {
+      "code": "4000",
+      "name": "O'quv to'lovlari",
+      "type": "income",
+      "debit": "0.00",
+      "credit": "5.00",
+      "balance_debit": "0.00",
+      "balance_credit": "5.00"
+     }
+    ],
+    "total_debit": "5.00",
+    "total_credit": "5.00",
+    "total_balance_debit": "5.00",
+    "total_balance_credit": "5.00",
+    "balanced": true
+   }
+  }
+ ],
+ "income_statement": [
+  {
+   "name": "empty",
+   "totals": {},
+   "out": {
+    "income": [],
+    "expenses": [],
+    "total_income": "0.00",
+    "total_expenses": "0.00",
+    "net": "0.00"
+   }
+  },
+  {
+   "name": "income and expenses",
+   "totals": {
+    "4000": [
+     "0.00",
+     "500000.00"
+    ],
+    "4100": [
+     "0.00",
+     "50000.00"
+    ],
+    "5000": [
+     "120000.50",
+     "0.00"
+    ],
+    "5100": [
+     "3000000.00",
+     "0.00"
+    ]
+   },
+   "out": {
+    "income": [
+     {
+      "code": "4000",
+      "name": "O'quv to'lovlari",
+      "amount": "500000.00"
+     },
+     {
+      "code": "4100",
+      "name": "Boshqa daromadlar",
+      "amount": "50000.00"
+     }
+    ],
+    "expenses": [
+     {
+      "code": "5000",
+      "name": "Ijara",
+      "amount": "120000.50"
+     },
+     {
+      "code": "5100",
+      "name": "O'qituvchilar oyligi",
+      "amount": "3000000.00"
+     }
+    ],
+    "total_income": "550000.00",
+    "total_expenses": "3120000.50",
+    "net": "-2570000.50"
+   }
+  },
+  {
+   "name": "a reversed part lowers the income",
+   "totals": {
+    "4000": [
+     "100000.00",
+     "500000.00"
+    ]
+   },
+   "out": {
+    "income": [
+     {
+      "code": "4000",
+      "name": "O'quv to'lovlari",
+      "amount": "400000.00"
+     }
+    ],
+    "expenses": [],
+    "total_income": "400000.00",
+    "total_expenses": "0.00",
+    "net": "400000.00"
+   }
+  },
+  {
+   "name": "a fully reversed expense disappears",
+   "totals": {
+    "5000": [
+     "120000.50",
+     "120000.50"
+    ],
+    "4000": [
+     "0.00",
+     "10.00"
+    ]
+   },
+   "out": {
+    "income": [
+     {
+      "code": "4000",
+      "name": "O'quv to'lovlari",
+      "amount": "10.00"
+     }
+    ],
+    "expenses": [],
+    "total_income": "10.00",
+    "total_expenses": "0.00",
+    "net": "10.00"
+   }
+  },
+  {
+   "name": "balance sheet accounts are ignored",
+   "totals": {
+    "1000": [
+     "900.00",
+     "0.00"
+    ],
+    "2000": [
+     "0.00",
+     "900.00"
+    ]
+   },
+   "out": {
+    "income": [],
+    "expenses": [],
+    "total_income": "0.00",
+    "total_expenses": "0.00",
+    "net": "0.00"
+   }
+  }
+ ],
+ "balance_sheet": [
+  {
+   "name": "empty",
+   "totals": {},
+   "out": {
+    "assets": [],
+    "liabilities": [],
+    "equity": [],
+    "current_result": "0.00",
+    "total_assets": "0.00",
+    "total_liabilities": "0.00",
+    "total_equity": "0.00",
+    "balanced": true
+   }
+  },
+  {
+   "name": "capital, tuition and rent",
+   "totals": {
+    "1000": [
+     "600000.00",
+     "120000.50"
+    ],
+    "3000": [
+     "0.00",
+     "100000.00"
+    ],
+    "4000": [
+     "0.00",
+     "500000.00"
+    ],
+    "5000": [
+     "120000.50",
+     "0.00"
+    ]
+   },
+   "out": {
+    "assets": [
+     {
+      "code": "1000",
+      "name": "Kassa",
+      "amount": "479999.50"
+     }
+    ],
+    "liabilities": [],
+    "equity": [
+     {
+      "code": "3000",
+      "name": "Egasi kapitali",
+      "amount": "100000.00"
+     }
+    ],
+    "current_result": "379999.50",
+    "total_assets": "479999.50",
+    "total_liabilities": "0.00",
+    "total_equity": "479999.50",
+    "balanced": true
+   }
+  },
+  {
+   "name": "with a supplier payable",
+   "totals": {
+    "1000": [
+     "600000.00",
+     "120000.50"
+    ],
+    "2000": [
+     "0.00",
+     "200000.00"
+    ],
+    "3000": [
+     "0.00",
+     "100000.00"
+    ],
+    "4000": [
+     "0.00",
+     "500000.00"
+    ],
+    "5000": [
+     "320000.50",
+     "0.00"
+    ]
+   },
+   "out": {
+    "assets": [
+     {
+      "code": "1000",
+      "name": "Kassa",
+      "amount": "479999.50"
+     }
+    ],
+    "liabilities": [
+     {
+      "code": "2000",
+      "name": "Yetkazib beruvchilarga qarz",
+      "amount": "200000.00"
+     }
+    ],
+    "equity": [
+     {
+      "code": "3000",
+      "name": "Egasi kapitali",
+      "amount": "100000.00"
+     }
+    ],
+    "current_result": "179999.50",
+    "total_assets": "479999.50",
+    "total_liabilities": "200000.00",
+    "total_equity": "279999.50",
+    "balanced": true
+   }
+  },
+  {
+   "name": "negative asset and negative equity still balance",
+   "totals": {
+    "1010": [
+     "0.00",
+     "50000.00"
+    ],
+    "3000": [
+     "50000.00",
+     "0.00"
+    ]
+   },
+   "out": {
+    "assets": [
+     {
+      "code": "1010",
+      "name": "Bank hisobi",
+      "amount": "-50000.00"
+     }
+    ],
+    "liabilities": [],
+    "equity": [
+     {
+      "code": "3000",
+      "name": "Egasi kapitali",
+      "amount": "-50000.00"
+     }
+    ],
+    "current_result": "0.00",
+    "total_assets": "-50000.00",
+    "total_liabilities": "0.00",
+    "total_equity": "-50000.00",
+    "balanced": true
+   }
+  },
+  {
+   "name": "unbalanced ledger is flagged",
+   "totals": {
+    "1000": [
+     "100.00",
+     "0.00"
+    ]
+   },
+   "out": {
+    "assets": [
+     {
+      "code": "1000",
+      "name": "Kassa",
+      "amount": "100.00"
+     }
+    ],
+    "liabilities": [],
+    "equity": [],
+    "current_result": "0.00",
+    "total_assets": "100.00",
+    "total_liabilities": "0.00",
+    "total_equity": "0.00",
+    "balanced": false
+   }
+  },
+  {
+   "name": "loss makes the current result negative",
+   "totals": {
+    "1000": [
+     "0.00",
+     "300.00"
+    ],
+    "5000": [
+     "300.00",
+     "0.00"
+    ]
+   },
+   "out": {
+    "assets": [
+     {
+      "code": "1000",
+      "name": "Kassa",
+      "amount": "-300.00"
+     }
+    ],
+    "liabilities": [],
+    "equity": [],
+    "current_result": "-300.00",
+    "total_assets": "-300.00",
+    "total_liabilities": "0.00",
+    "total_equity": "-300.00",
+    "balanced": true
+   }
+  }
+ ],
+ "account_statement": [
+  {
+   "name": "debit-normal account with opening balance",
+   "opening": "1000.00",
+   "side": "debit",
+   "lines": [
+    {
+     "seq": 5,
+     "date": "2026-11-03",
+     "debit": "500.00",
+     "credit": "0.00"
+    },
+    {
+     "seq": 2,
+     "date": "2026-11-01",
+     "debit": "0.00",
+     "credit": "200.00"
+    }
+   ],
+   "out": {
+    "opening": "1000.00",
+    "rows": [
+     {
+      "seq": 2,
+      "date": "2026-11-01",
+      "debit": "0.00",
+      "credit": "200.00",
+      "balance": "800.00"
+     },
+     {
+      "seq": 5,
+      "date": "2026-11-03",
+      "debit": "500.00",
+      "credit": "0.00",
+      "balance": "1300.00"
+     }
+    ],
+    "closing": "1300.00"
+   }
+  },
+  {
+   "name": "credit-normal account",
+   "opening": "0.00",
+   "side": "credit",
+   "lines": [
+    {
+     "seq": 1,
+     "date": "2026-11-01",
+     "debit": "0.00",
+     "credit": "700.00"
+    },
+    {
+     "seq": 2,
+     "date": "2026-11-02",
+     "debit": "100.00",
+     "credit": "0.00"
+    }
+   ],
+   "out": {
+    "opening": "0.00",
+    "rows": [
+     {
+      "seq": 1,
+      "date": "2026-11-01",
+      "debit": "0.00",
+      "credit": "700.00",
+      "balance": "700.00"
+     },
+     {
+      "seq": 2,
+      "date": "2026-11-02",
+      "debit": "100.00",
+      "credit": "0.00",
+      "balance": "600.00"
+     }
+    ],
+    "closing": "600.00"
+   }
+  },
+  {
+   "name": "no movements",
+   "opening": "42.00",
+   "side": "debit",
+   "lines": [],
+   "out": {
+    "opening": "42.00",
+    "rows": [],
+    "closing": "42.00"
+   }
+  }
+ ],
+ "aging": [
+  {
+   "name": "every bucket edge",
+   "as_of": "2026-11-23",
+   "bills": [
+    {
+     "id": "B01",
+     "due_date": "2026-12-01",
+     "amount": "10.00",
+     "paid": "0.00"
+    },
+    {
+     "id": "B02",
+     "due_date": "2026-11-23",
+     "amount": "10.00",
+     "paid": "0.00"
+    },
+    {
+     "id": "B03",
+     "due_date": "2026-11-22",
+     "amount": "10.00",
+     "paid": "0.00"
+    },
+    {
+     "id": "B04",
+     "due_date": "2026-10-24",
+     "amount": "10.00",
+     "paid": "0.00"
+    },
+    {
+     "id": "B05",
+     "due_date": "2026-10-23",
+     "amount": "10.00",
+     "paid": "0.00"
+    },
+    {
+     "id": "B06",
+     "due_date": "2026-09-24",
+     "amount": "10.00",
+     "paid": "0.00"
+    },
+    {
+     "id": "B07",
+     "due_date": "2026-09-23",
+     "amount": "10.00",
+     "paid": "0.00"
+    },
+    {
+     "id": "B08",
+     "due_date": "2026-08-25",
+     "amount": "10.00",
+     "paid": "0.00"
+    },
+    {
+     "id": "B09",
+     "due_date": "2026-08-24",
+     "amount": "10.00",
+     "paid": "0.00"
+    }
+   ],
+   "out": {
+    "rows": [
+     {
+      "id": "B09",
+      "due_date": "2026-08-24",
+      "outstanding": "10.00",
+      "days_overdue": 91,
+      "bucket": "d90_plus"
+     },
+     {
+      "id": "B08",
+      "due_date": "2026-08-25",
+      "outstanding": "10.00",
+      "days_overdue": 90,
+      "bucket": "d61_90"
+     },
+     {
+      "id": "B07",
+      "due_date": "2026-09-23",
+      "outstanding": "10.00",
+      "days_overdue": 61,
+      "bucket": "d61_90"
+     },
+     {
+      "id": "B06",
+      "due_date": "2026-09-24",
+      "outstanding": "10.00",
+      "days_overdue": 60,
+      "bucket": "d31_60"
+     },
+     {
+      "id": "B05",
+      "due_date": "2026-10-23",
+      "outstanding": "10.00",
+      "days_overdue": 31,
+      "bucket": "d31_60"
+     },
+     {
+      "id": "B04",
+      "due_date": "2026-10-24",
+      "outstanding": "10.00",
+      "days_overdue": 30,
+      "bucket": "d1_30"
+     },
+     {
+      "id": "B03",
+      "due_date": "2026-11-22",
+      "outstanding": "10.00",
+      "days_overdue": 1,
+      "bucket": "d1_30"
+     },
+     {
+      "id": "B02",
+      "due_date": "2026-11-23",
+      "outstanding": "10.00",
+      "days_overdue": 0,
+      "bucket": "not_due"
+     },
+     {
+      "id": "B01",
+      "due_date": "2026-12-01",
+      "outstanding": "10.00",
+      "days_overdue": 0,
+      "bucket": "not_due"
+     }
+    ],
+    "buckets": {
+     "not_due": "20.00",
+     "d1_30": "20.00",
+     "d31_60": "20.00",
+     "d61_90": "20.00",
+     "d90_plus": "10.00"
+    },
+    "total": "90.00"
+   }
+  },
+  {
+   "name": "partly paid counts the rest, fully paid is left out",
+   "as_of": "2026-11-23",
+   "bills": [
+    {
+     "id": "B1",
+     "due_date": "2026-11-01",
+     "amount": "100.00",
+     "paid": "40.50"
+    },
+    {
+     "id": "B2",
+     "due_date": "2026-11-01",
+     "amount": "100.00",
+     "paid": "100.00"
+    }
+   ],
+   "out": {
+    "rows": [
+     {
+      "id": "B1",
+      "due_date": "2026-11-01",
+      "outstanding": "59.50",
+      "days_overdue": 22,
+      "bucket": "d1_30"
+     }
+    ],
+    "buckets": {
+     "not_due": "0.00",
+     "d1_30": "59.50",
+     "d31_60": "0.00",
+     "d61_90": "0.00",
+     "d90_plus": "0.00"
+    },
+    "total": "59.50"
+   }
+  },
+  {
+   "name": "empty",
+   "as_of": "2026-11-23",
+   "bills": [],
+   "out": {
+    "rows": [],
+    "buckets": {
+     "not_due": "0.00",
+     "d1_30": "0.00",
+     "d31_60": "0.00",
+     "d61_90": "0.00",
+     "d90_plus": "0.00"
+    },
+    "total": "0.00"
+   }
+  },
+  {
+   "name": "same due date is ordered by id",
+   "as_of": "2026-11-23",
+   "bills": [
+    {
+     "id": "B2",
+     "due_date": "2026-11-20",
+     "amount": "1.00",
+     "paid": "0.00"
+    },
+    {
+     "id": "B1",
+     "due_date": "2026-11-20",
+     "amount": "2.00",
+     "paid": "0.00"
+    }
+   ],
+   "out": {
+    "rows": [
+     {
+      "id": "B1",
+      "due_date": "2026-11-20",
+      "outstanding": "2.00",
+      "days_overdue": 3,
+      "bucket": "d1_30"
+     },
+     {
+      "id": "B2",
+      "due_date": "2026-11-20",
+      "outstanding": "1.00",
+      "days_overdue": 3,
+      "bucket": "d1_30"
+     }
+    ],
+    "buckets": {
+     "not_due": "0.00",
+     "d1_30": "3.00",
+     "d31_60": "0.00",
+     "d61_90": "0.00",
+     "d90_plus": "0.00"
+    },
+    "total": "3.00"
+   }
+  }
+ ],
+ "match": [
+  {
+   "name": "same day same amount",
+   "tolerance": 0,
+   "statement": [
+    {
+     "id": "s1",
+     "date": "2026-11-01",
+     "amount": "100000.00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 3,
+     "date": "2026-11-01",
+     "amount": "100000.00"
+    }
+   ],
+   "out": {
+    "matches": [
+     {
+      "statement_line": "s1",
+      "seq": 3
+     }
+    ],
+    "unmatched_statement": [],
+    "unmatched_ledger": []
+   }
+  },
+  {
+   "name": "tolerance edge inside",
+   "tolerance": 2,
+   "statement": [
+    {
+     "id": "s1",
+     "date": "2026-11-03",
+     "amount": "50.00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 1,
+     "date": "2026-11-01",
+     "amount": "50.00"
+    }
+   ],
+   "out": {
+    "matches": [
+     {
+      "statement_line": "s1",
+      "seq": 1
+     }
+    ],
+    "unmatched_statement": [],
+    "unmatched_ledger": []
+   }
+  },
+  {
+   "name": "tolerance edge outside",
+   "tolerance": 2,
+   "statement": [
+    {
+     "id": "s1",
+     "date": "2026-11-04",
+     "amount": "50.00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 1,
+     "date": "2026-11-01",
+     "amount": "50.00"
+    }
+   ],
+   "out": {
+    "matches": [],
+    "unmatched_statement": [
+     "s1"
+    ],
+    "unmatched_ledger": [
+     1
+    ]
+   }
+  },
+  {
+   "name": "duplicate amounts pair in date order",
+   "tolerance": 3,
+   "statement": [
+    {
+     "id": "s2",
+     "date": "2026-11-02",
+     "amount": "100.00"
+    },
+    {
+     "id": "s1",
+     "date": "2026-11-01",
+     "amount": "100.00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 5,
+     "date": "2026-11-02",
+     "amount": "100.00"
+    },
+    {
+     "seq": 3,
+     "date": "2026-11-01",
+     "amount": "100.00"
+    }
+   ],
+   "out": {
+    "matches": [
+     {
+      "statement_line": "s1",
+      "seq": 3
+     },
+     {
+      "statement_line": "s2",
+      "seq": 5
+     }
+    ],
+    "unmatched_statement": [],
+    "unmatched_ledger": []
+   }
+  },
+  {
+   "name": "a ledger line is matched once",
+   "tolerance": 5,
+   "statement": [
+    {
+     "id": "s1",
+     "date": "2026-11-01",
+     "amount": "100.00"
+    },
+    {
+     "id": "s2",
+     "date": "2026-11-02",
+     "amount": "100.00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 3,
+     "date": "2026-11-01",
+     "amount": "100.00"
+    }
+   ],
+   "out": {
+    "matches": [
+     {
+      "statement_line": "s1",
+      "seq": 3
+     }
+    ],
+    "unmatched_statement": [
+     "s2"
+    ],
+    "unmatched_ledger": []
+   }
+  },
+  {
+   "name": "money out matches a credit line",
+   "tolerance": 0,
+   "statement": [
+    {
+     "id": "s1",
+     "date": "2026-11-05",
+     "amount": "-50000.00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 9,
+     "date": "2026-11-05",
+     "amount": "-50000.00"
+    },
+    {
+     "seq": 8,
+     "date": "2026-11-05",
+     "amount": "50000.00"
+    }
+   ],
+   "out": {
+    "matches": [
+     {
+      "statement_line": "s1",
+      "seq": 9
+     }
+    ],
+    "unmatched_statement": [],
+    "unmatched_ledger": [
+     8
+    ]
+   }
+  },
+  {
+   "name": "tie on distance takes the earlier date",
+   "tolerance": 2,
+   "statement": [
+    {
+     "id": "s1",
+     "date": "2026-11-05",
+     "amount": "10.00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 8,
+     "date": "2026-11-06",
+     "amount": "10.00"
+    },
+    {
+     "seq": 7,
+     "date": "2026-11-04",
+     "amount": "10.00"
+    }
+   ],
+   "out": {
+    "matches": [
+     {
+      "statement_line": "s1",
+      "seq": 7
+     }
+    ],
+    "unmatched_statement": [],
+    "unmatched_ledger": [
+     8
+    ]
+   }
+  },
+  {
+   "name": "smaller distance beats earlier date",
+   "tolerance": 3,
+   "statement": [
+    {
+     "id": "s1",
+     "date": "2026-11-05",
+     "amount": "10.00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 7,
+     "date": "2026-11-02",
+     "amount": "10.00"
+    },
+    {
+     "seq": 8,
+     "date": "2026-11-05",
+     "amount": "10.00"
+    }
+   ],
+   "out": {
+    "matches": [
+     {
+      "statement_line": "s1",
+      "seq": 8
+     }
+    ],
+    "unmatched_statement": [],
+    "unmatched_ledger": [
+     7
+    ]
+   }
+  },
+  {
+   "name": "nothing on either side",
+   "tolerance": 3,
+   "statement": [],
+   "ledger": [],
+   "out": {
+    "matches": [],
+    "unmatched_statement": [],
+    "unmatched_ledger": []
+   }
+  },
+  {
+   "name": "unmatched ledger lines are sorted",
+   "tolerance": 0,
+   "statement": [],
+   "ledger": [
+    {
+     "seq": 9,
+     "date": "2026-11-01",
+     "amount": "1.00"
+    },
+    {
+     "seq": 2,
+     "date": "2026-11-01",
+     "amount": "1.00"
+    }
+   ],
+   "out": {
+    "matches": [],
+    "unmatched_statement": [],
+    "unmatched_ledger": [
+     2,
+     9
+    ]
+   }
+  },
+  {
+   "name": "different amounts never match",
+   "tolerance": 10,
+   "statement": [
+    {
+     "id": "s1",
+     "date": "2026-11-01",
+     "amount": "100.00"
+    }
+   ],
+   "ledger": [
+    {
+     "seq": 1,
+     "date": "2026-11-01",
+     "amount": "100.01"
+    }
+   ],
+   "out": {
+    "matches": [],
+    "unmatched_statement": [
+     "s1"
+    ],
+    "unmatched_ledger": [
+     1
+    ]
+   }
+  }
+ ],
+ "foots": [
+  {
+   "name": "foots",
+   "opening": "1000.00",
+   "closing": "1300.00",
+   "lines": [
+    {
+     "id": "a",
+     "date": "2026-11-01",
+     "amount": "500.00"
+    },
+    {
+     "id": "b",
+     "date": "2026-11-02",
+     "amount": "-200.00"
+    }
+   ],
+   "out": true
+  },
+  {
+   "name": "does not foot",
+   "opening": "1000.00",
+   "closing": "1301.00",
+   "lines": [
+    {
+     "id": "a",
+     "date": "2026-11-01",
+     "amount": "500.00"
+    },
+    {
+     "id": "b",
+     "date": "2026-11-02",
+     "amount": "-200.00"
+    }
+   ],
+   "out": false
+  },
+  {
+   "name": "no lines, same balance",
+   "opening": "5.00",
+   "closing": "5.00",
+   "lines": [],
+   "out": true
+  }
+ ],
+ "summary": [
+  {
+   "name": "reconciled",
+   "closing": "1300.00",
+   "ledger": "1300.00",
+   "unmatched_statement": 0,
+   "unmatched_ledger": 0,
+   "foots": true,
+   "out": {
+    "difference": "0.00",
+    "reconciled": true
+   }
+  },
+  {
+   "name": "difference blocks",
+   "closing": "1300.00",
+   "ledger": "1250.00",
+   "unmatched_statement": 0,
+   "unmatched_ledger": 0,
+   "foots": true,
+   "out": {
+    "difference": "50.00",
+    "reconciled": false
+   }
+  },
+  {
+   "name": "negative difference",
+   "closing": "1000.00",
+   "ledger": "1250.50",
+   "unmatched_statement": 0,
+   "unmatched_ledger": 0,
+   "foots": true,
+   "out": {
+    "difference": "-250.50",
+    "reconciled": false
+   }
+  },
+  {
+   "name": "unmatched statement line blocks",
+   "closing": "1300.00",
+   "ledger": "1300.00",
+   "unmatched_statement": 1,
+   "unmatched_ledger": 0,
+   "foots": true,
+   "out": {
+    "difference": "0.00",
+    "reconciled": false
+   }
+  },
+  {
+   "name": "unmatched ledger line blocks",
+   "closing": "1300.00",
+   "ledger": "1300.00",
+   "unmatched_statement": 0,
+   "unmatched_ledger": 2,
+   "foots": true,
+   "out": {
+    "difference": "0.00",
+    "reconciled": false
+   }
+  },
+  {
+   "name": "statement that does not foot blocks",
+   "closing": "1300.00",
+   "ledger": "1300.00",
+   "unmatched_statement": 0,
+   "unmatched_ledger": 0,
+   "foots": false,
+   "out": {
+    "difference": "0.00",
+    "reconciled": false
+   }
+  }
+ ]
+}

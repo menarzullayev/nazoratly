@@ -6,6 +6,7 @@ from fastapi import APIRouter
 
 from nazoratly.routers import (
     academics,
+    accounting,
     agents,
     auth,
     dashboard,
@@ -18,8 +19,10 @@ from nazoratly.routers import (
     org,
     packages,
     pay,
+    payables,
     payroll,
     plans,
+    reconciliation,
     settings,
     students,
 )
@@ -40,5 +43,8 @@ router.include_router(packages.router)
 router.include_router(dashboard.router)
 router.include_router(documents.router)
 router.include_router(payroll.router)
+router.include_router(accounting.router)
+router.include_router(payables.router)
+router.include_router(reconciliation.router)
 router.include_router(agents.router)
 router.include_router(pay.settings_router)

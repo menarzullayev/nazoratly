@@ -9,6 +9,8 @@ export interface ColDef {
   labels?: Record<string, string>; // domain value -> label shown in the sheet (kind "enum")
   options?: string[]; // free-text columns with a dropdown suggestion
   help?: string; // header note
+  plain?: boolean; // stored as plain text (codes, hashes, free text): never turned into a number or a formula
+  signed?: boolean; // an int column that may be negative
 }
 
 export interface TableDef {
@@ -34,6 +36,10 @@ const L = {
   draftStatus: { pending: "Kutilmoqda", approved: "Tasdiqlangan", sent: "Yuborilgan", rejected: "Rad etilgan", failed: "Xato" },
   expenseCategory: { rent: "Ijara", utilities: "Kommunal", salary: "Maosh (boshqa xodimlar)", marketing: "Reklama", equipment: "Jihoz", tax: "Soliq", other: "Boshqa" },
   payrollStatus: { draft: "Qoralama", approved: "Tasdiqlangan", paid: "To'langan" },
+  accountType: { asset: "Aktiv", liability: "Majburiyat", equity: "Kapital", income: "Daromad", expense: "Xarajat" },
+  cashKind: { cash: "Naqd", bank: "Bank" },
+  paidFrom: { cash: "Naqd", bank: "Bank" },
+  statementStatus: { open: "Ochiq", finalized: "Yopilgan" },
 } as const;
 
 export const METHODS = ["Naqd", "Karta", "O'tkazma", "Payme", "Click", "Boshqa"];
@@ -153,6 +159,8 @@ export const EXPENSES: TableDef = {
     { key: "amount", header: "Summa", width: 120, kind: "int" },
     { key: "note", header: "Izoh", width: 260, kind: "text" },
     { key: "voided", header: "Bekor qilingan", width: 110, kind: "bool", help: "Xarajatni o'chirmang, 'Ha' qilib bekor qiling" },
+    { key: "paidFrom", header: "Qayerdan to'langan", width: 130, kind: "enum", labels: L.paidFrom, help: "Naqd (kassa) yoki Bank: buxgalteriya yozuvi shunga qarab tushadi" },
+    { key: "billId", header: "Ta'minotchi hisobi", width: 120, kind: "text", plain: true, help: "Ta'minotchi hisobidan avtomatik yaratilgan xarajat (H0001...): uni hisob orqali bekor qiling" },
   ],
 };
 
@@ -272,7 +280,131 @@ export const DOCUMENTS: TableDef = {
   ],
 };
 
-export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, PACKAGES, INSTALLMENTS, DOCUMENTS, EXPENSES];
+// ---- accounting (capability 4.6). LEDGER_TABLES are written ONLY by the script (protected sheets, hash chain). ----
+export const JOURNAL: TableDef = {
+  sheet: "Jurnal",
+  color: "#202124",
+  cols: [
+    { key: "seq", header: "№", width: 70, kind: "int", help: "Qator raqami (1, 2, 3 ...): zanjirning bir bo'g'ini" },
+    { key: "entryNo", header: "Yozuv №", width: 80, kind: "int", help: "Bir yozuvning qatorlari bir xil raqamga ega" },
+    { key: "date", header: "Sana", width: 110, kind: "date" },
+    { key: "account", header: "Hisob", width: 80, kind: "text", plain: true },
+    { key: "debit", header: "Debet", width: 120, kind: "int" },
+    { key: "credit", header: "Kredit", width: 120, kind: "int" },
+    { key: "sourceType", header: "Manba turi", width: 130, kind: "text", plain: true },
+    { key: "sourceKey", header: "Manba ID", width: 130, kind: "text", plain: true },
+    { key: "memo", header: "Izoh", width: 320, kind: "text", plain: true },
+    { key: "prevHash", header: "Oldingi hash", width: 160, kind: "text", plain: true, help: "Oldingi qatorning hashi" },
+    { key: "hash", header: "Hash", width: 160, kind: "text", plain: true, help: "SHA-256: oldingi hash + shu qator mazmuni. Biror qator o'zgartirilsa menyudagi 'Jurnalni tekshirish' birinchi buzilgan qatorni ko'rsatadi" },
+  ],
+};
+
+export const PERIODS: TableDef = {
+  sheet: "Davrlar",
+  color: "#202124",
+  cols: [
+    { key: "month", header: "Oy", width: 90, kind: "text", plain: true, help: "yyyy-mm. Yopilgan oyga yozuv qo'shib bo'lmaydi" },
+    { key: "lastSeq", header: "Oxirgi №", width: 90, kind: "int" },
+    { key: "headHash", header: "Oxirgi hash", width: 160, kind: "text", plain: true },
+    { key: "totalDebit", header: "Jami debet", width: 130, kind: "int" },
+    { key: "totalCredit", header: "Jami kredit", width: 130, kind: "int" },
+    { key: "periodHash", header: "Davr hashi", width: 160, kind: "text", plain: true },
+    { key: "closedOn", header: "Yopilgan sana", width: 120, kind: "date" },
+  ],
+};
+
+export const CHART_ACCOUNTS: TableDef = {
+  sheet: "Hisob rejasi",
+  color: "#5f6368",
+  cols: [
+    { key: "code", header: "Kod", width: 80, kind: "text", plain: true, help: "3-8 raqam. Kod va tur o'zgarmaydi" },
+    { key: "name", header: "Nomi", width: 280, kind: "text" },
+    { key: "type", header: "Turi", width: 120, kind: "enum", labels: L.accountType },
+    { key: "active", header: "Faol", width: 80, kind: "bool", help: "Faol bo'lmagan hisobga yozuv qo'shib bo'lmaydi" },
+  ],
+};
+
+export const CASH_ACCOUNTS: TableDef = {
+  sheet: "Pul hisoblari",
+  color: "#5f6368",
+  cols: [
+    { key: "code", header: "Hisob kodi", width: 100, kind: "text", plain: true, help: "Hisob rejasidagi aktiv hisob" },
+    { key: "name", header: "Nomi", width: 240, kind: "text" },
+    { key: "kind", header: "Turi", width: 100, kind: "enum", labels: L.cashKind },
+  ],
+};
+
+export const STATEMENTS: TableDef = {
+  sheet: "Ko'chirmalar",
+  color: "#9334e6",
+  cols: [
+    { key: "id", header: "ID", width: 80, kind: "text", help: "Avtomatik (K0001...)" },
+    { key: "accountCode", header: "Pul hisobi", width: 100, kind: "text", plain: true },
+    { key: "from", header: "Davr boshi", width: 110, kind: "date" },
+    { key: "to", header: "Davr oxiri", width: 110, kind: "date" },
+    { key: "opening", header: "Boshlang'ich qoldiq", width: 140, kind: "int", signed: true },
+    { key: "closing", header: "Oxirgi qoldiq", width: 140, kind: "int", signed: true },
+    { key: "status", header: "Holat", width: 110, kind: "enum", labels: L.statementStatus, help: "Yopilgan ko'chirma o'zgarmaydi" },
+  ],
+};
+
+export const STATEMENT_LINES: TableDef = {
+  sheet: "Ko'chirma satrlari",
+  color: "#9334e6",
+  cols: [
+    { key: "statementId", header: "Ko'chirma ID", width: 100, kind: "text" },
+    { key: "no", header: "№", width: 60, kind: "int", help: "Ko'chirma ichida 1, 2, 3 ..." },
+    { key: "date", header: "Sana", width: 110, kind: "date" },
+    { key: "description", header: "Izoh", width: 300, kind: "text", plain: true },
+    { key: "amount", header: "Summa", width: 120, kind: "int", signed: true, help: "Kirim musbat, chiqim manfiy" },
+    { key: "matchedSeq", header: "Jurnal №", width: 90, kind: "int", help: "Mos kelgan jurnal qatori (0 = moslanmagan). Menyu: Buxgalteriya > Ko'chirma" },
+  ],
+};
+
+export const SUPPLIERS: TableDef = {
+  sheet: "Ta'minotchilar",
+  color: "#e37400",
+  cols: [
+    { key: "id", header: "ID", width: 80, kind: "text", help: "Avtomatik (V0001...)" },
+    { key: "name", header: "Nomi", width: 240, kind: "text" },
+    { key: "phone", header: "Telefon", width: 140, kind: "text", plain: true },
+    { key: "note", header: "Izoh", width: 260, kind: "text", plain: true },
+    { key: "active", header: "Faol", width: 80, kind: "bool" },
+  ],
+};
+
+export const SUPPLIER_BILLS: TableDef = {
+  sheet: "Ta'minotchi hisoblari",
+  color: "#e37400",
+  cols: [
+    { key: "id", header: "ID", width: 80, kind: "text", help: "Avtomatik (H0001...): menyu Buxgalteriya > Ta'minotchi hisobi" },
+    { key: "supplierId", header: "Ta'minotchi ID", width: 110, kind: "text" },
+    { key: "number", header: "Hisob raqami", width: 120, kind: "text", plain: true },
+    { key: "billDate", header: "Sana", width: 110, kind: "date" },
+    { key: "dueDate", header: "To'lov muddati", width: 120, kind: "date" },
+    { key: "category", header: "Turi", width: 170, kind: "enum", labels: L.expenseCategory },
+    { key: "amount", header: "Summa", width: 120, kind: "int" },
+    { key: "note", header: "Izoh", width: 240, kind: "text", plain: true },
+    { key: "voided", header: "Bekor qilingan", width: 110, kind: "bool", help: "Hisobni menyu orqali bekor qiling (xarajat ham bekor bo'ladi)" },
+  ],
+};
+
+export const BILL_PAYMENTS: TableDef = {
+  sheet: "Ta'minotchi to'lovlari",
+  color: "#e37400",
+  cols: [
+    { key: "id", header: "ID", width: 80, kind: "text", help: "Avtomatik (Q0001...)" },
+    { key: "billId", header: "Hisob ID", width: 90, kind: "text" },
+    { key: "date", header: "Sana", width: 110, kind: "date" },
+    { key: "amount", header: "Summa", width: 120, kind: "int" },
+    { key: "paidFrom", header: "Qayerdan", width: 100, kind: "enum", labels: L.paidFrom },
+    { key: "note", header: "Izoh", width: 240, kind: "text", plain: true },
+    { key: "voided", header: "Bekor qilingan", width: 110, kind: "bool", help: "To'lovni menyu orqali bekor qiling" },
+  ],
+};
+
+export const LEDGER_TABLES: TableDef[] = [JOURNAL, PERIODS, CHART_ACCOUNTS, CASH_ACCOUNTS];
+export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, PACKAGES, INSTALLMENTS, DOCUMENTS, EXPENSES, ...LEDGER_TABLES, STATEMENTS, STATEMENT_LINES, SUPPLIERS, SUPPLIER_BILLS, BILL_PAYMENTS];
 
 export const SETTINGS_SHEET = "Sozlamalar";
 export const DEBTORS_SHEET = "Qarzdorlar";
@@ -297,5 +429,6 @@ export const SETTING_DEFAULTS: { key: string; label: string; value: string; help
   { key: "installmentRemindDays", label: "Qism haqida oldindan eslatma (kun)", value: "3", help: "To'lov qismi muddatiga shuncha kun qolganda eslatma loyihasi yaratiladi (0 = o'chirilgan)" },
   { key: "requisites", label: "Markaz rekvizitlari (hujjatlarda)", value: "", help: "Manzil, telefon, hisob raqami... Kvitansiya va to'lov hisobida markaz nomi ostida chiqadi. Hujjat ichki hujjat: fiskal chek emas" },
   { key: "payInfo", label: "To'lov rekvizitlari", value: "", help: "Karta raqami yoki hisob. Xabardagi 'Nusxalash' tugmasi shuni nusxalaydi (bo'sh = tugma yo'q)" },
+  { key: "ledgerEditors", label: "Jurnalga yozishi mumkin bo'lgan emaillar", value: "", help: "Vergul bilan. Jurnal, Davrlar, Hisob rejasi va Pul hisoblari varaqlari himoyalangan: faqat egasi (skript) va shu emaillar yoza oladi. Bo'sh = faqat ega. Varaq egasi himoyani olib tashlashi mumkin; hash zanjiri o'zgartirishni aniqlaydi, lekin to'sa olmaydi" },
   { key: "ownerChatId", label: "Egasining Telegram chat ID si", value: "", help: "Vasiy 'To'lov qildim' bossa shu yerga xabar keladi (botga /start yozib, @userinfobot dan ID ni oling)" },
 ];

@@ -2,9 +2,12 @@
 import * as actions from "./gas/actions";
 import * as admission from "./gas/admission";
 import * as documents from "./gas/documents";
+import * as ledger from "./gas/ledger";
 import * as makeup from "./gas/makeup";
 import * as packages from "./gas/packages";
+import * as payables from "./gas/payables";
 import * as plans from "./gas/plans";
+import * as reconcile from "./gas/reconcile";
 import { setupWorkbook, loadSampleData, resetSampleData } from "./gas/setup";
 import { handleGet, handlePost } from "./gas/webhook";
 
@@ -79,6 +82,38 @@ g.onOpen = (): void => {
         .addItem("Webhook relay sozlamalari", "menuWebhookInfo")
         .addItem("Vasiylar uchun ulash havolalari", "menuLinkCodes"),
     )
+    .addSubMenu(
+      SpreadsheetApp.getUi()
+        .createMenu("Buxgalteriya")
+        .addItem("Kutayotganlarni jurnalga o'tkazish", "menuLedgerSync")
+        .addItem("Jurnalni tekshirish (hash zanjiri)", "menuLedgerVerify")
+        .addItem("Qo'lda yozuv", "menuLedgerManual")
+        .addItem("Teskari yozuv (xatoni tuzatish)", "menuLedgerReverse")
+        .addItem("Davrni yopish", "menuLedgerClose")
+        .addSeparator()
+        .addItem("Sinov balansi", "menuReportTrial")
+        .addItem("Foyda va zarar", "menuReportIncome")
+        .addItem("Balans", "menuReportBalance")
+        .addItem("Hisob kartochkasi", "menuReportLedger")
+        .addSeparator()
+        .addItem("Hisob qo'shish", "menuAccountAdd")
+        .addItem("Pul hisobi qo'shish (kassa, bank)", "menuCashAdd")
+        .addItem("Jurnal varaqlarini himoyalash", "menuLedgerProtect")
+        .addSeparator()
+        .addItem("Ta'minotchi qo'shish", "menuSupplierAdd")
+        .addItem("Ta'minotchi hisobi kiritish", "menuBillAdd")
+        .addItem("Ta'minotchiga to'lov", "menuBillPay")
+        .addItem("To'lovni bekor qilish", "menuBillPayVoid")
+        .addItem("Hisobni bekor qilish", "menuBillVoid")
+        .addItem("Qarz yoshi (ta'minotchilar)", "menuAging")
+        .addSeparator()
+        .addItem("Ko'chirma ochish", "menuStatementCreate")
+        .addItem("Ko'chirmani avtomatik moslash", "menuStatementAuto")
+        .addItem("Ko'chirma holati (solishtirish)", "menuStatementStatus")
+        .addItem("Qatorni qo'lda moslash", "menuStatementMatch")
+        .addItem("Moslashni bekor qilish", "menuStatementUnmatch")
+        .addItem("Ko'chirmani yopish", "menuStatementFinalize"),
+    )
     .addItem("O'qituvchi oyligini hisoblash", "menuPayroll")
     .addSeparator()
     .addItem("Boshlang'ich sozlash", "menuSetup")
@@ -119,6 +154,30 @@ g.menuDocSend = documents.menu.send;
 g.menuEntitlements = makeup.menu.view;
 g.menuScheduleMakeup = makeup.menu.schedule;
 g.menuCancelEntitlement = makeup.menu.cancel;
+g.menuLedgerSync = ledger.menu.sync;
+g.menuLedgerVerify = ledger.menu.verify;
+g.menuLedgerManual = ledger.menu.manual;
+g.menuLedgerReverse = ledger.menu.reverse;
+g.menuLedgerClose = ledger.menu.close;
+g.menuReportTrial = ledger.menu.trial;
+g.menuReportIncome = ledger.menu.income;
+g.menuReportBalance = ledger.menu.balance;
+g.menuReportLedger = ledger.menu.ledger;
+g.menuAccountAdd = ledger.menu.addAccount;
+g.menuCashAdd = ledger.menu.addCash;
+g.menuLedgerProtect = ledger.menu.protect;
+g.menuSupplierAdd = payables.menu.addSupplier;
+g.menuBillAdd = payables.menu.addBill;
+g.menuBillPay = payables.menu.pay;
+g.menuBillPayVoid = payables.menu.voidPayment;
+g.menuBillVoid = payables.menu.voidBill;
+g.menuAging = payables.menu.aging;
+g.menuStatementCreate = reconcile.menu.create;
+g.menuStatementAuto = reconcile.menu.auto;
+g.menuStatementStatus = reconcile.menu.status;
+g.menuStatementMatch = reconcile.menu.match;
+g.menuStatementUnmatch = reconcile.menu.unmatch;
+g.menuStatementFinalize = reconcile.menu.finalize;
 g.menuPayroll = (): void => actions.guard("Oylik", actions.calculatePayroll);
 g.menuWebhookInfo = (): void => actions.guard("Webhook", actions.showWebhookInfo);
 g.menuHelp = (): void => actions.showHelp();
