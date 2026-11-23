@@ -25,7 +25,7 @@ export function LangSwitch({ d, locale }: { d: Dict; locale: Locale }) {
 /** Fixed header: brand, section links (inline on wide screens, a native <details> menu on phones) and the language switch. */
 export function Nav({ d, locale }: { d: Dict; locale: Locale }) {
   const links = SECTIONS.map((id) => (
-    <a key={id} href={`#${id}`} className="text-mute hover:text-fg">
+    <a key={id} href={`#${id}`} className="whitespace-nowrap text-mute hover:text-fg">
       {d.nav[id]}
     </a>
   ));
@@ -35,13 +35,13 @@ export function Nav({ d, locale }: { d: Dict; locale: Locale }) {
         <a href="#main" aria-label={d.brand}>
           <Wordmark name={d.brand} />
         </a>
-        <nav aria-label={d.nav.label} className="hidden gap-5 text-sm lg:flex">
+        <nav aria-label={d.nav.label} className="hidden gap-5 text-sm xl:flex">
           {links}
         </nav>
-        <div className="hidden lg:block">
+        <div className="hidden xl:block">
           <LangSwitch d={d} locale={locale} />
         </div>
-        <details className="relative lg:hidden">
+        <details className="relative xl:hidden">
           <summary className="cursor-pointer list-none rounded-lg border border-line px-3 py-2 text-sm font-medium">{d.header.menu}</summary>
           <div className="absolute right-0 mt-2 grid w-[min(20rem,calc(100vw-2.5rem))] gap-4 rounded-xl border border-line bg-bg2 p-4">
             <nav aria-label={d.nav.label} className="grid gap-3 text-sm">
