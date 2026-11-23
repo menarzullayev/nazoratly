@@ -9,6 +9,7 @@ from nazoratly.routers import (
     agents,
     auth,
     finance,
+    leads,
     lessons,
     lifecycle,
     org,
@@ -24,6 +25,7 @@ router.include_router(org.router)
 router.include_router(students.router)
 router.include_router(academics.router)
 router.include_router(lifecycle.router)
+router.include_router(leads.router)
 router.include_router(settings.router)
 router.include_router(lessons.router)
 router.include_router(finance.router)

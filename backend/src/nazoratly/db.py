@@ -32,6 +32,8 @@ _RESOLVABLE = {
     "rooms": False,
     "branches": True,
     "enrollments": False,
+    "leads": True,
+    "lead_sources": False,
     "lessons": False,
     "charges": False,
     "payments": False,

@@ -651,6 +651,43 @@ _ENR_SQL = (
 )
 
 
+async def insert_enrollment(
+    conn: Conn,
+    *,
+    org_id: int,
+    student_id: int,
+    group_id: int,
+    started_on: date,
+    status: Literal["trial", "active"] = "active",
+    monthly_fee_override: Decimal | None = None,
+    discount_percent: Decimal = Decimal(0),
+) -> int:
+    """Seat check (trials count) and insert; the group row is locked so that concurrent enrollments are serialised."""
+    grp = await fetch_one(
+        conn, "SELECT capacity, status FROM study_groups WHERE id = %s FOR UPDATE", (group_id,)
+    )
+    assert grp is not None
+    if grp["status"] in ("finished", "cancelled"):
+        raise Conflict(f"Group is {grp['status']}")
+    if grp["capacity"] is not None:
+        n = await fetch_one(
+            conn,
+            "SELECT count(*) AS n FROM enrollments WHERE group_id = %s AND status IN ('trial', 'active')",
+            (group_id,),
+        )
+        assert n is not None
+        if n["n"] >= grp["capacity"]:
+            raise Conflict("Group is full")
+    row = await fetch_one(
+        conn,
+        "INSERT INTO enrollments (org_id, student_id, group_id, started_on, monthly_fee_override, discount_percent, status) "
+        "VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id",
+        (org_id, student_id, group_id, started_on, monthly_fee_override, discount_percent, status),
+    )
+    assert row is not None
+    return int(row["id"])
+
+
 @router.post("/groups/{group_id}/enrollments", response_model=EnrollmentOut, status_code=201)
 async def enroll(
     group_id: uuid.UUID,
@@ -661,37 +698,17 @@ async def enroll(
     async with db.tx(p.session()) as conn:
         gid = await resolve(conn, "study_groups", group_id, what="group")
         sid = await resolve(conn, "students", body.student_id, what="student")
-        grp = await fetch_one(
-            conn, "SELECT capacity, status FROM study_groups WHERE id = %s FOR UPDATE", (gid,)
-        )  # serialises seat checks
-        assert grp is not None
-        if grp["status"] in ("finished", "cancelled"):
-            raise Conflict(f"Group is {grp['status']}")
-        if grp["capacity"] is not None:
-            n = await fetch_one(
-                conn,
-                "SELECT count(*) AS n FROM enrollments WHERE group_id = %s AND status IN ('trial', 'active')",
-                (gid,),
-            )
-            assert n is not None
-            if n["n"] >= grp["capacity"]:
-                raise Conflict("Group is full")
-        row = await fetch_one(
+        eid = await insert_enrollment(
             conn,
-            "INSERT INTO enrollments (org_id, student_id, group_id, started_on, monthly_fee_override, discount_percent, status) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id",
-            (
-                p.org_id,
-                sid,
-                gid,
-                body.started_on,
-                body.monthly_fee_override,
-                body.discount_percent,
-                body.status,
-            ),
+            org_id=p.org_id,
+            student_id=sid,
+            group_id=gid,
+            started_on=body.started_on,
+            status=body.status,
+            monthly_fee_override=body.monthly_fee_override,
+            discount_percent=body.discount_percent,
         )
-        assert row is not None
-        out = await fetch_one(conn, f"{_ENR_SQL} WHERE e.id = %s", (row["id"],))
+        out = await fetch_one(conn, f"{_ENR_SQL} WHERE e.id = %s", (eid,))
     assert out is not None
     return EnrollmentOut.model_validate(out)
 

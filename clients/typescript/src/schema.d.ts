@@ -702,6 +702,94 @@ export interface paths {
         patch: operations["patch_guardian_v1_guardians__guardian_id__patch"];
         trace?: never;
     };
+    "/v1/lead-sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Sources */
+        get: operations["list_sources_v1_lead_sources_get"];
+        put?: never;
+        /** Create Source */
+        post: operations["create_source_v1_lead_sources_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/leads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Leads */
+        get: operations["list_leads_v1_leads_get"];
+        put?: never;
+        /** Create Lead */
+        post: operations["create_lead_v1_leads_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/leads/{lead_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Lead */
+        get: operations["get_lead_v1_leads__lead_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Lead */
+        patch: operations["patch_lead_v1_leads__lead_id__patch"];
+        trace?: never;
+    };
+    "/v1/leads/{lead_id}/enroll-trial": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Atomically turn a lead into a student with a trial enrollment (repeat calls return the first result) */
+        post: operations["enroll_trial_v1_leads__lead_id__enroll_trial_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/leads/{lead_id}/interactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Interaction */
+        post: operations["add_interaction_v1_leads__lead_id__interactions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/lessons": {
         parameters: {
             query?: never;
@@ -1163,6 +1251,23 @@ export interface paths {
         };
         /** Students with overdue debt */
         get: operations["debtors_v1_reports_debtors_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/reports/funnel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lead funnel for leads created in the range */
+        get: operations["funnel_v1_reports_funnel_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2024,6 +2129,35 @@ export interface components {
             /** Reason */
             reason?: string | null;
         };
+        /** EnrollTrialIn */
+        EnrollTrialIn: {
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Link Existing
+             * @description use the existing student that has the same phone
+             * @default false
+             */
+            link_existing: boolean;
+            /**
+             * Started On
+             * @description defaults to today
+             */
+            started_on?: string | null;
+        };
+        /** EnrollTrialOut */
+        EnrollTrialOut: {
+            enrollment: components["schemas"]["EnrollmentOut"];
+            lead: components["schemas"]["LeadOut"];
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+        };
         /** EnrollmentIn */
         EnrollmentIn: {
             /**
@@ -2153,6 +2287,17 @@ export interface components {
             void_reason: string | null;
             /** Voided */
             voided: boolean;
+        };
+        /** FunnelOut */
+        FunnelOut: {
+            /** By Source */
+            by_source: components["schemas"]["SourceStat"][];
+            /** Stages */
+            stages: {
+                [key: string]: number;
+            };
+            /** Trial To Enrolled */
+            trial_to_enrolled: number;
         };
         /** GenerateChargesIn */
         GenerateChargesIn: {
@@ -2411,6 +2556,50 @@ export interface components {
             /** Version */
             version: string;
         };
+        /** InteractionIn */
+        InteractionIn: {
+            /**
+             * Happened On
+             * Format: date
+             */
+            happened_on: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "call" | "message" | "meeting" | "trial" | "note";
+            /** Next Follow Up On */
+            next_follow_up_on?: string | null;
+            /** Summary */
+            summary: string;
+        };
+        /** InteractionOut */
+        InteractionOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Happened On
+             * Format: date
+             */
+            happened_on: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "call" | "message" | "meeting" | "trial" | "note";
+            /** Next Follow Up On */
+            next_follow_up_on: string | null;
+            /** Summary */
+            summary: string;
+        };
         /** ItemIn */
         ItemIn: {
             /**
@@ -2441,6 +2630,104 @@ export interface components {
             kind: string;
             /** Lesson Id */
             lesson_id: string | null;
+        };
+        /** LeadDetail */
+        LeadDetail: {
+            /** Converted At */
+            converted_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Full Name */
+            full_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Interactions */
+            interactions: components["schemas"]["InteractionOut"][];
+            /** Next Follow Up On */
+            next_follow_up_on: string | null;
+            /** Note */
+            note: string | null;
+            /** Phone */
+            phone: string | null;
+            /** Source */
+            source: string | null;
+            /** Source Id */
+            source_id: string | null;
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "new" | "contacted" | "trial_scheduled" | "trial_attended" | "enrolled" | "lost";
+            /** Student Id */
+            student_id: string | null;
+        };
+        /** LeadIn */
+        LeadIn: {
+            /** Full Name */
+            full_name: string;
+            /** Next Follow Up On */
+            next_follow_up_on?: string | null;
+            /** Note */
+            note?: string | null;
+            /** Phone */
+            phone?: string | null;
+            /** Source Id */
+            source_id?: string | null;
+        };
+        /** LeadOut */
+        LeadOut: {
+            /** Converted At */
+            converted_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Full Name */
+            full_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Next Follow Up On */
+            next_follow_up_on: string | null;
+            /** Note */
+            note: string | null;
+            /** Phone */
+            phone: string | null;
+            /** Source */
+            source: string | null;
+            /** Source Id */
+            source_id: string | null;
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "new" | "contacted" | "trial_scheduled" | "trial_attended" | "enrolled" | "lost";
+            /** Student Id */
+            student_id: string | null;
+        };
+        /** LeadPatch */
+        LeadPatch: {
+            /** Full Name */
+            full_name?: string | null;
+            /** Next Follow Up On */
+            next_follow_up_on?: string | null;
+            /** Note */
+            note?: string | null;
+            /** Phone */
+            phone?: string | null;
+            /** Source Id */
+            source_id?: string | null;
+            /** Stage */
+            stage?: ("new" | "contacted" | "trial_scheduled" | "trial_attended" | "lost") | null;
         };
         /** LessonIn */
         LessonIn: {
@@ -2947,6 +3234,17 @@ export interface components {
             has_more: boolean;
             /** Items */
             items: components["schemas"]["GuardianOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
+        /** Page[LeadOut] */
+        Page_LeadOut_: {
+            /** Has More */
+            has_more: boolean;
+            /** Items */
+            items: components["schemas"]["LeadOut"][];
             /** Limit */
             limit: number;
             /** Offset */
@@ -3462,6 +3760,32 @@ export interface components {
             trial_free_days?: number | null;
             /** Trial Free Lessons */
             trial_free_lessons?: number | null;
+        };
+        /** SourceIn */
+        SourceIn: {
+            /** Name */
+            name: string;
+        };
+        /** SourceOut */
+        SourceOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+        };
+        /** SourceStat */
+        SourceStat: {
+            /** Conversion */
+            conversion: number;
+            /** Enrolled */
+            enrolled: number;
+            /** Leads */
+            leads: number;
+            /** Source */
+            source: string | null;
         };
         /** StaffIn */
         StaffIn: {
@@ -5703,6 +6027,264 @@ export interface operations {
             };
         };
     };
+    list_sources_v1_lead_sources_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceOut"][];
+                };
+            };
+        };
+    };
+    create_source_v1_lead_sources_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SourceIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_leads_v1_leads_get: {
+        parameters: {
+            query?: {
+                stage?: ("new" | "contacted" | "trial_scheduled" | "trial_attended" | "enrolled" | "lost") | null;
+                source_id?: string | null;
+                follow_up_before?: string | null;
+                q?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_LeadOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_lead_v1_leads_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeadIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeadOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_lead_v1_leads__lead_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lead_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeadDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_lead_v1_leads__lead_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lead_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeadPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeadOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    enroll_trial_v1_leads__lead_id__enroll_trial_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lead_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnrollTrialIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollTrialOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_interaction_v1_leads__lead_id__interactions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lead_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InteractionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InteractionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_lessons_v1_lessons_get: {
         parameters: {
             query: {
@@ -6741,6 +7323,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DebtorRow"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    funnel_v1_reports_funnel_get: {
+        parameters: {
+            query: {
+                date_from: string;
+                date_to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FunnelOut"];
                 };
             };
             /** @description Validation Error */
