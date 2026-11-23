@@ -14,7 +14,7 @@ from nazoratly.config import Settings, get_settings
 from nazoratly.db import Database
 from nazoratly.middleware import BodyLimitMiddleware, RateLimitMiddleware, RequestContextMiddleware
 from nazoratly.observability import configure_logging, configure_sentry, configure_tracing
-from nazoratly.routers import health, pay, relay, v1
+from nazoratly.routers import health, landing, pay, relay, v1
 from nazoratly.secrets_box import SecretsBox
 
 log = structlog.get_logger()
@@ -72,6 +72,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.add_middleware(RequestContextMiddleware, settings=settings)
 
     app.include_router(health.router)
+    app.include_router(landing.router)
     app.include_router(v1.router)
     app.include_router(pay.callbacks)
     app.include_router(relay.router)
