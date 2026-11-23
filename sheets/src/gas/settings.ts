@@ -11,6 +11,8 @@ export interface Settings {
   policyText: string;
   payInfo: string;
   ownerChatId: string;
+  trialFreeLessons: number;
+  trialFreeDays: number;
 }
 
 export function readSettings(): Settings {
@@ -35,6 +37,8 @@ export function readSettings(): Settings {
     template: map.get("template") || DEFAULT_TEMPLATE,
     policyVersion: map.get("policyVersion") || "2026-11",
     policyText: map.get("policyText") || "",
+    trialFreeLessons: num("trialFreeLessons", 1, 0, 100),
+    trialFreeDays: num("trialFreeDays", 7, 0, 365),
     payInfo: map.get("payInfo") ?? "",
     ownerChatId: /^-?\d{5,}$/.test(map.get("ownerChatId") ?? "") ? (map.get("ownerChatId") as string) : "",
   };

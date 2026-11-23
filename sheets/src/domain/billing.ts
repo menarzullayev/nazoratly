@@ -45,7 +45,9 @@ export function planCharges(args: {
     const g = groups.get(e.groupId);
     const s = students.get(e.studentId);
     if (!g || !s || g.status === "cancelled" || s.status === "left") continue;
-    if (e.status === "frozen") continue;
+    if (e.status === "frozen" || e.status === "trial") continue;
+    // a trial that was accepted is billed for its first month at acceptance; the monthly run starts after that month
+    if (e.acceptedOn && first <= monthStart(e.acceptedOn)) continue;
     if (!(e.startedOn < next && (e.endedOn === "" || e.endedOn >= first))) continue;
     const fee = effectiveFee(g, e);
     if (fee <= 0) {

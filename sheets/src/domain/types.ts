@@ -25,7 +25,10 @@ export interface Enrollment {
   startedOn: ISODate;
   endedOn: ISODate | "";
   discountPercent: number;
-  status: "active" | "frozen" | "finished";
+  status: "trial" | "active" | "frozen" | "finished";
+  /** Set when a trial was accepted; months up to and including this month are not billed by the monthly run. */
+  acceptedOn?: ISODate | "";
+  firstMonthMode?: "full" | "prorated" | "free_until_next" | "";
 }
 
 export interface Charge {
@@ -72,4 +75,26 @@ export interface ReminderDraft {
   text: string;
   status: "pending" | "approved" | "sent" | "rejected" | "failed";
   error: string;
+}
+
+export type LeadStage = "new" | "contacted" | "trial_scheduled" | "trial_attended" | "enrolled" | "lost";
+
+export interface Lead {
+  id: string;
+  fullName: string;
+  phone: string;
+  source: string; // free text, "" when unknown
+  stage: LeadStage;
+  nextFollowUpOn: ISODate | "";
+  note: string;
+  createdOn: ISODate;
+  studentId: string; // set when the lead was turned into a trial
+}
+
+export interface LeadLogRow {
+  leadId: string;
+  date: ISODate;
+  kind: "call" | "message" | "meeting" | "trial" | "note";
+  summary: string;
+  nextFollowUpOn: ISODate | "";
 }

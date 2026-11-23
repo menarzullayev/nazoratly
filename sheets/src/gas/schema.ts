@@ -21,7 +21,10 @@ const YES_NO = "Ha / Yo'q";
 const L = {
   studentStatus: { lead: "Lead", active: "Faol", paused: "To'xtatilgan", left: "Ketgan" },
   groupStatus: { planned: "Rejada", active: "Faol", finished: "Tugagan", cancelled: "Bekor" },
-  enrollStatus: { active: "Faol", frozen: "Muzlatilgan", finished: "Tugagan" },
+  enrollStatus: { trial: "Sinov", active: "Faol", frozen: "Muzlatilgan", finished: "Tugagan" },
+  firstMonth: { "": "", full: "To'liq oy", prorated: "Proratsiya", free_until_next: "Keyingi oydan" },
+  leadStage: { new: "Yangi", contacted: "Aloqada", trial_scheduled: "Sinovga yozilgan", trial_attended: "Sinovda bo'ldi", enrolled: "Yozildi", lost: "Yo'qotildi" },
+  leadKind: { call: "Qo'ng'iroq", message: "Xabar", meeting: "Uchrashuv", trial: "Sinov", note: "Izoh" },
   attendance: { present: "Keldi", absent: "Kelmadi", late: "Kechikdi", excused: "Sababli" },
   payModel: { fixed: "Qat'iy oylik", per_lesson: "Dars uchun", percent: "Foiz" },
   teacherStatus: { active: "Faol", inactive: "Nofaol" },
@@ -73,7 +76,9 @@ export const ENROLLMENTS: TableDef = {
     { key: "startedOn", header: "Boshlangan sana", width: 120, kind: "date" },
     { key: "endedOn", header: "Tugagan sana", width: 120, kind: "date" },
     { key: "discountPercent", header: "Chegirma %", width: 100, kind: "int" },
-    { key: "status", header: "Holat", width: 110, kind: "enum", labels: L.enrollStatus },
+    { key: "status", header: "Holat", width: 110, kind: "enum", labels: L.enrollStatus, help: "Sinov: hisob yaratilmaydi. Qabul qilish: nazoratly > Qabul menyusi" },
+    { key: "acceptedOn", header: "Qabul sanasi", width: 110, kind: "date", help: "Sinov qabul qilingan sana (avtomatik)" },
+    { key: "firstMonthMode", header: "Birinchi oy", width: 120, kind: "enum", labels: L.firstMonth, help: "Qabul paytida tanlangan: to'liq oy / proratsiya / keyingi oydan (avtomatik)" },
   ],
 };
 
@@ -158,7 +163,35 @@ export const DRAFTS: TableDef = {
   ],
 };
 
-export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS];
+export const LEADS: TableDef = {
+  sheet: "Lead'lar",
+  color: "#e37400",
+  cols: [
+    { key: "id", header: "ID", width: 70, kind: "text", help: "Avtomatik beriladi (L0001...)" },
+    { key: "fullName", header: "F.I.Sh.", width: 220, kind: "text" },
+    { key: "phone", header: "Telefon", width: 130, kind: "text", help: "+998901234567" },
+    { key: "source", header: "Manba", width: 130, kind: "text", options: ["Instagram", "Telegram", "Tanish", "OLX", "Reklama", "Boshqa"], help: "Qayerdan keldi" },
+    { key: "stage", header: "Bosqich", width: 140, kind: "enum", labels: L.leadStage },
+    { key: "nextFollowUpOn", header: "Keyingi aloqa", width: 120, kind: "date" },
+    { key: "note", header: "Izoh", width: 240, kind: "text" },
+    { key: "createdOn", header: "Qo'shilgan sana", width: 120, kind: "date" },
+    { key: "studentId", header: "O'quvchi ID", width: 100, kind: "text", help: "Sinovga yozilganda avtomatik to'ladi" },
+  ],
+};
+
+export const LEAD_LOG: TableDef = {
+  sheet: "Lead aloqalari",
+  color: "#f29900",
+  cols: [
+    { key: "leadId", header: "Lead ID", width: 90, kind: "text" },
+    { key: "date", header: "Sana", width: 110, kind: "date" },
+    { key: "kind", header: "Turi", width: 120, kind: "enum", labels: L.leadKind },
+    { key: "summary", header: "Qisqacha", width: 320, kind: "text" },
+    { key: "nextFollowUpOn", header: "Keyingi aloqa", width: 120, kind: "date" },
+  ],
+};
+
+export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG];
 
 export const SETTINGS_SHEET = "Sozlamalar";
 export const DEBTORS_SHEET = "Qarzdorlar";
@@ -172,6 +205,8 @@ export const SETTING_DEFAULTS: { key: string; label: string; value: string; help
   { key: "template", label: "Eslatma shabloni", value: "", help: "{guardian} {student} {amount} {days} {center} o'zgaruvchilari" },
   { key: "policyVersion", label: "Maxfiylik siyosati versiyasi", value: "2026-11", help: "Rozilik yozuvida saqlanadi" },
   { key: "policyText", label: "Maxfiylik siyosati (bot /privacy)", value: "Biz faqat to'lov va davomat haqida xabar yuborish uchun ota-onaning ism va Telegram chat ID sini saqlaymiz. Rozilikni istalgan payt /stop bilan qaytarishingiz mumkin.", help: "Bot /privacy buyrug'iga shuni javob beradi (Telegram talabi). Havola bo'lsa shu yerga yozing" },
+  { key: "trialFreeLessons", label: "Bepul sinov darslari soni", value: "1", help: "Shuncha dars o'tgach (yoki kun chegarasi oldin tugasa) qaror kerak bo'ladi" },
+  { key: "trialFreeDays", label: "Bepul sinov kunlari", value: "7", help: "Sinov boshlanganidan shuncha kun o'tgach qaror kerak bo'ladi" },
   { key: "payInfo", label: "To'lov rekvizitlari", value: "", help: "Karta raqami yoki hisob. Xabardagi 'Nusxalash' tugmasi shuni nusxalaydi (bo'sh = tugma yo'q)" },
   { key: "ownerChatId", label: "Egasining Telegram chat ID si", value: "", help: "Vasiy 'To'lov qildim' bossa shu yerga xabar keladi (botga /start yozib, @userinfobot dan ID ni oling)" },
 ];
