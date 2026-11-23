@@ -20,6 +20,6 @@ export class SceneBoundary extends Component<Props, { failed: boolean }> {
   }
 
   render(): ReactNode {
-    return this.state.failed ? <div className="flex h-full items-center justify-center px-4 pt-24">{this.props.fallback}</div> : this.props.children;
+    return this.state.failed ? <div className="flex h-full items-center justify-center px-4">{this.props.fallback}</div> : this.props.children;
   }
 }

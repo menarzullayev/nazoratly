@@ -92,13 +92,13 @@ export function ScrollStage({ scene, accent, tier, children }: Props) {
         style={{ "--p": effective === "static" ? 1 : 0 } as CSSProperties}
         className="sticky top-0 h-svh overflow-hidden"
       >
-        <div className="absolute inset-0">
+        <div className="absolute inset-x-0 bottom-0 top-[40%]">
           {effective === "full" ? (
             <SceneBoundary fallback={lite}>
               {scene === "a" ? <ChaosScene {...sceneProps} /> : scene === "b" ? <MapScene {...sceneProps} /> : <FlowScene {...sceneProps} />}
             </SceneBoundary>
           ) : (
-            <div className="flex h-full items-center justify-center px-4 pt-24">{lite}</div>
+            <div className="flex h-full items-center justify-center px-4">{lite}</div>
           )}
         </div>
         <div className="pointer-events-none absolute inset-x-0 top-0 z-10 bg-gradient-to-b from-bg via-bg/70 to-transparent px-5 pb-16 pt-20">

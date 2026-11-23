@@ -103,9 +103,9 @@ function Rig({ progress, accent }: SceneProps) {
   const light = useRef<THREE.PointLight>(null);
   useFrame(({ camera }) => {
     const p = progress.current;
-    camera.position.z = lerp(10, 8, smooth(p));
+    camera.position.z = lerp(12, 10.5, smooth(p));
     camera.position.y = lerp(0.8, 0, smooth(p));
-    camera.lookAt(0, 0, 0);
+    camera.lookAt(0, lerp(0.2, 0.4, smooth(p)), 0);
     if (light.current) {
       light.current.position.x = lerp(-9, 9, clamp01((p - 0.7) / 0.3));
       light.current.intensity = 40 * smooth((p - 0.65) / 0.1);
@@ -116,14 +116,16 @@ function Rig({ progress, accent }: SceneProps) {
 
 export default function ChaosScene(props: SceneProps) {
   return (
-    <Canvas dpr={[1, 2]} camera={{ position: [0, 0.8, 10], fov: 45 }} gl={{ antialias: true, alpha: true }}
+    <Canvas dpr={[1, 2]} camera={{ position: [0, 0.8, 12], fov: 45 }} gl={{ antialias: true, alpha: true }}
       onCreated={({ gl }) => gl.domElement.addEventListener("webglcontextlost", (e) => { e.preventDefault(); props.onLost?.(); })}
     >
       <fog attach="fog" args={["#070b10", 9, 22]} />
       <ambientLight intensity={0.8} />
       <directionalLight position={[4, 6, 5]} intensity={1.6} />
-      <Cards {...props} />
-      <Dashboard {...props} />
+      <group scale={0.85}>
+        <Cards {...props} />
+        <Dashboard {...props} />
+      </group>
       <Rig {...props} />
     </Canvas>
   );

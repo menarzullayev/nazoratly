@@ -55,7 +55,7 @@ function Rig({ progress }: SceneProps) {
     const cam = camera as THREE.OrthographicCamera;
     const sweep = lerp(-4, 4, p);
     cam.position.set(10 + sweep, 10, 10 - sweep * 0.5);
-    cam.zoom = lerp(48, 78, p);
+    cam.zoom = lerp(36, 56, p);
     cam.lookAt(sweep, 0, -sweep * 0.5);
     cam.updateProjectionMatrix();
   });
@@ -64,7 +64,7 @@ function Rig({ progress }: SceneProps) {
 
 export default function MapScene(props: SceneProps) {
   return (
-    <Canvas dpr={[1, 2]} orthographic camera={{ position: [10, 10, 10], zoom: 48, near: -50, far: 100 }} gl={{ antialias: true, alpha: true }}
+    <Canvas dpr={[1, 2]} orthographic camera={{ position: [10, 10, 10], zoom: 36, near: -50, far: 100 }} gl={{ antialias: true, alpha: true }}
       onCreated={({ gl }) => gl.domElement.addEventListener("webglcontextlost", (e) => { e.preventDefault(); props.onLost?.(); })}
     >
       <ambientLight intensity={0.9} />
