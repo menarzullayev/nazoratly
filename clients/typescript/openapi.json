@@ -1273,6 +1273,49 @@
         "title": "CoursePatch",
         "type": "object"
       },
+      "DashboardOut": {
+        "properties": {
+          "as_of": {
+            "format": "date",
+            "title": "As Of",
+            "type": "string"
+          },
+          "finance": {
+            "$ref": "#/components/schemas/FinanceBlock"
+          },
+          "funnel": {
+            "$ref": "#/components/schemas/FunnelOut"
+          },
+          "movement": {
+            "$ref": "#/components/schemas/MovementBlock"
+          },
+          "payments": {
+            "$ref": "#/components/schemas/PaymentsBlock"
+          },
+          "range": {
+            "$ref": "#/components/schemas/RangeOut"
+          },
+          "waiting": {
+            "$ref": "#/components/schemas/WaitingBlock"
+          },
+          "window_days": {
+            "title": "Window Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "as_of",
+          "range",
+          "window_days",
+          "payments",
+          "movement",
+          "finance",
+          "funnel",
+          "waiting"
+        ],
+        "title": "DashboardOut",
+        "type": "object"
+      },
       "DebtorRow": {
         "properties": {
           "max_days_overdue": {
@@ -2192,6 +2235,37 @@
           "expires_on"
         ],
         "title": "ExtendIn",
+        "type": "object"
+      },
+      "FinanceBlock": {
+        "properties": {
+          "expenses": {
+            "title": "Expenses",
+            "type": "string"
+          },
+          "income": {
+            "title": "Income",
+            "type": "string"
+          },
+          "months": {
+            "items": {
+              "$ref": "#/components/schemas/MonthPointOut"
+            },
+            "title": "Months",
+            "type": "array"
+          },
+          "net": {
+            "title": "Net",
+            "type": "string"
+          }
+        },
+        "required": [
+          "months",
+          "income",
+          "expenses",
+          "net"
+        ],
+        "title": "FinanceBlock",
         "type": "object"
       },
       "FunnelOut": {
@@ -4477,6 +4551,45 @@
         "title": "MonthCell",
         "type": "object"
       },
+      "MonthPointOut": {
+        "properties": {
+          "expenses": {
+            "title": "Expenses",
+            "type": "string"
+          },
+          "income": {
+            "title": "Income",
+            "type": "string"
+          },
+          "month": {
+            "format": "date",
+            "title": "Month",
+            "type": "string"
+          },
+          "net": {
+            "title": "Net",
+            "type": "string"
+          },
+          "operating": {
+            "title": "Operating",
+            "type": "string"
+          },
+          "payroll": {
+            "title": "Payroll",
+            "type": "string"
+          }
+        },
+        "required": [
+          "month",
+          "income",
+          "operating",
+          "payroll",
+          "expenses",
+          "net"
+        ],
+        "title": "MonthPointOut",
+        "type": "object"
+      },
       "MonthReport": {
         "properties": {
           "cells": {
@@ -4558,6 +4671,65 @@
           "excused"
         ],
         "title": "MonthStudent",
+        "type": "object"
+      },
+      "MovementBlock": {
+        "properties": {
+          "accepted": {
+            "title": "Accepted",
+            "type": "integer"
+          },
+          "conversion": {
+            "title": "Conversion",
+            "type": "number"
+          },
+          "dropped": {
+            "title": "Dropped",
+            "type": "integer"
+          },
+          "left": {
+            "title": "Left",
+            "type": "integer"
+          },
+          "left_students": {
+            "items": {
+              "$ref": "#/components/schemas/StudentRef"
+            },
+            "title": "Left Students",
+            "type": "array"
+          },
+          "new": {
+            "title": "New",
+            "type": "integer"
+          },
+          "new_students": {
+            "items": {
+              "$ref": "#/components/schemas/StudentRef"
+            },
+            "title": "New Students",
+            "type": "array"
+          },
+          "running": {
+            "title": "Running",
+            "type": "integer"
+          },
+          "trials_started": {
+            "title": "Trials Started",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "new",
+          "left",
+          "new_students",
+          "left_students",
+          "trials_started",
+          "accepted",
+          "dropped",
+          "running",
+          "conversion"
+        ],
+        "title": "MovementBlock",
         "type": "object"
       },
       "OnlineTxOut": {
@@ -6281,6 +6453,45 @@
         "title": "PaymentOut",
         "type": "object"
       },
+      "PaymentsBlock": {
+        "properties": {
+          "overdue": {
+            "title": "Overdue",
+            "type": "integer"
+          },
+          "paid": {
+            "title": "Paid",
+            "type": "integer"
+          },
+          "paid_students": {
+            "items": {
+              "$ref": "#/components/schemas/StudentRef"
+            },
+            "title": "Paid Students",
+            "type": "array"
+          },
+          "unpaid": {
+            "title": "Unpaid",
+            "type": "integer"
+          },
+          "unpaid_students": {
+            "items": {
+              "$ref": "#/components/schemas/UnpaidStudent"
+            },
+            "title": "Unpaid Students",
+            "type": "array"
+          }
+        },
+        "required": [
+          "paid",
+          "unpaid",
+          "overdue",
+          "unpaid_students",
+          "paid_students"
+        ],
+        "title": "PaymentsBlock",
+        "type": "object"
+      },
       "PayrollDetail": {
         "properties": {
           "approved_at": {
@@ -6656,6 +6867,26 @@
           "callback_url"
         ],
         "title": "ProviderOut",
+        "type": "object"
+      },
+      "RangeOut": {
+        "properties": {
+          "date_from": {
+            "format": "date",
+            "title": "Date From",
+            "type": "string"
+          },
+          "date_to": {
+            "format": "date",
+            "title": "Date To",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date_from",
+          "date_to"
+        ],
+        "title": "RangeOut",
         "type": "object"
       },
       "ReceiptIn": {
@@ -8024,6 +8255,25 @@
         "title": "StudentPatch",
         "type": "object"
       },
+      "StudentRef": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "StudentRef",
+        "type": "object"
+      },
       "SummaryOut": {
         "properties": {
           "charged": {
@@ -8456,6 +8706,40 @@
         "title": "ToolCallOut",
         "type": "object"
       },
+      "UnpaidStudent": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "outstanding": {
+            "title": "Outstanding",
+            "type": "string"
+          },
+          "overdue": {
+            "title": "Overdue",
+            "type": "string"
+          },
+          "package_debt_lessons": {
+            "title": "Package Debt Lessons",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "outstanding",
+          "overdue",
+          "package_debt_lessons"
+        ],
+        "title": "UnpaidStudent",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -8516,6 +8800,185 @@
           "reason"
         ],
         "title": "VoidIn",
+        "type": "object"
+      },
+      "WaitingBlock": {
+        "properties": {
+          "packages": {
+            "items": {
+              "$ref": "#/components/schemas/WaitingPackage"
+            },
+            "title": "Packages",
+            "type": "array"
+          },
+          "rights": {
+            "items": {
+              "$ref": "#/components/schemas/WaitingRight"
+            },
+            "title": "Rights",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "trials": {
+            "items": {
+              "$ref": "#/components/schemas/WaitingTrial"
+            },
+            "title": "Trials",
+            "type": "array"
+          }
+        },
+        "required": [
+          "trials",
+          "packages",
+          "rights",
+          "total"
+        ],
+        "title": "WaitingBlock",
+        "type": "object"
+      },
+      "WaitingPackage": {
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "integer"
+          },
+          "days_left": {
+            "title": "Days Left",
+            "type": "integer"
+          },
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "next_expiry": {
+            "format": "date",
+            "title": "Next Expiry",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "enrollment_id",
+          "student_id",
+          "student_name",
+          "group_name",
+          "available",
+          "next_expiry",
+          "days_left"
+        ],
+        "title": "WaitingPackage",
+        "type": "object"
+      },
+      "WaitingRight": {
+        "properties": {
+          "days_left": {
+            "title": "Days Left",
+            "type": "integer"
+          },
+          "expires_on": {
+            "format": "date",
+            "title": "Expires On",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "student_id",
+          "student_name",
+          "group_name",
+          "expires_on",
+          "days_left"
+        ],
+        "title": "WaitingRight",
+        "type": "object"
+      },
+      "WaitingTrial": {
+        "properties": {
+          "days_elapsed": {
+            "title": "Days Elapsed",
+            "type": "integer"
+          },
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "lessons_attended": {
+            "title": "Lessons Attended",
+            "type": "integer"
+          },
+          "reason": {
+            "enum": [
+              "lessons",
+              "days"
+            ],
+            "title": "Reason",
+            "type": "string"
+          },
+          "started_on": {
+            "format": "date",
+            "title": "Started On",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "enrollment_id",
+          "student_id",
+          "student_name",
+          "group_name",
+          "started_on",
+          "lessons_attended",
+          "days_elapsed",
+          "reason"
+        ],
+        "title": "WaitingTrial",
         "type": "object"
       },
       "nazoratly__routers__packages__BalanceOut": {
@@ -10673,6 +11136,106 @@
         "summary": "Patch Course",
         "tags": [
           "academics"
+        ]
+      }
+    },
+    "/v1/dashboard": {
+      "get": {
+        "operationId": "dashboard_v1_dashboard_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "description": "look-ahead for expiring packages and rights",
+            "in": "query",
+            "name": "window_days",
+            "required": false,
+            "schema": {
+              "default": 7,
+              "description": "look-ahead for expiring packages and rights",
+              "maximum": 60,
+              "minimum": 1,
+              "title": "Window Days",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "max rows in each student list",
+            "in": "query",
+            "name": "list_limit",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "description": "max rows in each student list",
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "List Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Owner dashboard: paid/unpaid, new/left and trial conversion, six-month finance, funnel and waiting items",
+        "tags": [
+          "dashboard"
         ]
       }
     },

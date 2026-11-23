@@ -491,6 +491,23 @@ export interface paths {
         patch: operations["patch_course_v1_courses__course_id__patch"];
         trace?: never;
     };
+    "/v1/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Owner dashboard: paid/unpaid, new/left and trial conversion, six-month finance, funnel and waiting items */
+        get: operations["dashboard_v1_dashboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/documents": {
         parameters: {
             query?: never;
@@ -2313,6 +2330,22 @@ export interface components {
             /** Status */
             status?: ("active" | "archived") | null;
         };
+        /** DashboardOut */
+        DashboardOut: {
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            finance: components["schemas"]["FinanceBlock"];
+            funnel: components["schemas"]["FunnelOut"];
+            movement: components["schemas"]["MovementBlock"];
+            payments: components["schemas"]["PaymentsBlock"];
+            range: components["schemas"]["RangeOut"];
+            waiting: components["schemas"]["WaitingBlock"];
+            /** Window Days */
+            window_days: number;
+        };
         /** DebtorRow */
         DebtorRow: {
             /** Max Days Overdue */
@@ -2702,6 +2735,17 @@ export interface components {
              * Format: date
              */
             expires_on: string;
+        };
+        /** FinanceBlock */
+        FinanceBlock: {
+            /** Expenses */
+            expenses: string;
+            /** Income */
+            income: string;
+            /** Months */
+            months: components["schemas"]["MonthPointOut"][];
+            /** Net */
+            net: string;
         };
         /** FunnelOut */
         FunnelOut: {
@@ -3465,6 +3509,24 @@ export interface components {
              */
             student_id: string;
         };
+        /** MonthPointOut */
+        MonthPointOut: {
+            /** Expenses */
+            expenses: string;
+            /** Income */
+            income: string;
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+            /** Net */
+            net: string;
+            /** Operating */
+            operating: string;
+            /** Payroll */
+            payroll: string;
+        };
         /** MonthReport */
         MonthReport: {
             /** Cells */
@@ -3501,6 +3563,27 @@ export interface components {
             student_id: string;
             /** Student Name */
             student_name: string;
+        };
+        /** MovementBlock */
+        MovementBlock: {
+            /** Accepted */
+            accepted: number;
+            /** Conversion */
+            conversion: number;
+            /** Dropped */
+            dropped: number;
+            /** Left */
+            left: number;
+            /** Left Students */
+            left_students: components["schemas"]["StudentRef"][];
+            /** New */
+            new: number;
+            /** New Students */
+            new_students: components["schemas"]["StudentRef"][];
+            /** Running */
+            running: number;
+            /** Trials Started */
+            trials_started: number;
         };
         /** OnlineTxOut */
         OnlineTxOut: {
@@ -4162,6 +4245,19 @@ export interface components {
             /** Voided */
             voided: boolean;
         };
+        /** PaymentsBlock */
+        PaymentsBlock: {
+            /** Overdue */
+            overdue: number;
+            /** Paid */
+            paid: number;
+            /** Paid Students */
+            paid_students: components["schemas"]["StudentRef"][];
+            /** Unpaid */
+            unpaid: number;
+            /** Unpaid Students */
+            unpaid_students: components["schemas"]["UnpaidStudent"][];
+        };
         /** PayrollDetail */
         PayrollDetail: {
             /** Approved At */
@@ -4321,6 +4417,19 @@ export interface components {
             reversal_enabled: boolean;
             /** Status */
             status: string;
+        };
+        /** RangeOut */
+        RangeOut: {
+            /**
+             * Date From
+             * Format: date
+             */
+            date_from: string;
+            /**
+             * Date To
+             * Format: date
+             */
+            date_to: string;
         };
         /** ReceiptIn */
         ReceiptIn: {
@@ -4772,6 +4881,16 @@ export interface components {
             /** Status */
             status?: ("lead" | "active" | "paused" | "graduated" | "left") | null;
         };
+        /** StudentRef */
+        StudentRef: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+        };
         /** SummaryOut */
         SummaryOut: {
             /**
@@ -4927,6 +5046,22 @@ export interface components {
             /** Tool Name */
             tool_name: string;
         };
+        /** UnpaidStudent */
+        UnpaidStudent: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Outstanding */
+            outstanding: string;
+            /** Overdue */
+            overdue: string;
+            /** Package Debt Lessons */
+            package_debt_lessons: number;
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -4950,6 +5085,98 @@ export interface components {
              * @default false
              */
             release_allocations: boolean;
+        };
+        /** WaitingBlock */
+        WaitingBlock: {
+            /** Packages */
+            packages: components["schemas"]["WaitingPackage"][];
+            /** Rights */
+            rights: components["schemas"]["WaitingRight"][];
+            /** Total */
+            total: number;
+            /** Trials */
+            trials: components["schemas"]["WaitingTrial"][];
+        };
+        /** WaitingPackage */
+        WaitingPackage: {
+            /** Available */
+            available: number;
+            /** Days Left */
+            days_left: number;
+            /**
+             * Enrollment Id
+             * Format: uuid
+             */
+            enrollment_id: string;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Next Expiry
+             * Format: date
+             */
+            next_expiry: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+        };
+        /** WaitingRight */
+        WaitingRight: {
+            /** Days Left */
+            days_left: number;
+            /**
+             * Expires On
+             * Format: date
+             */
+            expires_on: string;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+        };
+        /** WaitingTrial */
+        WaitingTrial: {
+            /** Days Elapsed */
+            days_elapsed: number;
+            /**
+             * Enrollment Id
+             * Format: uuid
+             */
+            enrollment_id: string;
+            /** Group Name */
+            group_name: string;
+            /** Lessons Attended */
+            lessons_attended: number;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "lessons" | "days";
+            /**
+             * Started On
+             * Format: date
+             */
+            started_on: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
         };
         /** BalanceOut */
         nazoratly__routers__packages__BalanceOut: {
@@ -6243,6 +6470,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CourseOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dashboard_v1_dashboard_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+                /** @description look-ahead for expiring packages and rights */
+                window_days?: number;
+                /** @description max rows in each student list */
+                list_limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardOut"];
                 };
             };
             /** @description Validation Error */
