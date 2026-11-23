@@ -19,8 +19,31 @@ function chain<T extends object>(target: T): T {
   });
 }
 
+const OWNER = "owner@example.com";
+type Who = string | { getEmail(): string };
+const emailOf = (w: Who): string => (typeof w === "string" ? w : w.getEmail());
+/** A sheet protection: the spreadsheet starts with an owner and a staff editor; the owner can never be removed. */
+class FakeProtection {
+  description = "";
+  editors = new Set<string>([OWNER, "staff@example.com"]);
+  domainEdit = true;
+  constructor(private owner: { protections: FakeProtection[] }) {}
+  setDescription(d: string) { this.description = d; return this; }
+  getDescription() { return this.description; }
+  getEditors() { return [...this.editors].map((e) => ({ getEmail: () => e })); }
+  removeEditors(list: Who[]) { for (const w of list) if (emailOf(w) !== OWNER) this.editors.delete(emailOf(w)); return this; }
+  addEditor(w: Who) { this.editors.add(emailOf(w)); return this; }
+  addEditors(list: string[]) { for (const e of list) this.editors.add(e); return this; }
+  canDomainEdit() { return this.domainEdit; }
+  setDomainEdit(v: boolean) { this.domainEdit = v; return this; }
+  remove() { this.owner.protections = this.owner.protections.filter((p) => p !== this); }
+}
+
 class FakeSheet {
   data: Cell[][] = [];
+  protections: FakeProtection[] = [];
+  protect() { const p = new FakeProtection(this); this.protections.push(p); return p; }
+  getProtections(_type: unknown) { return [...this.protections]; }
   maxRows = 1000;
   constructor(public name: string) {}
   private ensure(r: number, c: number) {
@@ -105,6 +128,8 @@ export interface Harness {
   drive: Map<string, { name: string; folder: string; content: string }>;
   sheet(ref: SheetRef): FakeSheet;
   rows(ref: SheetRef): Cell[][];
+  /** protections of a sheet: description and the editors that may write */
+  protections(ref: SheetRef): { description: string; editors: string[] }[];
 }
 
 export function installHarness(): Harness {
@@ -121,6 +146,7 @@ export function installHarness(): Harness {
     drive: new Map(),
     sheet: (ref) => sheets.get(nameOf(ref))!,
     rows: (ref) => sheets.get(nameOf(ref))!.data.slice(0, sheets.get(nameOf(ref))!.getLastRow()),
+    protections: (ref) => sheets.get(nameOf(ref))!.protections.map((p) => ({ description: p.description, editors: [...p.editors] })),
   };
   const ss = {
     getSpreadsheetTimeZone: () => "Asia/Tashkent",
@@ -140,6 +166,7 @@ export function installHarness(): Harness {
   g.SpreadsheetApp = {
     getActive: () => ss,
     getUi: () => ui,
+    ProtectionType: { SHEET: "SHEET", RANGE: "RANGE" },
     newDataValidation: () => chain({ build: () => ({}) }),
     newConditionalFormatRule: () => chain({ build: () => ({}) }),
   };
@@ -152,6 +179,7 @@ export function installHarness(): Harness {
     sleep: () => {},
     newBlob: (data: string, type: string, name: string) => makeBlob(data, type, name),
   };
+  g.Session = { getEffectiveUser: () => ({ getEmail: () => OWNER }) };
   g.LockService = { getScriptLock: () => ({ tryLock: () => true, releaseLock: () => {} }) };
   g.PropertiesService = {
     getScriptProperties: () => ({

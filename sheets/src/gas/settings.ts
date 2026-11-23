@@ -21,6 +21,7 @@ export interface Settings {
   packageExpiryDays: number;
   packageLowLessons: number;
   requisites: string;
+  ledgerEditors: string;
 }
 
 export function readSettings(): Settings {
@@ -56,6 +57,7 @@ export function readSettings(): Settings {
     packageLowLessons: num("packageLowLessons", 2, 0, 50),
     requisites: map.get("requisites") ?? "",
     payInfo: map.get("payInfo") ?? "",
+    ledgerEditors: map.get("ledgerEditors") ?? "",
     ownerChatId: /^-?\d{5,}$/.test(map.get("ownerChatId") ?? "") ? (map.get("ownerChatId") as string) : "",
   };
 }

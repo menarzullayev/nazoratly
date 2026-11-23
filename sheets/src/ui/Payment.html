@@ -79,7 +79,7 @@
     run("recordPayment", { studentId: cur.id, amount: amountValue(), method: $("method").value, paidOn: $("paidOn").value, note: $("note").value, notifyGuardian: $("notify").checked })
       .then(function (r) {
         bal = Object.assign({ fullName: cur.fullName }, r.balance); showBalance();
-        banner("ok", "Qabul qilindi (" + esc(r.id) + "). Yangi qoldiq: " + som(r.balance.outstanding) + " so'm." + (r.telegram ? " " + r.telegram + "." : ""));
+        banner("ok", "Qabul qilindi (" + esc(r.id) + "). Yangi qoldiq: " + som(r.balance.outstanding) + " so'm." + (r.telegram ? " " + r.telegram + "." : "") + (r.ledger ? " " + r.ledger : ""));
         $("amount").value = ""; $("note").value = "";
       }).catch(function (e) { banner("err", e && e.message || "Saqlab bo'lmadi"); })
       .then(function () { $("save").textContent = "Qabul qilish"; validate(); });
