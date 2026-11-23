@@ -17,7 +17,7 @@ from nazoratly.idempotency import IdempotentRoute
 from nazoratly.routers.academics import _ENR_SQL, EnrollmentOut
 from nazoratly.routers.finance import month_start, next_month
 from nazoratly.routers.settings import load_settings
-from nazoratly.rules.lifecycle import FirstMonthMode, first_month_charge, trial_status
+from nazoratly.rules.lifecycle import FirstMonth, FirstMonthMode, first_month_charge, trial_status
 from nazoratly.schemas import Dec2, LongText, Model, Out, Page, make_page
 
 router = APIRouter(prefix="/v1", tags=["admission"], route_class=IdempotentRoute)
@@ -124,7 +124,7 @@ async def accept_trial(
         eid = await resolve(conn, "enrollments", enrollment_id, what="enrollment")
         e = await fetch_one(
             conn,
-            "SELECT e.id, e.status, e.started_on, e.accepted_on, e.student_id, e.group_id, "
+            "SELECT e.id, e.status, e.started_on, e.accepted_on, e.student_id, e.group_id, g.billing_mode, "
             "round(COALESCE(e.monthly_fee_override, g.monthly_fee) * (1 - e.discount_percent / 100), 2) AS fee "
             "FROM enrollments e JOIN study_groups g ON g.org_id = e.org_id AND g.id = e.group_id "
             "WHERE e.id = %s FOR UPDATE OF e",
@@ -138,12 +138,15 @@ async def accept_trial(
         if accepted_on < e["started_on"]:
             raise Unprocessable("accepted_on cannot be before the trial started")
         first = month_start(accepted_on)
-        result = first_month_charge(
-            mode=body.mode,
-            monthly_fee=Decimal(e["fee"]),
-            accepted_on=accepted_on,
-            lesson_dates=await _lesson_dates(conn, e["group_id"], first),
-        )
+        if e["billing_mode"] == "package":  # a package group bills when a package is sold, never by the month
+            result = FirstMonth(Decimal(0), False)
+        else:
+            result = first_month_charge(
+                mode=body.mode,
+                monthly_fee=Decimal(e["fee"]),
+                accepted_on=accepted_on,
+                lesson_dates=await _lesson_dates(conn, e["group_id"], first),
+            )
         if result.amount > 0:
             due = max(accepted_on, first.replace(day=DUE_DAY))
             await execute(
@@ -193,7 +196,7 @@ async def drop_trial(
         await execute(
             conn,
             "UPDATE enrollments SET status = 'finished', ended_on = %s, dropped_reason = %s WHERE id = %s",
-            (ended, body.reason, eid),
+            (ended, body.reason or "", eid),  # '' marks a dropped trial even without a reason
         )
         out = await fetch_one(conn, f"{_ENR_SQL} WHERE e.id = %s", (eid,))
     assert out is not None

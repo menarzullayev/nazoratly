@@ -1,5 +1,6 @@
 import { daysBetween } from "./dates";
 import type { StudentDebt } from "./debt";
+import { packageReminderText, type EnrollmentBalance } from "./packages";
 import type { ISODate, ReminderDraft, Student } from "./types";
 
 export const DEFAULT_TEMPLATE =
@@ -144,6 +145,48 @@ export function planUpcomingReminders(args: {
           }),
         });
       }
+    }
+  }
+  return plan;
+}
+
+/**
+ * Reminder DRAFTS for students whose lesson package is low, exhausted or in debt (negative lessons). Same consent / chat /
+ * cooldown rules as every reminder; nothing is sent from here (a human approves each draft). One draft per student:
+ * the worst of their package groups wins.
+ */
+export function planPackageReminders(args: {
+  balances: EnrollmentBalance[];
+  students: Student[];
+  drafts: ReminderDraft[];
+  today: ISODate;
+  cooldownDays: number;
+  centerName: string;
+}): ReminderPlan {
+  const rank = { debt: 0, exhausted: 1, low: 2, ok: 3 } as const;
+  const students = new Map(args.students.map((s) => [s.id, s]));
+  const lastDraft = new Map<string, ISODate>();
+  for (const d of args.drafts) {
+    if (d.status === "rejected") continue;
+    const prev = lastDraft.get(d.studentId);
+    if (!prev || d.createdOn > prev) lastDraft.set(d.studentId, d.createdOn);
+  }
+  const worst = new Map<string, EnrollmentBalance>();
+  for (const b of args.balances) {
+    if (b.need === "ok") continue;
+    const cur = worst.get(b.studentId);
+    if (!cur || rank[b.need] < rank[cur.need] || (b.need === cur.need && b.balance.balance < cur.balance.balance)) worst.set(b.studentId, b);
+  }
+  const plan: ReminderPlan = { drafts: [], skipped: [] };
+  for (const [studentId, b] of worst) {
+    const s = students.get(studentId);
+    if (!s || s.status === "left" || s.status === "paused") plan.skipped.push({ studentId, reason: "student_inactive" });
+    else if (!s.consentNotify) plan.skipped.push({ studentId, reason: "no_consent" });
+    else if (!s.guardianChatId) plan.skipped.push({ studentId, reason: "no_chat" });
+    else {
+      const last = lastDraft.get(studentId);
+      if (last && daysBetween(last, args.today) < args.cooldownDays) plan.skipped.push({ studentId, reason: "cooldown" });
+      else plan.drafts.push({ studentId, text: packageReminderText({ need: b.need, guardian: s.guardianName || "ota-ona", student: s.fullName, balance: b.balance.balance, debtAmount: b.debtAmount, center: args.centerName }) });
     }
   }
   return plan;

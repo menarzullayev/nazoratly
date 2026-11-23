@@ -657,29 +657,6 @@
         "title": "AuditOut",
         "type": "object"
       },
-      "BalanceOut": {
-        "properties": {
-          "credit": {
-            "title": "Credit",
-            "type": "string"
-          },
-          "outstanding_total": {
-            "title": "Outstanding Total",
-            "type": "string"
-          },
-          "overdue_total": {
-            "title": "Overdue Total",
-            "type": "string"
-          }
-        },
-        "required": [
-          "outstanding_total",
-          "overdue_total",
-          "credit"
-        ],
-        "title": "BalanceOut",
-        "type": "object"
-      },
       "BranchIn": {
         "additionalProperties": false,
         "properties": {
@@ -2202,6 +2179,21 @@
         "title": "ExpenseOut",
         "type": "object"
       },
+      "ExtendIn": {
+        "additionalProperties": false,
+        "properties": {
+          "expires_on": {
+            "format": "date",
+            "title": "Expires On",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expires_on"
+        ],
+        "title": "ExtendIn",
+        "type": "object"
+      },
       "FunnelOut": {
         "properties": {
           "by_source": {
@@ -2279,6 +2271,12 @@
           },
           "skipped_existing": {
             "title": "Skipped Existing",
+            "type": "integer"
+          },
+          "skipped_package_groups": {
+            "default": 0,
+            "description": "enrollments of package-billed groups (billed when a package is sold)",
+            "title": "Skipped Package Groups",
             "type": "integer"
           },
           "skipped_zero_fee": {
@@ -2362,6 +2360,14 @@
             "title": "Active Students",
             "type": "integer"
           },
+          "billing_mode": {
+            "enum": [
+              "monthly",
+              "package"
+            ],
+            "title": "Billing Mode",
+            "type": "string"
+          },
           "branch_id": {
             "anyOf": [
               {
@@ -2419,6 +2425,28 @@
             "title": "Name",
             "type": "string"
           },
+          "package_lessons": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Package Lessons"
+          },
+          "package_price": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Package Price"
+          },
           "schedule": {
             "items": {
               "$ref": "#/components/schemas/ScheduleSlotOut"
@@ -2472,6 +2500,9 @@
           "start_date",
           "end_date",
           "status",
+          "billing_mode",
+          "package_lessons",
+          "package_price",
           "active_students",
           "schedule"
         ],
@@ -2481,6 +2512,15 @@
       "GroupIn": {
         "additionalProperties": false,
         "properties": {
+          "billing_mode": {
+            "default": "monthly",
+            "enum": [
+              "monthly",
+              "package"
+            ],
+            "title": "Billing Mode",
+            "type": "string"
+          },
           "branch_id": {
             "anyOf": [
               {
@@ -2550,6 +2590,41 @@
             "title": "Name",
             "type": "string"
           },
+          "package_lessons": {
+            "anyOf": [
+              {
+                "maximum": 200.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "lessons in one package (package-billed groups only)",
+            "title": "Package Lessons"
+          },
+          "package_price": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "exclusiveMinimum": 0.0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "description": "UZS amount, 2 decimals"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "price of one package (package-billed groups only)",
+            "title": "Package Price"
+          },
           "start_date": {
             "format": "date",
             "title": "Start Date",
@@ -2592,6 +2667,14 @@
           "active_students": {
             "title": "Active Students",
             "type": "integer"
+          },
+          "billing_mode": {
+            "enum": [
+              "monthly",
+              "package"
+            ],
+            "title": "Billing Mode",
+            "type": "string"
           },
           "branch_id": {
             "anyOf": [
@@ -2650,6 +2733,28 @@
             "title": "Name",
             "type": "string"
           },
+          "package_lessons": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Package Lessons"
+          },
+          "package_price": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Package Price"
+          },
           "start_date": {
             "format": "date",
             "title": "Start Date",
@@ -2696,6 +2801,9 @@
           "start_date",
           "end_date",
           "status",
+          "billing_mode",
+          "package_lessons",
+          "package_price",
           "active_students"
         ],
         "title": "GroupOut",
@@ -2704,6 +2812,21 @@
       "GroupPatch": {
         "additionalProperties": false,
         "properties": {
+          "billing_mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "monthly",
+                  "package"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Billing Mode"
+          },
           "branch_id": {
             "anyOf": [
               {
@@ -2773,6 +2896,39 @@
               }
             ],
             "title": "Name"
+          },
+          "package_lessons": {
+            "anyOf": [
+              {
+                "maximum": 200.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Package Lessons"
+          },
+          "package_price": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "exclusiveMinimum": 0.0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "description": "UZS amount, 2 decimals"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Package Price"
           },
           "start_date": {
             "anyOf": [
@@ -4883,6 +5039,125 @@
         "title": "OutboxOut",
         "type": "object"
       },
+      "PackageIn": {
+        "additionalProperties": false,
+        "properties": {
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "pay": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PayIn"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "record the payment now: it goes to THIS package first, the rest FIFO"
+          },
+          "purchased_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "defaults to today",
+            "title": "Purchased On"
+          }
+        },
+        "required": [
+          "enrollment_id"
+        ],
+        "title": "PackageIn",
+        "type": "object"
+      },
+      "PackageOut": {
+        "properties": {
+          "charge_id": {
+            "format": "uuid",
+            "title": "Charge Id",
+            "type": "string"
+          },
+          "credited_lessons": {
+            "title": "Credited Lessons",
+            "type": "integer"
+          },
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "expires_on": {
+            "format": "date",
+            "title": "Expires On",
+            "type": "string"
+          },
+          "group_id": {
+            "format": "uuid",
+            "title": "Group Id",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "lessons": {
+            "title": "Lessons",
+            "type": "integer"
+          },
+          "paid": {
+            "title": "Paid",
+            "type": "string"
+          },
+          "price": {
+            "title": "Price",
+            "type": "string"
+          },
+          "purchased_on": {
+            "format": "date",
+            "title": "Purchased On",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "student_id",
+          "student_name",
+          "group_id",
+          "group_name",
+          "enrollment_id",
+          "charge_id",
+          "lessons",
+          "price",
+          "paid",
+          "credited_lessons",
+          "purchased_on",
+          "expires_on"
+        ],
+        "title": "PackageOut",
+        "type": "object"
+      },
       "Page_AuditOut_": {
         "properties": {
           "has_more": {
@@ -5348,6 +5623,37 @@
         "title": "Page[OutboxOut]",
         "type": "object"
       },
+      "Page_PackageOut_": {
+        "properties": {
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PackageOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset",
+          "has_more"
+        ],
+        "title": "Page[PackageOut]",
+        "type": "object"
+      },
       "Page_PaymentOut_": {
         "properties": {
           "has_more": {
@@ -5619,6 +5925,52 @@
         "title": "PasswordChangeIn",
         "type": "object"
       },
+      "PayIn": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "UZS amount, 2 decimals",
+            "title": "Amount"
+          },
+          "method": {
+            "enum": [
+              "cash",
+              "card",
+              "bank_transfer",
+              "other"
+            ],
+            "title": "Method",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "required": [
+          "amount",
+          "method"
+        ],
+        "title": "PayIn",
+        "type": "object"
+      },
       "PaymentIn": {
         "additionalProperties": false,
         "properties": {
@@ -5728,6 +6080,92 @@
           "method"
         ],
         "title": "PaymentIn",
+        "type": "object"
+      },
+      "PaymentNeededRow": {
+        "properties": {
+          "balance_lessons": {
+            "title": "Balance Lessons",
+            "type": "integer"
+          },
+          "debt_amount": {
+            "title": "Debt Amount",
+            "type": "string"
+          },
+          "debt_lessons": {
+            "title": "Debt Lessons",
+            "type": "integer"
+          },
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "group_id": {
+            "format": "uuid",
+            "title": "Group Id",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "guardian_name": {
+            "title": "Guardian Name",
+            "type": "string"
+          },
+          "need": {
+            "enum": [
+              "ok",
+              "low",
+              "exhausted",
+              "debt"
+            ],
+            "title": "Need",
+            "type": "string"
+          },
+          "next_expiry": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Expiry"
+          },
+          "reminder_text": {
+            "description": "suggested reminder DRAFT: nothing is sent; a person approves every message",
+            "title": "Reminder Text",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "student_id",
+          "student_name",
+          "enrollment_id",
+          "group_id",
+          "group_name",
+          "balance_lessons",
+          "debt_lessons",
+          "debt_amount",
+          "need",
+          "next_expiry",
+          "guardian_name",
+          "reminder_text"
+        ],
+        "title": "PaymentNeededRow",
         "type": "object"
       },
       "PaymentOut": {
@@ -6746,6 +7184,14 @@
             "title": "Makeup Lapses",
             "type": "boolean"
           },
+          "package_expiry_days": {
+            "title": "Package Expiry Days",
+            "type": "integer"
+          },
+          "package_low_lessons": {
+            "title": "Package Low Lessons",
+            "type": "integer"
+          },
           "requisites": {
             "anyOf": [
               {
@@ -6773,6 +7219,8 @@
           "excused_mode",
           "makeup_expiry_days",
           "makeup_lapses",
+          "package_expiry_days",
+          "package_low_lessons",
           "requisites"
         ],
         "title": "SettingsOut",
@@ -6820,6 +7268,32 @@
               }
             ],
             "title": "Makeup Lapses"
+          },
+          "package_expiry_days": {
+            "anyOf": [
+              {
+                "maximum": 730.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Package Expiry Days"
+          },
+          "package_low_lessons": {
+            "anyOf": [
+              {
+                "maximum": 50.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Package Low Lessons"
           },
           "requisites": {
             "anyOf": [
@@ -7205,7 +7679,7 @@
           "balance": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/BalanceOut"
+                "$ref": "#/components/schemas/nazoratly__routers__students__BalanceOut"
               },
               {
                 "type": "null"
@@ -8042,6 +8516,118 @@
           "reason"
         ],
         "title": "VoidIn",
+        "type": "object"
+      },
+      "nazoratly__routers__packages__BalanceOut": {
+        "properties": {
+          "available": {
+            "description": "lessons left in packages that have not expired",
+            "title": "Available",
+            "type": "integer"
+          },
+          "balance_lessons": {
+            "description": "available - debt_lessons; negative means debt",
+            "title": "Balance Lessons",
+            "type": "integer"
+          },
+          "burned": {
+            "description": "lessons left in packages that expired",
+            "title": "Burned",
+            "type": "integer"
+          },
+          "debt_amount": {
+            "description": "debt_lessons in so'm at the group's package price",
+            "title": "Debt Amount",
+            "type": "string"
+          },
+          "debt_lessons": {
+            "description": "lessons attended without cover (negative lessons)",
+            "title": "Debt Lessons",
+            "type": "integer"
+          },
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "group_id": {
+            "format": "uuid",
+            "title": "Group Id",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "need": {
+            "enum": [
+              "ok",
+              "low",
+              "exhausted",
+              "debt"
+            ],
+            "title": "Need",
+            "type": "string"
+          },
+          "next_expiry": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Expiry"
+          },
+          "package_lessons": {
+            "title": "Package Lessons",
+            "type": "integer"
+          },
+          "package_price": {
+            "title": "Package Price",
+            "type": "string"
+          }
+        },
+        "required": [
+          "enrollment_id",
+          "group_id",
+          "group_name",
+          "package_lessons",
+          "package_price",
+          "available",
+          "burned",
+          "debt_lessons",
+          "balance_lessons",
+          "debt_amount",
+          "need",
+          "next_expiry"
+        ],
+        "title": "BalanceOut",
+        "type": "object"
+      },
+      "nazoratly__routers__students__BalanceOut": {
+        "properties": {
+          "credit": {
+            "title": "Credit",
+            "type": "string"
+          },
+          "outstanding_total": {
+            "title": "Outstanding Total",
+            "type": "string"
+          },
+          "overdue_total": {
+            "title": "Overdue Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "outstanding_total",
+          "overdue_total",
+          "credit"
+        ],
+        "title": "BalanceOut",
         "type": "object"
       }
     },
@@ -13421,6 +14007,222 @@
         ]
       }
     },
+    "/v1/packages": {
+      "get": {
+        "operationId": "list_packages_v1_packages_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "student_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Student Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "group_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Group Id"
+            }
+          },
+          {
+            "description": "true: not expired today; false: expired",
+            "in": "query",
+            "name": "active",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "true: not expired today; false: expired",
+              "title": "Active"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 1000000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_PackageOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Packages (voided ones are not listed)",
+        "tags": [
+          "lesson packages"
+        ]
+      },
+      "post": {
+        "operationId": "sell_package_v1_packages_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PackageIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Sell a package: a charge, lessons and an expiry; optionally record the payment",
+        "tags": [
+          "lesson packages"
+        ]
+      }
+    },
+    "/v1/packages/{package_id}/extend": {
+      "post": {
+        "operationId": "extend_package_v1_packages__package_id__extend_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "package_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Package Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtendIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Extend the expiry of a package (only to a later date)",
+        "tags": [
+          "lesson packages"
+        ]
+      }
+    },
     "/v1/payment-providers": {
       "get": {
         "operationId": "list_providers_v1_payment_providers_get",
@@ -14631,6 +15433,69 @@
         "summary": "Open installments overdue or due soon (what reminders follow)",
         "tags": [
           "payment plans"
+        ]
+      }
+    },
+    "/v1/reports/packages/payment-needed": {
+      "get": {
+        "operationId": "payment_needed_v1_reports_packages_payment_needed_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "need",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "low",
+                    "exhausted",
+                    "debt"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Need"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentNeededRow"
+                  },
+                  "title": "Response Payment Needed V1 Reports Packages Payment Needed Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Students whose package balance is low, exhausted or negative, with a reminder draft text",
+        "tags": [
+          "lesson packages"
         ]
       }
     },
@@ -15940,6 +16805,58 @@
         "summary": "Patch Link",
         "tags": [
           "students"
+        ]
+      }
+    },
+    "/v1/students/{student_id}/lesson-balance": {
+      "get": {
+        "operationId": "lesson_balance_v1_students__student_id__lesson_balance_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "student_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Student Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/nazoratly__routers__packages__BalanceOut"
+                  },
+                  "title": "Response Lesson Balance V1 Students  Student Id  Lesson Balance Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Lesson balance of a student in each package-billed group",
+        "tags": [
+          "lesson packages"
         ]
       }
     },

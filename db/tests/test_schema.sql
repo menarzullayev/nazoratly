@@ -429,4 +429,110 @@ ALTER TABLE document_files ENABLE TRIGGER USER;
 UPDATE guardians SET telegram_chat_id = NULL WHERE id = 1;
 DELETE FROM payments WHERE student_id = 4; DELETE FROM charges WHERE student_id = 4; DELETE FROM data_consents WHERE student_id = 4;
 
+-- ---------------------------------------------------------------- 0014: lesson packages
+DO $$
+DECLARE g BIGINT; e1 BIGINT; e2 BIGINT; e4 BIGINT; ch BIGINT; pid BIGINT; pk BIGINT; lid BIGINT;
+BEGIN
+  -- group billing shape
+  PERFORM public.t_expect('23514', $q$INSERT INTO study_groups (org_id, course_id, name, monthly_fee, start_date, billing_mode) VALUES (1,1,'Bad 1',0,'2026-09-01','package')$q$);                              -- package needs lessons and price
+  PERFORM public.t_expect('23514', $q$INSERT INTO study_groups (org_id, course_id, name, monthly_fee, start_date, package_lessons, package_price) VALUES (1,1,'Bad 2',0,'2026-09-01',12,600000)$q$);          -- monthly carries neither
+  PERFORM public.t_expect('23514', $q$INSERT INTO study_groups (org_id, course_id, name, monthly_fee, start_date, billing_mode, package_lessons, package_price) VALUES (1,1,'Bad 3',0,'2026-09-01','package',0,600000)$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO study_groups (org_id, course_id, name, monthly_fee, start_date, billing_mode, package_lessons, package_price) VALUES (1,1,'Bad 4',0,'2026-09-01','package',201,600000)$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO study_groups (org_id, course_id, name, monthly_fee, start_date, billing_mode, package_lessons, package_price) VALUES (1,1,'Bad 5',0,'2026-09-01','package',12,0)$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO study_groups (org_id, course_id, name, monthly_fee, start_date, billing_mode) VALUES (1,1,'Bad 6',0,'2026-09-01','bogus')$q$);
+  INSERT INTO study_groups (org_id, course_id, name, monthly_fee, start_date, status, billing_mode, package_lessons, package_price)
+    VALUES (1,1,'Paket A',0,'2026-09-01','active','package',12,600000) RETURNING id INTO g;
+  IF (SELECT billing_mode FROM study_groups WHERE name = 'Ingliz A1') <> 'monthly' THEN RAISE EXCEPTION 'groups are monthly by default'; END IF;
+
+  -- settings
+  INSERT INTO org_settings (org_id) VALUES (1);
+  IF (SELECT (package_expiry_days, package_low_lessons)::text FROM org_settings WHERE org_id = 1) <> '(60,2)' THEN RAISE EXCEPTION 'package setting defaults are wrong'; END IF;
+  PERFORM public.t_expect('23514', $q$UPDATE org_settings SET package_expiry_days = 0 WHERE org_id = 1$q$);
+  PERFORM public.t_expect('23514', $q$UPDATE org_settings SET package_expiry_days = 731 WHERE org_id = 1$q$);
+  PERFORM public.t_expect('23514', $q$UPDATE org_settings SET package_low_lessons = 51 WHERE org_id = 1$q$);
+  PERFORM public.t_expect('23514', $q$UPDATE org_settings SET package_low_lessons = -1 WHERE org_id = 1$q$);
+
+  -- enrollments: student 1 active, students 2 and 4 on trial
+  INSERT INTO enrollments (org_id, student_id, group_id, started_on) VALUES (1,1,g,'2026-09-01') RETURNING id INTO e1;
+  INSERT INTO enrollments (org_id, student_id, group_id, started_on, status) VALUES (1,2,g,'2026-11-10','trial') RETURNING id INTO e2;
+  INSERT INTO enrollments (org_id, student_id, group_id, started_on, status) VALUES (1,4,g,'2026-11-10','trial') RETURNING id INTO e4;
+
+  -- a package is a charge of kind 'package'
+  PERFORM public.t_expect('23514', format($q$INSERT INTO charges (org_id, student_id, enrollment_id, kind, period_month, amount, due_date) VALUES (1,1,%s,'bogus','2026-11-01',600000,'2026-11-01')$q$, e1));
+  INSERT INTO charges (org_id, student_id, enrollment_id, kind, period_month, amount, due_date) VALUES (1,1,e1,'package','2026-11-01',600000,'2026-11-01') RETURNING id INTO ch;
+  PERFORM public.t_expect('23514', format($q$INSERT INTO lesson_packages (org_id, student_id, enrollment_id, charge_id, lessons, price, purchased_on, expires_on) VALUES (1,1,%s,1,12,600000,'2026-11-01','2026-12-31')$q$, e1));      -- charge 1 is tuition
+  PERFORM public.t_expect('23514', format($q$INSERT INTO lesson_packages (org_id, student_id, enrollment_id, charge_id, lessons, price, purchased_on, expires_on) VALUES (1,2,%s,%s,12,600000,'2026-11-01','2026-12-31')$q$, e2, ch)); -- charge of another student
+  PERFORM public.t_expect('23514', format($q$INSERT INTO lesson_packages (org_id, student_id, enrollment_id, charge_id, lessons, price, purchased_on, expires_on) VALUES (1,1,%s,%s,12,600000,'2026-11-01','2026-12-31')$q$, e2, ch)); -- enrollment of another student
+  PERFORM public.t_expect('23514', format($q$INSERT INTO lesson_packages (org_id, student_id, enrollment_id, charge_id, lessons, price, purchased_on, expires_on) VALUES (1,1,%s,%s,0,600000,'2026-11-01','2026-12-31')$q$, e1, ch));
+  PERFORM public.t_expect('23514', format($q$INSERT INTO lesson_packages (org_id, student_id, enrollment_id, charge_id, lessons, price, purchased_on, expires_on) VALUES (1,1,%s,%s,12,600000,'2026-11-01','2026-10-31')$q$, e1, ch));
+  PERFORM public.t_expect('23503', format($q$INSERT INTO lesson_packages (org_id, student_id, enrollment_id, charge_id, lessons, price, purchased_on, expires_on) VALUES (2,3,3,%s,12,600000,'2026-11-01','2026-12-31')$q$, ch));    -- charge of another center
+  INSERT INTO lesson_packages (org_id, student_id, enrollment_id, charge_id, lessons, price, purchased_on, expires_on) VALUES (1,1,e1,ch,12,600000,'2026-11-01','2026-12-31') RETURNING id INTO pk;
+  PERFORM public.t_expect('23505', format($q$INSERT INTO lesson_packages (org_id, student_id, enrollment_id, charge_id, lessons, price, purchased_on, expires_on) VALUES (1,1,%s,%s,6,300000,'2026-11-02','2026-12-31')$q$, e1, ch));  -- one package per charge
+
+  -- paid amount comes from the allocations of the charge
+  IF (SELECT paid FROM v_lesson_packages WHERE package_id = pk) <> 0 THEN RAISE EXCEPTION 'unpaid package has paid money'; END IF;
+  INSERT INTO payments (org_id, student_id, amount, method) VALUES (1,1,300000,'cash') RETURNING id INTO pid;
+  INSERT INTO payment_allocations (org_id, payment_id, charge_id, amount) VALUES (1,pid,ch,300000);
+  IF (SELECT paid FROM v_lesson_packages WHERE package_id = pk) <> 300000 THEN RAISE EXCEPTION 'package paid is wrong'; END IF;
+
+  -- consumption: lessons of the package group
+  INSERT INTO lessons (org_id, group_id, lesson_date, start_time, end_time, status) VALUES
+    (1,g,'2026-11-03','10:00','11:00','held'), (1,g,'2026-11-05','10:00','11:00','held'), (1,g,'2026-11-07','10:00','11:00','cancelled'),
+    (1,g,'2026-11-11','10:00','11:00','held'), (1,g,'2026-11-12','10:00','11:00','held'), (1,g,'2026-11-14','10:00','11:00','held');
+  INSERT INTO lessons (org_id, group_id, lesson_date, start_time, end_time, status, kind) VALUES (1,g,'2026-11-09','10:00','11:00','held','makeup');
+  INSERT INTO attendance (org_id, lesson_id, student_id, status)
+    SELECT 1, l.id, 1, CASE l.lesson_date WHEN '2026-11-03' THEN 'present' WHEN '2026-11-05' THEN 'excused' WHEN '2026-11-07' THEN 'present'
+                                     WHEN '2026-11-09' THEN 'present' WHEN '2026-11-11' THEN 'absent' ELSE 'late' END
+    FROM lessons l WHERE l.group_id = g AND l.lesson_date <> '2026-11-14';
+  -- default excused mode is makeup: present 11-03, absent 11-11, late 11-12 count; excused, cancelled and make-up do not
+  IF (SELECT array_agg(lesson_date ORDER BY lesson_date)::text FROM v_package_consumption WHERE enrollment_id = e1) <> '{2026-11-03,2026-11-11,2026-11-12}' THEN
+    RAISE EXCEPTION 'consumption (makeup mode) is wrong: %', (SELECT array_agg(lesson_date ORDER BY lesson_date)::text FROM v_package_consumption WHERE enrollment_id = e1);
+  END IF;
+  UPDATE org_settings SET excused_mode = 'none' WHERE org_id = 1;
+  IF (SELECT count(*) FROM v_package_consumption WHERE enrollment_id = e1) <> 4 THEN RAISE EXCEPTION 'an excused absence consumes when the mode is none'; END IF;
+  UPDATE org_settings SET excused_mode = 'credit' WHERE org_id = 1;
+  IF (SELECT count(*) FROM v_package_consumption WHERE enrollment_id = e1) <> 3 THEN RAISE EXCEPTION 'an excused absence does not consume in credit mode'; END IF;
+  DELETE FROM org_settings;
+  IF (SELECT count(*) FROM v_package_consumption WHERE enrollment_id = e1) <> 3 THEN RAISE EXCEPTION 'without settings the excused mode is makeup'; END IF;
+  -- a monthly group never consumes
+  IF EXISTS (SELECT 1 FROM v_package_consumption WHERE group_id = (SELECT id FROM study_groups WHERE name = 'Ingliz A1')) THEN RAISE EXCEPTION 'a monthly group has no package consumption'; END IF;
+
+  -- trials, dropped trials and lessons before acceptance consume nothing
+  SELECT id INTO lid FROM lessons WHERE group_id = g AND lesson_date = '2026-11-12';
+  INSERT INTO attendance (org_id, lesson_id, student_id, status) VALUES (1,lid,2,'present'), (1,lid,4,'present');
+  IF EXISTS (SELECT 1 FROM v_package_consumption WHERE student_id IN (2,4)) THEN RAISE EXCEPTION 'a trial consumes nothing'; END IF;
+  UPDATE enrollments SET status = 'finished', ended_on = '2026-11-20', dropped_reason = '' WHERE id = e4;
+  IF EXISTS (SELECT 1 FROM v_package_consumption WHERE student_id = 4) THEN RAISE EXCEPTION 'a dropped trial consumes nothing'; END IF;
+  UPDATE enrollments SET dropped_reason = NULL WHERE id = e4;
+  IF (SELECT count(*) FROM v_package_consumption WHERE student_id = 4) <> 1 THEN RAISE EXCEPTION 'a finished enrollment that was not a dropped trial consumes'; END IF;
+  UPDATE enrollments SET status = 'active', accepted_on = '2026-11-13', first_month_mode = 'full' WHERE id = e2;
+  IF EXISTS (SELECT 1 FROM v_package_consumption WHERE student_id = 2) THEN RAISE EXCEPTION 'lessons before acceptance are free'; END IF;
+  INSERT INTO attendance (org_id, lesson_id, student_id, status) SELECT 1, id, 2, 'present' FROM lessons WHERE group_id = g AND lesson_date = '2026-11-14';
+  IF (SELECT count(*) FROM v_package_consumption WHERE student_id = 2) <> 1 THEN RAISE EXCEPTION 'lessons after acceptance consume'; END IF;
+
+  -- agent views: consent filtered (student 1 has AI consent, student 2 has none)
+  PERFORM set_config('app.org_id', '1', true);
+  IF (SELECT count(*) FROM agent_v_package_packages) <> 1 OR (SELECT (package_lessons, group_name)::text FROM agent_v_package_packages) <> '(12,"Paket A")' THEN RAISE EXCEPTION 'agent package view is wrong'; END IF;
+  IF (SELECT array_agg(lesson_date ORDER BY lesson_date)::text FROM agent_v_package_consumption WHERE student_id = 1)
+     IS DISTINCT FROM (SELECT array_agg(lesson_date ORDER BY lesson_date)::text FROM v_package_consumption WHERE student_id = 1) THEN
+    RAISE EXCEPTION 'the agent consumption view must equal the app view';
+  END IF;
+  IF (SELECT paid FROM agent_v_package_packages WHERE student_id = 1) <> 300000 THEN RAISE EXCEPTION 'agent package paid is wrong'; END IF;
+  IF (SELECT count(*) FROM agent_v_package_consumption WHERE student_id = 1) <> 3 OR EXISTS (SELECT 1 FROM agent_v_package_consumption WHERE student_id = 2) THEN RAISE EXCEPTION 'agent consumption view must hide students without consent'; END IF;
+  PERFORM set_config('app.org_id', '2', true);
+  IF EXISTS (SELECT 1 FROM agent_v_package_packages) OR EXISTS (SELECT 1 FROM agent_v_package_consumption) THEN RAISE EXCEPTION 'agent views are per center'; END IF;
+  PERFORM set_config('app.org_id', '', true);
+
+  -- void the package charge: the package disappears from the calculation
+  DELETE FROM payment_allocations WHERE charge_id = ch;
+  UPDATE charges SET voided_at = now(), void_reason = 'test' WHERE id = ch;
+  IF EXISTS (SELECT 1 FROM v_lesson_packages WHERE package_id = pk) THEN RAISE EXCEPTION 'a voided package charge hides the package'; END IF;
+
+  -- clean up so the down-migration test starts from the original state
+  DELETE FROM attendance WHERE lesson_id IN (SELECT id FROM lessons WHERE group_id = g);
+  DELETE FROM lessons WHERE group_id = g;
+  DELETE FROM lesson_packages; DELETE FROM charges WHERE kind = 'package'; DELETE FROM payments WHERE id = pid;
+  DELETE FROM enrollments WHERE group_id = g; DELETE FROM study_groups WHERE id = g;
+END $$;
+
 SELECT 'ALL SCHEMA TESTS PASSED' AS result;

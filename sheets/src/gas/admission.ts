@@ -82,6 +82,13 @@ export function acceptTrial(enrollmentId?: string): void {
     if (e.status !== "trial") throw new Error(e.acceptedOn ? "Bu yozilish allaqachon qabul qilingan." : "Faqat sinovdagi yozilishni qabul qilish mumkin.");
     const g = read<Group>(GROUPS).find((x) => x.id === e.groupId);
     if (!g) throw new Error(`Guruh topilmadi: ${e.groupId}`);
+    if (g.billingMode === "package") {
+      // a package group bills when a package is sold, never by the month
+      const acceptedOn = today();
+      if (acceptedOn < e.startedOn) throw new Error("Sinov hali boshlanmagan.");
+      updateById(ENROLLMENTS, "id", e.id, { status: "active", acceptedOn, firstMonthMode: "" });
+      return "Qabul qilindi. Bu abonement guruhi: hisob yaratilmadi. Abonement sotish: nazoratly > Abonement.";
+    }
     const mode = askMode();
     const s = readSettings();
     const acceptedOn = today();
@@ -119,7 +126,7 @@ export function dropTrial(enrollmentId?: string): void {
     if (!e) throw new Error(`Yozilish topilmadi: ${id}`);
     if (e.status !== "trial") throw new Error("Faqat sinovdagi yozilishni bekor qilish mumkin.");
     const t = today();
-    updateById(ENROLLMENTS, "id", e.id, { status: "finished", endedOn: t > e.startedOn ? t : e.startedOn });
+    updateById(ENROLLMENTS, "id", e.id, { status: "finished", endedOn: t > e.startedOn ? t : e.startedOn, droppedTrial: true });
   });
   SpreadsheetApp.getActive().toast("Sinov bekor qilindi. Hisob yaratilmagan.", "nazoratly", 6);
 }

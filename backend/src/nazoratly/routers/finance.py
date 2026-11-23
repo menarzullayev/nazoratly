@@ -98,6 +98,9 @@ class GenerateChargesOut(Out):
     created: int
     skipped_existing: int
     skipped_zero_fee: int
+    skipped_package_groups: int = Field(
+        default=0, description="enrollments of package-billed groups (billed when a package is sold)"
+    )
 
 
 _OVERDUE_SQL = "COALESCE((SELECT b.overdue_outstanding FROM v_charge_balance b WHERE b.charge_id = c.id), 0)"
@@ -165,10 +168,20 @@ async def generate_charges(
             "JOIN students s ON s.org_id = e.org_id AND s.id = e.student_id "
             "WHERE e.status IN ('active', 'finished') AND e.started_on < %(nxt)s AND (e.ended_on IS NULL OR e.ended_on >= %(first)s) "
             "AND (e.accepted_on IS NULL OR %(first)s > date_trunc('month', e.accepted_on)::date) "
-            "AND g.deleted_at IS NULL AND g.status <> 'cancelled' AND s.deleted_at IS NULL AND (%(gid)s::bigint IS NULL OR e.group_id = %(gid)s) "
+            "AND g.deleted_at IS NULL AND g.status <> 'cancelled' AND s.deleted_at IS NULL AND (%(gid)s::bigint IS NULL OR e.group_id = %(gid)s) AND g.billing_mode = 'monthly' "
             "ORDER BY e.id",
             {"nxt": nxt, "first": first, "gid": gid},
         )
+        pkg = await fetch_one(
+            conn,
+            "SELECT count(*) AS n FROM enrollments e JOIN study_groups g ON g.org_id = e.org_id AND g.id = e.group_id "
+            "JOIN students s ON s.org_id = e.org_id AND s.id = e.student_id "
+            "WHERE g.billing_mode = 'package' AND e.status IN ('active', 'finished') AND e.started_on < %(nxt)s "
+            "AND (e.ended_on IS NULL OR e.ended_on >= %(first)s) AND g.deleted_at IS NULL AND g.status <> 'cancelled' "
+            "AND s.deleted_at IS NULL AND (%(gid)s::bigint IS NULL OR e.group_id = %(gid)s)",
+            {"nxt": nxt, "first": first, "gid": gid},
+        )
+        assert pkg is not None
         created = existing = zero = 0
         for r in rows:
             if r["fee"] <= 0:
@@ -210,7 +223,13 @@ async def generate_charges(
                     )
             else:
                 existing += 1
-    return GenerateChargesOut(month=first, created=created, skipped_existing=existing, skipped_zero_fee=zero)
+    return GenerateChargesOut(
+        month=first,
+        created=created,
+        skipped_existing=existing,
+        skipped_zero_fee=zero,
+        skipped_package_groups=int(pkg["n"]),
+    )
 
 
 @router.get("/charges", response_model=Page[ChargeOut])

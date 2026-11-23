@@ -49,3 +49,9 @@ Foydalanuvchi bilan hisobotlar o'zbek lotin tilida; kod/izoh/identifikatorlar in
 - Qurildi: oltin qoidalar (`tests/golden/entitlements.json`), migratsiya 0012, API (`/v1/entitlements`, sozlamalar, kredit `/charges/generate` da, oylik qoidasi), Sheets (Qoplash huquqlari varaqi, menyu Qoplash, kredit, oylik).
 - KUTMOQDA (egasining ruxsati): 0012 ni lokal bazaga qo'llash (oldin `pg_dump`), `clasp push` + Sheet'da "Boshlang'ich sozlash".
 - Keyingi: 3-bosqich (to'lov rejasi, PDF kvitansiya/hisob-faktura), keyin abonement, panel, buxgalteriya.
+
+## Holat 2026-11-23 (kech, 5): 4-bosqich (dars paketlari / abonement), branch `feat/phase4-lesson-packages`
+- Qurildi: oltin qoidalar (`tests/golden/packages.json`), migratsiya 0014, API (`/v1/packages`, `/v1/students/{id}/lesson-balance`, `/v1/reports/packages/payment-needed`, guruh `billing_mode`, sozlamalar), MCP `list_packages_needing_payment`, Sheets (Abonement menyusi, `Abonementlar` varag'i, to'lov kerak ro'yxati va eslatma loyihalari).
+- KUTMOQDA (egasining ruxsati): 0014 ni lokal bazaga qo'llash (oldin `pg_dump`), `clasp push` + Sheet'da "Boshlang'ich sozlash" (yangi ustunlar/varaq).
+- Qaror: API mahsulotida eslatma LOYIHASINI agent yaratadi (Model B); server faqat matn taklifini beradi va MCP o'qish asbobini ochadi. Qaytarish (refund) va kuygan darslarni tiklash yo'q.
+- Keyingi: boshqaruv paneli, buxgalteriya (to'liq), sig'im/QR/import/demo rejim; sayt har bosqichdan keyin.

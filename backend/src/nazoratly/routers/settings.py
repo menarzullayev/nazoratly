@@ -21,6 +21,8 @@ class SettingsOut(Out):
     excused_mode: Literal["makeup", "credit", "none"]
     makeup_expiry_days: int
     makeup_lapses: bool
+    package_expiry_days: int
+    package_low_lessons: int
     requisites: str | None = Field(
         description="the center's own requisites, printed on receipts and invoices"
     )
@@ -32,6 +34,8 @@ class SettingsPatch(Model):
     excused_mode: Literal["makeup", "credit", "none"] | None = None
     makeup_expiry_days: Annotated[int, Field(ge=0, le=365)] | None = None
     makeup_lapses: bool | None = None
+    package_expiry_days: Annotated[int, Field(ge=1, le=730)] | None = None
+    package_low_lessons: Annotated[int, Field(ge=0, le=50)] | None = None
     requisites: Annotated[str, StringConstraints(strip_whitespace=True, max_length=1000)] | None = Field(
         default=None, description="empty string clears it"
     )
@@ -44,7 +48,7 @@ async def load_settings(conn: Conn, org_id: int) -> SettingsOut:
     )
     row = await fetch_one(
         conn,
-        "SELECT trial_free_lessons, trial_free_days, excused_mode, makeup_expiry_days, makeup_lapses, requisites FROM org_settings WHERE org_id = %s",
+        "SELECT trial_free_lessons, trial_free_days, excused_mode, makeup_expiry_days, makeup_lapses, package_expiry_days, package_low_lessons, requisites FROM org_settings WHERE org_id = %s",
         (org_id,),
     )
     assert row is not None
