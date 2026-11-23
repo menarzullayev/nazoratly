@@ -34,6 +34,13 @@ Birinchi mijozlar uchun: o'quv markazini Google Sheets ichida professional yurit
 - Bot tokeni xato xabarlarida/varaqlarda ko'rinmaydi. Minimal OAuth ruxsatlar (`appsscript.json`), tashqi so'rov faqat `api.telegram.org`.
 - Hisob/to'lovlar o'chirilmaydi: "Bekor qilingan = Ha" (chizilgan ko'rinadi), qarz hisobi ularni hisobga olmaydi.
 
+## Postgres tizimiga ko'chish
+Mijoz o'sganda ma'lumot to'liq nazoratly API'ga ko'chadi (qoidalar bir xil, shuning uchun qarz summalari mos tushadi):
+1. Har bir varaqni CSV qilib yuklab oling (File > Download > CSV), fayl nomi varaq nomi bilan: `O'quvchilar.csv`, `Guruhlar.csv`, `Yozilishlar.csv`, `Hisoblar.csv`, `To'lovlar.csv`, `Davomat.csv`, `O'qituvchilar.csv` (bitta papkaga).
+2. API'da markaz yarating (`POST /v1/auth/register`) va owner tokenini oling.
+3. `cd backend && uv run python -m nazoratly.tools.sheets_import --api https://nazoratly.bugvector.uz --token <ACCESS_TOKEN> --dir <papka> --dry-run` (avval sinov: hech narsa yozilmaydi), keyin `--dry-run`siz.
+Import API orqali ishlaydi (izolyatsiya, rozilik, yaxlitlik qoidalari amal qiladi), `import_state.json` tufayli qayta ishga tushirish hech narsani ikki marta yaratmaydi, rad etilgan qatorlar sabab bilan hisobotda chiqadi. Vasiylar: Telegram chat ID va rozilik ko'chiriladi; aloqasi yo'q vasiylar hisobotda ko'rsatiladi. Davomat uchun dars vaqti sheetda yo'q: 09:00-10:00 qo'yiladi. Guruhlar bitta "Umumiy" kursga bog'lanadi.
+
 ## Sifat nazorati
 ```bash
 npm run check     # tsc --noEmit + vitest (34 test) + build
@@ -45,4 +52,3 @@ Testlar: sof domen mantiqi (hisob, FIFO qarz, oylik, eslatma qoidalari), jadval 
 - Apps Script kvotalari: bitta ishga tushirish ~6 daqiqa (yuborish 4,5 daqiqada to'xtab, qolganini keyingi bosishda davom ettiradi), kundalik URL so'rovlar limiti hisob turiga bog'liq. Katta markaz (1000+ o'quvchi, ko'p yillik davomat) uchun Postgres tizimiga o'tish kerak.
 - Bir vaqtda tahrirlash: skript amallari qulf (`LockService`) bilan, lekin qo'lda tahrir va skript bir vaqtda bo'lsa oxirgi yozgan yutadi.
 - Proratsiya yo'q (to'liq oy narxi), valyuta faqat so'm, foiz/dars oyligi hisobi API bilan bir xil soddalashtirilgan (dars = sana+guruh bo'yicha davomat belgilangan kun).
-- Postgres tizimiga ko'chirish skripti (import) hali yozilmagan.
