@@ -60,6 +60,7 @@ for (const p of PAGES) {
 
 test("the demo works with the keyboard only", async ({ page }) => {
   await page.goto("/");
+  await page.locator("#demo").scrollIntoViewIfNeeded();
   const demo = page.locator("#demo");
   await demo.getByRole("tab", { name: "Davomat" }).focus();
   await page.keyboard.press("ArrowRight");
@@ -75,6 +76,7 @@ test("the demo works with the keyboard only", async ({ page }) => {
 
 test("the demo is rendered in the Cyrillic script on /uz-cyrl/", async ({ page }) => {
   await page.goto("/uz-cyrl/");
+  await page.locator("#demo").scrollIntoViewIfNeeded();
   const demo = page.locator("#demo");
   await expect(demo.getByRole("tab").first()).toHaveText(/[Ѐ-ӿ]/);
   await expect(demo.getByText("Азиз Раҳимов").first()).toBeVisible();
