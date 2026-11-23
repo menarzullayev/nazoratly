@@ -71,3 +71,11 @@ Qarzdorlar (`charges_open_due`), o'quvchi balansi, kunlik/oylik tushum (`payment
 - `documents` (+`document_files` PDF baytlari, auditga tushmaydi): raqamlar `document_counters` qatorini qulflab beriladi; hujjat o'zgarmas (trigger), bir to'lovga bitta kvitansiya. `org_settings.requisites` markaz rekvizitlari.
 - `outbox_messages` hujjat olib yuradi (`document_id`, `body_html`, `text_delivered`); worker `outbox_document()` va `outbox_mark_text_delivered()` orqali oladi (jadvalga kirishi yo'q).
 - Hujjatlar markazning ichki hujjati: fiskal da'vo yo'q (YaTT/MChJ yo'q), shuning uchun "hisob-faktura" so'zi ishlatilmaydi ("to'lov hisobi").
+
+## 10. Dars paketlari / abonement (migratsiya 0014)
+- `study_groups.billing_mode` (`monthly|package`) + `package_lessons`, `package_price` (CHECK: paket guruhida ikkalasi ham to'ldirilgan, oylikda bo'sh). `org_settings.package_expiry_days` (60), `package_low_lessons` (2). `charges.kind` ga `package` qo'shildi.
+- `lesson_packages`: paket = `package` hisobi (`charge_id` unikal) + dars soni, narx, sotilgan sana, muddat (RLS + audit; trigger hisob turi va o'quvchi mosligini tekshiradi). Bekor qilingan hisob paketni hisobdan chiqaradi.
+- Balans SAQLANMAYDI va SQL'da hisoblanmaydi: `v_lesson_packages` (paket + hisobga to'langan pul) va `v_package_consumption` (dars sarflaydigan davomat belgilari) faktlarni beradi, qoida `rules/packages.py` / `domain/packages.ts` da (oltin: `tests/golden/packages.json`). Qoidalar: beriladigan darslar to'langan pulga proporsional; eng eski paketdan sarflanadi (paket shu kuni amal qilishi kerak); paketsiz darslar `uncovered` (manfiy dars), keyin muddati o'tmagan paketdan yopiladi; muddati o'tgan paketning qolgani `burned`.
+- Agent ko'rinishlari (`agent_v_package_enrollments`, `_packages`, `_consumption`, AI roziligi bilan) bir xil Python qoidasiga ozuqa beradi. Ular asosiy jadvallardan o'qiydi (security_invoker ko'rinishni o'qiydigan ko'rinish agent huquqi bilan ishlardi), shuning uchun sarflash qoidasi SQL'da ikki joyda yozilgan; sxema testi ikkalasini solishtiradi.
+- Bekor qilingan sinov: `enrollments.dropped_reason` bo'sh bo'lmagan qatordagi (`''` ham) `finished` yozilish sinov darslarini sarflamaydi.
+- Pastga qaytarish: paketlar, `package` hisoblari yoki paket guruhlari bo'lsa to'xtaydi.

@@ -1162,6 +1162,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/packages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Packages (voided ones are not listed) */
+        get: operations["list_packages_v1_packages_get"];
+        put?: never;
+        /** Sell a package: a charge, lessons and an expiry; optionally record the payment */
+        post: operations["sell_package_v1_packages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/packages/{package_id}/extend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Extend the expiry of a package (only to a later date) */
+        post: operations["extend_package_v1_packages__package_id__extend_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/payment-providers": {
         parameters: {
             query?: never;
@@ -1469,6 +1504,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/reports/packages/payment-needed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Students whose package balance is low, exhausted or negative, with a reminder draft text */
+        get: operations["payment_needed_v1_reports_packages_payment_needed_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/reports/revenue": {
         parameters: {
             query?: never;
@@ -1731,6 +1783,23 @@ export interface paths {
         head?: never;
         /** Patch Link */
         patch: operations["patch_link_v1_students__student_id__guardians__guardian_id__patch"];
+        trace?: never;
+    };
+    "/v1/students/{student_id}/lesson-balance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lesson balance of a student in each package-billed group */
+        get: operations["lesson_balance_v1_students__student_id__lesson_balance_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/teachers": {
@@ -2038,15 +2107,6 @@ export interface components {
             id: number;
             /** Request Id */
             request_id: string | null;
-        };
-        /** BalanceOut */
-        BalanceOut: {
-            /** Credit */
-            credit: string;
-            /** Outstanding Total */
-            outstanding_total: string;
-            /** Overdue Total */
-            overdue_total: string;
         };
         /** BranchIn */
         BranchIn: {
@@ -2635,6 +2695,14 @@ export interface components {
             /** Voided */
             voided: boolean;
         };
+        /** ExtendIn */
+        ExtendIn: {
+            /**
+             * Expires On
+             * Format: date
+             */
+            expires_on: string;
+        };
         /** FunnelOut */
         FunnelOut: {
             /** By Source */
@@ -2673,6 +2741,12 @@ export interface components {
             month: string;
             /** Skipped Existing */
             skipped_existing: number;
+            /**
+             * Skipped Package Groups
+             * @description enrollments of package-billed groups (billed when a package is sold)
+             * @default 0
+             */
+            skipped_package_groups: number;
             /** Skipped Zero Fee */
             skipped_zero_fee: number;
         };
@@ -2714,6 +2788,11 @@ export interface components {
         GroupDetail: {
             /** Active Students */
             active_students: number;
+            /**
+             * Billing Mode
+             * @enum {string}
+             */
+            billing_mode: "monthly" | "package";
             /** Branch Id */
             branch_id: string | null;
             /** Capacity */
@@ -2736,6 +2815,10 @@ export interface components {
             monthly_fee: string;
             /** Name */
             name: string;
+            /** Package Lessons */
+            package_lessons: number | null;
+            /** Package Price */
+            package_price: string | null;
             /** Schedule */
             schedule: components["schemas"]["ScheduleSlotOut"][];
             /**
@@ -2752,6 +2835,12 @@ export interface components {
         };
         /** GroupIn */
         GroupIn: {
+            /**
+             * Billing Mode
+             * @default monthly
+             * @enum {string}
+             */
+            billing_mode: "monthly" | "package";
             /** Branch Id */
             branch_id?: string | null;
             /** Capacity */
@@ -2771,6 +2860,16 @@ export interface components {
             /** Name */
             name: string;
             /**
+             * Package Lessons
+             * @description lessons in one package (package-billed groups only)
+             */
+            package_lessons?: number | null;
+            /**
+             * Package Price
+             * @description price of one package (package-billed groups only)
+             */
+            package_price?: (number | string) | null;
+            /**
              * Start Date
              * Format: date
              */
@@ -2788,6 +2887,11 @@ export interface components {
         GroupOut: {
             /** Active Students */
             active_students: number;
+            /**
+             * Billing Mode
+             * @enum {string}
+             */
+            billing_mode: "monthly" | "package";
             /** Branch Id */
             branch_id: string | null;
             /** Capacity */
@@ -2810,6 +2914,10 @@ export interface components {
             monthly_fee: string;
             /** Name */
             name: string;
+            /** Package Lessons */
+            package_lessons: number | null;
+            /** Package Price */
+            package_price: string | null;
             /**
              * Start Date
              * Format: date
@@ -2824,6 +2932,8 @@ export interface components {
         };
         /** GroupPatch */
         GroupPatch: {
+            /** Billing Mode */
+            billing_mode?: ("monthly" | "package") | null;
             /** Branch Id */
             branch_id?: string | null;
             /** Capacity */
@@ -2834,6 +2944,10 @@ export interface components {
             monthly_fee?: (number | string) | null;
             /** Name */
             name?: string | null;
+            /** Package Lessons */
+            package_lessons?: number | null;
+            /** Package Price */
+            package_price?: (number | string) | null;
             /** Start Date */
             start_date?: string | null;
             /** Status */
@@ -3578,6 +3692,71 @@ export interface components {
             /** Student Name */
             student_name: string;
         };
+        /** PackageIn */
+        PackageIn: {
+            /**
+             * Enrollment Id
+             * Format: uuid
+             */
+            enrollment_id: string;
+            /** @description record the payment now: it goes to THIS package first, the rest FIFO */
+            pay?: components["schemas"]["PayIn"] | null;
+            /**
+             * Purchased On
+             * @description defaults to today
+             */
+            purchased_on?: string | null;
+        };
+        /** PackageOut */
+        PackageOut: {
+            /**
+             * Charge Id
+             * Format: uuid
+             */
+            charge_id: string;
+            /** Credited Lessons */
+            credited_lessons: number;
+            /**
+             * Enrollment Id
+             * Format: uuid
+             */
+            enrollment_id: string;
+            /**
+             * Expires On
+             * Format: date
+             */
+            expires_on: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Lessons */
+            lessons: number;
+            /** Paid */
+            paid: string;
+            /** Price */
+            price: string;
+            /**
+             * Purchased On
+             * Format: date
+             */
+            purchased_on: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+        };
         /** Page[AuditOut] */
         Page_AuditOut_: {
             /** Has More */
@@ -3743,6 +3922,17 @@ export interface components {
             /** Offset */
             offset: number;
         };
+        /** Page[PackageOut] */
+        Page_PackageOut_: {
+            /** Has More */
+            has_more: boolean;
+            /** Items */
+            items: components["schemas"]["PackageOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
         /** Page[PaymentOut] */
         Page_PaymentOut_: {
             /** Has More */
@@ -3838,6 +4028,21 @@ export interface components {
             /** New Password */
             new_password: string;
         };
+        /** PayIn */
+        PayIn: {
+            /**
+             * Amount
+             * @description UZS amount, 2 decimals
+             */
+            amount: number | string;
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "cash" | "card" | "bank_transfer" | "other";
+            /** Note */
+            note?: string | null;
+        };
         /** PaymentIn */
         PaymentIn: {
             /** Allocations */
@@ -3871,6 +4076,48 @@ export interface components {
              * Format: uuid
              */
             student_id: string;
+        };
+        /** PaymentNeededRow */
+        PaymentNeededRow: {
+            /** Balance Lessons */
+            balance_lessons: number;
+            /** Debt Amount */
+            debt_amount: string;
+            /** Debt Lessons */
+            debt_lessons: number;
+            /**
+             * Enrollment Id
+             * Format: uuid
+             */
+            enrollment_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Group Name */
+            group_name: string;
+            /** Guardian Name */
+            guardian_name: string;
+            /**
+             * Need
+             * @enum {string}
+             */
+            need: "ok" | "low" | "exhausted" | "debt";
+            /** Next Expiry */
+            next_expiry: string | null;
+            /**
+             * Reminder Text
+             * @description suggested reminder DRAFT: nothing is sent; a person approves every message
+             */
+            reminder_text: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
         };
         /** PaymentOut */
         PaymentOut: {
@@ -4296,6 +4543,10 @@ export interface components {
             makeup_expiry_days: number;
             /** Makeup Lapses */
             makeup_lapses: boolean;
+            /** Package Expiry Days */
+            package_expiry_days: number;
+            /** Package Low Lessons */
+            package_low_lessons: number;
             /**
              * Requisites
              * @description the center's own requisites, printed on receipts and invoices
@@ -4314,6 +4565,10 @@ export interface components {
             makeup_expiry_days?: number | null;
             /** Makeup Lapses */
             makeup_lapses?: boolean | null;
+            /** Package Expiry Days */
+            package_expiry_days?: number | null;
+            /** Package Low Lessons */
+            package_low_lessons?: number | null;
             /**
              * Requisites
              * @description empty string clears it
@@ -4430,7 +4685,7 @@ export interface components {
         };
         /** StudentDetail */
         StudentDetail: {
-            balance?: components["schemas"]["BalanceOut"] | null;
+            balance?: components["schemas"]["nazoratly__routers__students__BalanceOut"] | null;
             /** Birth Date */
             birth_date: string | null;
             /** Consents */
@@ -4695,6 +4950,66 @@ export interface components {
              * @default false
              */
             release_allocations: boolean;
+        };
+        /** BalanceOut */
+        nazoratly__routers__packages__BalanceOut: {
+            /**
+             * Available
+             * @description lessons left in packages that have not expired
+             */
+            available: number;
+            /**
+             * Balance Lessons
+             * @description available - debt_lessons; negative means debt
+             */
+            balance_lessons: number;
+            /**
+             * Burned
+             * @description lessons left in packages that expired
+             */
+            burned: number;
+            /**
+             * Debt Amount
+             * @description debt_lessons in so'm at the group's package price
+             */
+            debt_amount: string;
+            /**
+             * Debt Lessons
+             * @description lessons attended without cover (negative lessons)
+             */
+            debt_lessons: number;
+            /**
+             * Enrollment Id
+             * Format: uuid
+             */
+            enrollment_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Need
+             * @enum {string}
+             */
+            need: "ok" | "low" | "exhausted" | "debt";
+            /** Next Expiry */
+            next_expiry: string | null;
+            /** Package Lessons */
+            package_lessons: number;
+            /** Package Price */
+            package_price: string;
+        };
+        /** BalanceOut */
+        nazoratly__routers__students__BalanceOut: {
+            /** Credit */
+            credit: string;
+            /** Outstanding Total */
+            outstanding_total: string;
+            /** Overdue Total */
+            overdue_total: string;
         };
     };
     responses: never;
@@ -7739,6 +8054,110 @@ export interface operations {
             };
         };
     };
+    list_packages_v1_packages_get: {
+        parameters: {
+            query?: {
+                student_id?: string | null;
+                group_id?: string | null;
+                /** @description true: not expired today; false: expired */
+                active?: boolean | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_PackageOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sell_package_v1_packages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PackageIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PackageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    extend_package_v1_packages__package_id__extend_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                package_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExtendIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PackageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_providers_v1_payment_providers_get: {
         parameters: {
             query?: never;
@@ -8343,6 +8762,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InstallmentDueRow"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    payment_needed_v1_reports_packages_payment_needed_get: {
+        parameters: {
+            query?: {
+                need?: ("low" | "exhausted" | "debt") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentNeededRow"][];
                 };
             };
             /** @description Validation Error */
@@ -9118,6 +9568,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GuardianLink"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    lesson_balance_v1_students__student_id__lesson_balance_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["nazoratly__routers__packages__BalanceOut"][];
                 };
             };
             /** @description Validation Error */
