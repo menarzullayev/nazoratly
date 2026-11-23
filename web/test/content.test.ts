@@ -17,8 +17,9 @@ describe("section copy", () => {
     expect(keys(en)).toEqual(keys(uz));
     expect(getDict("uz").how.steps).toHaveLength(4);
     expect(getDict("uz").pricing.tiers).toHaveLength(3);
-    expect(getDict("uz").faq.items).toHaveLength(6);
+    expect(getDict("uz").faq.items).toHaveLength(8);
     expect(getDict("uz").tech.items).toHaveLength(4);
+    expect(getDict("uz").features.items).toHaveLength(10);
   });
 
   it("keeps arrays as arrays after script conversion", () => {
@@ -50,6 +51,21 @@ describe("section copy", () => {
       expect(p.tiers[2]!.price).toContain("3 000 000");
       expect(p.monthly).toContain("300 000");
       expect(p.monthly).toContain("600 000");
+    }
+  });
+
+  it("has features and role copy in every locale, and the bot command is never converted", () => {
+    for (const l of LOCALES) {
+      const d = getDict(l);
+      expect(d.features.items).toHaveLength(10);
+      for (const it of d.features.items) {
+        expect(it.title.trim()).not.toBe("");
+        expect(it.text.trim().length).toBeGreaterThan(40);
+      }
+      for (const k of ["owner", "teacher", "guardian", "label", "teacherHint", "guardianHint", "child", "empty"] as const) {
+        expect(d.demo.roles[k].trim(), `${l} ${k}`).not.toBe("");
+      }
+      expect(d.demo.roles.command).toBe("/qarz");
     }
   });
 

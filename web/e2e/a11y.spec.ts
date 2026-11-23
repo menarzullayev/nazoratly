@@ -46,3 +46,16 @@ test("social and SEO metadata", async ({ page }) => {
   const ld = await page.locator('script[type="application/ld+json"]').textContent();
   expect(JSON.parse(ld!).inLanguage).toBe("en");
 });
+
+for (const path of ["/", "/uz-cyrl/", "/ru/", "/en/"]) {
+  test(`axe: clean in the teacher and guardian roles on ${path}`, async ({ page }) => {
+    await page.goto(path);
+    const radios = page.locator("#demo").getByRole("radio");
+    await radios.nth(1).click();
+    expect(await audit(page), "teacher attendance").toEqual([]);
+    await page.locator("#demo").getByRole("tab").nth(1).click();
+    expect(await audit(page), "teacher payroll").toEqual([]);
+    await radios.nth(2).click();
+    expect(await audit(page), "guardian").toEqual([]);
+  });
+}
