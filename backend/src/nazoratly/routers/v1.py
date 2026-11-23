@@ -13,6 +13,7 @@ from nazoratly.routers import (
     documents,
     entitlements,
     finance,
+    imports,
     leads,
     lessons,
     lifecycle,
@@ -22,6 +23,7 @@ from nazoratly.routers import (
     payables,
     payroll,
     plans,
+    qr,
     reconciliation,
     settings,
     students,
@@ -36,6 +38,8 @@ router.include_router(academics.router)
 router.include_router(lifecycle.router)
 router.include_router(entitlements.router)
 router.include_router(waitlist.router)
+router.include_router(qr.router)
+router.include_router(imports.router)
 router.include_router(leads.router)
 router.include_router(settings.router)
 router.include_router(lessons.router)

@@ -72,6 +72,65 @@ ALTER TABLE students ADD CONSTRAINT students_qr_pair CHECK ((qr_code IS NULL) = 
 CREATE UNIQUE INDEX students_qr_code_key ON students (qr_code) WHERE qr_code IS NOT NULL;
 ALTER TABLE attendance ADD COLUMN marked_via TEXT NOT NULL DEFAULT 'manual' CHECK (marked_via IN ('manual','qr'));
 
+-- The QR card is sent to a guardian as a PDF through the outbox (the person who clicks "send" approves it, like a
+-- receipt). The rendered file travels in its own table so that audit snapshots of outbox rows stay small.
+CREATE TABLE outbox_attachments (
+  message_id BIGINT PRIMARY KEY,
+  org_id     BIGINT NOT NULL,
+  filename   TEXT NOT NULL CHECK (filename ~ '^[A-Za-z0-9._-]{1,80}$'),
+  pdf        BYTEA NOT NULL CHECK (octet_length(pdf) BETWEEN 100 AND 1048576),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT outbox_attachments_message_fk FOREIGN KEY (org_id, message_id) REFERENCES outbox_messages(org_id, id) ON DELETE RESTRICT
+);
+ALTER TABLE outbox_attachments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE outbox_attachments FORCE ROW LEVEL SECURITY;
+CREATE POLICY tenant_isolation ON outbox_attachments FOR ALL TO nazoratly_app USING (org_id = app_org_id()) WITH CHECK (org_id = app_org_id());
+GRANT SELECT, INSERT ON outbox_attachments TO nazoratly_app;
+
+DROP FUNCTION outbox_document(bigint);
+DROP FUNCTION outbox_claim(integer);
+CREATE FUNCTION outbox_claim(p_limit integer DEFAULT 20)
+RETURNS TABLE (message_id bigint, org_id bigint, channel text, body text, telegram_chat_id bigint, phone text, attempts smallint,
+               body_html text, has_document boolean, text_delivered boolean)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
+BEGIN
+  UPDATE outbox_messages o SET status = 'cancelled', last_error = 'notifications consent revoked before sending'
+  WHERE o.status = 'queued' AND o.send_after <= now()
+    AND NOT EXISTS (SELECT 1 FROM data_consents dc WHERE dc.org_id = o.org_id AND dc.student_id = o.student_id
+                    AND dc.purpose = 'notifications' AND dc.revoked_at IS NULL);
+  RETURN QUERY
+  WITH due AS (
+    SELECT o.id FROM outbox_messages o
+    WHERE (o.status = 'queued' AND o.send_after <= now()) OR (o.status = 'sending' AND o.updated_at < now() - interval '5 minutes')
+    ORDER BY o.send_after, o.id LIMIT greatest(1, least(p_limit, 100)) FOR UPDATE SKIP LOCKED),
+  claimed AS (
+    UPDATE outbox_messages o SET status = 'sending', attempts = o.attempts + 1
+    FROM due WHERE o.id = due.id
+    RETURNING o.id AS mid, o.org_id AS oid, o.channel AS ch, o.body AS txt, o.guardian_id AS gid, o.attempts AS att,
+              o.body_html AS html,
+              (o.document_id IS NOT NULL OR EXISTS (SELECT 1 FROM outbox_attachments a WHERE a.message_id = o.id)) AS has_doc,
+              o.text_delivered AS delivered)
+  SELECT c.mid, c.oid, c.ch, c.txt, g.telegram_chat_id, g.phone::text, c.att, c.html, c.has_doc, c.delivered
+  FROM claimed c JOIN guardians g ON g.org_id = c.oid AND g.id = c.gid ORDER BY c.mid;
+END $$;
+REVOKE ALL ON FUNCTION outbox_claim(integer) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION outbox_claim(integer) TO nazoratly_worker;
+
+CREATE FUNCTION outbox_document(p_message_id bigint) RETURNS TABLE (filename text, pdf bytea)
+LANGUAGE sql SECURITY DEFINER SET search_path = public, pg_temp AS $$
+  SELECT d.number || '.pdf', f.pdf
+  FROM outbox_messages o
+  JOIN documents d ON d.org_id = o.org_id AND d.id = o.document_id
+  JOIN document_files f ON f.org_id = d.org_id AND f.document_id = d.id
+  WHERE o.id = p_message_id AND o.status = 'sending'
+  UNION ALL
+  SELECT a.filename, a.pdf
+  FROM outbox_messages o JOIN outbox_attachments a ON a.message_id = o.id
+  WHERE o.id = p_message_id AND o.status = 'sending'
+$$;
+REVOKE ALL ON FUNCTION outbox_document(bigint) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION outbox_document(bigint) TO nazoratly_worker;
+
 -- ---- demo mode -------------------------------------------------------------------------------------------
 ALTER TABLE org_settings ADD COLUMN demo_mode BOOLEAN NOT NULL DEFAULT FALSE;
 

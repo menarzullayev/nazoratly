@@ -80,8 +80,24 @@ class AlreadyEnrolled(Conflict):
     code = "already_enrolled"
 
 
+class NotInGroup(Conflict):
+    code = "not_in_group"
+
+
+class LessonCancelled(Conflict):
+    code = "lesson_cancelled"
+
+
+class UnknownQrCode(NotFound):
+    code = "unknown_code"
+
+
 class Unprocessable(ApiError):
     status_code, code = 422, "unprocessable"
+
+
+class BadQrCode(Unprocessable):
+    code = "bad_code"
 
 
 class TooManyRequests(ApiError):
