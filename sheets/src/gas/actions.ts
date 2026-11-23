@@ -13,6 +13,7 @@ import {
 import { readSettings } from "./settings";
 import { balanceRich, EFFECT_PARTY, receiptRich, reminderRich, type OpenCharge } from "../domain/messages";
 import { applyBotProfile } from "./botProfile";
+import { pickWebAppUrl, isWebAppUrl } from "../domain/urls";
 import { getToken, props, sendMessage, sendRich, setToken, tg, webhookSecret } from "./telegram";
 
 type StudentRow = Student & { phone?: string; consentDate?: string; consentPolicy?: string; linkCode?: string; linkUrl?: string };
@@ -388,7 +389,7 @@ function finishTelegramSetup(): void {
   const username = String((me.result as { username?: string }).username ?? "");
   props().setProperty("BOT_USERNAME", username);
   const profile = applyBotProfile(readSettings().center);
-  const url = ScriptApp.getService().getUrl();
+  const url = pickWebAppUrl(props().getProperty("WEBAPP_URL"), ScriptApp.getService().getUrl());
   let hook = "";
   let relay = props().getProperty("RELAY_URL") ?? "";
   if (!relay) {
@@ -445,11 +446,24 @@ export function balanceHtmlForChat(chatId: string): string {
 
 /** Values the relay needs (NAZORATLY_TG_RELAY_TARGET / NAZORATLY_TG_RELAY_SECRET). Shown only to the sheet owner. */
 export function showWebhookInfo(): void {
-  const url = ScriptApp.getService().getUrl();
-  if (!url) throw new Error("Avval skriptni Web App sifatida joylang (Deploy > New deployment > Web app).");
+  let url = pickWebAppUrl(props().getProperty("WEBAPP_URL"), ScriptApp.getService().getUrl());
+  if (!url) {
+    const r = ui().prompt(
+      "Web App manzili",
+      "Skript manzili avtomatik aniqlanmadi. Deploy > Manage deployments dan Web app URL'ni (https://script.google.com/macros/s/.../exec) kiriting.",
+      ui().ButtonSet.OK_CANCEL,
+    );
+    const v = r.getSelectedButton() === ui().Button.OK ? r.getResponseText().trim() : "";
+    if (!isWebAppUrl(v)) throw new Error("Web App manzili https://script.google.com/macros/s/.../exec ko'rinishida bo'lishi kerak.");
+    props().setProperty("WEBAPP_URL", v);
+    url = v;
+  }
   ui().alert(
     "Webhook relay sozlamalari",
-    `NAZORATLY_TG_RELAY_TARGET=${url}\nNAZORATLY_TG_RELAY_SECRET=${webhookSecret()}\n\nBu sirni boshqalarga bermang.`,
+    `NAZORATLY_TG_RELAY_TARGET=${url}
+NAZORATLY_TG_RELAY_SECRET=${webhookSecret()}
+
+Bu sirni boshqalarga bermang.`,
     ui().ButtonSet.OK,
   );
 }
