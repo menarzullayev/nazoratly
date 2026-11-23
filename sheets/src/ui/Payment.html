@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>/*STYLE*/</style>
+</head>
+<body>
+<h1>To'lov qabul qilish</h1>
+<label for="q">O'quvchi (ism yoki ID)</label>
+<input id="q" type="search" autocomplete="off" placeholder="Qidirish..." aria-label="O'quvchini qidirish">
+<div id="results" class="list" role="listbox" aria-label="Qidiruv natijalari"></div>
+<div id="selected" class="card soft hidden" aria-live="polite"></div>
+<div id="form" class="hidden">
+  <label for="amount">Summa (so'm)</label>
+  <input id="amount" inputmode="numeric" autocomplete="off" placeholder="0">
+  <div class="row" style="margin-top:6px">
+    <button id="fillOut" type="button">Qoldiq</button>
+    <button id="fillOver" type="button">Muddati o'tgan</button>
+  </div>
+  <div class="row">
+    <div><label for="method">Usul</label>
+      <select id="method"><option>Naqd</option><option>Karta</option><option>O'tkazma</option><option>Payme</option><option>Click</option><option>Boshqa</option></select></div>
+    <div><label for="paidOn">Sana</label><input id="paidOn" type="date"></div>
+  </div>
+  <label for="note">Izoh</label>
+  <input id="note" maxlength="500" placeholder="ixtiyoriy">
+  <label style="display:flex;gap:8px;align-items:center;font-weight:400;color:var(--fg);margin-top:12px">
+    <input id="notify" type="checkbox" style="width:auto"> Vasiyga Telegram orqali chek yuborish
+  </label>
+</div>
+<div id="msg" role="status" aria-live="polite"></div>
+<div class="footer"><span class="grow muted" id="hint">O'quvchini tanlang</span><button id="save" class="primary" type="button" disabled>Qabul qilish</button></div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var cur = null, bal = null, timer = null;
+  function run(name) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return new Promise(function (ok, bad) { google.script.run.withSuccessHandler(ok).withFailureHandler(bad)[name].apply(google.script.run, args); });
+  }
+  function som(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, " "); }
+  function esc(s) { return String(s).replace(/[<>&"]/g, ""); }
+  function banner(kind, text) { $("msg").innerHTML = text ? '<div class="banner ' + kind + '">' + esc(text) + "</div>" : ""; }
+  function amountValue() { return parseInt(($("amount").value || "").replace(/\D/g, ""), 10) || 0; }
+  function validate() { $("save").disabled = !(cur && amountValue() > 0); $("hint").textContent = cur ? (amountValue() > 0 ? som(amountValue()) + " so'm" : "Summani kiriting") : "O'quvchini tanlang"; }
+  function showBalance() {
+    $("selected").classList.remove("hidden"); $("form").classList.remove("hidden");
+    $("selected").innerHTML = "<b>" + esc(bal.fullName) + "</b> <span class='pill'>" + esc(bal.studentId) + "</span><div class='kpis' style='margin-top:8px'>" +
+      "<div class='kpi'><span class='muted'>Qoldiq</span><b>" + som(bal.outstanding) + "</b></div>" +
+      "<div class='kpi'><span class='muted'>Muddati o'tgan</span><b style='color:" + (bal.overdue > 0 ? "var(--bad)" : "inherit") + "'>" + som(bal.overdue) + "</b></div>" +
+      "<div class='kpi'><span class='muted'>Kredit</span><b>" + som(bal.credit) + "</b></div></div>";
+  }
+  function pick(s) {
+    cur = s; $("results").innerHTML = ""; $("q").value = s.fullName; banner("", "");
+    run("getBalance", s.id).then(function (b) { bal = b; showBalance(); validate(); }).catch(function (e) { banner("err", e && e.message || "Xatolik"); });
+  }
+  $("q").oninput = function () {
+    clearTimeout(timer); cur = null; bal = null; $("selected").classList.add("hidden"); $("form").classList.add("hidden"); validate();
+    timer = setTimeout(function () {
+      var q = $("q").value;
+      run("searchStudents", q).then(function (rows) {
+        $("results").innerHTML = "";
+        rows.forEach(function (s) {
+          var b = document.createElement("button"); b.type = "button"; b.className = "item"; b.setAttribute("role", "option");
+          b.innerHTML = "<b>" + esc(s.fullName) + "</b> <span class='muted'>" + esc(s.id) + (s.outstanding > 0 ? " · qoldiq " + som(s.outstanding) : "") + "</span>";
+          b.onclick = function () { pick(s); };
+          $("results").appendChild(b);
+        });
+      }).catch(function (e) { banner("err", e && e.message || "Qidirib bo'lmadi"); });
+    }, 250);
+  };
+  $("amount").oninput = function () { var v = amountValue(); $("amount").value = v ? som(v) : ""; validate(); };
+  $("fillOut").onclick = function () { if (bal) { $("amount").value = som(bal.outstanding); validate(); } };
+  $("fillOver").onclick = function () { if (bal) { $("amount").value = som(bal.overdue); validate(); } };
+  $("save").onclick = function () {
+    $("save").disabled = true; $("save").textContent = "Saqlanmoqda...";
+    run("recordPayment", { studentId: cur.id, amount: amountValue(), method: $("method").value, paidOn: $("paidOn").value, note: $("note").value, notifyGuardian: $("notify").checked })
+      .then(function (r) {
+        bal = Object.assign({ fullName: cur.fullName }, r.balance); showBalance();
+        banner("ok", "Qabul qilindi (" + esc(r.id) + "). Yangi qoldiq: " + som(r.balance.outstanding) + " so'm." + (r.telegram ? " " + r.telegram + "." : ""));
+        $("amount").value = ""; $("note").value = "";
+      }).catch(function (e) { banner("err", e && e.message || "Saqlab bo'lmadi"); })
+      .then(function () { $("save").textContent = "Qabul qilish"; validate(); });
+  };
+  run("todayIso").then(function (d) { $("paidOn").value = d; });
+  $("q").focus();
+})();
+</script>
+</body>
+</html>

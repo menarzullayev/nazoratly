@@ -51,6 +51,17 @@ jobs:
         run: npm run generate && git diff --exit-code src/schema.d.ts
       - run: npm run typecheck
 
+  sheets:
+    runs-on: ubuntu-latest
+    defaults: {run: {working-directory: sheets}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: "24"}
+      - run: npm ci --no-audit --no-fund
+      - name: Types, tests, bundle
+        run: npm run check
+
   secrets:
     runs-on: ubuntu-latest
     steps:
