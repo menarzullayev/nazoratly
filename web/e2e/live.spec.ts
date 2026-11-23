@@ -30,3 +30,17 @@ test("unknown paths show the site's 404, not API JSON", async ({ request }) => {
   expect(r.status()).toBe(404);
   expect(r.headers()["content-type"]).toContain("text/html");
 });
+
+test("social image, sitemap and robots are served", async ({ request }) => {
+  const og = await request.get("/og.png");
+  expect(og.status()).toBe(200);
+  expect(og.headers()["content-type"]).toContain("image/png");
+  const map = await (await request.get("/sitemap.xml")).text();
+  for (const p of ["/", "/uz-cyrl/", "/uz-new/", "/ru/", "/en/"]) expect(map).toContain(`https://nazoratly.bugvector.uz${p}`);
+  const robots = await (await request.get("/robots.txt")).text();
+  expect(robots).not.toContain("/lab/");
+});
+
+test("every locale page is up", async ({ request }) => {
+  for (const p of ["/", "/uz-cyrl/", "/uz-new/", "/ru/", "/en/"]) expect((await request.get(p)).status(), p).toBe(200);
+});

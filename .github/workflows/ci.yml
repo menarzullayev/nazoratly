@@ -72,6 +72,8 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - name: Lint, types, unit tests, static build
         run: npm run lint && npm run typecheck && npm test && npm run build
+      - name: Browser tests (e2e, axe)
+        run: npx playwright install --with-deps chromium && npm run e2e
 
   secrets:
     runs-on: ubuntu-latest
