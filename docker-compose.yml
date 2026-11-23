@@ -31,6 +31,7 @@ services:
     build: {context: ., dockerfile: backend/Dockerfile}
     environment:
       NAZORATLY_ENV: ${NAZORATLY_ENV:-dev}
+      NAZORATLY_TRUST_PROXY_HEADERS: ${NAZORATLY_TRUST_PROXY_HEADERS:-false}
       NAZORATLY_DATABASE_URL_APP: postgresql://nazoratly_app:${NAZORATLY_APP_PASSWORD}@db:5432/nazoratly
       NAZORATLY_DATABASE_URL_AUTH: postgresql://nazoratly_auth:${NAZORATLY_AUTH_PASSWORD}@db:5432/nazoratly
       NAZORATLY_JWT_SECRET: ${NAZORATLY_JWT_SECRET:?set NAZORATLY_JWT_SECRET in .env}
@@ -39,7 +40,7 @@ services:
       NAZORATLY_SENTRY_DSN: ${NAZORATLY_SENTRY_DSN:-}
       NAZORATLY_OTEL_EXPORTER_OTLP_ENDPOINT: ${NAZORATLY_OTEL_EXPORTER_OTLP_ENDPOINT:-}
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:${NAZORATLY_API_PORT:-8000}:8000"
     depends_on:
       migrate: {condition: service_completed_successfully}
     restart: unless-stopped
@@ -51,7 +52,7 @@ services:
       NAZORATLY_DATABASE_URL_AGENT: postgresql://nazoratly_agent:${NAZORATLY_AGENT_PASSWORD}@db:5432/nazoratly
       NAZORATLY_MCP_ALLOWED_HOSTS: ${NAZORATLY_MCP_ALLOWED_HOSTS:-[]}
     ports:
-      - "127.0.0.1:8001:8001"
+      - "127.0.0.1:${NAZORATLY_MCP_PORT:-8001}:8001"
     depends_on:
       migrate: {condition: service_completed_successfully}
     restart: unless-stopped
