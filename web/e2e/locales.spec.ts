@@ -16,7 +16,7 @@ for (const [path, lang] of CASES) {
     await expect(page.locator("h1")).toBeVisible();
     const alts = await page.locator('link[rel="alternate"][hreflang]').evaluateAll((els) => els.map((e) => e.getAttribute("hreflang")));
     for (const want of ["uz-Latn", "uz-Cyrl", "ru", "en", "x-default"]) expect(alts).toContain(want);
-    await expect(page.getByRole("navigation", { name: /./ })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: /./ }).first()).toBeVisible();
     await expect(page.locator('a[href="https://t.me/menarzullayev"]').first()).toBeAttached();
     await expect(page.locator('a[href="tel:+998902336600"]').first()).toBeAttached();
     await expect(page.locator('a[href="https://t.me/nazoratlybot"]').first()).toBeAttached();
