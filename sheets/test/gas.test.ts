@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as actions from "../src/gas/actions";
 import { read, updateById } from "../src/gas/repo";
 import { ATTENDANCE, CHARGES, DASHBOARD_SHEET, DEBTORS_SHEET, DRAFTS, PAYMENTS, PAYROLL, STUDENTS, ALL_TABLES, SETTING_DEFAULTS } from "../src/gas/schema";
-import { loadSampleData, setupWorkbook } from "../src/gas/setup";
+import { loadSampleData, resetSampleData, setupWorkbook } from "../src/gas/setup";
 import { webhookSecret } from "../src/gas/telegram";
 import { handlePost } from "../src/gas/webhook";
 import type { AttendanceRow, Charge, Payment, ReminderDraft, Student } from "../src/domain/types";
@@ -50,6 +50,26 @@ describe("workbook setup", () => {
     expect(loadSampleData()).toContain("8 o'quvchi");
     expect(read<StudentRow>(STUDENTS)).toHaveLength(8);
     expect(() => loadSampleData()).toThrow(/bo'sh emas/);
+  });
+
+  it("refreshes demo data to today, drops stale rows, keeps settings and Telegram links", () => {
+    loadSampleData();
+    linkGuardian("S0005", 777);
+    updateById(STUDENTS, "id", "S0001", { fullName: "Stale Edited Name" });
+    const settingsBefore = JSON.stringify(h.rows("Sozlamalar"));
+    const msg = resetSampleData();
+    expect(msg).toContain("8 o'quvchi");
+    expect(msg).toContain("1 ta o'quvchi");
+    const students = read<StudentRow>(STUDENTS);
+    expect(students).toHaveLength(8);
+    expect(students.find((s) => s.id === "S0001")!.fullName).toBe("Aziz Rahimov");
+    const kept = students.find((s) => s.id === "S0005")!;
+    expect(kept.guardianChatId).toBe("777");
+    expect(kept.consentNotify).toBe(true);
+    expect(read<Charge>(CHARGES).length).toBeGreaterThan(0);
+    expect(read<Charge>(CHARGES).every((c) => c.month >= "2026-")).toBe(true);
+    expect(JSON.stringify(h.rows("Sozlamalar"))).toBe(settingsBefore);
+    expect(read<ReminderDraft>(DRAFTS)).toHaveLength(0);
   });
 });
 

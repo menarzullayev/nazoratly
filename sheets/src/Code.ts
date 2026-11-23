@@ -1,6 +1,6 @@
 /** Apps Script entry point: every function Google calls (menu, web app, sidebars) is exposed on globalThis. */
 import * as actions from "./gas/actions";
-import { setupWorkbook, loadSampleData } from "./gas/setup";
+import { setupWorkbook, loadSampleData, resetSampleData } from "./gas/setup";
 import { handleGet, handlePost } from "./gas/webhook";
 
 // Collected here and exposed to Apps Script as top-level function declarations by build.mjs.
@@ -37,6 +37,7 @@ g.onOpen = (): void => {
     .addSeparator()
     .addItem("Boshlang'ich sozlash", "menuSetup")
     .addItem("Namuna ma'lumot yuklash", "menuSample")
+    .addItem("Namuna ma'lumotni yangilash", "menuSampleReset")
     .addItem("Yordam", "menuHelp")
     .addToUi();
 };
@@ -69,6 +70,21 @@ g.menuSample = (): void =>
     const ui = SpreadsheetApp.getUi();
     if (ui.alert("Namuna ma'lumot", "Bo'sh jadvallarga demo ma'lumot yuklanadi. Davom etamizmi?", ui.ButtonSet.YES_NO) === ui.Button.YES) {
       const msg = loadSampleData();
+      actions.refreshDashboard();
+      ui.alert("Namuna", msg, ui.ButtonSet.OK);
+    }
+  });
+
+g.menuSampleReset = (): void =>
+  actions.guard("Namuna", () => {
+    const ui = SpreadsheetApp.getUi();
+    const ok = ui.alert(
+      "Namuna ma'lumotni yangilash",
+      "DIQQAT: o'quvchilar, guruhlar, hisoblar, to'lovlar, davomat va eslatma loyihalari O'CHIRILADI va bugungi sanaga mos yangi demo ma'lumot yuklanadi (Sozlamalar va vasiylarning Telegram ulanishi saqlanadi). Davom etamizmi?",
+      ui.ButtonSet.YES_NO,
+    );
+    if (ok === ui.Button.YES) {
+      const msg = resetSampleData();
       actions.refreshDashboard();
       ui.alert("Namuna", msg, ui.ButtonSet.OK);
     }

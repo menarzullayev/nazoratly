@@ -4,7 +4,7 @@ import { planCharges } from "../domain/billing";
 import { prevMonthStart, monthStart } from "../domain/dates";
 import { nextIds } from "../domain/ids";
 import type { AttendanceRow, Charge, Enrollment, Group, Student, Teacher } from "../domain/types";
-import { append, read, toDate, today } from "./repo";
+import { append, read, sheetOf, toDate, today, updateById } from "./repo";
 import {
   ALL_TABLES,
   ATTENDANCE,
@@ -200,4 +200,27 @@ export function loadSampleData(): string {
   append(ATTENDANCE, attendance);
   void toDate;
   return `Namuna: ${students.length} o'quvchi, ${groups.length} guruh, ${charges.length} hisob, ${payments.length} to'lov, ${attendance.length} davomat yozuvi.`;
+}
+
+const TELEGRAM_FIELDS = ["guardianChatId", "consentNotify", "consentDate", "consentPolicy", "linkCode", "linkUrl"] as const;
+
+/**
+ * Wipes every data table (not Sozlamalar) and loads fresh sample data relative to today. Guardian Telegram links
+ * and consent of students that exist in the new sample (same id) are carried over, so a live demo bot keeps working.
+ */
+export function resetSampleData(): string {
+  const keep = new Map<string, Record<string, unknown>>();
+  for (const s of read<Student & Record<string, unknown>>(STUDENTS)) {
+    if (!s.guardianChatId) continue;
+    keep.set(s.id, Object.fromEntries(TELEGRAM_FIELDS.map((f) => [f, s[f] ?? ""])));
+  }
+  for (const def of ALL_TABLES) {
+    const sh = sheetOf(def);
+    const rows = sh.getLastRow() - 1;
+    if (rows > 0) sh.getRange(2, 1, rows, sh.getLastColumn()).clearContent();
+  }
+  const msg = loadSampleData();
+  let restored = 0;
+  for (const [id, patch] of keep) if (updateById(STUDENTS, "id", id, patch)) restored++;
+  return `${msg}${restored ? ` Telegram ulanishlari saqlandi: ${restored} ta o'quvchi.` : ""}`;
 }
