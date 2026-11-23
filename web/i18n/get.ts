@@ -9,6 +9,7 @@ export type Dict = Widen<typeof uz>;
 
 function mapStrings<T>(o: T, fn: (s: string) => string): T {
   if (typeof o === "string") return fn(o) as T;
+  if (Array.isArray(o)) return o.map((v) => mapStrings(v, fn)) as T;
   return Object.fromEntries(Object.entries(o as object).map(([k, v]) => [k, mapStrings(v, fn)])) as T;
 }
 
