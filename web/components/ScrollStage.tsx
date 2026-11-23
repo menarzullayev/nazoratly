@@ -3,20 +3,13 @@
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { ChaosLite } from "@/scenes/chaos/lite";
-import { FlowLite } from "@/scenes/flow/lite";
-import { MapLite } from "@/scenes/map/lite";
 import type { Tier } from "@/lib/capability";
 import { applyProgress, createProgress } from "@/lib/progress";
 import { SceneBoundary } from "./SceneBoundary";
 
 const ChaosScene = dynamic(() => import("@/scenes/chaos/ChaosScene"), { ssr: false });
-const MapScene = dynamic(() => import("@/scenes/map/MapScene"), { ssr: false });
-const FlowScene = dynamic(() => import("@/scenes/flow/FlowScene"), { ssr: false });
-
-export type SceneId = "a" | "b" | "c";
 
 interface Props {
-  scene: SceneId;
   accent: string;
   tier: Tier;
   /** Text laid over the scene (the hero copy). */
@@ -28,7 +21,7 @@ interface Props {
  * attribute and to a ref the WebGL scene reads in its render loop. The `static` tier skips all of it and shows the
  * finished state (progress 1) in a single screen.
  */
-export function ScrollStage({ scene, accent, tier, children }: Props) {
+export function ScrollStage({ accent, tier, children }: Props) {
   const section = useRef<HTMLElement>(null);
   const stage = useRef<HTMLDivElement>(null);
   const [progress] = useState(() => createProgress(tier === "static" ? 1 : 0));
@@ -80,13 +73,13 @@ export function ScrollStage({ scene, accent, tier, children }: Props) {
 
   const onLost = useCallback(() => setLost(true), []);
   const sceneProps = { progress, accent, onLost };
-  const lite = scene === "a" ? <ChaosLite accent={accent} /> : scene === "b" ? <MapLite accent={accent} /> : <FlowLite accent={accent} />;
+  const lite = <ChaosLite accent={accent} />;
 
   return (
     <section ref={section} style={{ height: effective === "static" ? "100svh" : "320svh" }} className="relative">
       <div
         ref={stage}
-        data-stage={scene}
+        data-stage="chaos"
         data-tier={effective}
         data-progress={effective === "static" ? "1.000" : "0.000"}
         style={{ "--p": effective === "static" ? 1 : 0 } as CSSProperties}
@@ -95,7 +88,7 @@ export function ScrollStage({ scene, accent, tier, children }: Props) {
         <div className="absolute inset-x-0 bottom-0 top-[40%]">
           {effective === "full" ? (
             <SceneBoundary fallback={lite}>
-              {scene === "a" ? <ChaosScene {...sceneProps} /> : scene === "b" ? <MapScene {...sceneProps} /> : <FlowScene {...sceneProps} />}
+              <ChaosScene {...sceneProps} />
             </SceneBoundary>
           ) : (
             <div className="flex h-full items-center justify-center px-4">{lite}</div>

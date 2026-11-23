@@ -1,3 +1,4 @@
+import { Hero } from "@/components/Hero";
 import { Wordmark } from "@/components/Wordmark";
 import { getDict } from "@/i18n/get";
 import { LOCALES, NATIVE_NAME, hreflangOf, pathFor, type Locale } from "@/i18n/locales";
@@ -28,22 +29,13 @@ export function SiteHome({ locale }: { locale: Locale }) {
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:bg-white focus:p-2 focus:text-black">
         {d.skip}
       </a>
-      <header className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-3 px-5 py-5">
+      <header className="absolute inset-x-0 top-0 z-20 mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-3 px-5 py-5">
         <Wordmark name={d.brand} />
         <LangSwitch locale={locale} />
       </header>
-      <main id="main" className="mx-auto max-w-5xl px-5 pb-24 pt-16">
-        <p className="text-sm uppercase tracking-widest text-accent">{d.hero.eyebrow}</p>
-        <h1 className="mt-3 text-3xl font-semibold leading-tight tracking-tight break-words sm:text-6xl font-display">{d.hero.title}</h1>
-        <p className="mt-5 max-w-2xl text-lg text-mute">{d.hero.sub}</p>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <a href="#contact" className="rounded-xl bg-accent px-5 py-3 font-semibold text-accent-ink">
-            {d.hero.ctaPrimary}
-          </a>
-          <a href="https://t.me/nazoratlybot" className="rounded-xl border border-line px-5 py-3 font-semibold">
-            {d.hero.ctaSecondary}
-          </a>
-        </div>
+      <main id="main">
+        <Hero d={d} />
+        <div className="mx-auto max-w-5xl px-5 pb-24">
         <section id="contact" className="mt-24" aria-labelledby="contact-title">
           <h2 id="contact-title" className="text-2xl font-semibold">{d.contact.title}</h2>
           <p className="mt-2 text-mute">{d.contact.lead}</p>
@@ -59,6 +51,7 @@ export function SiteHome({ locale }: { locale: Locale }) {
             </li>
           </ul>
         </section>
+        </div>
       </main>
       <footer className="mx-auto max-w-5xl px-5 pb-10 text-sm text-mute">{d.footer.note}</footer>
     </>

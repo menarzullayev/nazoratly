@@ -40,7 +40,7 @@ export function readEnv(): Env {
 }
 
 /** Server and first client render are `static`; the real tier is set after mount so HTML always matches. */
-export function useMotionTier(override?: Tier | null): Tier {
+export function useMotionTier(): Tier {
   const [tier, setTier] = useState<Tier>("static");
   useEffect(() => {
     const apply = () => setTier(detectTier(readEnv()));
@@ -49,5 +49,5 @@ export function useMotionTier(override?: Tier | null): Tier {
     mq.addEventListener("change", apply);
     return () => mq.removeEventListener("change", apply);
   }, []);
-  return override ?? tier;
+  return tier;
 }

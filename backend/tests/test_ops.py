@@ -203,18 +203,3 @@ async def test_worker_without_bot_token_has_no_telegram_sender(pg_server: dict[s
     w = Worker(WorkerSettings(database_url_worker=pg_server["worker"], telegram_bot_token=""))  # type: ignore[arg-type]
     assert set(w.senders) == {"sms"}
     await w.close()
-
-
-async def test_landing_page_is_public_static_and_locked_down(client: httpx.AsyncClient) -> None:
-    import re
-
-    r = await client.get("/")
-    assert r.status_code == 200 and r.headers["content-type"].startswith("text/html")
-    assert "nazoratly" in r.text and "<script" not in r.text.lower()
-    csp = r.headers["content-security-policy"]
-    assert "default-src 'none'" in csp and "frame-ancestors 'none'" in csp and "'unsafe-inline'" not in csp
-    assert re.search(r"style-src 'sha256-[A-Za-z0-9+/=]+'", csp)
-    assert r.headers["x-content-type-options"] == "nosniff"
-    spec = (await client.get("/openapi.json")).json()
-    assert "/" not in spec["paths"]  # landing page stays out of the API contract
-    assert (await client.get("/definitely-missing")).status_code == 404  # JSON 404 elsewhere is unchanged

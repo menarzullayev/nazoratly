@@ -21,10 +21,8 @@ test("the site is served from the web container", async ({ page }) => {
   expect(res?.headers()["content-security-policy"]).toContain("frame-ancestors 'none'");
 });
 
-test("lab is reachable and noindex", async ({ request }) => {
-  const r = await request.get("/lab/");
-  expect(r.status()).toBe(200);
-  expect(r.headers()["x-robots-tag"]).toContain("noindex");
+test("lab prototypes are gone", async ({ request }) => {
+  expect((await request.get("/lab/")).status()).toBe(404);
 });
 
 test("unknown paths show the site's 404, not API JSON", async ({ request }) => {
