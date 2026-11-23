@@ -1,0 +1,26 @@
+:root {
+  --bg: #070b10;
+  --bg-2: #0d141c;
+  --fg: #e8eef5;
+  --mute: #93a4b6;
+  --line: #1d2a36;
+  --accent: #34d399;
+  --accent-ink: #04130c;
+  --radius: 14px;
+  --font-body: "Inter Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Unbounded Variable", "Inter Variable", system-ui, sans-serif;
+}
+[data-accent="cyan"] { --accent: #22d3ee; --accent-ink: #031418; }
+[data-accent="amber"] { --accent: #fbbf24; --accent-ink: #1a1203; }
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg2: var(--bg-2);
+  --color-fg: var(--fg);
+  --color-mute: var(--mute);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+}

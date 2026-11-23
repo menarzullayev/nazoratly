@@ -1,0 +1,19 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/unbounded";
+@import "../styles/tokens.css";
+
+html { color-scheme: dark; scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); -webkit-font-smoothing: antialiased; overflow-x: clip; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; } }
+
+@keyframes nz-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+.nz-pulse { animation: nz-pulse 1.4s ease-in-out infinite; }
+
+@keyframes nz-reveal { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .nz-reveal { animation: nz-reveal linear both; animation-timeline: view(); animation-range: entry 0% entry 45%; }
+  }
+}
