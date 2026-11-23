@@ -3,10 +3,19 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date
+from datetime import UTC, date, datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from tests.conftest import Tenant
+
+ORG_TZ = ZoneInfo("Asia/Tashkent")  # the default organizations.timezone; the server's "today" follows it
+
+
+def org_today() -> date:
+    """The organization's calendar date. Tests must not use date.today(): between 19:00 and 24:00 UTC the
+    server date (Asia/Tashkent) is one day ahead of the machine date and date-sensitive assertions break."""
+    return datetime.now(UTC).astimezone(ORG_TZ).date()
 
 
 async def ok(r: Any, status: int = 200) -> Any:

@@ -10,6 +10,7 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends
 from pydantic import Field
 
+from nazoratly.accounting import org_today
 from nazoratly.db import Conn, execute, fetch_all, fetch_one, resolve
 from nazoratly.deps import DB, Paging, Principal, require
 from nazoratly.errors import AlreadyAccepted, EnrollmentNotTrial, Unprocessable
@@ -76,8 +77,8 @@ async def _lesson_dates(conn: Conn, group_id: int, first: date) -> list[date]:
 async def pending_trials(
     p: Annotated[Principal, Depends(require("academics:write"))], db: DB, pg: Paging
 ) -> Page[PendingTrial]:
-    today = date.today()
     async with db.tx(p.session()) as conn:
+        today = await org_today(conn)
         cfg = await load_settings(conn, p.org_id)
         rows = await fetch_all(
             conn,
@@ -119,8 +120,8 @@ async def accept_trial(
     p: Annotated[Principal, Depends(require("academics:write", "finance:write"))],
     db: DB,
 ) -> AcceptOut:
-    accepted_on = body.accepted_on or date.today()
     async with db.tx(p.session()) as conn:
+        accepted_on = body.accepted_on or await org_today(conn)
         eid = await resolve(conn, "enrollments", enrollment_id, what="enrollment")
         e = await fetch_one(
             conn,
@@ -192,7 +193,7 @@ async def drop_trial(
         assert e is not None
         if e["status"] != "trial":
             raise EnrollmentNotTrial("Only a trial enrollment can be dropped")
-        ended = max(date.today(), e["started_on"])
+        ended = max(await org_today(conn), e["started_on"])
         await execute(
             conn,
             "UPDATE enrollments SET status = 'finished', ended_on = %s, dropped_reason = %s WHERE id = %s",

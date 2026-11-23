@@ -9,6 +9,7 @@ from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends
 
+from nazoratly.accounting import org_today
 from nazoratly.db import Conn, execute, fetch_all, fetch_one, resolve
 from nazoratly.deps import DB, Paging, Principal, require
 from nazoratly.errors import AlreadyEnrolled, AlreadyWaiting, Conflict, SeatAvailable
@@ -220,7 +221,7 @@ async def enroll_from_waitlist(
             org_id=p.org_id,
             student_id=int(row["student_id"]),  # type: ignore[call-overload]
             group_id=int(row["group_id"]),  # type: ignore[call-overload]
-            started_on=body.started_on or date.today(),
+            started_on=body.started_on or await org_today(conn),
             status=body.status,
         )
         out = await fetch_one(conn, f"{_ENR_SQL} WHERE e.id = %s", (eid,))

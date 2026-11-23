@@ -5,13 +5,13 @@ and payroll rules."""
 from __future__ import annotations
 
 import uuid
-from datetime import date, timedelta
+from datetime import timedelta
 from typing import Any
 
 from tests.conftest import Tenant
-from tests.helpers import consent, enroll, mk_group, mk_guardian, mk_student, ok
+from tests.helpers import consent, enroll, mk_group, mk_guardian, mk_student, ok, org_today
 
-TODAY = date.today()
+TODAY = org_today()
 
 
 def day(offset: int) -> str:

@@ -7,7 +7,7 @@ from datetime import date, timedelta
 from typing import Any
 
 from tests.conftest import Tenant
-from tests.helpers import enroll, mk_group, mk_student, ok
+from tests.helpers import enroll, mk_group, mk_student, ok, org_today
 
 MARCH = {"date_from": "2026-03-01", "date_to": "2026-03-31"}
 
@@ -59,7 +59,7 @@ async def test_settings_expose_the_makeup_options(tenant: Tenant) -> None:
 # ---- creation, idempotency, cancellation -----------------------------------------------------------------
 async def test_excused_creates_one_makeup_right_with_expiry(tenant: Tenant) -> None:
     grp, st = await setup(tenant)
-    missed = date.today() - timedelta(days=3)
+    missed = org_today() - timedelta(days=3)
     les = await lesson(tenant, grp["id"], missed)
     await mark(tenant, les["id"], st["id"], "excused")
     await mark(tenant, les["id"], st["id"], "excused")  # saving the roll call again changes nothing
@@ -75,7 +75,7 @@ async def test_excused_creates_one_makeup_right_with_expiry(tenant: Tenant) -> N
 
 async def test_changing_the_mark_cancels_an_open_right_and_excused_again_reopens_it(tenant: Tenant) -> None:
     grp, st = await setup(tenant)
-    les = await lesson(tenant, grp["id"], date.today() - timedelta(days=2))
+    les = await lesson(tenant, grp["id"], org_today() - timedelta(days=2))
     await mark(tenant, les["id"], st["id"], "excused")
     await mark(tenant, les["id"], st["id"], "present")
     assert [r["status"] for r in await rights(tenant)] == ["cancelled"]
@@ -86,7 +86,7 @@ async def test_changing_the_mark_cancels_an_open_right_and_excused_again_reopens
 
 async def test_none_mode_creates_nothing_and_other_marks_create_nothing(tenant: Tenant) -> None:
     grp, st = await setup(tenant)
-    les = await lesson(tenant, grp["id"], date.today() - timedelta(days=2))
+    les = await lesson(tenant, grp["id"], org_today() - timedelta(days=2))
     await mark(tenant, les["id"], st["id"], "absent")
     await mark(tenant, les["id"], st["id"], "late")
     assert await rights(tenant) == []
@@ -99,7 +99,7 @@ async def test_a_trial_student_gets_no_right(tenant: Tenant) -> None:
     grp = await mk_group(tenant)
     st = await mk_student(tenant)
     await enroll(tenant, grp["id"], st["id"], "2026-01-01", status="trial")
-    les = await lesson(tenant, grp["id"], date.today() - timedelta(days=2))
+    les = await lesson(tenant, grp["id"], org_today() - timedelta(days=2))
     await mark(tenant, les["id"], st["id"], "excused")
     assert await rights(tenant) == []
 
@@ -107,10 +107,10 @@ async def test_a_trial_student_gets_no_right(tenant: Tenant) -> None:
 # ---- scheduling and closing ------------------------------------------------------------------------------
 async def test_schedule_attend_closes_and_absent_again_reopens(tenant: Tenant) -> None:
     grp, st = await setup(tenant)
-    les = await lesson(tenant, grp["id"], date.today() - timedelta(days=3))
+    les = await lesson(tenant, grp["id"], org_today() - timedelta(days=3))
     await mark(tenant, les["id"], st["id"], "excused")
     r = (await rights(tenant))[0]
-    day = (date.today() + timedelta(days=7)).isoformat()
+    day = (org_today() + timedelta(days=7)).isoformat()
     sched = await ok(
         await tenant.post(
             f"/v1/entitlements/{r['id']}/schedule",
@@ -153,10 +153,10 @@ async def test_schedule_attend_closes_and_absent_again_reopens(tenant: Tenant) -
 
 async def test_schedule_validation(tenant: Tenant) -> None:
     grp, st = await setup(tenant)
-    les = await lesson(tenant, grp["id"], date.today() - timedelta(days=3))
+    les = await lesson(tenant, grp["id"], org_today() - timedelta(days=3))
     await mark(tenant, les["id"], st["id"], "excused")
     r = (await rights(tenant))[0]
-    past = (date.today() - timedelta(days=1)).isoformat()
+    past = (org_today() - timedelta(days=1)).isoformat()
     assert (
         await tenant.post(
             f"/v1/entitlements/{r['id']}/schedule",
@@ -166,19 +166,19 @@ async def test_schedule_validation(tenant: Tenant) -> None:
     assert (
         await tenant.post(
             f"/v1/entitlements/{r['id']}/schedule",
-            {"lesson_date": date.today().isoformat(), "start_time": "13:00:00", "end_time": "12:00:00"},
+            {"lesson_date": org_today().isoformat(), "start_time": "13:00:00", "end_time": "12:00:00"},
         )
     ).status_code == 422
     enr = (await ok(await tenant.get(f"/v1/students/{st['id']}/enrollments")))[0]
     await ok(
         await tenant.patch(
-            f"/v1/enrollments/{enr['id']}", {"status": "finished", "ended_on": date.today().isoformat()}
+            f"/v1/enrollments/{enr['id']}", {"status": "finished", "ended_on": org_today().isoformat()}
         )
     )
     gone = await tenant.post(
         f"/v1/entitlements/{r['id']}/schedule",
         {
-            "lesson_date": (date.today() + timedelta(days=5)).isoformat(),
+            "lesson_date": (org_today() + timedelta(days=5)).isoformat(),
             "start_time": "12:00:00",
             "end_time": "13:00:00",
         },
@@ -188,13 +188,13 @@ async def test_schedule_validation(tenant: Tenant) -> None:
 
 async def test_cancel_open_and_scheduled(tenant: Tenant) -> None:
     grp, st = await setup(tenant)
-    a = await lesson(tenant, grp["id"], date.today() - timedelta(days=4))
-    b = await lesson(tenant, grp["id"], date.today() - timedelta(days=3))
+    a = await lesson(tenant, grp["id"], org_today() - timedelta(days=4))
+    b = await lesson(tenant, grp["id"], org_today() - timedelta(days=3))
     await mark(tenant, a["id"], st["id"], "excused")
     await mark(tenant, b["id"], st["id"], "excused")
     r1, r2 = sorted(await rights(tenant), key=lambda x: x["missed_on"])
     assert (await ok(await tenant.post(f"/v1/entitlements/{r1['id']}/cancel", {})))["status"] == "cancelled"
-    day = (date.today() + timedelta(days=6)).isoformat()
+    day = (org_today() + timedelta(days=6)).isoformat()
     await ok(
         await tenant.post(
             f"/v1/entitlements/{r2['id']}/schedule",
@@ -209,7 +209,7 @@ async def test_cancel_open_and_scheduled(tenant: Tenant) -> None:
 async def test_a_right_lapses_after_its_expiry_unless_lapsing_is_off(tenant: Tenant) -> None:
     grp, st = await setup(tenant)
     await ok(await tenant.patch("/v1/settings", {"makeup_expiry_days": 0}))
-    les = await lesson(tenant, grp["id"], date.today() - timedelta(days=2))
+    les = await lesson(tenant, grp["id"], org_today() - timedelta(days=2))
     await mark(tenant, les["id"], st["id"], "excused")
     r = (await rights(tenant))[0]
     assert r["status"] == "open" and r["effective_status"] == "lapsed"
@@ -218,7 +218,7 @@ async def test_a_right_lapses_after_its_expiry_unless_lapsing_is_off(tenant: Ten
     s = await tenant.post(
         f"/v1/entitlements/{r['id']}/schedule",
         {
-            "lesson_date": (date.today() + timedelta(days=5)).isoformat(),
+            "lesson_date": (org_today() + timedelta(days=5)).isoformat(),
             "start_time": "12:00:00",
             "end_time": "13:00:00",
         },
@@ -275,7 +275,7 @@ async def test_a_credit_cannot_schedule_a_makeup(tenant: Tenant) -> None:
     s = await tenant.post(
         f"/v1/entitlements/{r['id']}/schedule",
         {
-            "lesson_date": (date.today() + timedelta(days=5)).isoformat(),
+            "lesson_date": (org_today() + timedelta(days=5)).isoformat(),
             "start_time": "12:00:00",
             "end_time": "13:00:00",
         },
@@ -286,12 +286,12 @@ async def test_a_credit_cannot_schedule_a_makeup(tenant: Tenant) -> None:
 # ---- isolation and idempotency ---------------------------------------------------------------------------
 async def test_other_centers_cannot_see_or_touch_rights(tenant: Tenant, tenant_b: Tenant) -> None:
     grp, st = await setup(tenant)
-    les = await lesson(tenant, grp["id"], date.today() - timedelta(days=2))
+    les = await lesson(tenant, grp["id"], org_today() - timedelta(days=2))
     await mark(tenant, les["id"], st["id"], "excused")
     r = (await rights(tenant))[0]
     assert await rights(tenant_b) == []
     body = {
-        "lesson_date": (date.today() + timedelta(days=5)).isoformat(),
+        "lesson_date": (org_today() + timedelta(days=5)).isoformat(),
         "start_time": "12:00:00",
         "end_time": "13:00:00",
     }
@@ -301,11 +301,11 @@ async def test_other_centers_cannot_see_or_touch_rights(tenant: Tenant, tenant_b
 
 async def test_schedule_replays_with_the_same_idempotency_key(tenant: Tenant) -> None:
     grp, st = await setup(tenant)
-    les = await lesson(tenant, grp["id"], date.today() - timedelta(days=2))
+    les = await lesson(tenant, grp["id"], org_today() - timedelta(days=2))
     await mark(tenant, les["id"], st["id"], "excused")
     r = (await rights(tenant))[0]
     body = {
-        "lesson_date": (date.today() + timedelta(days=5)).isoformat(),
+        "lesson_date": (org_today() + timedelta(days=5)).isoformat(),
         "start_time": "12:00:00",
         "end_time": "13:00:00",
     }
@@ -323,7 +323,7 @@ async def test_teacher_is_paid_for_a_makeup_lesson_only_when_someone_attended(te
     grp = await mk_group(tenant, teacher_id=teacher["id"], monthly_fee="600000")
     st = await mk_student(tenant)
     await enroll(tenant, grp["id"], st["id"], "2026-01-01")
-    today = date.today()
+    today = org_today()
     regular = await lesson(tenant, grp["id"], today, "09:00:00")
     await mark(tenant, regular["id"], st["id"], "excused")
     r = (await rights(tenant))[0]

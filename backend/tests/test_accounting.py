@@ -5,20 +5,20 @@ isolation and permissions. The accounting numbers themselves are the shared rule
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import timedelta
 from typing import Any
 
 import httpx
 import psycopg
 
 from tests.conftest import Tenant
-from tests.helpers import enroll, mk_group, mk_student, mk_teacher, ok
+from tests.helpers import enroll, mk_group, mk_student, mk_teacher, ok, org_today
 from tests.test_packages import CASH, pkg_group, sell, student_in
 from tests.test_pay import CLICK_KEY, PAYME_KEY, _billed_student, _connect, click, click_form, payme
 from tests.test_tenancy_and_staff import _add_staff, _login
 
 A = "/v1/accounting"
-TODAY = date.today()
+TODAY = org_today()
 
 
 async def entries(t: Tenant, **params: Any) -> list[dict[str, Any]]:

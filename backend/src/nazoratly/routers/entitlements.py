@@ -10,6 +10,7 @@ from typing import Annotated, Any, Literal
 from fastapi import APIRouter, Depends
 from pydantic import model_validator
 
+from nazoratly.accounting import org_today
 from nazoratly.db import Conn, execute, fetch_all, fetch_one, resolve, resolve_opt
 from nazoratly.deps import DB, Paging, Principal, require
 from nazoratly.errors import Conflict, NotOpen, Unprocessable
@@ -169,7 +170,7 @@ async def list_entitlements(
             params.append(mine["id"] if mine else -1)
         clause = f" WHERE {' AND '.join(where)}" if where else ""
         rows = await fetch_all(conn, f"{_SQL}{clause} ORDER BY ml.lesson_date, ae.id LIMIT 1000", params)
-    today = date.today()
+        today = await org_today(conn)
     rows = [_with_state(r, today, cfg.makeup_lapses) for r in rows]
     if status:
         rows = [r for r in rows if r["effective_status"] == status]
@@ -192,7 +193,7 @@ class ScheduleIn(Model):
 async def _one(conn: Conn, iid: int, lapses: bool) -> EntitlementOut:
     row = await fetch_one(conn, f"{_SQL} WHERE ae.id = %s", (iid,))
     assert row is not None
-    return EntitlementOut.model_validate(_with_state(row, date.today(), lapses))
+    return EntitlementOut.model_validate(_with_state(row, await org_today(conn), lapses))
 
 
 @router.post(
@@ -219,12 +220,13 @@ async def schedule(
         assert ae is not None
         if ae["kind"] != "makeup":
             raise NotOpen("A credit is applied to tuition; it cannot be scheduled")
+        today = await org_today(conn)
         state = entitlement_state(
-            status=ae["status"], expires_on=ae["expires_on"], today=date.today(), lapses=cfg.makeup_lapses
+            status=ae["status"], expires_on=ae["expires_on"], today=today, lapses=cfg.makeup_lapses
         )
         if state != "open":
             raise NotOpen(f"This right is {state}")
-        if body.lesson_date < date.today():
+        if body.lesson_date < today:
             raise Unprocessable("A make-up lesson cannot be scheduled in the past")
         active = await fetch_one(
             conn,

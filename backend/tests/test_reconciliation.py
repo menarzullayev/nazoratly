@@ -3,17 +3,17 @@ the shared rules in tests/golden/accounting.json; the freeze after finalizing is
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import timedelta
 from typing import Any
 
 import httpx
 
 from tests.conftest import Tenant
-from tests.helpers import mk_student, ok
+from tests.helpers import mk_student, ok, org_today
 from tests.test_accounting import A, manual, pay
 from tests.test_tenancy_and_staff import _add_staff, _login
 
-TODAY = date.today()
+TODAY = org_today()
 
 
 def d(offset: int) -> str:
