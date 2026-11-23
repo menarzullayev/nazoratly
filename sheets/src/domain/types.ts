@@ -99,3 +99,18 @@ export interface LeadLogRow {
   summary: string;
   nextFollowUpOn: ISODate | "";
 }
+
+export interface Entitlement {
+  id: string;
+  studentId: string;
+  groupId: string;
+  missedOn: ISODate;
+  kind: "makeup" | "credit";
+  amount: number;
+  expiresOn: ISODate;
+  status: "open" | "scheduled" | "used" | "cancelled";
+  makeupOn: ISODate | "";
+  usedOn: ISODate | "";
+  appliedChargeId: string;
+  lastMakeupOn: ISODate | "";
+}

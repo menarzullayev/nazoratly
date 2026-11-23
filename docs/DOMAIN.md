@@ -59,3 +59,8 @@ Qarzdorlar (`charges_open_due`), o'quvchi balansi, kunlik/oylik tushum (`payment
 - `org_settings`: `trial_free_lessons` (0-100, standart 1), `trial_free_days` (0-365, standart 7).
 - `lead_sources`, `leads` (bosqichlar: new, contacted, trial_scheduled, trial_attended, enrolled, lost; `student_id` + `converted_at` birga; bitta o'quvchi bitta lead'dan), `lead_interactions`. Hammasida RLS, audit trigger; agent roli bu jadvallarga tegmaydi.
 - Pastga qaytarish `trial` yozilishlar bo'lsa to'xtaydi (avval qabul qiling yoki bekor qiling).
+
+## 8. Sababli yo'qlik va qoplash (migratsiya 0012)
+- `org_settings`: `excused_mode`, `makeup_expiry_days`, `makeup_lapses`; `lessons.kind` (`regular|makeup`); `charges.amount` endi `>= 0`.
+- `absence_entitlements`: bitta (yo'qotilgan dars, o'quvchi) uchun bitta qator; `kind makeup|credit` (kreditda `amount`), `status open|scheduled|used|cancelled`, `expires_on`, `makeup_lesson_id`, `applied_charge_id`. RLS + audit.
+- Pastga qaytarish: qoplash darslari yoki 0 so'mlik hisoblar bo'lsa to'xtaydi.
