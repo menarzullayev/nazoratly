@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>QR davomat | nazoratly</title>
+  <link rel="stylesheet" href="/ui/static/ui.css">
+</head>
+<body>
+  <header class="top">
+    <strong>nazoratly: QR davomat</strong>
+    <span class="row"><span id="who" class="muted"></span><button id="signout" class="secondary" type="button" hidden>Chiqish</button></span>
+  </header>
+  <main>
+    <section id="login" class="card"></section>
+    <div id="app" hidden>
+      <section class="card stack">
+        <h2>1. Darsni tanlang</h2>
+        <div class="row">
+          <div><label for="day">Sana</label><input id="day" type="date"></div>
+          <button id="load" class="secondary" type="button">Darslarni yuklash</button>
+        </div>
+        <div><label for="lesson">Dars</label><select id="lesson"></select></div>
+        <p id="lesson-msg" class="muted" role="status"></p>
+      </section>
+      <section class="card stack">
+        <h2>2. Kartani skanerlang</h2>
+        <div class="row">
+          <button id="cam" type="button">Kamerani yoqish</button>
+          <button id="cam-off" class="secondary" type="button" hidden>Kamerani o'chirish</button>
+        </div>
+        <div id="viewport" class="viewport" hidden><video id="video" playsinline muted></video><div class="frame"></div></div>
+        <p id="cam-msg" class="muted" role="status"></p>
+        <div>
+          <label for="manual">Skaner qurilmasi yoki qo'lda kiritish (kod + Enter)</label>
+          <input id="manual" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="NZQ1-...">
+        </div>
+        <div id="result" class="result" role="status" aria-live="polite"></div>
+      </section>
+      <section class="card stack">
+        <h2>Bugungi skanerlashlar <span id="count" class="pill ok">0</span></h2>
+        <ul id="log" class="log"></ul>
+      </section>
+    </div>
+  </main>
+  <script src="/ui/static/jsQR.js"></script>
+  <script src="/ui/static/common.js"></script>
+  <script src="/ui/static/scan.js"></script>
+</body>
+</html>

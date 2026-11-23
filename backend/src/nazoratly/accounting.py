@@ -354,7 +354,7 @@ async def _sources(conn: Conn) -> list[dict[str, Any]]:
     for r in await fetch_all(
         conn,
         "SELECT p.id, p.amount, p.method, (p.paid_at AT TIME ZONE o.timezone)::date AS d, (p.voided_at IS NOT NULL) AS voided "
-        "FROM payments p JOIN organizations o ON o.id = p.org_id",
+        "FROM payments p JOIN organizations o ON o.id = p.org_id WHERE NOT p.is_demo",
     ):
         out.append(
             {"type": "payment", "key": str(r["id"]), "date": r["d"].isoformat(), "amount": r["amount"],
@@ -362,7 +362,7 @@ async def _sources(conn: Conn) -> list[dict[str, Any]]:
         )  # fmt: skip
     for r in await fetch_all(
         conn,
-        "SELECT id, category, amount, spent_at, paid_from, (bill_id IS NOT NULL) AS bill, (voided_at IS NOT NULL) AS voided FROM expenses",
+        "SELECT id, category, amount, spent_at, paid_from, (bill_id IS NOT NULL) AS bill, (voided_at IS NOT NULL) AS voided FROM expenses WHERE NOT is_demo",
     ):
         out.append(
             {"type": "expense", "key": str(r["id"]), "date": r["spent_at"].isoformat(), "amount": r["amount"],
