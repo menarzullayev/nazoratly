@@ -513,6 +513,11 @@ BEGIN
   -- agent views: consent filtered (student 1 has AI consent, student 2 has none)
   PERFORM set_config('app.org_id', '1', true);
   IF (SELECT count(*) FROM agent_v_package_packages) <> 1 OR (SELECT (package_lessons, group_name)::text FROM agent_v_package_packages) <> '(12,"Paket A")' THEN RAISE EXCEPTION 'agent package view is wrong'; END IF;
+  IF (SELECT array_agg(lesson_date ORDER BY lesson_date)::text FROM agent_v_package_consumption WHERE student_id = 1)
+     IS DISTINCT FROM (SELECT array_agg(lesson_date ORDER BY lesson_date)::text FROM v_package_consumption WHERE student_id = 1) THEN
+    RAISE EXCEPTION 'the agent consumption view must equal the app view';
+  END IF;
+  IF (SELECT paid FROM agent_v_package_packages WHERE student_id = 1) <> 300000 THEN RAISE EXCEPTION 'agent package paid is wrong'; END IF;
   IF (SELECT count(*) FROM agent_v_package_consumption WHERE student_id = 1) <> 3 OR EXISTS (SELECT 1 FROM agent_v_package_consumption WHERE student_id = 2) THEN RAISE EXCEPTION 'agent consumption view must hide students without consent'; END IF;
   PERFORM set_config('app.org_id', '2', true);
   IF EXISTS (SELECT 1 FROM agent_v_package_packages) OR EXISTS (SELECT 1 FROM agent_v_package_consumption) THEN RAISE EXCEPTION 'agent views are per center'; END IF;

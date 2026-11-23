@@ -67,6 +67,7 @@ async def test_unauthenticated_and_listing(pg_server: dict[str, Any], tenant: Te
         assert names == {
             "list_debtors",
             "list_due_installments",
+            "list_packages_needing_payment",
             "attendance_summary",
             "revenue_report",
             "list_reminder_targets",
@@ -236,3 +237,41 @@ async def test_reminder_tools_follow_installments(pg_server: dict[str, Any], ten
         ] == [2]
         too_far = await tool(mcp_client, token, "list_due_installments", days_ahead=15)
         assert too_far["isError"] is True
+
+
+async def test_agent_sees_packages_needing_payment(pg_server: dict[str, Any], tenant: Tenant) -> None:
+    from tests.helpers import consent, enroll, mk_student
+    from tests.test_packages import CASH, TODAY, attend, pkg_group, sell
+
+    async with mcp_ctx(pg_server) as mcp_client:
+        grp = await pkg_group(tenant)
+        seen, hidden, fine = (
+            await mk_student(tenant, "Pkg Seen"),
+            await mk_student(tenant, "Pkg Hidden"),
+            await mk_student(tenant, "Pkg Fine"),
+        )
+        start = (TODAY.replace(year=TODAY.year - 1)).isoformat()
+        enrolments = {s["id"]: await enroll(tenant, grp["id"], s["id"], start) for s in (seen, hidden, fine)}
+        for s in (seen, fine):
+            await consent(tenant, s["id"], "ai_assistant_processing")
+        await attend(tenant, grp, seen, ["present", "present", "late"])  # three lessons, no package: debt
+        await sell(tenant, enrolments[fine["id"]]["id"], pay=CASH)  # twelve lessons: nothing needed
+        await ok(await tenant.patch("/v1/settings", {"package_low_lessons": 3}))
+        token = await _agent(tenant, ["read"])
+        rows = content(await tool(mcp_client, token, "list_packages_needing_payment"))
+        assert [(r["student_name"], r["need"], r["balance_lessons"], r["debt_amount"]) for r in rows] == [
+            ("Pkg Seen", "debt", -3, "150000.00")
+        ]  # the student without AI consent is invisible, the paid one needs nothing
+        assert (
+            "3 ta darsda to'lovsiz" in rows[0]["reminder_text"] and "150 000 so'm" in rows[0]["reminder_text"]
+        )
+        assert "phone" not in rows[0]
+        await sell(
+            tenant, enrolments[seen["id"]]["id"], pay=CASH
+        )  # covers the debt: 9 left, above the threshold 3
+        assert content(await tool(mcp_client, token, "list_packages_needing_payment")) == []
+        await ok(
+            await tenant.patch("/v1/settings", {"package_low_lessons": 9})
+        )  # the threshold now includes 9
+        rows = content(await tool(mcp_client, token, "list_packages_needing_payment"))
+        assert [(r["student_name"], r["need"]) for r in rows] == [("Pkg Seen", "low")]

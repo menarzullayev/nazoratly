@@ -41,10 +41,10 @@ _SQL: dict[Source, dict[str, str]] = {
     },
     "agent": {
         "enrollments": (
-            "SELECT enrollment_id, student_id, full_name, group_id, NULL::uuid AS group_public_id, group_name, package_lessons, package_price "
+            "SELECT enrollment_id, student_id, full_name, group_id, NULL::uuid AS group_public_id, group_name, package_lessons, package_price, low_lessons "
             "FROM agent_v_package_enrollments WHERE (%(student)s::bigint IS NULL OR student_id = %(student)s) ORDER BY enrollment_id"
         ),
-        "packages": "SELECT enrollment_id, lessons, price, paid, purchased_on, expires_on FROM agent_v_package_packages WHERE enrollment_id = ANY(%s) ORDER BY purchased_on, package_id",
+        "packages": "SELECT enrollment_id, lessons, price, paid, purchased_on, expires_on FROM agent_v_package_packages WHERE enrollment_id = ANY(%s) ORDER BY purchased_on, expires_on",
         "consumption": "SELECT enrollment_id, lesson_date FROM agent_v_package_consumption WHERE enrollment_id = ANY(%s)",
     },
 }
@@ -108,7 +108,7 @@ async def load_balances(
                 package_lessons=e["package_lessons"],
                 package_price=e["package_price"],
                 balance=bal,
-                need=payment_need(balance=bal.balance, low_lessons=low_lessons),
+                need=payment_need(balance=bal.balance, low_lessons=e.get("low_lessons", low_lessons)),
                 debt_lessons=bal.uncovered,
                 debt_amount=lessons_money(
                     lessons=bal.uncovered, price=e["package_price"], package_lessons=e["package_lessons"]

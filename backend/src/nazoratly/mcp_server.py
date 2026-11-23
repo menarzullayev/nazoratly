@@ -18,6 +18,7 @@ from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Annotated, Any, Literal
 
 import structlog
@@ -32,6 +33,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
+from nazoratly.packages import load_balances, severity
+from nazoratly.rules.packages import package_reminder_text
 from nazoratly.security import sha256
 
 log = structlog.get_logger("mcp")
@@ -299,6 +302,48 @@ def build_server(backend: AgentBackend) -> FastMCP:
         return await backend.call(
             who, rid, "list_due_installments", "read", {"days_ahead": days_ahead, "limit": limit}, run
         )
+
+    @mcp.tool(
+        description="Students in package-billed groups whose lesson balance is low, exhausted or negative (only students with AI-processing consent), worst first: debt (negative lessons, with the amount), exhausted, low. Each row has a suggested reminder text; you may draft it with draft_reminder, a human approves every message."
+    )
+    async def list_packages_needing_payment(
+        ctx: Context[Any, Any, Any], limit: Limit = 50
+    ) -> list[dict[str, Any]]:
+        who, rid = identity(ctx)
+
+        async def run(c: Conn) -> list[dict[str, Any]]:
+            cur = await c.execute("SELECT CURRENT_DATE AS d")
+            today = (await cur.fetchone() or {})["d"]
+            rows = await load_balances(c, today=today, low_lessons=2, source="agent")
+            needing = [r for r in rows if r.need != "ok"]
+            needing.sort(
+                key=lambda r: (severity(r.need), r.balance.balance, r.student_name.lower(), r.enrollment_id)
+            )
+            return _plain(
+                [
+                    {
+                        "student_id": r.student_id,
+                        "student_name": r.student_name,
+                        "group_name": r.group_name,
+                        "balance_lessons": r.balance.balance,
+                        "debt_lessons": r.debt_lessons,
+                        "debt_amount": r.debt_amount.quantize(Decimal("0.01")),
+                        "need": r.need,
+                        "next_expiry": r.balance.next_expiry,
+                        "reminder_text": package_reminder_text(
+                            need=r.need,
+                            guardian="Hurmatli ota-ona",
+                            student=r.student_name,
+                            balance=r.balance.balance,
+                            debt_amount=r.debt_amount,
+                            center="",
+                        ).strip(),
+                    }
+                    for r in needing[:limit]
+                ]
+            )
+
+        return await backend.call(who, rid, "list_packages_needing_payment", "read", {"limit": limit}, run)
 
     @mcp.tool(
         description="Attendance counts per student for a date range (students with AI-processing consent only)."
