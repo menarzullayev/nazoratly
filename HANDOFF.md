@@ -25,3 +25,11 @@ Foydalanuvchi bilan hisobotlar o'zbek lotin tilida; kod/izoh/identifikatorlar in
 - Git repo yo'q (`E:\projects\nazoratly` repo emas); commit qilinmagan. Birinchi commit/GitHub repo — foydalanuvchi ruxsati bilan.
 - Windows'da psycopg async `SelectorEventLoop` talab qiladi: testlar buni `pytest_asyncio_loop_factories` bilan hal qiladi; mahalliy `uvicorn` Windows'da ishlatilsa `--loop` / selector policy kerak bo'lishi mumkin (Docker/Linux'da muammo yo'q).
 - Sxemani o'zgartirsangiz: yangi migratsiya (`0008_*`) + `db/tests` va API testi.
+
+## Holat 2026-11-23 (kech): Sheets + Telegram haqiqiy muhitda
+- Deploy: stack PC'da (`docker compose`, `.env` git'da yo'q), `https://nazoratly.bugvector.uz` alohida Cloudflare tunnel (`~/.cloudflared/nazoratly.yml`, UUID bilan DNS), `docs/DEPLOY.md`.
+- Sheets (`sheets/`): haqiqiy Google Sheet + Apps Script (clasp ulangan, `.clasp.json` git'da yo'q; Web App deployment "webhook relay"). Haqiqiy muhitda tekshirilgan: menyu, sozlash, demo, panel, davomat yon paneli+saqlash, Telegram sozlash, eslatma loyihasi (rozilik yo'q -> o'tkazib yuboriladi).
+- Bot `@nazoratlybot` (egasi @menarzullayev): profil/buyruqlar uz/ru/en, webhook RELAY orqali (`/hooks/telegram`; Apps Script POST'ga 302 qaytaradi, Telegram redirect kuzatmaydi). Haqiqiy botda tekshirilgan: /start kod -> rozilik -> ulanish, /qarz rich xabar (jadval, tg-time).
+- Tekshirilmagan (haqiqiy muhitda): eslatmani tasdiqlash paneli, "Tasdiqlanganlarni yuborish", tugmalar (copy_text, "To'lov qildim"), 🎉 effekt, /privacy javobi, to'lov oynasi.
+- Eslatma: Apps Script `ScriptApp.getService().getUrl()` noto'g'ri URL qaytardi; relay target sifatida deployment URL qo'lda `.env` ga yozilgan (NAZORATLY_TG_RELAY_TARGET). Kodni tuzatish kerak (deployment ID'ni sozlamadan olish).
+- Sheets UI'ni brauzer paneli orqali boshqarishda: viewport 1500x900 kerak, aks holda "nazoratly" menyusi "..." ostiga yashirinadi.
