@@ -29,6 +29,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 from pydantic import Field, StringConstraints
 
+from nazoratly.accounting import post_payment, void_source
 from nazoratly.db import Conn, Database, Session, execute, fetch_all, fetch_one
 from nazoratly.deps import DB, Paging, Principal, require
 from nazoratly.errors import ApiError, Conflict, NotFound, Unprocessable
@@ -110,6 +111,7 @@ async def _perform(conn: Conn, org_id: int, tx: dict[str, Any]) -> None:
     )
     assert pay is not None
     await allocate_fifo(conn, org_id, pay["id"])
+    await post_payment(conn, org_id, None, pay["id"])
     await execute(
         conn,
         "UPDATE online_transactions SET state = 2, payment_id = %s, performed_at = now() WHERE id = %s",
@@ -127,6 +129,9 @@ async def _cancel(conn: Conn, tx: dict[str, Any], reason: int | None) -> int:
             "UPDATE payments SET voided_at = now(), void_reason = %s WHERE id = %s AND voided_at IS NULL",
             (f"{tx['provider']} cancellation, reason {reason}", tx["payment_id"]),
         )
+        org = await fetch_one(conn, "SELECT app_org_id() AS org_id")
+        assert org is not None
+        await void_source(conn, int(org["org_id"]), None, "payment", str(tx["payment_id"]))
     await execute(
         conn,
         "UPDATE online_transactions SET state = %s, reason = %s, cancelled_at = now() WHERE id = %s",

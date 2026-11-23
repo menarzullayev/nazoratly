@@ -14,6 +14,7 @@ from typing import Annotated, Any, Literal
 from fastapi import APIRouter, Depends, Query
 from pydantic import Field
 
+from nazoratly.accounting import post_payment
 from nazoratly.db import Conn, execute, fetch_all, fetch_one, resolve
 from nazoratly.deps import DB, Paging, Principal, require
 from nazoratly.errors import Conflict, Unprocessable
@@ -168,6 +169,7 @@ async def sell_package(
             assert pay is not None
             await _insert_allocation(conn, p.org_id, pay["id"], charge["id"], min(body.pay.amount, price))
             await allocate_fifo(conn, p.org_id, pay["id"])
+            await post_payment(conn, p.org_id, p.user_id, pay["id"])
         return await _package(conn, pkg["id"])
 
 

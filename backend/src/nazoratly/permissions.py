@@ -14,6 +14,7 @@ ALL: Final = frozenset(
         "finance:read", "finance:write", "expenses:write",
         "payroll:read", "payroll:write", "payroll:approve",
         "reports:read", "audit:read",
+        "accounting:read", "accounting:write", "accounting:close",
         "agent:manage",
     }
 )  # fmt: skip
@@ -22,13 +23,14 @@ _MANAGER: Final = frozenset(
     {
         "org:read", "students:read", "students:write", "consents:write", "academics:read", "academics:write",
         "attendance:read", "attendance:write", "finance:read", "finance:write", "reports:read", "staff:read",
+        "accounting:read",
     }
 )  # fmt: skip
 
 _ACCOUNTANT: Final = frozenset(
     {
         "org:read", "students:read", "academics:read", "attendance:read", "finance:read", "finance:write",
-        "expenses:write", "payroll:read", "payroll:write", "reports:read",
+        "expenses:write", "payroll:read", "payroll:write", "reports:read", "accounting:read", "accounting:write",
     }
 )  # fmt: skip
 

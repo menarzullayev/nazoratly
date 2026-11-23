@@ -89,6 +89,522 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/accounting/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Chart of accounts */
+        get: operations["list_accounts_v1_accounting_accounts_get"];
+        put?: never;
+        /** Add an account to the chart */
+        post: operations["create_account_v1_accounting_accounts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/accounts/{account_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Rename or deactivate an account */
+        patch: operations["patch_account_v1_accounting_accounts__account_id__patch"];
+        trace?: never;
+    };
+    "/v1/accounting/bill-payments/{payment_id}/void": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Void a settlement (its entry is reversed) */
+        post: operations["void_bill_payment_v1_accounting_bill_payments__payment_id__void_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/bills": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Supplier bills ordered by due date */
+        get: operations["list_bills_v1_accounting_bills_get"];
+        put?: never;
+        /** Record a supplier bill (it accrues an expense) */
+        post: operations["create_bill_v1_accounting_bills_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/bills/{bill_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Bill */
+        get: operations["get_bill_v1_accounting_bills__bill_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/bills/{bill_id}/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Settle a bill (partly or fully) */
+        post: operations["pay_bill_v1_accounting_bills__bill_id__payments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/bills/{bill_id}/void": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Void a bill that has no live settlements */
+        post: operations["void_bill_v1_accounting_bills__bill_id__void_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/cash-accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cash desks and bank accounts */
+        get: operations["list_cash_accounts_v1_accounting_cash_accounts_get"];
+        put?: never;
+        /** Add a cash desk or bank account */
+        post: operations["create_cash_account_v1_accounting_cash_accounts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Journal entries, newest first */
+        get: operations["list_entries_v1_accounting_entries_get"];
+        put?: never;
+        /** Post a manual balanced entry */
+        post: operations["create_entry_v1_accounting_entries_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/entries/{entry_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Entry */
+        get: operations["get_entry_v1_accounting_entries__entry_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/entries/{entry_id}/reverse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Correct an entry: post its exact reversal (entries are never edited or deleted) */
+        post: operations["reverse_entry_v1_accounting_entries__entry_id__reverse_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/ledger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Account statement with a running balance */
+        get: operations["ledger_v1_accounting_ledger_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Source documents without a journal entry yet */
+        get: operations["pending_v1_accounting_pending_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/periods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Closed months */
+        get: operations["list_periods_v1_accounting_periods_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/periods/{month}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close a month that has ended (final: corrections are reversing entries in an open month) */
+        post: operations["close_period_v1_accounting_periods__month__close_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/reports/balance-sheet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Balance sheet as of a date */
+        get: operations["balance_sheet_v1_accounting_reports_balance_sheet_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/reports/income-statement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Income statement for a period */
+        get: operations["income_statement_v1_accounting_reports_income_statement_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/reports/payables-aging": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What is owed to suppliers, by days overdue */
+        get: operations["payables_aging_v1_accounting_reports_payables_aging_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/reports/trial-balance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Trial balance */
+        get: operations["trial_balance_v1_accounting_reports_trial_balance_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/statements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Statements (lines are not included in the list) */
+        get: operations["list_statements_v1_accounting_statements_get"];
+        put?: never;
+        /** Start a statement reconciliation */
+        post: operations["create_statement_v1_accounting_statements_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/statements/{statement_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A statement with its lines and the reconciliation state */
+        get: operations["get_statement_v1_accounting_statements__statement_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/statements/{statement_id}/auto-match": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Match lines to the ledger automatically */
+        post: operations["auto_match_v1_accounting_statements__statement_id__auto_match_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/statements/{statement_id}/finalize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Finalize: only when it foots, everything is matched and the balance equals the ledger */
+        post: operations["finalize_v1_accounting_statements__statement_id__finalize_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/statements/{statement_id}/lines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add statement lines */
+        post: operations["add_lines_v1_accounting_statements__statement_id__lines_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/statements/{statement_id}/lines/{line_id}/match": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Match one line by hand */
+        post: operations["match_line_v1_accounting_statements__statement_id__lines__line_id__match_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/statements/{statement_id}/lines/{line_id}/unmatch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Remove a match */
+        post: operations["unmatch_line_v1_accounting_statements__statement_id__lines__line_id__unmatch_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/suppliers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Suppliers */
+        get: operations["list_suppliers_v1_accounting_suppliers_get"];
+        put?: never;
+        /** Create Supplier */
+        post: operations["create_supplier_v1_accounting_suppliers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/suppliers/{supplier_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Supplier */
+        patch: operations["patch_supplier_v1_accounting_suppliers__supplier_id__patch"];
+        trace?: never;
+    };
+    "/v1/accounting/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post what is missing (idempotent: a second run posts nothing) */
+        post: operations["sync_v1_accounting_sync_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/accounting/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Verify the hash chain and the closed periods */
+        get: operations["verify_v1_accounting_verify_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agent-drafts": {
         parameters: {
             query?: never;
@@ -1967,6 +2483,49 @@ export interface components {
              */
             token_type: string;
         };
+        /** AccountIn */
+        AccountIn: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "asset" | "liability" | "equity" | "income" | "expense";
+        };
+        /** AccountOut */
+        AccountOut: {
+            /** Active */
+            active: boolean;
+            /** Code */
+            code: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Normal Side
+             * @enum {string}
+             */
+            normal_side: "debit" | "credit";
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "asset" | "liability" | "equity" | "income" | "expense";
+        };
+        /** AccountPatch */
+        AccountPatch: {
+            /** Active */
+            active?: boolean | null;
+            /** Name */
+            name?: string | null;
+        };
         /** AgentCreated */
         AgentCreated: {
             /**
@@ -2039,6 +2598,45 @@ export interface components {
             scopes: string[];
             /** Status */
             status: string;
+        };
+        /** AgingOut */
+        AgingOut: {
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            /** Buckets */
+            buckets: {
+                [key: string]: string;
+            };
+            /** Rows */
+            rows: components["schemas"]["AgingRow"][];
+            /** Total */
+            total: string;
+        };
+        /** AgingRow */
+        AgingRow: {
+            /** Bucket */
+            bucket: string;
+            /** Days Overdue */
+            days_overdue: number;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Number */
+            number: string;
+            /** Outstanding */
+            outstanding: string;
+            /** Supplier Name */
+            supplier_name: string;
         };
         /** AllocateIn */
         AllocateIn: {
@@ -2125,6 +2723,181 @@ export interface components {
             /** Request Id */
             request_id: string | null;
         };
+        /** AutoMatchIn */
+        AutoMatchIn: {
+            /**
+             * Tolerance Days
+             * @default 3
+             */
+            tolerance_days: number;
+        };
+        /** BalanceSheetOut */
+        BalanceSheetOut: {
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            /** Assets */
+            assets: components["schemas"]["NamedAmount"][];
+            /** Balanced */
+            balanced: boolean;
+            /** Current Result */
+            current_result: string;
+            /** Equity */
+            equity: components["schemas"]["NamedAmount"][];
+            /** Liabilities */
+            liabilities: components["schemas"]["NamedAmount"][];
+            /** Total Assets */
+            total_assets: string;
+            /** Total Equity */
+            total_equity: string;
+            /** Total Liabilities */
+            total_liabilities: string;
+        };
+        /** BillIn */
+        BillIn: {
+            /**
+             * Amount
+             * @description UZS amount, 2 decimals
+             */
+            amount: number | string;
+            /**
+             * Bill Date
+             * Format: date
+             */
+            bill_date: string;
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "rent" | "utilities" | "salary" | "marketing" | "equipment" | "tax" | "other";
+            /** Description */
+            description?: string | null;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /** Number */
+            number: string;
+            /**
+             * Supplier Id
+             * Format: uuid
+             */
+            supplier_id: string;
+        };
+        /** BillOut */
+        BillOut: {
+            /** Amount */
+            amount: string;
+            /**
+             * Bill Date
+             * Format: date
+             */
+            bill_date: string;
+            /** Category */
+            category: string;
+            /** Description */
+            description: string | null;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Number */
+            number: string;
+            /** Outstanding */
+            outstanding: string;
+            /** Paid */
+            paid: string;
+            /**
+             * Payments
+             * @default []
+             */
+            payments: components["schemas"]["BillPaymentOut"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "partial" | "overdue" | "paid" | "voided";
+            /**
+             * Supplier Id
+             * Format: uuid
+             */
+            supplier_id: string;
+            /** Supplier Name */
+            supplier_name: string;
+            /** Void Reason */
+            void_reason: string | null;
+            /** Voided */
+            voided: boolean;
+        };
+        /** BillPaymentIn */
+        BillPaymentIn: {
+            /**
+             * Amount
+             * @description UZS amount, 2 decimals
+             */
+            amount: number | string;
+            /** Note */
+            note?: string | null;
+            /**
+             * Paid From
+             * @default cash
+             * @enum {string}
+             */
+            paid_from: "cash" | "bank";
+            /**
+             * Paid On
+             * Format: date
+             */
+            paid_on: string;
+        };
+        /** BillPaymentOut */
+        BillPaymentOut: {
+            /** Amount */
+            amount: string;
+            /**
+             * Bill Id
+             * Format: uuid
+             */
+            bill_id: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Note */
+            note: string | null;
+            /** Paid From */
+            paid_from: string;
+            /**
+             * Paid On
+             * Format: date
+             */
+            paid_on: string;
+            /** Void Reason */
+            void_reason: string | null;
+            /** Voided */
+            voided: boolean;
+        };
+        /** BlockedOut */
+        BlockedOut: {
+            /** Date */
+            date: string;
+            /** Reason */
+            reason: string;
+            /** Source Key */
+            source_key: string;
+            /** Source Type */
+            source_type: string;
+        };
         /** BranchIn */
         BranchIn: {
             /** Address */
@@ -2154,6 +2927,40 @@ export interface components {
             name?: string | null;
             /** Status */
             status?: ("active" | "closed") | null;
+        };
+        /** CashAccountIn */
+        CashAccountIn: {
+            /**
+             * Code
+             * @description ledger account code; an existing unused asset account is reused, else it is created
+             */
+            code: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "cash" | "bank";
+            /** Name */
+            name: string;
+        };
+        /** CashAccountOut */
+        CashAccountOut: {
+            /** Account Code */
+            account_code: string;
+            /**
+             * Balance
+             * @description debit minus credit of the ledger account
+             */
+            balance: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Name */
+            name: string;
         };
         /** ChargeIn */
         ChargeIn: {
@@ -2667,6 +3474,65 @@ export interface components {
             /** Used On */
             used_on: string | null;
         };
+        /** EntryIn */
+        EntryIn: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Lines */
+            lines: components["schemas"]["EntryLineIn"][];
+            /** Memo */
+            memo: string;
+        };
+        /** EntryLineIn */
+        EntryLineIn: {
+            /**
+             * Account
+             * @description account code
+             */
+            account: string;
+            /**
+             * Credit
+             * @description UZS amount, 2 decimals
+             * @default 0
+             */
+            credit: number | string;
+            /**
+             * Debit
+             * @description UZS amount, 2 decimals
+             * @default 0
+             */
+            debit: number | string;
+        };
+        /** EntryOut */
+        EntryOut: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Entry No */
+            entry_no: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Lines */
+            lines: components["schemas"]["LineOut"][];
+            /** Memo */
+            memo: string;
+            /** Reversed By Entry Id */
+            reversed_by_entry_id: string | null;
+            /** Reverses Entry Id */
+            reverses_entry_id: string | null;
+            /** Source Key */
+            source_key: string;
+            /** Source Type */
+            source_type: string;
+        };
         /** EqualSplitIn */
         EqualSplitIn: {
             /**
@@ -2698,6 +3564,13 @@ export interface components {
             /** Description */
             description?: string | null;
             /**
+             * Paid From
+             * @description where the money left from: the cash desk or the bank
+             * @default cash
+             * @enum {string}
+             */
+            paid_from: "cash" | "bank";
+            /**
              * Spent At
              * Format: date
              */
@@ -2718,11 +3591,18 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Paid From */
+            paid_from: string;
             /**
              * Spent At
              * Format: date
              */
             spent_at: string;
+            /**
+             * Supplier Bill Id
+             * @description set when the expense accrues a supplier bill
+             */
+            supplier_bill_id: string | null;
             /** Void Reason */
             void_reason: string | null;
             /** Voided */
@@ -3061,6 +3941,29 @@ export interface components {
             /** Version */
             version: string;
         };
+        /** IncomeStatementOut */
+        IncomeStatementOut: {
+            /**
+             * Date From
+             * Format: date
+             */
+            date_from: string;
+            /**
+             * Date To
+             * Format: date
+             */
+            date_to: string;
+            /** Expenses */
+            expenses: components["schemas"]["NamedAmount"][];
+            /** Income */
+            income: components["schemas"]["NamedAmount"][];
+            /** Net */
+            net: string;
+            /** Total Expenses */
+            total_expenses: string;
+            /** Total Income */
+            total_income: string;
+        };
         /** InstallmentDueRow */
         InstallmentDueRow: {
             /** Amount */
@@ -3313,6 +4216,24 @@ export interface components {
             /** Stage */
             stage?: ("new" | "contacted" | "trial_scheduled" | "trial_attended" | "lost") | null;
         };
+        /** LedgerOut */
+        LedgerOut: {
+            /** Account */
+            account: string;
+            /** Closing */
+            closing: string;
+            /** Name */
+            name: string;
+            /** Opening */
+            opening: string;
+            /** Rows */
+            rows: components["schemas"]["StatementRow"][];
+            /**
+             * Side
+             * @enum {string}
+             */
+            side: "debit" | "credit";
+        };
         /** LessonIn */
         LessonIn: {
             /**
@@ -3402,6 +4323,19 @@ export interface components {
             /** Topic */
             topic?: string | null;
         };
+        /** LineOut */
+        LineOut: {
+            /** Account Code */
+            account_code: string;
+            /** Account Name */
+            account_name: string;
+            /** Credit */
+            credit: string;
+            /** Debit */
+            debit: string;
+            /** Seq */
+            seq: number;
+        };
         /** LinkIn */
         LinkIn: {
             /**
@@ -3471,6 +4405,14 @@ export interface components {
              * Format: uuid
              */
             student_id: string;
+        };
+        /** MatchIn */
+        MatchIn: {
+            /**
+             * Seq
+             * @description journal line number (seq) on the statement account
+             */
+            seq: number;
         };
         /** MeOut */
         MeOut: {
@@ -3584,6 +4526,15 @@ export interface components {
             running: number;
             /** Trials Started */
             trials_started: number;
+        };
+        /** NamedAmount */
+        NamedAmount: {
+            /** Amount */
+            amount: string;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
         };
         /** OnlineTxOut */
         OnlineTxOut: {
@@ -3851,6 +4802,17 @@ export interface components {
             /** Offset */
             offset: number;
         };
+        /** Page[BillOut] */
+        Page_BillOut_: {
+            /** Has More */
+            has_more: boolean;
+            /** Items */
+            items: components["schemas"]["BillOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
         /** Page[BranchOut] */
         Page_BranchOut_: {
             /** Has More */
@@ -3923,6 +4885,17 @@ export interface components {
             has_more: boolean;
             /** Items */
             items: components["schemas"]["EntitlementOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
+        /** Page[EntryOut] */
+        Page_EntryOut_: {
+            /** Has More */
+            has_more: boolean;
+            /** Items */
+            items: components["schemas"]["EntryOut"][];
             /** Limit */
             limit: number;
             /** Offset */
@@ -4066,6 +5039,17 @@ export interface components {
             has_more: boolean;
             /** Items */
             items: components["schemas"]["StaffOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
+        /** Page[StatementOut] */
+        Page_StatementOut_: {
+            /** Has More */
+            has_more: boolean;
+            /** Items */
+            items: components["schemas"]["StatementOut"][];
             /** Limit */
             limit: number;
             /** Offset */
@@ -4320,6 +5304,23 @@ export interface components {
             /** Total */
             total: string;
         };
+        /** PendingOut */
+        PendingOut: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "post" | "reverse";
+            /** Source Key */
+            source_key: string;
+            /** Source Type */
+            source_type: string;
+        };
         /** PendingTrial */
         PendingTrial: {
             /** Days Elapsed */
@@ -4355,6 +5356,21 @@ export interface components {
             student_id: string;
             /** Student Name */
             student_name: string;
+        };
+        /** PeriodOut */
+        PeriodOut: {
+            /** Head Hash */
+            head_hash: string;
+            /** Last Seq */
+            last_seq: number;
+            /** Month */
+            month: string;
+            /** Period Hash */
+            period_hash: string;
+            /** Total Credit */
+            total_credit: string;
+            /** Total Debit */
+            total_debit: string;
         };
         /** PlanIn */
         PlanIn: {
@@ -4439,6 +5455,21 @@ export interface components {
              */
             payment_id: string;
         };
+        /** ReconciliationOut */
+        ReconciliationOut: {
+            /** Difference */
+            difference: string;
+            /** Foots */
+            foots: boolean;
+            /** Ledger Balance */
+            ledger_balance: string;
+            /** Reconciled */
+            reconciled: boolean;
+            /** Unmatched Ledger */
+            unmatched_ledger: components["schemas"]["UnmatchedLedgerLine"][];
+            /** Unmatched Statement */
+            unmatched_statement: number;
+        };
         /** RefreshIn */
         RefreshIn: {
             /** Org Id */
@@ -4472,6 +5503,16 @@ export interface components {
             period: string;
             /** Total */
             total: string;
+        };
+        /** ReverseIn */
+        ReverseIn: {
+            /**
+             * Date
+             * @description defaults to today; must be in an open month
+             */
+            date?: string | null;
+            /** Memo */
+            memo?: string | null;
         };
         /** ReverseOut */
         ReverseOut: {
@@ -4776,6 +5817,138 @@ export interface components {
             /** Phone */
             phone: string | null;
         };
+        /** StatementIn */
+        StatementIn: {
+            /**
+             * Cash Account Id
+             * Format: uuid
+             */
+            cash_account_id: string;
+            /**
+             * Closing Balance
+             * @description UZS amount, 2 decimals, may be negative
+             */
+            closing_balance: number | string;
+            /**
+             * Opening Balance
+             * @description UZS amount, 2 decimals, may be negative
+             */
+            opening_balance: number | string;
+            /**
+             * Period From
+             * Format: date
+             */
+            period_from: string;
+            /**
+             * Period To
+             * Format: date
+             */
+            period_to: string;
+        };
+        /** StatementLineIn */
+        StatementLineIn: {
+            /**
+             * Amount
+             * @description money in positive, out negative; not zero
+             */
+            amount: number | string;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+        };
+        /** StatementLineOut */
+        StatementLineOut: {
+            /** Amount */
+            amount: string;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Description */
+            description: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Matched Seq */
+            matched_seq: number | null;
+        };
+        /** StatementLinesIn */
+        StatementLinesIn: {
+            /** Lines */
+            lines: components["schemas"]["StatementLineIn"][];
+        };
+        /** StatementOut */
+        StatementOut: {
+            /** Account Code */
+            account_code: string;
+            /** Cash Account */
+            cash_account: string;
+            /**
+             * Cash Account Id
+             * Format: uuid
+             */
+            cash_account_id: string;
+            /** Closing Balance */
+            closing_balance: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Lines
+             * @default []
+             */
+            lines: components["schemas"]["StatementLineOut"][];
+            /** Opening Balance */
+            opening_balance: string;
+            /**
+             * Period From
+             * Format: date
+             */
+            period_from: string;
+            /**
+             * Period To
+             * Format: date
+             */
+            period_to: string;
+            reconciliation?: components["schemas"]["ReconciliationOut"] | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "finalized";
+        };
+        /** StatementRow */
+        StatementRow: {
+            /** Balance */
+            balance: string;
+            /** Credit */
+            credit: string;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Debit */
+            debit: string;
+            /** Entry No */
+            entry_no: number;
+            /** Memo */
+            memo: string;
+            /** Seq */
+            seq: number;
+        };
         /** StudentBalanceOut */
         StudentBalanceOut: {
             /** Credit */
@@ -4931,6 +6104,47 @@ export interface components {
              */
             revenue: string;
         };
+        /** SupplierIn */
+        SupplierIn: {
+            /** Name */
+            name: string;
+            /** Note */
+            note?: string | null;
+            /** Phone */
+            phone?: string | null;
+        };
+        /** SupplierOut */
+        SupplierOut: {
+            /** Active */
+            active: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Note */
+            note: string | null;
+            /**
+             * Outstanding
+             * @description unpaid amount of its bills
+             */
+            outstanding: string;
+            /** Phone */
+            phone: string | null;
+        };
+        /** SupplierPatch */
+        SupplierPatch: {
+            /** Active */
+            active?: boolean | null;
+            /** Name */
+            name?: string | null;
+            /** Note */
+            note?: string | null;
+            /** Phone */
+            phone?: string | null;
+        };
         /** SwitchIn */
         SwitchIn: {
             /**
@@ -4938,6 +6152,15 @@ export interface components {
              * Format: uuid
              */
             org_id: string;
+        };
+        /** SyncOut */
+        SyncOut: {
+            /** Blocked */
+            blocked: components["schemas"]["BlockedOut"][];
+            /** Posted */
+            posted: number;
+            /** Reversed */
+            reversed: number;
         };
         /** TeacherIn */
         TeacherIn: {
@@ -5046,6 +6269,59 @@ export interface components {
             /** Tool Name */
             tool_name: string;
         };
+        /** TrialBalanceOut */
+        TrialBalanceOut: {
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            /** Balanced */
+            balanced: boolean;
+            /** Date From */
+            date_from: string | null;
+            /** Rows */
+            rows: components["schemas"]["TrialRow"][];
+            /** Total Balance Credit */
+            total_balance_credit: string;
+            /** Total Balance Debit */
+            total_balance_debit: string;
+            /** Total Credit */
+            total_credit: string;
+            /** Total Debit */
+            total_debit: string;
+        };
+        /** TrialRow */
+        TrialRow: {
+            /** Balance Credit */
+            balance_credit: string;
+            /** Balance Debit */
+            balance_debit: string;
+            /** Code */
+            code: string;
+            /** Credit */
+            credit: string;
+            /** Debit */
+            debit: string;
+            /** Name */
+            name: string;
+            /** Type */
+            type: string;
+        };
+        /** UnmatchedLedgerLine */
+        UnmatchedLedgerLine: {
+            /** Amount */
+            amount: string;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Memo */
+            memo: string;
+            /** Seq */
+            seq: number;
+        };
         /** UnpaidStudent */
         UnpaidStudent: {
             /**
@@ -5075,16 +6351,23 @@ export interface components {
             /** Error Type */
             type: string;
         };
-        /** VoidIn */
-        VoidIn: {
-            /** Reason */
-            reason: string;
+        /** VerifyOut */
+        VerifyOut: {
             /**
-             * Release Allocations
-             * @description also remove payment allocations (returns the money to the payer's credit)
-             * @default false
+             * Broken Seq
+             * @description the first broken journal line
              */
-            release_allocations: boolean;
+            broken_seq: number | null;
+            /** Lines */
+            lines: number;
+            /** Ok */
+            ok: boolean;
+            /** Period Issues */
+            period_issues: {
+                [key: string]: unknown;
+            }[];
+            /** Reason */
+            reason: string | null;
         };
         /** WaitingBlock */
         WaitingBlock: {
@@ -5178,6 +6461,17 @@ export interface components {
             /** Student Name */
             student_name: string;
         };
+        /** VoidIn */
+        nazoratly__routers__finance__VoidIn: {
+            /** Reason */
+            reason: string;
+            /**
+             * Release Allocations
+             * @description also remove payment allocations (returns the money to the payer's credit)
+             * @default false
+             */
+            release_allocations: boolean;
+        };
         /** BalanceOut */
         nazoratly__routers__packages__BalanceOut: {
             /**
@@ -5228,6 +6522,11 @@ export interface components {
             package_lessons: number;
             /** Package Price */
             package_price: string;
+        };
+        /** VoidIn */
+        nazoratly__routers__payables__VoidIn: {
+            /** Reason */
+            reason: string;
         };
         /** BalanceOut */
         nazoratly__routers__students__BalanceOut: {
@@ -5374,6 +6673,1122 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Health"];
+                };
+            };
+        };
+    };
+    list_accounts_v1_accounting_accounts_get: {
+        parameters: {
+            query?: {
+                include_inactive?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_account_v1_accounting_accounts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_account_v1_accounting_accounts__account_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    void_bill_payment_v1_accounting_bill_payments__payment_id__void_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                payment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["nazoratly__routers__payables__VoidIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_bills_v1_accounting_bills_get: {
+        parameters: {
+            query?: {
+                supplier_id?: string | null;
+                status?: ("open" | "partial" | "overdue" | "paid" | "voided") | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_BillOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_bill_v1_accounting_bills_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BillIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_bill_v1_accounting_bills__bill_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pay_bill_v1_accounting_bills__bill_id__payments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BillPaymentIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    void_bill_v1_accounting_bills__bill_id__void_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["nazoratly__routers__payables__VoidIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_cash_accounts_v1_accounting_cash_accounts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashAccountOut"][];
+                };
+            };
+        };
+    };
+    create_cash_account_v1_accounting_cash_accounts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CashAccountIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashAccountOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_entries_v1_accounting_entries_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+                /** @description only entries that touch this account code */
+                account?: string | null;
+                source_type?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_EntryOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_entry_v1_accounting_entries_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EntryIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_entry_v1_accounting_entries__entry_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reverse_entry_v1_accounting_entries__entry_id__reverse_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReverseIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ledger_v1_accounting_ledger_get: {
+        parameters: {
+            query: {
+                account: string;
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LedgerOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pending_v1_accounting_pending_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendingOut"][];
+                };
+            };
+        };
+    };
+    list_periods_v1_accounting_periods_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PeriodOut"][];
+                };
+            };
+        };
+    };
+    close_period_v1_accounting_periods__month__close_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                month: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PeriodOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    balance_sheet_v1_accounting_reports_balance_sheet_get: {
+        parameters: {
+            query?: {
+                as_of?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BalanceSheetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    income_statement_v1_accounting_reports_income_statement_get: {
+        parameters: {
+            query: {
+                date_from: string;
+                date_to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncomeStatementOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    payables_aging_v1_accounting_reports_payables_aging_get: {
+        parameters: {
+            query?: {
+                as_of?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgingOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    trial_balance_v1_accounting_reports_trial_balance_get: {
+        parameters: {
+            query?: {
+                as_of?: string | null;
+                /** @description only movements from this date (default: from the start) */
+                date_from?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrialBalanceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_statements_v1_accounting_statements_get: {
+        parameters: {
+            query?: {
+                cash_account_id?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_StatementOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_statement_v1_accounting_statements_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatementIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_statement_v1_accounting_statements__statement_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                statement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    auto_match_v1_accounting_statements__statement_id__auto_match_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                statement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AutoMatchIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    finalize_v1_accounting_statements__statement_id__finalize_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                statement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_lines_v1_accounting_statements__statement_id__lines_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                statement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatementLinesIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    match_line_v1_accounting_statements__statement_id__lines__line_id__match_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                statement_id: string;
+                line_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MatchIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unmatch_line_v1_accounting_statements__statement_id__lines__line_id__unmatch_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                statement_id: string;
+                line_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_suppliers_v1_accounting_suppliers_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierOut"][];
+                };
+            };
+        };
+    };
+    create_supplier_v1_accounting_suppliers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupplierIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_supplier_v1_accounting_suppliers__supplier_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                supplier_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupplierPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sync_v1_accounting_sync_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncOut"];
+                };
+            };
+        };
+    };
+    verify_v1_accounting_verify_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerifyOut"];
                 };
             };
         };
@@ -6265,7 +8680,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["VoidIn"];
+                "application/json": components["schemas"]["nazoratly__routers__finance__VoidIn"];
             };
         };
         responses: {
@@ -7032,7 +9447,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["VoidIn"];
+                "application/json": components["schemas"]["nazoratly__routers__finance__VoidIn"];
             };
         };
         responses: {
@@ -8655,7 +11070,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["VoidIn"];
+                "application/json": components["schemas"]["nazoratly__routers__finance__VoidIn"];
             };
         };
         responses: {

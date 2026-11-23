@@ -14,6 +14,7 @@ from typing import Annotated, Any, Literal
 from fastapi import APIRouter, Depends
 from pydantic import Field, model_validator
 
+from nazoratly.accounting import post_payroll
 from nazoratly.db import Conn, execute, fetch_all, fetch_one, resolve
 from nazoratly.deps import DB, Paging, Principal, require
 from nazoratly.errors import Conflict, NotFound, Unprocessable
@@ -271,6 +272,7 @@ async def approve(
             "UPDATE teacher_payrolls SET status = 'approved', approved_by_user_id = %s, approved_at = now() WHERE id = %s",
             (p.user_id, pid),
         )
+        await post_payroll(conn, p.org_id, p.user_id, pid, "payroll_accrual")
         return await _detail(conn, pid)
 
 
@@ -289,4 +291,5 @@ async def mark_paid(
         await execute(
             conn, "UPDATE teacher_payrolls SET status = 'paid', paid_at = now() WHERE id = %s", (pid,)
         )
+        await post_payroll(conn, p.org_id, p.user_id, pid, "payroll_payment")
         return await _detail(conn, pid)

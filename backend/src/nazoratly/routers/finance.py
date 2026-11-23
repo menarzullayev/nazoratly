@@ -15,6 +15,7 @@ from typing import Annotated, Any, Literal
 from fastapi import APIRouter, Depends, Query, Response
 from pydantic import Field, StringConstraints, model_validator
 
+from nazoratly.accounting import post_expense, post_payment, void_source
 from nazoratly.db import Conn, execute, fetch_all, fetch_one, patch_row, resolve, resolve_opt
 from nazoratly.deps import DB, Paging, Principal, require
 from nazoratly.errors import Conflict, NotFound, Unprocessable
@@ -514,6 +515,7 @@ async def create_payment(
                 await _insert_allocation(conn, p.org_id, pid, cid, a.amount)
         elif body.auto_allocate:
             await allocate_fifo(conn, p.org_id, pid)
+        await post_payment(conn, p.org_id, p.user_id, pid)
         return await _payment(conn, pid)
 
 
@@ -624,6 +626,7 @@ async def void_payment(
         await execute(
             conn, "UPDATE payments SET voided_at = now(), void_reason = %s WHERE id = %s", (body.reason, pid)
         )
+        await void_source(conn, p.org_id, p.user_id, "payment", str(pid))
         return await _payment(conn, pid)
 
 
@@ -736,6 +739,9 @@ class ExpenseIn(Model):
     spent_at: date
     description: LongText | None = None
     branch_id: uuid.UUID | None = None
+    paid_from: Literal["cash", "bank"] = Field(
+        default="cash", description="where the money left from: the cash desk or the bank"
+    )
 
 
 class ExpenseOut(Out):
@@ -745,13 +751,17 @@ class ExpenseOut(Out):
     spent_at: date
     description: str | None
     branch_id: uuid.UUID | None
+    paid_from: str
+    supplier_bill_id: uuid.UUID | None = Field(description="set when the expense accrues a supplier bill")
     voided: bool
     void_reason: str | None
 
 
 _EXP_SQL = (
-    "SELECT e.public_id AS id, e.category, e.amount, e.spent_at, e.description, b.public_id AS branch_id,"
-    " (e.voided_at IS NOT NULL) AS voided, e.void_reason FROM expenses e LEFT JOIN branches b ON b.org_id = e.org_id AND b.id = e.branch_id"
+    "SELECT e.public_id AS id, e.category, e.amount, e.spent_at, e.description, b.public_id AS branch_id, e.paid_from,"
+    " sb.public_id AS supplier_bill_id, (e.voided_at IS NOT NULL) AS voided, e.void_reason FROM expenses e"
+    " LEFT JOIN branches b ON b.org_id = e.org_id AND b.id = e.branch_id"
+    " LEFT JOIN supplier_bills sb ON sb.org_id = e.org_id AND sb.id = e.bill_id"
 )
 
 
@@ -763,11 +773,21 @@ async def create_expense(
         bid = await resolve_opt(conn, "branches", body.branch_id, what="branch")
         row = await fetch_one(
             conn,
-            "INSERT INTO expenses (org_id, branch_id, category, amount, spent_at, description, created_by_user_id) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id",
-            (p.org_id, bid, body.category, body.amount, body.spent_at, body.description, p.user_id),
+            "INSERT INTO expenses (org_id, branch_id, category, amount, spent_at, description, created_by_user_id, paid_from) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+            (
+                p.org_id,
+                bid,
+                body.category,
+                body.amount,
+                body.spent_at,
+                body.description,
+                p.user_id,
+                body.paid_from,
+            ),
         )
         assert row is not None
+        await post_expense(conn, p.org_id, p.user_id, row["id"])
         out = await fetch_one(conn, f"{_EXP_SQL} WHERE e.id = %s", (row["id"],))
     assert out is not None
     return ExpenseOut.model_validate(out)
@@ -811,13 +831,18 @@ async def void_expense(
 ) -> ExpenseOut:
     async with db.tx(p.session()) as conn:
         eid = await resolve(conn, "expenses", expense_id, what="expense")
-        cur = await fetch_one(conn, "SELECT voided_at FROM expenses WHERE id = %s FOR UPDATE", (eid,))
+        cur = await fetch_one(
+            conn, "SELECT voided_at, bill_id FROM expenses WHERE id = %s FOR UPDATE", (eid,)
+        )
         assert cur is not None
         if cur["voided_at"] is not None:
             raise Conflict("Expense is already voided")
+        if cur["bill_id"] is not None:
+            raise Conflict("This expense accrues a supplier bill: void the bill instead")
         await execute(
             conn, "UPDATE expenses SET voided_at = now(), void_reason = %s WHERE id = %s", (body.reason, eid)
         )
+        await void_source(conn, p.org_id, p.user_id, "expense", str(eid))
         out = await fetch_one(conn, f"{_EXP_SQL} WHERE e.id = %s", (eid,))
     assert out is not None
     return ExpenseOut.model_validate(out)
