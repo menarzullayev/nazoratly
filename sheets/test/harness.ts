@@ -35,6 +35,7 @@ class FakeSheet {
   getLastColumn() {
     return Math.max(1, ...this.data.map((r) => { let l = 0; r.forEach((v, i) => { if (v !== "" && v != null) l = i + 1; }); return l; }));
   }
+  getSheetId() { return [...this.name].reduce((n, c) => n + c.charCodeAt(0), 1000); }
   getMaxRows() { return this.maxRows; }
   insertRowsAfter(_after: number, n: number) { this.maxRows += n; }
   getDataRange() { return this.getRange(1, 1, Math.max(this.getLastRow(), 1), this.getLastColumn()); }

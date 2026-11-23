@@ -8,7 +8,7 @@ import { formatSom, INSTALLMENT_TEMPLATE, planReminders, planUpcomingReminders, 
 import type { AttendanceRow, Charge, Enrollment, Group, Installment, Payment, ReminderDraft, Student, Teacher } from "../domain/types";
 import { append, read, readIfPresent, replaceWhere, today, updateById } from "./repo";
 import {
-  ATTENDANCE, CHARGES, DASHBOARD_SHEET, DEBTORS_SHEET, DRAFTS, ENROLLMENTS, GROUPS, INSTALLMENTS, PAYMENTS, PAYROLL, STUDENTS, TEACHERS,
+  ATTENDANCE, CHARGES, DEBTORS_SHEET, DRAFTS, ENROLLMENTS, GROUPS, INSTALLMENTS, PAYMENTS, PAYROLL, STUDENTS, TEACHERS,
 } from "./schema";
 import { readSettings } from "./settings";
 import { balanceRich, EFFECT_PARTY, receiptRich, reminderRich, type OpenCharge } from "../domain/messages";
@@ -319,56 +319,8 @@ export function calculatePayroll(): void {
   ui().alert("Oylik", msg, ui().ButtonSet.OK);
 }
 
-// ------------------------------------------------------------------ dashboard
-export function refreshDashboard(): void {
-  const ss = SpreadsheetApp.getActive();
-  const sh = ss.getSheetByName(DASHBOARD_SHEET) ?? ss.insertSheet(DASHBOARD_SHEET, 0);
-  const now = today();
-  const month = monthStart(now);
-  const students = read<StudentRow>(STUDENTS);
-  const { charges, payments, installments } = loadFinance();
-  const { students: debts } = computeDebts(charges, payments, now, installments);
-  const attendance = read<AttendanceRow>(ATTENDANCE).filter((a) => inMonth(a.date, month));
-  const active = students.filter((s) => s.status === "active").length;
-  const monthCharged = charges.filter((c) => !c.voided && c.month === month).reduce((s, c) => s + c.amount, 0);
-  const monthPaid = payments.filter((p) => !p.voided && inMonth(p.paidOn, month)).reduce((s, p) => s + p.amount, 0);
-  const outstanding = debts.reduce((s, d) => s + d.outstanding, 0);
-  const overdue = debts.reduce((s, d) => s + d.overdue, 0);
-  const present = attendance.filter((a) => a.status === "present" || a.status === "late").length;
-  const rate = attendance.length ? Math.round((present / attendance.length) * 100) : 0;
-
-  sh.clear();
-  sh.getCharts().forEach((c) => sh.removeChart(c));
-  sh.setHiddenGridlines(true);
-  sh.setColumnWidths(1, 8, 150);
-  sh.getRange("A1").setValue(readSettings().center).setFontSize(22).setFontWeight("bold").setFontFamily("Google Sans");
-  sh.getRange("A2").setValue(`Boshqaruv paneli · ${now}`).setFontColor("#5f6368");
-  const cards: [string, string | number, string][] = [
-    ["Faol o'quvchilar", active, "#e8f0fe"], ["Bu oy hisob", monthCharged, "#fef7e0"], ["Bu oy tushum", monthPaid, "#e6f4ea"],
-    ["Umumiy qoldiq", outstanding, "#f3e8fd"], ["Muddati o'tgan", overdue, "#fce8e6"], ["Davomat (bu oy)", `${rate}%`, "#e8f0fe"],
-  ];
-  cards.forEach(([label, value, bg], i) => {
-    const col = 1 + i;
-    sh.getRange(4, col).setValue(label).setFontColor("#5f6368").setBackground(bg).setFontSize(10);
-    sh.getRange(5, col).setValue(value).setFontSize(20).setFontWeight("bold").setBackground(bg).setNumberFormat("#,##0");
-    sh.getRange(6, col).setBackground(bg);
-  });
-  // last 6 months: charged vs received (feeds the chart)
-  const months: string[] = [];
-  let m = month;
-  for (let i = 0; i < 6; i++) { months.unshift(m); const y = Number(m.slice(0, 4)), mo = Number(m.slice(5, 7)); m = mo === 1 ? `${y - 1}-12-01` : `${y}-${String(mo - 1).padStart(2, "0")}-01`; }
-  const table = months.map((mm) => [mm.slice(0, 7), charges.filter((c) => !c.voided && c.month === mm).reduce((s, c) => s + c.amount, 0), payments.filter((p) => !p.voided && inMonth(p.paidOn, mm)).reduce((s, p) => s + p.amount, 0)]);
-  sh.getRange(8, 1, 1, 3).setValues([["Oy", "Hisoblangan", "Tushgan"]]).setFontWeight("bold").setBackground("#202124").setFontColor("#fff");
-  sh.getRange(9, 1, table.length, 3).setValues(table);
-  sh.getRange(9, 2, table.length, 2).setNumberFormat("#,##0");
-  sh.insertChart(sh.newChart().asColumnChart().addRange(sh.getRange(8, 1, table.length + 1, 3)).setPosition(8, 5, 0, 0).setOption("title", "Hisoblangan va tushgan (oxirgi 6 oy)").setOption("colors", ["#fbbc04", "#34a853"]).setOption("width", 560).setOption("height", 300).build());
-  const top = debts.filter((d) => d.overdue > 0).slice(0, 5);
-  const byId = new Map(students.map((s) => [s.id, s.fullName]));
-  sh.getRange(17, 1).setValue("Eng katta qarzdorlar").setFontWeight("bold");
-  top.forEach((d, i) => { sh.getRange(18 + i, 1, 1, 3).setValues([[byId.get(d.studentId) ?? d.studentId, d.overdue, `${d.maxDaysOverdue} kun`]]); sh.getRange(18 + i, 2).setNumberFormat("#,##0"); });
-  if (!top.length) sh.getRange(18, 1).setValue("Muddati o'tgan qarz yo'q").setFontColor("#188038");
-  sh.activate();
-}
+// ------------------------------------------------------------------ dashboard (moved to ./dashboard, kept importable from here)
+export { refreshDashboard } from "./dashboard";
 
 // ------------------------------------------------------------------ Telegram setup and guardian linking
 export function setupTelegram(): void {
