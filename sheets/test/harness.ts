@@ -81,6 +81,8 @@ export interface Harness {
   sheets: Map<string, FakeSheet>;
   alerts: { title: string; message: string }[];
   prompts: string[];
+  /** answers for the next ui.alert() calls (default "YES"); use "NO" to decline a confirmation */
+  answers: string[];
   fetches: { url: string; body: Record<string, unknown> }[];
   telegram: { handler: (method: string, body: Record<string, unknown>) => { status: number; body: unknown } };
   props: Map<string, string>;
@@ -95,6 +97,7 @@ export function installHarness(): Harness {
     sheets,
     alerts: [],
     prompts: [],
+    answers: [],
     fetches: [],
     telegram: { handler: () => ({ status: 200, body: { ok: true, result: {} } }) },
     props: new Map(),
@@ -112,8 +115,8 @@ export function installHarness(): Harness {
   };
   const ui = {
     ButtonSet: { OK: "OK", OK_CANCEL: "OK_CANCEL", YES_NO: "YES_NO" },
-    Button: { OK: "OK", YES: "YES", CANCEL: "CANCEL" },
-    alert: (title: string, message: string) => { h.alerts.push({ title, message }); return "YES"; },
+    Button: { OK: "OK", YES: "YES", NO: "NO", CANCEL: "CANCEL" },
+    alert: (title: string, message: string) => { h.alerts.push({ title, message }); return h.answers.shift() ?? "YES"; },
     prompt: () => ({ getSelectedButton: () => "OK", getResponseText: () => h.prompts.shift() ?? "" }),
   };
   const g = globalThis as Record<string, unknown>;

@@ -23,6 +23,11 @@ export function read<T>(def: TableDef): T[] {
   return decodeRows<T>(def, sh.getDataRange().getValues() as Cell[][], fmtDate);
 }
 
+/** Like `read`, but an absent sheet (workbook not yet set up for a newer feature) reads as empty. */
+export function readIfPresent<T>(def: TableDef): T[] {
+  return SpreadsheetApp.getActive().getSheetByName(def.sheet) ? read<T>(def) : [];
+}
+
 function header(sh: GoogleAppsScript.Spreadsheet.Sheet): Cell[] {
   return sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0] as Cell[];
 }

@@ -4,11 +4,11 @@ import { computeDebts, debtors, type StudentDebt } from "../domain/debt";
 import { inMonth, isIsoDate, monthStart } from "../domain/dates";
 import { nextId, nextIds } from "../domain/ids";
 import { collectedTuition, computePayroll, heldLessons } from "../domain/payroll";
-import { formatSom, planReminders, type SkipReason } from "../domain/reminders";
-import type { AttendanceRow, Charge, Enrollment, Group, Payment, ReminderDraft, Student, Teacher } from "../domain/types";
-import { append, read, replaceWhere, today, updateById } from "./repo";
+import { formatSom, INSTALLMENT_TEMPLATE, planReminders, planUpcomingReminders, UPCOMING_TEMPLATE, type SkipReason } from "../domain/reminders";
+import type { AttendanceRow, Charge, Enrollment, Group, Installment, Payment, ReminderDraft, Student, Teacher } from "../domain/types";
+import { append, read, readIfPresent, replaceWhere, today, updateById } from "./repo";
 import {
-  ATTENDANCE, CHARGES, DASHBOARD_SHEET, DEBTORS_SHEET, DRAFTS, ENROLLMENTS, GROUPS, PAYMENTS, PAYROLL, STUDENTS, TEACHERS,
+  ATTENDANCE, CHARGES, DASHBOARD_SHEET, DEBTORS_SHEET, DRAFTS, ENROLLMENTS, GROUPS, INSTALLMENTS, PAYMENTS, PAYROLL, STUDENTS, TEACHERS,
 } from "./schema";
 import { readSettings } from "./settings";
 import { balanceRich, EFFECT_PARTY, receiptRich, reminderRich, type OpenCharge } from "../domain/messages";
@@ -50,8 +50,8 @@ function promptMonth(title: string): string | null {
   return `${v}-01`;
 }
 
-function loadFinance(): { charges: Charge[]; payments: Payment[] } {
-  return { charges: read<Charge>(CHARGES), payments: read<Payment>(PAYMENTS) };
+function loadFinance(): { charges: Charge[]; payments: Payment[]; installments: Installment[] } {
+  return { charges: read<Charge>(CHARGES), payments: read<Payment>(PAYMENTS), installments: readIfPresent<Installment>(INSTALLMENTS) };
 }
 
 // ------------------------------------------------------------------ monthly charges
@@ -75,8 +75,8 @@ export function generateMonthlyCharges(): void {
 
 // ------------------------------------------------------------------ debtors report
 function debtState(): { students: StudentRow[]; debts: StudentDebt[]; balances: ReturnType<typeof computeDebts>["balances"] } {
-  const { charges, payments } = loadFinance();
-  const r = computeDebts(charges, payments, today());
+  const { charges, payments, installments } = loadFinance();
+  const r = computeDebts(charges, payments, today(), installments);
   return { students: read<StudentRow>(STUDENTS), debts: r.students, balances: r.balances };
 }
 
@@ -120,7 +120,7 @@ export function refreshDebtors(): void {
 // ------------------------------------------------------------------ reminder drafts + sending
 const REASONS: Record<SkipReason, string> = {
   no_consent: "roziligi yo'q", no_chat: "Telegram ulanmagan", cooldown: "yaqinda eslatma yaratilgan",
-  below_threshold: "qarz minimal chegaradan kam", student_inactive: "o'quvchi faol emas",
+  below_threshold: "qarz minimal chegaradan kam", student_inactive: "o'quvchi faol emas", already_overdue: "muddati o'tgan qismi bor (qarz eslatmasi yaratiladi)",
 };
 
 export function createReminderDrafts(): void {
@@ -128,9 +128,14 @@ export function createReminderDrafts(): void {
     const s = readSettings();
     const { students, debts } = debtState();
     const drafts = read<ReminderDraft>(DRAFTS);
-    const plan = planReminders({
-      debtors: debtors(debts), students, drafts, today: today(), cooldownDays: s.cooldownDays, minOverdueSom: s.minOverdue, template: s.template, centerName: s.center,
+    const overdue = planReminders({
+      debtors: debtors(debts), students, drafts, today: today(), cooldownDays: s.cooldownDays, minOverdueSom: s.minOverdue, template: s.template, centerName: s.center, installmentTemplate: INSTALLMENT_TEMPLATE,
     });
+    // ahead of an installment (payment plans): a draft before the due date; students drafted just now are left out
+    const upcoming = planUpcomingReminders({
+      debts, students, drafts, today: today(), cooldownDays: s.cooldownDays, remindDays: s.installmentRemindDays, template: UPCOMING_TEMPLATE, centerName: s.center, exclude: new Set(overdue.drafts.map((d) => d.studentId)),
+    });
+    const plan = { drafts: [...overdue.drafts, ...upcoming.drafts], skipped: [...overdue.skipped, ...upcoming.skipped] };
     const ids = nextIds("R", drafts.map((d) => d.id), plan.drafts.length);
     append(DRAFTS, plan.drafts.map((d, i) => ({ id: ids[i]!, studentId: d.studentId, createdOn: today(), text: d.text, status: "pending", error: "" })));
     const counts = new Map<SkipReason, number>();
@@ -296,8 +301,8 @@ export function calculatePayroll(): void {
     const groups = read<Group>(GROUPS);
     const enrollments = read<Enrollment>(ENROLLMENTS);
     const attendance = read<AttendanceRow>(ATTENDANCE);
-    const { charges, payments } = loadFinance();
-    const { balances } = computeDebts(charges, payments, today());
+    const { charges, payments, installments } = loadFinance();
+    const { balances } = computeDebts(charges, payments, today(), installments);
     type PayRow = { month: string; teacherId: string; status: string; bonus: number };
     const existing = read<PayRow>(PAYROLL);
     const locked = new Set(existing.filter((r) => r.month === month && r.status !== "draft").map((r) => r.teacherId));
@@ -321,8 +326,8 @@ export function refreshDashboard(): void {
   const now = today();
   const month = monthStart(now);
   const students = read<StudentRow>(STUDENTS);
-  const { charges, payments } = loadFinance();
-  const { students: debts } = computeDebts(charges, payments, now);
+  const { charges, payments, installments } = loadFinance();
+  const { students: debts } = computeDebts(charges, payments, now, installments);
   const attendance = read<AttendanceRow>(ATTENDANCE).filter((a) => inMonth(a.date, month));
   const active = students.filter((s) => s.status === "active").length;
   const monthCharged = charges.filter((c) => !c.voided && c.month === month).reduce((s, c) => s + c.amount, 0);

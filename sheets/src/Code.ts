@@ -2,6 +2,7 @@
 import * as actions from "./gas/actions";
 import * as admission from "./gas/admission";
 import * as makeup from "./gas/makeup";
+import * as plans from "./gas/plans";
 import { setupWorkbook, loadSampleData, resetSampleData } from "./gas/setup";
 import { handleGet, handlePost } from "./gas/webhook";
 
@@ -43,6 +44,14 @@ g.onOpen = (): void => {
     )
     .addSubMenu(
       SpreadsheetApp.getUi()
+        .createMenu("To'lov rejasi (qismlarga bo'lish)")
+        .addItem("Reja tuzish", "menuPlanCreate")
+        .addItem("Qismlar holati", "menuPlanView")
+        .addItem("Rejani olib tashlash", "menuPlanRemove")
+        .addItem("Rejalarni tekshirish", "menuPlanCheck"),
+    )
+    .addSubMenu(
+      SpreadsheetApp.getUi()
         .createMenu("Telegram eslatmalar")
         .addItem("Eslatma loyihalarini yaratish", "menuCreateDrafts")
         .addItem("Eslatmalarni ko'rib chiqish", "openDrafts")
@@ -77,6 +86,10 @@ g.menuAcceptTrial = admission.menu.accept;
 g.menuDropTrial = admission.menu.drop;
 g.menuLeadToTrial = admission.menu.leadToTrial;
 g.menuFunnel = admission.menu.funnel;
+g.menuPlanCreate = plans.menu.create;
+g.menuPlanView = plans.menu.view;
+g.menuPlanRemove = plans.menu.remove;
+g.menuPlanCheck = plans.menu.check;
 g.menuEntitlements = makeup.menu.view;
 g.menuScheduleMakeup = makeup.menu.schedule;
 g.menuCancelEntitlement = makeup.menu.cancel;
