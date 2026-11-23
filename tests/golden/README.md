@@ -14,3 +14,5 @@ expiry, what consumes a lesson, the lesson balance with burn and debt, payment-n
 their own way.
 
 `dashboard.json` (dashboard rules: paid vs unpaid students, new/left students and trial conversion, six-month income/expenses/net, and the "waiting for a decision" lists). Dates in outputs are ISO strings; money inputs are strings and outputs whole so'm.
+
+`ledger.json` (the hash-chained journal: SHA-256 vectors, canonical line format and hashes, sealing an entry onto the chain, entry validation, chain and closed-period verification, period hash, reversal) and `accounting.json` (chart of accounts template, automatic posting rules, pending postings, trial balance / income statement / balance sheet, account statement, payables aging, bank statement matching and reconciliation). Money in these files is a string with two decimals; TypeScript converts to integer tiyin. Hash values in `ledger.json` come from an independent `hashlib` script, not from the rules code.
