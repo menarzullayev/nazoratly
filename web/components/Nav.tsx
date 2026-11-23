@@ -31,19 +31,24 @@ export function Nav({ d, locale }: { d: Dict; locale: Locale }) {
   ));
   return (
     <header className="fixed inset-x-0 top-0 z-30 border-b border-line/60 bg-bg/80 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-5 py-3">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3">
         <a href="#main" aria-label={d.brand}>
           <Wordmark name={d.brand} />
         </a>
         <nav aria-label={d.nav.label} className="hidden gap-5 text-sm lg:flex">
           {links}
         </nav>
-        <LangSwitch d={d} locale={locale} />
-        <details className="group w-full lg:hidden">
+        <div className="hidden lg:block">
+          <LangSwitch d={d} locale={locale} />
+        </div>
+        <details className="relative lg:hidden">
           <summary className="cursor-pointer list-none rounded-lg border border-line px-3 py-2 text-sm font-medium">{d.header.menu}</summary>
-          <nav aria-label={d.nav.label} className="mt-2 grid gap-3 rounded-xl border border-line bg-bg2 p-4 text-sm">
-            {links}
-          </nav>
+          <div className="absolute right-0 mt-2 grid w-[min(20rem,calc(100vw-2.5rem))] gap-4 rounded-xl border border-line bg-bg2 p-4">
+            <nav aria-label={d.nav.label} className="grid gap-3 text-sm">
+              {links}
+            </nav>
+            <LangSwitch d={d} locale={locale} />
+          </div>
         </details>
       </div>
     </header>
