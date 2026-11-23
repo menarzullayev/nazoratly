@@ -33,3 +33,31 @@ export function firstMonthCharge(a: { mode: FirstMonthMode; monthlyFee: number; 
   const amount = Math.floor((2 * a.monthlyFee * remaining + total) / (2 * total));
   return { amount, fallbackToFull: false };
 }
+
+const DAY_TOKENS: [string, number][] = [["du", 1], ["se", 2], ["chor", 3], ["pay", 4], ["ju", 5], ["sha", 6], ["yak", 7]];
+
+/** ISO weekday numbers (1 = Monday) found in a schedule text like "Du-Chor-Ju 18:00" or "1, 3, 5". Times are ignored. */
+export function parseWeekdays(spec: string): number[] {
+  const out = new Set<number>();
+  for (const raw of spec.toLowerCase().split(/[\s,;\-/]+/)) {
+    if (!raw) continue;
+    if (/^[1-7]$/.test(raw)) out.add(Number(raw));
+    else for (const [prefix, n] of DAY_TOKENS) if (raw.startsWith(prefix) && raw.length <= prefix.length + 8 && !/\d/.test(raw)) out.add(n);
+  }
+  return [...out].sort((a, b) => a - b);
+}
+
+/** Lesson dates of a month implied by the weekly schedule text; empty when the text names no weekday. */
+export function monthLessonDates(month: ISODate, spec: string): ISODate[] {
+  const days = new Set(parseWeekdays(spec));
+  if (days.size === 0) return [];
+  const y = Number(month.slice(0, 4));
+  const m = Number(month.slice(5, 7));
+  const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const out: ISODate[] = [];
+  for (let d = 1; d <= last; d++) {
+    const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+    if (days.has(dow === 0 ? 7 : dow)) out.push(`${month.slice(0, 7)}-${String(d).padStart(2, "0")}`);
+  }
+  return out;
+}

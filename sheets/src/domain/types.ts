@@ -15,6 +15,7 @@ export interface Group {
   name: string;
   teacherId: string;
   monthlyFee: number; // so'm, integer
+  schedule?: string; // weekly schedule text, e.g. "Du-Chor-Ju 18:00"
   status: "planned" | "active" | "finished" | "cancelled";
 }
 

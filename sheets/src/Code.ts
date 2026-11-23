@@ -1,5 +1,6 @@
 /** Apps Script entry point: every function Google calls (menu, web app, sidebars) is exposed on globalThis. */
 import * as actions from "./gas/actions";
+import * as admission from "./gas/admission";
 import { setupWorkbook, loadSampleData, resetSampleData } from "./gas/setup";
 import { handleGet, handlePost } from "./gas/webhook";
 
@@ -22,6 +23,16 @@ g.onOpen = (): void => {
     .addItem("Qarzdorlar hisoboti", "menuDebtors")
     .addItem("Boshqaruv panelini yangilash", "menuDashboard")
     .addSeparator()
+    .addSubMenu(
+      SpreadsheetApp.getUi()
+        .createMenu("Qabul (sinov, lead)")
+        .addItem("Qaror kutayotgan sinovlar", "menuPendingTrials")
+        .addItem("Sinovni qabul qilish", "menuAcceptTrial")
+        .addItem("Sinovni bekor qilish", "menuDropTrial")
+        .addSeparator()
+        .addItem("Lead'ni sinovga yozish", "menuLeadToTrial")
+        .addItem("Voronka hisoboti", "menuFunnel"),
+    )
     .addSubMenu(
       SpreadsheetApp.getUi()
         .createMenu("Telegram eslatmalar")
@@ -53,6 +64,11 @@ g.menuCreateDrafts = (): void => actions.guard("Eslatmalar", actions.createRemin
 g.menuSendApproved = (): void => actions.guard("Telegram", actions.sendApprovedReminders);
 g.menuSetupTelegram = (): void => actions.guard("Telegram", actions.setupTelegram);
 g.menuLinkCodes = (): void => actions.guard("Ulash havolalari", actions.generateLinkCodes);
+g.menuPendingTrials = admission.menu.pending;
+g.menuAcceptTrial = admission.menu.accept;
+g.menuDropTrial = admission.menu.drop;
+g.menuLeadToTrial = admission.menu.leadToTrial;
+g.menuFunnel = admission.menu.funnel;
 g.menuPayroll = (): void => actions.guard("Oylik", actions.calculatePayroll);
 g.menuWebhookInfo = (): void => actions.guard("Webhook", actions.showWebhookInfo);
 g.menuHelp = (): void => actions.showHelp();
