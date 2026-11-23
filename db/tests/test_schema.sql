@@ -259,4 +259,28 @@ DO $$ BEGIN
   DELETE FROM lead_interactions; DELETE FROM leads; DELETE FROM lead_sources; DELETE FROM org_settings;
 END $$;
 
+-- ---------------------------------------------------------------- 0012: make-up
+DO $$ BEGIN
+  INSERT INTO org_settings (org_id) VALUES (1);
+  IF (SELECT (excused_mode, makeup_expiry_days, makeup_lapses)::text FROM org_settings WHERE org_id = 1) <> '(makeup,30,t)' THEN
+    RAISE EXCEPTION 'make-up setting defaults are wrong';
+  END IF;
+  PERFORM public.t_expect('23514', $q$UPDATE org_settings SET excused_mode = 'bogus' WHERE org_id = 1$q$);
+  PERFORM public.t_expect('23514', $q$UPDATE org_settings SET makeup_expiry_days = 366 WHERE org_id = 1$q$);
+  PERFORM public.t_expect('23514', $q$UPDATE lessons SET kind = 'bogus' WHERE id = 1$q$);
+
+  -- student 2 was absent in lesson 1; enrollment 2 is student 2 in group 1
+  INSERT INTO absence_entitlements (org_id, student_id, enrollment_id, group_id, missed_lesson_id, kind, expires_on)
+    VALUES (1, 2, 2, 1, 1, 'makeup', '2026-12-31');
+  PERFORM public.t_expect('23505', $q$INSERT INTO absence_entitlements (org_id, student_id, enrollment_id, group_id, missed_lesson_id, kind, expires_on) VALUES (1,2,2,1,1,'makeup','2026-12-31')$q$);   -- one per lesson and student
+  PERFORM public.t_expect('23514', $q$INSERT INTO absence_entitlements (org_id, student_id, enrollment_id, group_id, missed_lesson_id, kind, expires_on) VALUES (1,1,1,1,2,'credit','2026-12-31')$q$);    -- a credit needs an amount
+  PERFORM public.t_expect('23514', $q$INSERT INTO absence_entitlements (org_id, student_id, enrollment_id, group_id, missed_lesson_id, kind, amount, expires_on) VALUES (1,1,1,1,2,'makeup',5,'2026-12-31')$q$); -- a make-up right has no amount
+  PERFORM public.t_expect('23514', $q$UPDATE absence_entitlements SET status = 'used' WHERE student_id = 2$q$);                                                                                          -- used needs used_on or a charge
+  PERFORM public.t_expect('23514', $q$UPDATE absence_entitlements SET status = 'scheduled' WHERE student_id = 2$q$);                                                                                     -- scheduled needs a lesson
+  PERFORM public.t_expect('23503', $q$INSERT INTO absence_entitlements (org_id, student_id, enrollment_id, group_id, missed_lesson_id, kind, expires_on) VALUES (2,3,3,2,1,'makeup','2026-12-31')$q$);   -- lesson 1 belongs to org 1
+  UPDATE absence_entitlements SET status = 'used', used_on = '2026-12-01' WHERE student_id = 2;
+
+  DELETE FROM absence_entitlements; DELETE FROM org_settings;
+END $$;
+
 SELECT 'ALL SCHEMA TESTS PASSED' AS result;
