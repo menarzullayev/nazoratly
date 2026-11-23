@@ -39,3 +39,8 @@ Foydalanuvchi bilan hisobotlar o'zbek lotin tilida; kod/izoh/identifikatorlar in
 - Qurildi (branch `feat/phase1-lifecycle`): oltin test harness (`tests/golden`), migratsiya 0011, API (settings, sinov, qabul/bekor, lead voronka), Sheets (Sinov holati, Lead varaqlari, Qabul menyusi).
 - KUTMOQDA (egasining ruxsati): (1) 0011 ni haqiqiy lokal bazaga qo'llash (oldin `pg_dump` zaxira), (2) yangi kodni haqiqiy Sheet'ga `clasp push` qilish va u yerda "Boshlang'ich sozlash"ni bosish.
 - Keyingi bosqichlar: davomat/qoplash, to'lov rejasi va PDF, abonement, panel, buxgalteriya, sig'im/QR/import/demo rejim; saytni har bosqichdan keyin yangilash.
+
+## Holat 2026-11-23 (kech, 3): 2-bosqich (sababli yo'qlik va qoplash), branch `feat/phase2-attendance`
+- Qurildi: oltin qoidalar (`tests/golden/entitlements.json`), migratsiya 0012, API (`/v1/entitlements`, sozlamalar, kredit `/charges/generate` da, oylik qoidasi), Sheets (Qoplash huquqlari varaqi, menyu Qoplash, kredit, oylik).
+- KUTMOQDA (egasining ruxsati): 0012 ni lokal bazaga qo'llash (oldin `pg_dump`), `clasp push` + Sheet'da "Boshlang'ich sozlash".
+- Keyingi: 3-bosqich (to'lov rejasi, PDF kvitansiya/hisob-faktura), keyin abonement, panel, buxgalteriya.

@@ -524,6 +524,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/entitlements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Make-up rights and credits */
+        get: operations["list_entitlements_v1_entitlements_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/entitlements/{entitlement_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel a right */
+        post: operations["cancel_v1_entitlements__entitlement_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/entitlements/{entitlement_id}/schedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Schedule the make-up lesson of an open right */
+        post: operations["schedule_v1_entitlements__entitlement_id__schedule_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/expenses": {
         parameters: {
             query?: never;
@@ -2241,6 +2292,66 @@ export interface components {
             /** Status */
             status?: ("active" | "frozen" | "finished") | null;
         };
+        /** EntitlementOut */
+        EntitlementOut: {
+            /** Amount */
+            amount: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Effective Status
+             * @enum {string}
+             */
+            effective_status: "open" | "scheduled" | "used" | "cancelled" | "lapsed";
+            /**
+             * Expires On
+             * Format: date
+             */
+            expires_on: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "makeup" | "credit";
+            /** Makeup Date */
+            makeup_date: string | null;
+            /** Makeup Lesson Id */
+            makeup_lesson_id: string | null;
+            /**
+             * Missed On
+             * Format: date
+             */
+            missed_on: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "scheduled" | "used" | "cancelled";
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+            /** Used On */
+            used_on: string | null;
+        };
         /** ExpenseIn */
         ExpenseIn: {
             /**
@@ -2780,6 +2891,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Kind */
+            kind: string;
             /**
              * Lesson Date
              * Format: date
@@ -3201,6 +3314,17 @@ export interface components {
             has_more: boolean;
             /** Items */
             items: components["schemas"]["EnrollmentOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
+        /** Page[EntitlementOut] */
+        Page_EntitlementOut_: {
+            /** Has More */
+            has_more: boolean;
+            /** Items */
+            items: components["schemas"]["EntitlementOut"][];
             /** Limit */
             limit: number;
             /** Offset */
@@ -3710,6 +3834,26 @@ export interface components {
             /** Lesson Status */
             lesson_status: string;
         };
+        /** ScheduleIn */
+        ScheduleIn: {
+            /**
+             * End Time
+             * Format: time
+             */
+            end_time: string;
+            /**
+             * Lesson Date
+             * Format: date
+             */
+            lesson_date: string;
+            /**
+             * Start Time
+             * Format: time
+             */
+            start_time: string;
+            /** Teacher Id */
+            teacher_id?: string | null;
+        };
         /** ScheduleSlot */
         ScheduleSlot: {
             /**
@@ -3749,6 +3893,15 @@ export interface components {
         };
         /** SettingsOut */
         SettingsOut: {
+            /**
+             * Excused Mode
+             * @enum {string}
+             */
+            excused_mode: "makeup" | "credit" | "none";
+            /** Makeup Expiry Days */
+            makeup_expiry_days: number;
+            /** Makeup Lapses */
+            makeup_lapses: boolean;
             /** Trial Free Days */
             trial_free_days: number;
             /** Trial Free Lessons */
@@ -3756,6 +3909,12 @@ export interface components {
         };
         /** SettingsPatch */
         SettingsPatch: {
+            /** Excused Mode */
+            excused_mode?: ("makeup" | "credit" | "none") | null;
+            /** Makeup Expiry Days */
+            makeup_expiry_days?: number | null;
+            /** Makeup Lapses */
+            makeup_lapses?: boolean | null;
             /** Trial Free Days */
             trial_free_days?: number | null;
             /** Trial Free Lessons */
@@ -5406,6 +5565,106 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EnrollmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_entitlements_v1_entitlements_get: {
+        parameters: {
+            query?: {
+                status?: ("open" | "scheduled" | "used" | "cancelled" | "lapsed") | null;
+                student_id?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_EntitlementOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_v1_entitlements__entitlement_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entitlement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntitlementOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    schedule_v1_entitlements__entitlement_id__schedule_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entitlement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScheduleIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntitlementOut"];
                 };
             };
             /** @description Validation Error */

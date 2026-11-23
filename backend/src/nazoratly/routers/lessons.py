@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import date, datetime, time, timedelta
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, cast
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import Field, model_validator
@@ -14,6 +14,7 @@ from nazoratly.deps import DB, Paging, Principal, require
 from nazoratly.errors import Conflict, Forbidden, NotFound, Unprocessable
 from nazoratly.idempotency import IdempotentRoute
 from nazoratly.routers.academics import assert_group_access, my_teacher_id
+from nazoratly.routers.entitlements import sync_entitlement
 from nazoratly.schemas import LongText, Message, Model, Out, Page, make_page
 
 router = APIRouter(prefix="/v1", tags=["lessons & attendance"], route_class=IdempotentRoute)
@@ -60,6 +61,7 @@ class LessonOut(Out):
     end_time: time
     status: str
     topic: str | None
+    kind: str
 
 
 class GenerateIn(Model):
@@ -74,7 +76,7 @@ class GenerateOut(Out):
 
 _LESSON_SQL = (
     "SELECT l.public_id AS id, g.public_id AS group_id, g.name AS group_name, t.public_id AS teacher_id, t.full_name AS teacher_name,"
-    " r.public_id AS room_id, l.lesson_date, l.start_time, l.end_time, l.status, l.topic "
+    " r.public_id AS room_id, l.lesson_date, l.start_time, l.end_time, l.status, l.topic, l.kind "
     "FROM lessons l JOIN study_groups g ON g.org_id = l.org_id AND g.id = l.group_id "
     "LEFT JOIN teachers t ON t.org_id = l.org_id AND t.id = l.teacher_id "
     "LEFT JOIN rooms r ON r.org_id = l.org_id AND r.id = l.room_id"
@@ -86,7 +88,7 @@ async def _lesson_for(conn: Conn, p: Principal, lesson_public: uuid.UUID) -> dic
     lid = await resolve(conn, "lessons", lesson_public, what="lesson")
     row = await fetch_one(
         conn,
-        "SELECT l.id, l.group_id, l.teacher_id, l.lesson_date, l.status, g.teacher_id AS group_teacher_id "
+        "SELECT l.id, l.group_id, l.teacher_id, l.lesson_date, l.status, l.kind, g.teacher_id AS group_teacher_id "
         "FROM lessons l JOIN study_groups g ON g.org_id = l.org_id AND g.id = l.group_id WHERE l.id = %s",
         (lid,),
     )
@@ -283,13 +285,22 @@ _ROSTER_SQL = (
     "FROM enrollments e JOIN students s ON s.org_id = e.org_id AND s.id = e.student_id "
     "LEFT JOIN attendance a ON a.org_id = e.org_id AND a.lesson_id = %(lesson)s AND a.student_id = e.student_id "
     "WHERE e.group_id = %(group)s AND e.started_on <= %(day)s AND (e.ended_on IS NULL OR e.ended_on >= %(day)s) "
-    "AND e.status <> 'frozen' AND s.deleted_at IS NULL ORDER BY lower(s.full_name), s.id"
+    "AND e.status <> 'frozen' AND s.deleted_at IS NULL "
+    "AND (%(kind)s <> 'makeup' OR EXISTS (SELECT 1 FROM absence_entitlements ae WHERE ae.makeup_lesson_id = %(lesson)s "
+    "AND ae.student_id = e.student_id)) ORDER BY lower(s.full_name), s.id"
 )
 
 
 async def _roster(conn: Conn, lesson: dict[str, object]) -> list[dict[str, object]]:
     return await fetch_all(
-        conn, _ROSTER_SQL, {"lesson": lesson["id"], "group": lesson["group_id"], "day": lesson["lesson_date"]}
+        conn,
+        _ROSTER_SQL,
+        {
+            "lesson": lesson["id"],
+            "group": lesson["group_id"],
+            "day": lesson["lesson_date"],
+            "kind": lesson["kind"],
+        },
     )
 
 
@@ -340,6 +351,13 @@ async def put_attendance(
                 "marked_by_user_id = EXCLUDED.marked_by_user_id, marked_at = now()",
                 (p.org_id, lesson["id"], roster[rec.student_id], rec.status, rec.minutes_late, p.user_id),
             )
+            await sync_entitlement(
+                conn,
+                org_id=p.org_id,
+                lesson=lesson,
+                student_id=cast(int, roster[rec.student_id]),
+                new_status=rec.status,
+            )
         if lesson["status"] == "planned":
             await execute(conn, "UPDATE lessons SET status = 'held' WHERE id = %s", (lesson["id"],))
             lesson["status"] = "held"
@@ -371,6 +389,7 @@ async def delete_mark(
         )
         if n == 0:
             raise NotFound("no mark for this student")
+        await sync_entitlement(conn, org_id=p.org_id, lesson=lesson, student_id=sid, new_status=None)
     return Message(message="mark removed")
 
 

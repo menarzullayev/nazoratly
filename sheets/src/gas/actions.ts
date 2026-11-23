@@ -13,6 +13,7 @@ import {
 import { readSettings } from "./settings";
 import { balanceRich, EFFECT_PARTY, receiptRich, reminderRich, type OpenCharge } from "../domain/messages";
 import { applyBotProfile } from "./botProfile";
+import { makeupDays, markCreditsUsed, reduceByCredits, syncAttendance } from "./makeup";
 import { pickWebAppUrl, isWebAppUrl } from "../domain/urls";
 import { getToken, props, sendMessage, sendRich, setToken, tg, webhookSecret } from "./telegram";
 
@@ -64,8 +65,10 @@ export function generateMonthlyCharges(): void {
       month, dueDay: s.dueDay, enrollments: read<Enrollment>(ENROLLMENTS), groups: read<Group>(GROUPS), students: read<StudentRow>(STUDENTS), charges,
     });
     const ids = nextIds("C", charges.map((c) => c.id), plan.create.length);
-    append(CHARGES, plan.create.map((c, i) => ({ ...c, id: ids[i]!, voided: false })));
-    return `${month.slice(0, 7)}: ${plan.create.length} ta yangi hisob yaratildi.\nAvval yaratilgan: ${plan.skippedExisting}.\nNarxi 0 bo'lgani uchun o'tkazib yuborilgan: ${plan.skippedZeroFee}.`;
+    const reduced = reduceByCredits(plan.create, ids);
+    append(CHARGES, plan.create.map((c, i) => ({ ...c, amount: reduced.amounts[i]!, id: ids[i]!, voided: false })));
+    markCreditsUsed(reduced.consumed);
+    return `${month.slice(0, 7)}: ${plan.create.length} ta yangi hisob yaratildi (kreditdan ayirilgan: ${reduced.consumed.length}).\nAvval yaratilgan: ${plan.skippedExisting}.\nNarxi 0 bo'lgani uchun o'tkazib yuborilgan: ${plan.skippedZeroFee}.`;
   });
   ui().alert("Oylik hisoblar", summary, ui().ButtonSet.OK);
 }
@@ -232,6 +235,7 @@ export function saveAttendance(input: { date: string; groupId: string; marks: { 
   }
   return withLock(() => {
     replaceWhere<AttendanceRow>(ATTENDANCE, (a) => a.date === input.date && a.groupId === input.groupId, input.marks.map((m) => ({ date: input.date, groupId: input.groupId, ...m })));
+    syncAttendance(input.date, input.groupId, input.marks);
     return { saved: input.marks.length };
   });
 }
@@ -300,7 +304,7 @@ export function calculatePayroll(): void {
     const bonus = new Map(existing.filter((r) => r.month === month && r.status === "draft").map((r) => [r.teacherId, r.bonus]));
     const rows = teachers.filter((t) => !locked.has(t.id)).map((t) => {
       const gids = new Set(groups.filter((g) => g.teacherId === t.id).map((g) => g.id));
-      const r = computePayroll(t, month, { heldLessons: heldLessons(attendance, gids, month), collectedTuition: collectedTuition(balances, enrollments, groups, t.id, month) });
+      const r = computePayroll(t, month, { heldLessons: heldLessons(attendance, gids, month, makeupDays()), collectedTuition: collectedTuition(balances, enrollments, groups, t.id, month) });
       const b = bonus.get(t.id) ?? 0;
       return { month, teacherId: t.id, teacherName: t.fullName, heldLessons: r.heldLessons, collected: r.collectedTuition, bonus: b, total: r.total + b, status: "draft" };
     });

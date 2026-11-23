@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends
 from pydantic import Field
@@ -18,11 +18,17 @@ router = APIRouter(prefix="/v1", tags=["settings"], route_class=IdempotentRoute)
 class SettingsOut(Out):
     trial_free_lessons: int
     trial_free_days: int
+    excused_mode: Literal["makeup", "credit", "none"]
+    makeup_expiry_days: int
+    makeup_lapses: bool
 
 
 class SettingsPatch(Model):
     trial_free_lessons: Annotated[int, Field(ge=0, le=100)] | None = None
     trial_free_days: Annotated[int, Field(ge=0, le=365)] | None = None
+    excused_mode: Literal["makeup", "credit", "none"] | None = None
+    makeup_expiry_days: Annotated[int, Field(ge=0, le=365)] | None = None
+    makeup_lapses: bool | None = None
 
 
 async def load_settings(conn: Conn, org_id: int) -> SettingsOut:
@@ -31,7 +37,9 @@ async def load_settings(conn: Conn, org_id: int) -> SettingsOut:
         conn, "INSERT INTO org_settings (org_id) VALUES (%s) ON CONFLICT (org_id) DO NOTHING", (org_id,)
     )
     row = await fetch_one(
-        conn, "SELECT trial_free_lessons, trial_free_days FROM org_settings WHERE org_id = %s", (org_id,)
+        conn,
+        "SELECT trial_free_lessons, trial_free_days, excused_mode, makeup_expiry_days, makeup_lapses FROM org_settings WHERE org_id = %s",
+        (org_id,),
     )
     assert row is not None
     return SettingsOut.model_validate(row)

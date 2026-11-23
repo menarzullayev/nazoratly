@@ -1,6 +1,7 @@
 /** Apps Script entry point: every function Google calls (menu, web app, sidebars) is exposed on globalThis. */
 import * as actions from "./gas/actions";
 import * as admission from "./gas/admission";
+import * as makeup from "./gas/makeup";
 import { setupWorkbook, loadSampleData, resetSampleData } from "./gas/setup";
 import { handleGet, handlePost } from "./gas/webhook";
 
@@ -32,6 +33,13 @@ g.onOpen = (): void => {
         .addSeparator()
         .addItem("Lead'ni sinovga yozish", "menuLeadToTrial")
         .addItem("Voronka hisoboti", "menuFunnel"),
+    )
+    .addSubMenu(
+      SpreadsheetApp.getUi()
+        .createMenu("Qoplash (sababli yo'qlik)")
+        .addItem("Huquqlarni ko'rish", "menuEntitlements")
+        .addItem("Qoplash darsini rejalash", "menuScheduleMakeup")
+        .addItem("Huquqni bekor qilish", "menuCancelEntitlement"),
     )
     .addSubMenu(
       SpreadsheetApp.getUi()
@@ -69,6 +77,9 @@ g.menuAcceptTrial = admission.menu.accept;
 g.menuDropTrial = admission.menu.drop;
 g.menuLeadToTrial = admission.menu.leadToTrial;
 g.menuFunnel = admission.menu.funnel;
+g.menuEntitlements = makeup.menu.view;
+g.menuScheduleMakeup = makeup.menu.schedule;
+g.menuCancelEntitlement = makeup.menu.cancel;
 g.menuPayroll = (): void => actions.guard("Oylik", actions.calculatePayroll);
 g.menuWebhookInfo = (): void => actions.guard("Webhook", actions.showWebhookInfo);
 g.menuHelp = (): void => actions.showHelp();

@@ -17,11 +17,16 @@ export interface PayrollResult {
   collectedTuition: number;
 }
 
-/** A lesson is a distinct (date, group) that has at least one attendance mark. */
-export function heldLessons(attendance: AttendanceRow[], groupIds: Set<string>, month: ISODate): number {
-  const seen = new Set<string>();
-  for (const a of attendance) if (groupIds.has(a.groupId) && inMonth(a.date, month)) seen.add(`${a.date}|${a.groupId}`);
-  return seen.size;
+/** A lesson is a distinct (date, group) that has at least one attendance mark (make-up days: at least one present/late). */
+export function heldLessons(attendance: AttendanceRow[], groupIds: Set<string>, month: ISODate, makeupDays?: Set<string>): number {
+  const seen = new Map<string, boolean>(); // lesson -> someone attended
+  for (const a of attendance) {
+    if (!groupIds.has(a.groupId) || !inMonth(a.date, month)) continue;
+    const key = `${a.date}|${a.groupId}`;
+    seen.set(key, (seen.get(key) ?? false) || a.status === "present" || a.status === "late");
+  }
+  // a make-up day counts only when someone attended; a regular lesson counts with any mark
+  return [...seen].filter(([key, attended]) => attended || !makeupDays?.has(key)).length;
 }
 
 /** Tuition actually collected in the month for the teacher's groups (paid part of the month's tuition charges). */

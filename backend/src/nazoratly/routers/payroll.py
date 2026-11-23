@@ -143,6 +143,7 @@ async def generate_payroll(
                 "SELECT l.org_id, %(pid)s, 'lesson', l.id, %(rate)s, 'Lesson ' || l.lesson_date::text || ' ' || g.name "
                 "FROM lessons l JOIN study_groups g ON g.org_id = l.org_id AND g.id = l.group_id "
                 "WHERE l.status = 'held' AND l.lesson_date >= %(f)s AND l.lesson_date < %(n)s "
+                "AND (l.kind <> 'makeup' OR EXISTS (SELECT 1 FROM attendance a WHERE a.lesson_id = l.id AND a.status IN ('present', 'late'))) "
                 "AND COALESCE(l.teacher_id, g.teacher_id) = %(tid)s ORDER BY l.lesson_date, l.start_time, l.id",
                 {"pid": pid, "rate": rate, "f": first, "n": nxt, "tid": tid},
             )

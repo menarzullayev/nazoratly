@@ -1756,6 +1756,143 @@
         "title": "EnrollmentPatch",
         "type": "object"
       },
+      "EntitlementOut": {
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "effective_status": {
+            "enum": [
+              "open",
+              "scheduled",
+              "used",
+              "cancelled",
+              "lapsed"
+            ],
+            "title": "Effective Status",
+            "type": "string"
+          },
+          "expires_on": {
+            "format": "date",
+            "title": "Expires On",
+            "type": "string"
+          },
+          "group_id": {
+            "format": "uuid",
+            "title": "Group Id",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "makeup",
+              "credit"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "makeup_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Makeup Date"
+          },
+          "makeup_lesson_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Makeup Lesson Id"
+          },
+          "missed_on": {
+            "format": "date",
+            "title": "Missed On",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "open",
+              "scheduled",
+              "used",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          },
+          "used_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Used On"
+          }
+        },
+        "required": [
+          "id",
+          "student_id",
+          "student_name",
+          "group_id",
+          "group_name",
+          "kind",
+          "amount",
+          "missed_on",
+          "expires_on",
+          "status",
+          "effective_status",
+          "makeup_lesson_id",
+          "makeup_date",
+          "used_on",
+          "created_at"
+        ],
+        "title": "EntitlementOut",
+        "type": "object"
+      },
       "ExpenseIn": {
         "additionalProperties": false,
         "properties": {
@@ -3414,6 +3551,10 @@
             "title": "Id",
             "type": "string"
           },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
           "lesson_date": {
             "format": "date",
             "title": "Lesson Date",
@@ -3486,7 +3627,8 @@
           "start_time",
           "end_time",
           "status",
-          "topic"
+          "topic",
+          "kind"
         ],
         "title": "LessonOut",
         "type": "object"
@@ -4570,6 +4712,37 @@
           "has_more"
         ],
         "title": "Page[EnrollmentOut]",
+        "type": "object"
+      },
+      "Page_EntitlementOut_": {
+        "properties": {
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/EntitlementOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset",
+          "has_more"
+        ],
+        "title": "Page[EntitlementOut]",
         "type": "object"
       },
       "Page_ExpenseOut_": {
@@ -5920,6 +6093,45 @@
         "title": "RosterOut",
         "type": "object"
       },
+      "ScheduleIn": {
+        "additionalProperties": false,
+        "properties": {
+          "end_time": {
+            "format": "time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "lesson_date": {
+            "format": "date",
+            "title": "Lesson Date",
+            "type": "string"
+          },
+          "start_time": {
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "teacher_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Teacher Id"
+          }
+        },
+        "required": [
+          "lesson_date",
+          "start_time",
+          "end_time"
+        ],
+        "title": "ScheduleIn",
+        "type": "object"
+      },
       "ScheduleSlot": {
         "additionalProperties": false,
         "properties": {
@@ -6001,6 +6213,23 @@
       },
       "SettingsOut": {
         "properties": {
+          "excused_mode": {
+            "enum": [
+              "makeup",
+              "credit",
+              "none"
+            ],
+            "title": "Excused Mode",
+            "type": "string"
+          },
+          "makeup_expiry_days": {
+            "title": "Makeup Expiry Days",
+            "type": "integer"
+          },
+          "makeup_lapses": {
+            "title": "Makeup Lapses",
+            "type": "boolean"
+          },
           "trial_free_days": {
             "title": "Trial Free Days",
             "type": "integer"
@@ -6012,7 +6241,10 @@
         },
         "required": [
           "trial_free_lessons",
-          "trial_free_days"
+          "trial_free_days",
+          "excused_mode",
+          "makeup_expiry_days",
+          "makeup_lapses"
         ],
         "title": "SettingsOut",
         "type": "object"
@@ -6020,6 +6252,46 @@
       "SettingsPatch": {
         "additionalProperties": false,
         "properties": {
+          "excused_mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "makeup",
+                  "credit",
+                  "none"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Excused Mode"
+          },
+          "makeup_expiry_days": {
+            "anyOf": [
+              {
+                "maximum": 365.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Makeup Expiry Days"
+          },
+          "makeup_lapses": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Makeup Lapses"
+          },
           "trial_free_days": {
             "anyOf": [
               {
@@ -9350,6 +9622,214 @@
         "summary": "Drop a trial",
         "tags": [
           "admission"
+        ]
+      }
+    },
+    "/v1/entitlements": {
+      "get": {
+        "operationId": "list_entitlements_v1_entitlements_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "open",
+                    "scheduled",
+                    "used",
+                    "cancelled",
+                    "lapsed"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "student_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Student Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 1000000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_EntitlementOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Make-up rights and credits",
+        "tags": [
+          "make-up"
+        ]
+      }
+    },
+    "/v1/entitlements/{entitlement_id}/cancel": {
+      "post": {
+        "operationId": "cancel_v1_entitlements__entitlement_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entitlement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Entitlement Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntitlementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cancel a right",
+        "tags": [
+          "make-up"
+        ]
+      }
+    },
+    "/v1/entitlements/{entitlement_id}/schedule": {
+      "post": {
+        "operationId": "schedule_v1_entitlements__entitlement_id__schedule_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entitlement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Entitlement Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntitlementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Schedule the make-up lesson of an open right",
+        "tags": [
+          "make-up"
         ]
       }
     },

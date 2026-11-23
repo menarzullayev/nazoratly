@@ -13,6 +13,7 @@ Birinchi mijozlar uchun: o'quv markazini Google Sheets ichida professional yurit
 | Oylik (o'qituvchi) | Qat'iy / dars uchun / foiz; bonus-jarima qo'lda; tasdiqlangan qatorlar qayta hisoblanganda o'zgarmaydi |
 | Telegram eslatma | Loyiha yaratiladi (yuborilmaydi) → siz ko'rib chiqasiz/tahrirlaysiz/tasdiqlaysiz → yuborish. Faqat vasiy botda **rozilik bergan** o'quvchilarga |
 | Qabul (sinov, lead) | `Yozilishlar` holati **Sinov** (hisob yo'q); `Lead'lar` va `Lead aloqalari` varaqlari; menyu **Qabul**: qaror kutayotgan sinovlar (bepul dars YOKI kun chegarasi, `Sozlamalar`da), sinovni qabul qilish (1 proratsiya / 2 to'liq oy / 3 keyingi oydan; proratsiya uchun `Guruhlar > Jadval` da hafta kunlari: Du-Chor-Ju 18:00), sinovni bekor qilish, lead'ni sinovga yozish, voronka hisoboti. Mavjud jadvalda yangi ustun va varaqlar uchun avval **Boshlang'ich sozlash** ni bosing |
+| Qoplash (sababli yo'qlik) | `Sozlamalar`: Sababli yo'qlik (Qoplash / Kredit / Yo'q), muddat (kun), muddati o'tgan huquq kuyadi. Davomatda "Sababli" belgilansa `Qoplash huquqlari` varag'ida huquq paydo bo'ladi; menyu **Qoplash**: huquqlarni ko'rish (holat: ochiq/rejalangan/muddati o'tgan), qoplash darsini rejalash (sana), bekor qilish. O'sha kuni Davomat oynasida guruhni belgilang: kelgan bo'lsa huquq yopiladi, kelmasa ochiqqa qaytadi. Kredit keyingi oylik hisobdan ayiriladi. Oylikda qoplash kuni faqat kimdir kelgan bo'lsa dars hisoblanadi. Mavjud jadvalda avval **Boshlang'ich sozlash** |
 | Boshqaruv paneli | KPI kartalar, 6 oylik grafik, qarzdorlar |
 
 ## O'rnatish (bir marta)

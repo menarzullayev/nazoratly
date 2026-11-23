@@ -24,6 +24,8 @@ const L = {
   enrollStatus: { trial: "Sinov", active: "Faol", frozen: "Muzlatilgan", finished: "Tugagan" },
   firstMonth: { "": "", full: "To'liq oy", prorated: "Proratsiya", free_until_next: "Keyingi oydan" },
   leadStage: { new: "Yangi", contacted: "Aloqada", trial_scheduled: "Sinovga yozilgan", trial_attended: "Sinovda bo'ldi", enrolled: "Yozildi", lost: "Yo'qotildi" },
+  entKind: { makeup: "Qoplash darsi", credit: "Kredit" },
+  entStatus: { open: "Ochiq", scheduled: "Rejalangan", used: "Ishlatilgan", cancelled: "Bekor" },
   leadKind: { call: "Qo'ng'iroq", message: "Xabar", meeting: "Uchrashuv", trial: "Sinov", note: "Izoh" },
   attendance: { present: "Keldi", absent: "Kelmadi", late: "Kechikdi", excused: "Sababli" },
   payModel: { fixed: "Qat'iy oylik", per_lesson: "Dars uchun", percent: "Foiz" },
@@ -191,7 +193,26 @@ export const LEAD_LOG: TableDef = {
   ],
 };
 
-export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG];
+export const ENTITLEMENTS: TableDef = {
+  sheet: "Qoplash huquqlari",
+  color: "#9334e6",
+  cols: [
+    { key: "id", header: "ID", width: 70, kind: "text", help: "Avtomatik (R0001...): sababli yo'qlikdan hosil bo'ladi" },
+    { key: "studentId", header: "O'quvchi ID", width: 100, kind: "text" },
+    { key: "groupId", header: "Guruh ID", width: 90, kind: "text" },
+    { key: "missedOn", header: "Qoldirilgan sana", width: 120, kind: "date" },
+    { key: "kind", header: "Turi", width: 120, kind: "enum", labels: L.entKind },
+    { key: "amount", header: "Summa (kredit)", width: 120, kind: "int" },
+    { key: "expiresOn", header: "Muddat", width: 110, kind: "date" },
+    { key: "status", header: "Holat", width: 110, kind: "enum", labels: L.entStatus },
+    { key: "makeupOn", header: "Qoplash sanasi", width: 120, kind: "date", help: "Rejalangan qoplash darsi sanasi (menyu: Qoplash)" },
+    { key: "usedOn", header: "Ishlatilgan sana", width: 120, kind: "date" },
+    { key: "appliedChargeId", header: "Hisob ID", width: 90, kind: "text", help: "Kredit qaysi oylik hisobdan ayirilgani" },
+    { key: "lastMakeupOn", header: "Oxirgi qoplash sanasi", width: 130, kind: "date", help: "Oylik hisobida: bu kunda faqat kelgan bo'lsa dars hisoblanadi" },
+  ],
+};
+
+export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS];
 
 export const SETTINGS_SHEET = "Sozlamalar";
 export const DEBTORS_SHEET = "Qarzdorlar";
@@ -207,6 +228,9 @@ export const SETTING_DEFAULTS: { key: string; label: string; value: string; help
   { key: "policyText", label: "Maxfiylik siyosati (bot /privacy)", value: "Biz faqat to'lov va davomat haqida xabar yuborish uchun ota-onaning ism va Telegram chat ID sini saqlaymiz. Rozilikni istalgan payt /stop bilan qaytarishingiz mumkin.", help: "Bot /privacy buyrug'iga shuni javob beradi (Telegram talabi). Havola bo'lsa shu yerga yozing" },
   { key: "trialFreeLessons", label: "Bepul sinov darslari soni", value: "1", help: "Shuncha dars o'tgach (yoki kun chegarasi oldin tugasa) qaror kerak bo'ladi" },
   { key: "trialFreeDays", label: "Bepul sinov kunlari", value: "7", help: "Sinov boshlanganidan shuncha kun o'tgach qaror kerak bo'ladi" },
+  { key: "excusedMode", label: "Sababli yo'qlik", value: "Qoplash", help: "Qoplash = qoplash huquqi, Kredit = keyingi oylik hisobdan ayiriladi, Yo'q = hech narsa" },
+  { key: "makeupExpiryDays", label: "Qoplash muddati (kun)", value: "30", help: "Sababli yo'qlikdan keyin huquq shuncha kun amal qiladi (0-365)" },
+  { key: "makeupLapses", label: "Muddati o'tgan huquq kuyadi", value: "Ha", help: "Ha / Yo'q" },
   { key: "payInfo", label: "To'lov rekvizitlari", value: "", help: "Karta raqami yoki hisob. Xabardagi 'Nusxalash' tugmasi shuni nusxalaydi (bo'sh = tugma yo'q)" },
   { key: "ownerChatId", label: "Egasining Telegram chat ID si", value: "", help: "Vasiy 'To'lov qildim' bossa shu yerga xabar keladi (botga /start yozib, @userinfobot dan ID ni oling)" },
 ];

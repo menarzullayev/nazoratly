@@ -13,6 +13,9 @@ export interface Settings {
   ownerChatId: string;
   trialFreeLessons: number;
   trialFreeDays: number;
+  excusedMode: "makeup" | "credit" | "none";
+  makeupExpiryDays: number;
+  makeupLapses: boolean;
 }
 
 export function readSettings(): Settings {
@@ -39,6 +42,9 @@ export function readSettings(): Settings {
     policyText: map.get("policyText") || "",
     trialFreeLessons: num("trialFreeLessons", 1, 0, 100),
     trialFreeDays: num("trialFreeDays", 7, 0, 365),
+    excusedMode: ((v) => (v.startsWith("kredit") ? "credit" : v === "yo'q" || v === "yoq" || v === "yo`q" ? "none" : "makeup"))((map.get("excusedMode") ?? "").toLowerCase()),
+    makeupExpiryDays: num("makeupExpiryDays", 30, 0, 365),
+    makeupLapses: !["yo'q", "yoq", "yo`q", "no", "false"].includes((map.get("makeupLapses") ?? "ha").toLowerCase()),
     payInfo: map.get("payInfo") ?? "",
     ownerChatId: /^-?\d{5,}$/.test(map.get("ownerChatId") ?? "") ? (map.get("ownerChatId") as string) : "",
   };
