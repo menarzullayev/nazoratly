@@ -116,7 +116,9 @@ function Rig({ progress, accent }: SceneProps) {
 
 export default function ChaosScene(props: SceneProps) {
   return (
-    <Canvas dpr={[1, 2]} camera={{ position: [0, 0.8, 10], fov: 45 }} gl={{ antialias: true, alpha: true }}>
+    <Canvas dpr={[1, 2]} camera={{ position: [0, 0.8, 10], fov: 45 }} gl={{ antialias: true, alpha: true }}
+      onCreated={({ gl }) => gl.domElement.addEventListener("webglcontextlost", (e) => { e.preventDefault(); props.onLost?.(); })}
+    >
       <fog attach="fog" args={["#070b10", 9, 22]} />
       <ambientLight intensity={0.8} />
       <directionalLight position={[4, 6, 5]} intensity={1.6} />

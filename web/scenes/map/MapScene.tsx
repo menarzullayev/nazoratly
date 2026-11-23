@@ -64,7 +64,9 @@ function Rig({ progress }: SceneProps) {
 
 export default function MapScene(props: SceneProps) {
   return (
-    <Canvas dpr={[1, 2]} orthographic camera={{ position: [10, 10, 10], zoom: 48, near: -50, far: 100 }} gl={{ antialias: true, alpha: true }}>
+    <Canvas dpr={[1, 2]} orthographic camera={{ position: [10, 10, 10], zoom: 48, near: -50, far: 100 }} gl={{ antialias: true, alpha: true }}
+      onCreated={({ gl }) => gl.domElement.addEventListener("webglcontextlost", (e) => { e.preventDefault(); props.onLost?.(); })}
+    >
       <ambientLight intensity={0.9} />
       <directionalLight position={[6, 10, 4]} intensity={1.5} />
       <Center accent={props.accent} />

@@ -7,6 +7,8 @@ export type Vec3 = readonly [number, number, number];
 export interface SceneProps {
   progress: { current: number };
   accent: string;
+  /** Called when the WebGL context is lost so the host can switch to the fallback. */
+  onLost?: () => void;
 }
 
 export const clamp01 = (v: number): number => Math.min(1, Math.max(0, v));

@@ -102,7 +102,9 @@ function Rig({ progress }: SceneProps) {
 
 export default function FlowScene(props: SceneProps) {
   return (
-    <Canvas dpr={[1, 2]} camera={{ position: [-1.5, 1, 11], fov: 42 }} gl={{ antialias: true, alpha: true }}>
+    <Canvas dpr={[1, 2]} camera={{ position: [-1.5, 1, 11], fov: 42 }} gl={{ antialias: true, alpha: true }}
+      onCreated={({ gl }) => gl.domElement.addEventListener("webglcontextlost", (e) => { e.preventDefault(); props.onLost?.(); })}
+    >
       <ambientLight intensity={0.9} />
       <directionalLight position={[3, 5, 6]} intensity={1.4} />
       <Sheet />
