@@ -15,7 +15,7 @@ def build() -> dict[str, object]:
         env="dev",
         database_url_app="postgresql://unused/unused",  # type: ignore[arg-type]
         database_url_auth="postgresql://unused/unused",  # type: ignore[arg-type]
-        jwt_secret="openapi-export-only-not-a-secret-000000",  # type: ignore[arg-type]
+        jwt_secret="openapi-export-only-not-a-secret-000000",  # type: ignore[arg-type]  # noqa: S106
     )
     return create_app(settings).openapi()
 
