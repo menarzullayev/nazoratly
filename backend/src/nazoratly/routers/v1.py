@@ -10,9 +10,11 @@ from nazoratly.routers import (
     agents,
     auth,
     dashboard,
+    demo,
     documents,
     entitlements,
     finance,
+    imports,
     leads,
     lessons,
     lifecycle,
@@ -22,9 +24,11 @@ from nazoratly.routers import (
     payables,
     payroll,
     plans,
+    qr,
     reconciliation,
     settings,
     students,
+    waitlist,
 )
 
 router = APIRouter()
@@ -34,6 +38,10 @@ router.include_router(students.router)
 router.include_router(academics.router)
 router.include_router(lifecycle.router)
 router.include_router(entitlements.router)
+router.include_router(waitlist.router)
+router.include_router(qr.router)
+router.include_router(imports.router)
+router.include_router(demo.router)
 router.include_router(leads.router)
 router.include_router(settings.router)
 router.include_router(lessons.router)

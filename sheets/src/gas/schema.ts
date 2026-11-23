@@ -31,6 +31,7 @@ const L = {
   leadKind: { call: "Qo'ng'iroq", message: "Xabar", meeting: "Uchrashuv", trial: "Sinov", note: "Izoh" },
   attendance: { present: "Keldi", absent: "Kelmadi", late: "Kechikdi", excused: "Sababli" },
   billing: { monthly: "Oylik", package: "Abonement" },
+  waitStatus: { waiting: "Kutmoqda", enrolled: "Yozildi", removed: "Olib tashlandi" },
   payModel: { fixed: "Qat'iy oylik", per_lesson: "Dars uchun", percent: "Foiz" },
   teacherStatus: { active: "Faol", inactive: "Nofaol" },
   draftStatus: { pending: "Kutilmoqda", approved: "Tasdiqlangan", sent: "Yuborilgan", rejected: "Rad etilgan", failed: "Xato" },
@@ -41,6 +42,9 @@ const L = {
   paidFrom: { cash: "Naqd", bank: "Bank" },
   statementStatus: { open: "Ochiq", finalized: "Yopilgan" },
 } as const;
+
+/** Marks sample rows ("Namuna ma'lumot"). "Demo ma'lumotni tozalash" deletes only flagged rows. */
+const DEMO: ColDef = { key: "demo", header: "Demo", width: 70, kind: "bool", help: "Namuna ma'lumot belgisi: 'Demo ma'lumotni tozalash' faqat shu belgili qatorlarni o'chiradi. Qo'lda o'zgartirmang" };
 
 export const METHODS = ["Naqd", "Karta", "O'tkazma", "Payme", "Click", "Boshqa"];
 
@@ -60,6 +64,8 @@ export const STUDENTS: TableDef = {
     { key: "linkCode", header: "Ulash kodi", width: 110, kind: "text", help: "Vasiyga beriladigan bir martalik kod (nazoratly menyusi)" },
     { key: "linkUrl", header: "Ulash havolasi", width: 260, kind: "text", help: "Vasiy shu havolani Telegramda ochadi" },
     { key: "note", header: "Izoh", width: 220, kind: "text" },
+    { key: "qrCode", header: "QR kod", width: 190, kind: "text", plain: true, help: "Davomat QR kartasi kodi (nazoratly > QR davomat). Qo'lda o'zgartirmang: kartani almashtirish uchun menyudan foydalaning" },
+    DEMO,
   ],
 };
 
@@ -76,6 +82,8 @@ export const GROUPS: TableDef = {
     { key: "billingMode", header: "Hisoblash turi", width: 120, kind: "enum", labels: L.billing, help: "Oylik: har oy hisob yaratiladi. Abonement: to'lov darslar sonini beradi (menyu: Abonement)" },
     { key: "packageLessons", header: "Abonement darslari", width: 120, kind: "int", help: "Bitta abonementdagi darslar soni (faqat Abonement guruhlari)" },
     { key: "packagePrice", header: "Abonement narxi (so'm)", width: 140, kind: "int", help: "Bitta abonement narxi (faqat Abonement guruhlari)" },
+    { key: "capacity", header: "Sig'im (o'rinlar)", width: 110, kind: "int", help: "Guruhdagi eng ko'p o'quvchi (sinovdagilar ham sanaladi). Bo'sh = cheklanmagan. To'lsa: nazoratly > Navbat" },
+    DEMO,
   ],
 };
 
@@ -93,6 +101,7 @@ export const ENROLLMENTS: TableDef = {
     { key: "acceptedOn", header: "Qabul sanasi", width: 110, kind: "date", help: "Sinov qabul qilingan sana (avtomatik)" },
     { key: "firstMonthMode", header: "Birinchi oy", width: 120, kind: "enum", labels: L.firstMonth, help: "Qabul paytida tanlangan: to'liq oy / proratsiya / keyingi oydan (avtomatik)" },
     { key: "droppedTrial", header: "Sinov bekor qilingan", width: 120, kind: "bool", help: "Sinov bekor qilinsa avtomatik 'Ha': sinov darslari bepul qoladi" },
+    DEMO,
   ],
 };
 
@@ -105,6 +114,7 @@ export const ATTENDANCE: TableDef = {
     { key: "studentId", header: "O'quvchi ID", width: 100, kind: "text" },
     { key: "status", header: "Holat", width: 110, kind: "enum", labels: L.attendance },
     { key: "minutesLate", header: "Kechikish (daq)", width: 110, kind: "int" },
+    DEMO,
   ],
 };
 
@@ -120,6 +130,7 @@ export const CHARGES: TableDef = {
     { key: "dueDate", header: "To'lov muddati", width: 120, kind: "date" },
     { key: "note", header: "Izoh", width: 200, kind: "text" },
     { key: "voided", header: "Bekor qilingan", width: 110, kind: "bool", help: "Hisobni o'chirmang, 'Ha' qilib bekor qiling" },
+    DEMO,
   ],
 };
 
@@ -134,6 +145,7 @@ export const PAYMENTS: TableDef = {
     { key: "method", header: "Usul", width: 110, kind: "text", options: METHODS },
     { key: "note", header: "Izoh", width: 200, kind: "text" },
     { key: "voided", header: "Bekor qilingan", width: 110, kind: "bool", help: "To'lovni o'chirmang, 'Ha' qilib bekor qiling" },
+    DEMO,
   ],
 };
 
@@ -146,6 +158,7 @@ export const TEACHERS: TableDef = {
     { key: "payModel", header: "Oylik turi", width: 130, kind: "enum", labels: L.payModel },
     { key: "payRate", header: "Stavka", width: 120, kind: "int", help: "so'm (qat'iy/dars) yoki foiz" },
     { key: "status", header: "Holat", width: 100, kind: "enum", labels: L.teacherStatus },
+    DEMO,
   ],
 };
 
@@ -161,6 +174,7 @@ export const EXPENSES: TableDef = {
     { key: "voided", header: "Bekor qilingan", width: 110, kind: "bool", help: "Xarajatni o'chirmang, 'Ha' qilib bekor qiling" },
     { key: "paidFrom", header: "Qayerdan to'langan", width: 130, kind: "enum", labels: L.paidFrom, help: "Naqd (kassa) yoki Bank: buxgalteriya yozuvi shunga qarab tushadi" },
     { key: "billId", header: "Ta'minotchi hisobi", width: 120, kind: "text", plain: true, help: "Ta'minotchi hisobidan avtomatik yaratilgan xarajat (H0001...): uni hisob orqali bekor qiling" },
+    DEMO,
   ],
 };
 
@@ -205,6 +219,7 @@ export const LEADS: TableDef = {
     { key: "note", header: "Izoh", width: 240, kind: "text" },
     { key: "createdOn", header: "Qo'shilgan sana", width: 120, kind: "date" },
     { key: "studentId", header: "O'quvchi ID", width: 100, kind: "text", help: "Sinovga yozilganda avtomatik to'ladi" },
+    DEMO,
   ],
 };
 
@@ -403,8 +418,22 @@ export const BILL_PAYMENTS: TableDef = {
   ],
 };
 
+export const WAITLIST: TableDef = {
+  sheet: "Navbat",
+  color: "#188038",
+  cols: [
+    { key: "id", header: "ID", width: 70, kind: "text", help: "Avtomatik beriladi (W0001...)" },
+    { key: "groupId", header: "Guruh ID", width: 90, kind: "text" },
+    { key: "studentId", header: "O'quvchi ID", width: 100, kind: "text" },
+    { key: "joinedOn", header: "Navbatga yozilgan sana", width: 140, kind: "date", help: "Navbat tartibi: sana, keyin qator tartibi" },
+    { key: "status", header: "Holat", width: 130, kind: "enum", labels: L.waitStatus },
+    { key: "note", header: "Izoh", width: 220, kind: "text" },
+    DEMO,
+  ],
+};
+
 export const LEDGER_TABLES: TableDef[] = [JOURNAL, PERIODS, CHART_ACCOUNTS, CASH_ACCOUNTS];
-export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, PACKAGES, INSTALLMENTS, DOCUMENTS, EXPENSES, ...LEDGER_TABLES, STATEMENTS, STATEMENT_LINES, SUPPLIERS, SUPPLIER_BILLS, BILL_PAYMENTS];
+export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, PACKAGES, INSTALLMENTS, DOCUMENTS, EXPENSES, WAITLIST, ...LEDGER_TABLES, STATEMENTS, STATEMENT_LINES, SUPPLIERS, SUPPLIER_BILLS, BILL_PAYMENTS];
 
 export const SETTINGS_SHEET = "Sozlamalar";
 export const DEBTORS_SHEET = "Qarzdorlar";

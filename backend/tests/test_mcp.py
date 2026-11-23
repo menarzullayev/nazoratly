@@ -68,6 +68,7 @@ async def test_unauthenticated_and_listing(pg_server: dict[str, Any], tenant: Te
             "list_debtors",
             "list_due_installments",
             "list_packages_needing_payment",
+            "list_waitlist_offers",
             "attendance_summary",
             "revenue_report",
             "list_reminder_targets",
@@ -275,3 +276,32 @@ async def test_agent_sees_packages_needing_payment(pg_server: dict[str, Any], te
         )  # the threshold now includes 9
         rows = content(await tool(mcp_client, token, "list_packages_needing_payment"))
         assert [(r["student_name"], r["need"]) for r in rows] == [("Pkg Seen", "low")]
+
+
+async def test_agent_sees_waitlist_offers_only_for_consented_students_in_line_order(
+    pg_server: dict[str, Any], tenant: Tenant, tenant_b: Tenant
+) -> None:
+    from tests.helpers import consent
+    from tests.test_capacity import full_group, queue
+
+    async with mcp_ctx(pg_server) as mcp_client:
+        grp, members = await full_group(tenant, 2)
+        hidden = await queue(tenant, grp["id"], "Hidden First")  # no AI consent: invisible, but holds place 1
+        seen = await queue(tenant, grp["id"], "Seen Second")
+        later = await queue(tenant, grp["id"], "Seen Third")
+        for e in (seen, later):
+            await consent(tenant, e["student"]["id"], "ai_assistant_processing")
+        token = await _agent(tenant, ["read"])
+        assert content(await tool(mcp_client, token, "list_waitlist_offers")) == []  # full: no offer
+        await ok(await tenant.patch(f"/v1/enrollments/{members[0]['id']}", {"status": "finished"}))
+        assert (
+            content(await tool(mcp_client, token, "list_waitlist_offers")) == []
+        )  # the only seat is the hidden student's
+        await ok(await tenant.patch(f"/v1/enrollments/{members[1]['id']}", {"status": "finished"}))
+        rows = content(await tool(mcp_client, token, "list_waitlist_offers"))
+        assert [(r["student_name"], r["position"], r["free_seats"]) for r in rows] == [("Seen Second", 2, 2)]
+        assert "2 ta o'rin" in rows[0]["offer_text"] and "phone" not in rows[0]
+        # another center's agent sees nothing of this queue
+        token_b = await _agent(tenant_b, ["read"])
+        assert content(await tool(mcp_client, token_b, "list_waitlist_offers")) == []
+        _ = hidden

@@ -7,6 +7,7 @@ import { funnelReport, STAGES } from "../domain/funnel";
 import { firstMonthCharge, monthLessonDates, trialStatus, type FirstMonthMode } from "../domain/lifecycle";
 import type { AttendanceRow, Charge, Enrollment, Group, Lead, Student } from "../domain/types";
 import { guard, withLock } from "./actions";
+import { assertSeat } from "./waitlist";
 import { pickId } from "./pick";
 import { append, read, today, updateById } from "./repo";
 import { ATTENDANCE, CHARGES, ENROLLMENTS, GROUPS, LEADS, STUDENTS } from "./schema";
@@ -174,6 +175,7 @@ export function enrollLeadInTrial(leadId?: string, groupId?: string): void {
     if (lead.studentId) throw new Error("Bu lead allaqachon sinovga yozilgan.");
     const g = read<Group>(GROUPS).find((x) => x.id === groupKey);
     if (!g) throw new Error(`Guruh topilmadi: ${groupKey}`);
+    assertSeat(g.id, ""); // a full group (or seats reserved for the waiting list) refuses a new trial: queue the student instead
     const students = read<StudentRow>(STUDENTS);
     if (lead.phone && students.some((s) => s.phone === lead.phone)) throw new Error("Bu telefon raqami bilan o'quvchi allaqachon bor. Ikkilanishni oldini olish uchun avval o'sha o'quvchini tekshiring.");
     const sid = nextId("S", students.map((s) => s.id));

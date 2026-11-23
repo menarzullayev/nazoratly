@@ -35,6 +35,7 @@ from nazoratly.rules.dashboard import (
     waiting_items,
 )
 from nazoratly.schemas import Dec2, Out
+from nazoratly.waitlist import load_offers
 
 router = APIRouter(prefix="/v1", tags=["dashboard"])
 
@@ -118,10 +119,23 @@ class WaitingRight(Out):
     days_left: int
 
 
+class WaitingSeat(Out):
+    """A seat that freed up: the next student in line for a group (the owner enrolls with one click)."""
+
+    entry_id: uuid.UUID
+    student_id: uuid.UUID
+    student_name: str
+    group_id: uuid.UUID
+    group_name: str
+    position: int
+    free_seats: int
+
+
 class WaitingBlock(Out):
     trials: list[WaitingTrial]
     packages: list[WaitingPackage]
     rights: list[WaitingRight]
+    seats: list[WaitingSeat]
     total: int
 
 
@@ -270,7 +284,9 @@ async def _finance_block(conn: Conn, today: date) -> FinanceBlock:
     return FinanceBlock.model_validate(result)
 
 
-async def _waiting_block(conn: Conn, today: date, window_days: int, cfg: SettingsOut) -> WaitingBlock:
+async def _waiting_block(
+    conn: Conn, org_id: int, today: date, window_days: int, cfg: SettingsOut
+) -> WaitingBlock:
     trial_rows = await fetch_all(
         conn,
         "SELECT e.id, e.public_id, e.student_id, e.group_id, e.started_on, "
@@ -358,7 +374,21 @@ async def _waiting_block(conn: Conn, today: date, window_days: int, cfg: Setting
         )
         for r in result["rights"]
     ]
-    return WaitingBlock(trials=trials, packages=packages, rights=rights, total=result["total"])
+    seats = [
+        WaitingSeat(
+            entry_id=o.entry_public_id,
+            student_id=o.student_public_id,
+            student_name=o.student_name,
+            group_id=o.group_public_id,
+            group_name=o.group_name,
+            position=o.position,
+            free_seats=o.free_seats,
+        )
+        for o in await load_offers(conn, org_id)
+    ]
+    return WaitingBlock(
+        trials=trials, packages=packages, rights=rights, seats=seats, total=result["total"] + len(seats)
+    )
 
 
 @router.get(
@@ -391,5 +421,5 @@ async def dashboard(
             movement=await _movement_block(conn, start, end, list_limit),
             finance=await _finance_block(conn, today),
             funnel=await load_funnel(conn, start, end),
-            waiting=await _waiting_block(conn, today, window_days, cfg),
+            waiting=await _waiting_block(conn, p.org_id, today, window_days, cfg),
         )

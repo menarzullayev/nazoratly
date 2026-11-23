@@ -12,9 +12,10 @@ from pydantic import Field, model_validator
 
 from nazoratly.db import Conn, execute, fetch_all, fetch_one, patch_row, resolve, resolve_opt
 from nazoratly.deps import DB, Paging, Principal, require
-from nazoratly.errors import Conflict, Forbidden, NotFound, Unprocessable
+from nazoratly.errors import Conflict, Forbidden, GroupFull, NotFound, Unprocessable
 from nazoratly.idempotency import IdempotentRoute
 from nazoratly.routers.students import like_pattern
+from nazoratly.rules import capacity as seats
 from nazoratly.schemas import (
     Dec2,
     LongText,
@@ -682,6 +683,10 @@ class EnrollmentIn(Model):
     status: Literal["trial", "active"] = "active"
     monthly_fee_override: Money | None = None
     discount_percent: Annotated[Decimal, Field(ge=0, le=100, max_digits=5, decimal_places=2)] = Decimal(0)
+    ignore_waitlist: bool = Field(
+        default=False,
+        description="owner override: take a free seat although waiting students are entitled to it",
+    )
 
 
 class EnrollmentPatch(Model):
@@ -717,6 +722,18 @@ _ENR_SQL = (
 )
 
 
+async def seat_counts(conn: Conn, group_id: int) -> tuple[int, int]:
+    """(occupied seats, waiting students) of a group. Trials count as seats; a frozen student holds none."""
+    row = await fetch_one(
+        conn,
+        "SELECT (SELECT count(*) FROM enrollments WHERE group_id = %s AND status IN ('trial', 'active')) AS occupied, "
+        "(SELECT count(*) FROM waitlist_entries WHERE group_id = %s AND status = 'waiting') AS waiting",
+        (group_id, group_id),
+    )
+    assert row is not None
+    return int(row["occupied"]), int(row["waiting"])
+
+
 async def insert_enrollment(
     conn: Conn,
     *,
@@ -727,23 +744,49 @@ async def insert_enrollment(
     status: Literal["trial", "active"] = "active",
     monthly_fee_override: Decimal | None = None,
     discount_percent: Decimal = Decimal(0),
+    ignore_waitlist: bool = False,
 ) -> int:
-    """Seat check (trials count) and insert; the group row is locked so that concurrent enrollments are serialised."""
+    """Seat check and insert; the group row is locked so that concurrent enrollments are serialised.
+
+    Rules (`rules/capacity.py`, golden-tested): trials count as seats; a student who waits for this group may take a free
+    seat only when first in line; anybody else needs a free seat that no waiting student is entitled to (override:
+    `ignore_waitlist`). A waiting entry of the enrolled student is closed with the new enrollment."""
     grp = await fetch_one(
         conn, "SELECT capacity, status FROM study_groups WHERE id = %s FOR UPDATE", (group_id,)
     )
     assert grp is not None
     if grp["status"] in ("finished", "cancelled"):
         raise Conflict(f"Group is {grp['status']}")
-    if grp["capacity"] is not None:
-        n = await fetch_one(
-            conn,
-            "SELECT count(*) AS n FROM enrollments WHERE group_id = %s AND status IN ('trial', 'active')",
-            (group_id,),
-        )
-        assert n is not None
-        if n["n"] >= grp["capacity"]:
-            raise Conflict("Group is full")
+    own = await fetch_one(
+        conn,
+        "SELECT id, joined_at FROM waitlist_entries WHERE group_id = %s AND student_id = %s AND status = 'waiting'",
+        (group_id, student_id),
+    )
+    capacity = grp["capacity"]
+    if capacity is not None:
+        occupied, waiting = await seat_counts(conn, group_id)
+        details = {"capacity": capacity, "occupied": occupied, "waiting": waiting}
+        if own is not None:
+            ahead = await fetch_one(
+                conn,
+                "SELECT count(*) AS n FROM waitlist_entries WHERE group_id = %s AND status = 'waiting' "
+                "AND (joined_at, id) <= (%s, %s)",
+                (group_id, own["joined_at"], own["id"]),
+            )
+            assert ahead is not None
+            if not seats.can_enroll_from_waitlist(
+                capacity=capacity, occupied=occupied, position=int(ahead["n"])
+            ):
+                raise GroupFull("No seat for this place in the waiting list yet", details=details)
+        elif not seats.direct_enroll_allowed(
+            capacity=capacity, occupied=occupied, waiting=waiting, ignore_waitlist=ignore_waitlist
+        ):
+            msg = (
+                "Group is full; add the student to its waiting list"
+                if occupied >= capacity
+                else "Free seats are reserved for the waiting list"
+            )
+            raise GroupFull(msg, details=details)
     row = await fetch_one(
         conn,
         "INSERT INTO enrollments (org_id, student_id, group_id, started_on, monthly_fee_override, discount_percent, status) "
@@ -751,6 +794,12 @@ async def insert_enrollment(
         (org_id, student_id, group_id, started_on, monthly_fee_override, discount_percent, status),
     )
     assert row is not None
+    if own is not None:
+        await execute(
+            conn,
+            "UPDATE waitlist_entries SET status = 'enrolled', resolved_at = now(), enrollment_id = %s WHERE id = %s",
+            (row["id"], own["id"]),
+        )
     return int(row["id"])
 
 
@@ -773,6 +822,7 @@ async def enroll(
             status=body.status,
             monthly_fee_override=body.monthly_fee_override,
             discount_percent=body.discount_percent,
+            ignore_waitlist=body.ignore_waitlist,
         )
         out = await fetch_one(conn, f"{_ENR_SQL} WHERE e.id = %s", (eid,))
     assert out is not None
@@ -837,7 +887,9 @@ async def patch_enrollment(
     async with db.tx(p.session()) as conn:
         eid = await resolve(conn, "enrollments", enrollment_id, what="enrollment")
         cur = await fetch_one(
-            conn, "SELECT status, started_on, ended_on FROM enrollments WHERE id = %s FOR UPDATE", (eid,)
+            conn,
+            "SELECT status, started_on, ended_on, group_id FROM enrollments WHERE id = %s FOR UPDATE",
+            (eid,),
         )
         assert cur is not None
         if (
@@ -850,6 +902,19 @@ async def patch_enrollment(
             raise Conflict("A trial is accepted or dropped through /accept and /drop")
         if changes.get("status") == "active" and cur["status"] == "finished":
             raise Conflict("A finished enrollment cannot be reopened; enroll the student again")
+        if changes.get("status") == "active" and cur["status"] == "frozen":
+            # a frozen student holds no seat: coming back needs a free one (the group row is locked like at enrollment)
+            grp = await fetch_one(
+                conn, "SELECT capacity FROM study_groups WHERE id = %s FOR UPDATE", (cur["group_id"],)
+            )
+            assert grp is not None
+            if grp["capacity"] is not None:
+                occupied, waiting = await seat_counts(conn, cur["group_id"])
+                if seats.free_seats(grp["capacity"], occupied) == 0:
+                    raise GroupFull(
+                        "Group is full; the frozen student cannot return yet",
+                        details={"capacity": grp["capacity"], "occupied": occupied, "waiting": waiting},
+                    )
         await patch_row(conn, "enrollments", eid, changes)
         out = await fetch_one(conn, f"{_ENR_SQL} WHERE e.id = %s", (eid,))
     assert out is not None

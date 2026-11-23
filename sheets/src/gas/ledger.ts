@@ -145,10 +145,12 @@ export function collectSources(): { sources: Source[]; memos: Map<string, string
     memos.set(sourceId(s.type, s.key), memo);
   };
   for (const p of read<Payment>(PAYMENTS)) {
+    if (p.demo === true) continue; // demo money never enters the books (the journal is immutable)
     if (!p.id || !isIsoDate(p.paidOn) || !(p.amount > 0)) continue; // hand-edited junk is ignored, never posted
     add({ type: "payment", key: p.id, date: p.paidOn, amount: tiyin(p.amount), voided: p.voided, method: paymentMethod(p.method) }, `To'lov ${p.id}: ${names.get(p.studentId) ?? p.studentId} (${p.method || "Naqd"})`);
   }
   for (const x of readIfPresent<Expense>(EXPENSES)) {
+    if (x.demo === true) continue;
     if (!x.id || !isIsoDate(x.date) || !(x.amount > 0)) continue;
     add({ type: "expense", key: x.id, date: x.date, amount: tiyin(x.amount), voided: x.voided, category: x.category, paidFrom: x.paidFrom || "cash", bill: Boolean(x.billId) }, `Xarajat ${x.id}: ${x.category}${x.note ? ` (${x.note})` : ""}`);
   }

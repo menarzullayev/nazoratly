@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>/*STYLE*/</style>
+</head>
+<body>
+<h1>QR davomat</h1>
+<label for="group">Guruh</label>
+<select id="group" aria-label="Guruh"></select>
+<label for="date">Sana</label>
+<input id="date" type="date" aria-label="Sana">
+<label for="manual" style="margin-top:12px">Skaner qurilmasi yoki qo'lda kiritish (kod + Enter)</label>
+<input id="manual" type="text" autocomplete="off" spellcheck="false" placeholder="NZQ1-..." aria-label="QR kod">
+<div class="row" style="margin-top:8px">
+  <button id="cam" type="button">Kamerani yoqish</button>
+  <button id="camoff" type="button" class="hidden">O'chirish</button>
+</div>
+<p id="camMsg" class="muted" role="status"></p>
+<video id="video" playsinline muted class="hidden" style="width:100%;border-radius:8px;background:#000"></video>
+<div id="msg" role="status" aria-live="polite"></div>
+<div id="count" class="muted">Belgilangan: 0</div>
+<ul id="log" style="list-style:none;padding:0;margin:8px 0 0"></ul>
+<script>/*JSQR*/</script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var marked = 0, busy = false, last = { code: "", at: 0 }, stream = null, timer = null, detector = null;
+  var canvas = document.createElement("canvas"), ctx = canvas.getContext("2d");
+  var TEXT = { marked: "keldi", already_present: "allaqachon belgilangan", not_in_group: "bu guruhda emas", unknown_code: "noma'lum kod (karta almashtirilgan bo'lishi mumkin)", bad_code: "bu nazoratly QR kodi emas", lesson_cancelled: "dars bekor qilingan" };
+  function run(name) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return new Promise(function (resolve, reject) {
+      google.script.run.withSuccessHandler(resolve).withFailureHandler(function (e) { reject(e); })[name].apply(google.script.run, args);
+    });
+  }
+  function banner(kind, text) {
+    var d = document.createElement("div"); d.className = "banner " + kind; d.textContent = text;
+    $("msg").replaceChildren(d);
+  }
+  function addLog(kind, text) {
+    var li = document.createElement("li"); li.className = "muted"; li.textContent = (kind === "ok" ? "✓ " : "✗ ") + text;
+    $("log").insertBefore(li, $("log").firstChild);
+  }
+  async function submit(code) {
+    code = (code || "").trim();
+    if (!code) return;
+    if (!$("group").value) { banner("warn", "Avval guruhni tanlang"); return; }
+    var now = Date.now();
+    if (code === last.code && now - last.at < 3000) return;
+    last = { code: code, at: now };
+    if (busy) return;
+    busy = true;
+    try {
+      var r = await run("scanQr", { code: code, groupId: $("group").value, date: $("date").value });
+      var name = r.studentName ? r.studentName + ": " : "";
+      if (r.result === "marked") { marked++; $("count").textContent = "Belgilangan: " + marked; banner("ok", name + "keldi"); addLog("ok", name + "keldi"); }
+      else { banner(r.result === "already_present" ? "warn" : "err", name + (TEXT[r.result] || r.result)); addLog("bad", name + (TEXT[r.result] || r.result)); }
+    } catch (e) { banner("err", (e && e.message) || "Xato"); }
+    finally { busy = false; }
+  }
+  async function startCamera() {
+    $("camMsg").textContent = "";
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { $("camMsg").textContent = "Bu brauzerda kamera mavjud emas. Skaner qurilmasi yoki qo'lda kiritishdan foydalaning."; return; }
+    try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false }); }
+    catch (e) { $("camMsg").textContent = "Google Sheets ichida kameraga ruxsat berilmadi (" + (e && e.name ? e.name : "xato") + "). Skaner qurilmasi, telefon skaneri yoki qo'lda kiritishdan foydalaning."; return; }
+    var v = $("video"); v.srcObject = stream; await v.play();
+    v.classList.remove("hidden"); $("cam").classList.add("hidden"); $("camoff").classList.remove("hidden");
+    if ("BarcodeDetector" in window) { try { detector = new window.BarcodeDetector({ formats: ["qr_code"] }); } catch (e) { detector = null; } }
+    timer = setInterval(tick, 200);
+  }
+  function stopCamera() {
+    if (timer) clearInterval(timer); timer = null;
+    if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); stream = null;
+    $("video").classList.add("hidden"); $("cam").classList.remove("hidden"); $("camoff").classList.add("hidden");
+  }
+  async function tick() {
+    var v = $("video"); if (!v.videoWidth || busy) return;
+    try {
+      if (detector) { var f = await detector.detect(v); if (f.length) submit(f[0].rawValue); return; }
+      var w = Math.min(640, v.videoWidth); canvas.width = w; canvas.height = Math.round(v.videoHeight * w / v.videoWidth);
+      ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+      var img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      var res = window.jsQR && window.jsQR(img.data, img.width, img.height, { inversionAttempts: "dontInvert" });
+      if (res && res.data) submit(res.data);
+    } catch (e) { /* skip an unreadable frame */ }
+  }
+  $("manual").addEventListener("keydown", function (ev) { if (ev.key === "Enter") { ev.preventDefault(); submit(this.value); this.value = ""; } });
+  $("cam").addEventListener("click", startCamera);
+  $("camoff").addEventListener("click", stopCamera);
+  window.addEventListener("pagehide", stopCamera);
+  Promise.all([run("getAttendanceGroups"), run("todayIso")]).then(function (a) {
+    a[0].forEach(function (g) { var o = document.createElement("option"); o.value = g.id; o.textContent = g.name; $("group").appendChild(o); });
+    $("date").value = a[1]; $("manual").focus();
+  }).catch(function (e) { banner("err", (e && e.message) || "Yuklab bo'lmadi"); });
+})();
+</script>
+</body>
+</html>

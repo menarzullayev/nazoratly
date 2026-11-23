@@ -732,6 +732,159 @@ BEGIN
 END $$;
 ROLLBACK;
 
+-- ---------------------------------------------------------------- 0016: waiting list, QR codes, demo mode
+BEGIN;
+DO $$
+DECLARE w1 BIGINT; g2 BIGINT; s5 BIGINT; s6 BIGINT; en BIGINT;
+BEGIN
+  -- waiting list: one waiting entry per student and group, resolution fields travel together
+  INSERT INTO study_groups (org_id, course_id, name, monthly_fee, start_date, status, capacity) VALUES (1,1,'Full group',100000,'2026-09-01','active',1) RETURNING id INTO g2;
+  INSERT INTO students (org_id, full_name) VALUES (1,'Queue One') RETURNING id INTO s5;
+  INSERT INTO students (org_id, full_name) VALUES (1,'Queue Two') RETURNING id INTO s6;
+  INSERT INTO waitlist_entries (org_id, group_id, student_id) VALUES (1,g2,s5) RETURNING id INTO w1;
+  PERFORM public.t_expect('23505', format($q$INSERT INTO waitlist_entries (org_id, group_id, student_id) VALUES (1,%s,%s)$q$, g2, s5));     -- already waiting
+  PERFORM public.t_expect('23514', format($q$UPDATE waitlist_entries SET status = 'removed' WHERE id = %s$q$, w1));                         -- resolved_at missing
+  PERFORM public.t_expect('23514', format($q$INSERT INTO waitlist_entries (org_id, group_id, student_id, status) VALUES (1,%s,%s,'bogus')$q$, g2, s6));
+  PERFORM public.t_expect('23514', format($q$INSERT INTO waitlist_entries (org_id, group_id, student_id, resolved_at) VALUES (1,%s,%s,now())$q$, g2, s6));  -- waiting but resolved
+  PERFORM public.t_expect('23503', format($q$INSERT INTO waitlist_entries (org_id, group_id, student_id) VALUES (2,%s,%s)$q$, g2, s6));       -- another center's group
+  UPDATE waitlist_entries SET status = 'removed', resolved_at = now() WHERE id = w1;
+  INSERT INTO waitlist_entries (org_id, group_id, student_id) VALUES (1,g2,s5);                                                             -- may queue again after being removed
+  IF (SELECT count(*) FROM audit_log WHERE entity_type = 'waitlist_entries') < 3 THEN RAISE EXCEPTION 'waiting-list changes are audited'; END IF;
+
+  -- QR codes: format, pairing, uniqueness
+  PERFORM public.t_expect('23514', format($q$UPDATE students SET qr_code = 'NZQ1-SHORT', qr_issued_at = now() WHERE id = %s$q$, s5));
+  PERFORM public.t_expect('23514', format($q$UPDATE students SET qr_code = 'NZQ1-ABCDEFGHJKLMNPQRSTU0', qr_issued_at = now() WHERE id = %s$q$, s5));   -- 0 is not in the alphabet
+  PERFORM public.t_expect('23514', format($q$UPDATE students SET qr_code = 'NZQ1-ABCDEFGHJKLMNPQRSTUV' WHERE id = %s$q$, s5));                          -- no issue time
+  UPDATE students SET qr_code = 'NZQ1-ABCDEFGHJKLMNPQRSTUV', qr_issued_at = now() WHERE id = s5;
+  PERFORM public.t_expect('23505', format($q$UPDATE students SET qr_code = 'NZQ1-ABCDEFGHJKLMNPQRSTUV', qr_issued_at = now() WHERE id = %s$q$, s6));    -- codes are unique
+  UPDATE students SET qr_code = NULL, qr_issued_at = NULL WHERE id = s5;                                                                                -- rotation clears first
+  PERFORM public.t_expect('23514', $q$INSERT INTO attendance (org_id, lesson_id, student_id, status, marked_via) VALUES (1,2,1,'present','telepathy')$q$);
+
+  -- demo flag cannot be flipped on existing rows
+  PERFORM public.t_expect('23514', format($q$UPDATE students SET is_demo = true WHERE id = %s$q$, s5));
+  PERFORM public.t_expect('23514', $q$UPDATE payments SET is_demo = true WHERE id = 1$q$);
+  PERFORM public.t_expect('23514', format($q$UPDATE waitlist_entries SET is_demo = true WHERE group_id = %s$q$, g2));
+END $$;
+ROLLBACK;
+
+-- the agent's waiting-list view: consent filtered, positions count every waiting student
+BEGIN;
+DO $$
+DECLARE g2 BIGINT; s5 BIGINT;
+BEGIN
+  INSERT INTO study_groups (org_id, course_id, name, monthly_fee, start_date, status, capacity) VALUES (1,1,'Queue group',100000,'2026-09-01','active',2) RETURNING id INTO g2;
+  INSERT INTO students (org_id, full_name) VALUES (1,'Waits First No Consent') RETURNING id INTO s5;
+  INSERT INTO waitlist_entries (org_id, group_id, student_id, joined_at) VALUES (1,g2,s5,'2026-11-01 10:00+00'), (1,g2,1,'2026-11-01 11:00+00'), (1,g2,4,'2026-11-01 12:00+00');
+  PERFORM set_config('app.org_id', '1', true);
+  SET LOCAL ROLE nazoratly_agent;
+  IF (SELECT count(*) FROM agent_v_waitlist) <> 1 THEN RAISE EXCEPTION 'only the student with AI consent is visible: %', (SELECT count(*) FROM agent_v_waitlist); END IF;
+  IF (SELECT position FROM agent_v_waitlist) <> 2 THEN RAISE EXCEPTION 'position counts the hidden student ahead in line'; END IF;
+  IF (SELECT (capacity, occupied)::text FROM agent_v_waitlist) <> '(2,0)' THEN RAISE EXCEPTION 'capacity/occupied are wrong: %', (SELECT (capacity, occupied)::text FROM agent_v_waitlist); END IF;
+  PERFORM public.t_expect('42501', $q$SELECT * FROM waitlist_entries$q$);
+  RESET ROLE;
+  PERFORM set_config('app.org_id', '2', true);
+  SET LOCAL ROLE nazoratly_agent;
+  IF (SELECT count(*) FROM agent_v_waitlist) <> 0 THEN RAISE EXCEPTION 'another center sees no queue'; END IF;
+  RESET ROLE;
+END $$;
+ROLLBACK;
+
+-- the application role: waiting list is tenant isolated and rows cannot be deleted by hand
+BEGIN;
+INSERT INTO waitlist_entries (org_id, group_id, student_id) VALUES (1,1,4);
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '2';
+DO $$
+BEGIN
+  ASSERT (SELECT count(*) FROM waitlist_entries) = 0, 'org 2 does not see the queue of org 1';
+  PERFORM public.t_expect('42501', $q$INSERT INTO waitlist_entries (org_id, group_id, student_id) VALUES (1,1,2)$q$);
+  PERFORM public.t_expect('42501', $q$DELETE FROM waitlist_entries$q$);
+END $$;
+ROLLBACK;
+
+-- demo mode: demo_clear() deletes demo rows of the caller's center and refuses when a real row references them
+BEGIN;
+DO $$
+DECLARE dc BIGINT; dt BIGINT; dg BIGINT; ds BIGINT; de BIGINT; dl BIGINT; dch BIGINT; dp BIGINT; dx BIGINT; dld BIGINT; res jsonb; before_students bigint; before_payments bigint;
+BEGIN
+  SELECT count(*) INTO before_students FROM students WHERE org_id = 1 AND NOT is_demo;
+  SELECT count(*) INTO before_payments FROM payments WHERE org_id = 1 AND NOT is_demo;
+  INSERT INTO courses (org_id, name, is_demo) VALUES (1,'Demo course',true) RETURNING id INTO dc;
+  INSERT INTO teachers (org_id, full_name, is_demo) VALUES (1,'Demo teacher',true) RETURNING id INTO dt;
+  INSERT INTO study_groups (org_id, course_id, teacher_id, name, monthly_fee, start_date, status, is_demo) VALUES (1,dc,dt,'Demo group',100000,'2026-09-01','active',true) RETURNING id INTO dg;
+  INSERT INTO group_schedules (org_id, group_id, weekday, start_time, end_time, is_demo) VALUES (1,dg,1,'10:00','11:00',true);
+  INSERT INTO students (org_id, full_name, is_demo) VALUES (1,'Demo student',true) RETURNING id INTO ds;
+  INSERT INTO enrollments (org_id, student_id, group_id, started_on, is_demo) VALUES (1,ds,dg,'2026-09-01',true) RETURNING id INTO de;
+  INSERT INTO lessons (org_id, group_id, teacher_id, lesson_date, start_time, end_time, status, is_demo) VALUES (1,dg,dt,'2026-11-02','10:00','11:00','held',true) RETURNING id INTO dl;
+  INSERT INTO attendance (org_id, lesson_id, student_id, status, is_demo) VALUES (1,dl,ds,'present',true);
+  INSERT INTO charges (org_id, student_id, enrollment_id, kind, period_month, amount, due_date, is_demo) VALUES (1,ds,de,'tuition','2026-11-01',100000,'2026-11-10',true) RETURNING id INTO dch;
+  INSERT INTO payments (org_id, student_id, amount, method, is_demo) VALUES (1,ds,60000,'cash',true) RETURNING id INTO dp;
+  INSERT INTO payment_allocations (org_id, payment_id, charge_id, amount, is_demo) VALUES (1,dp,dch,60000,true);
+  INSERT INTO expenses (org_id, category, amount, spent_at, is_demo) VALUES (1,'rent',500000,'2026-11-03',true) RETURNING id INTO dx;
+  INSERT INTO lead_sources (org_id, name, is_demo) VALUES (1,'Demo source',true);
+  INSERT INTO leads (org_id, full_name, source_id, is_demo) VALUES (1,'Demo lead',(SELECT id FROM lead_sources WHERE name = 'Demo source'),true) RETURNING id INTO dld;
+  INSERT INTO lead_interactions (org_id, lead_id, happened_on, kind, summary, is_demo) VALUES (1,dld,'2026-11-04','call','called',true);
+  INSERT INTO waitlist_entries (org_id, group_id, student_id, is_demo) VALUES (1,dg,1,true);
+  -- another center's demo data must survive org 1's clear
+  INSERT INTO students (org_id, full_name, is_demo) VALUES (2,'Beta demo student',true);
+
+  SET LOCAL ROLE nazoratly_app;
+  PERFORM set_config('app.org_id', '', true);
+  PERFORM public.t_expect('42501', $q$SELECT demo_clear()$q$);                                  -- needs a center in the session
+  PERFORM set_config('app.org_id', '1', true);
+
+  -- 1. a REAL attendance mark on a demo lesson would be deleted by the cascade: refused
+  RESET ROLE;
+  DELETE FROM attendance WHERE lesson_id = dl AND student_id = ds;
+  INSERT INTO attendance (org_id, lesson_id, student_id, status) VALUES (1,dl,ds,'present');      -- not flagged: made by a person
+  SET LOCAL ROLE nazoratly_app;
+  PERFORM public.t_expect('DM001', $q$SELECT demo_clear()$q$);
+  RESET ROLE;
+  DELETE FROM attendance WHERE lesson_id = dl AND student_id = ds;
+  INSERT INTO attendance (org_id, lesson_id, student_id, status, is_demo) VALUES (1,dl,ds,'present',true);
+  SET LOCAL ROLE nazoratly_app;
+
+  -- 2. a REAL student enrolled in a demo group: refused through the foreign key
+  RESET ROLE; INSERT INTO enrollments (org_id, student_id, group_id, started_on) VALUES (1,2,dg,'2026-09-01'); SET LOCAL ROLE nazoratly_app;
+  PERFORM public.t_expect('DM001', $q$SELECT demo_clear()$q$);
+  RESET ROLE; DELETE FROM enrollments WHERE student_id = 2 AND group_id = dg; SET LOCAL ROLE nazoratly_app;
+
+  -- 3. a REAL payment allocated to a demo charge: refused
+  RESET ROLE; INSERT INTO payments (org_id, student_id, amount, method) VALUES (1,ds,10000,'cash') RETURNING id INTO dp;
+  INSERT INTO payment_allocations (org_id, payment_id, charge_id, amount) VALUES (1,dp,dch,10000); SET LOCAL ROLE nazoratly_app;
+  PERFORM public.t_expect('DM001', $q$SELECT demo_clear()$q$);
+  RESET ROLE; DELETE FROM payment_allocations WHERE payment_id = dp; DELETE FROM payments WHERE id = dp; SET LOCAL ROLE nazoratly_app;
+
+  -- 4. a guardian linked to a demo student: refused (the link would be cascaded away)
+  RESET ROLE; INSERT INTO student_guardians (org_id, student_id, guardian_id, relation) VALUES (1,ds,1,'mother'); SET LOCAL ROLE nazoratly_app;
+  PERFORM public.t_expect('DM001', $q$SELECT demo_clear()$q$);
+  RESET ROLE; DELETE FROM student_guardians WHERE student_id = ds; SET LOCAL ROLE nazoratly_app;
+
+  -- nothing was deleted by the refused attempts (each ran inside the function and rolled back with it)
+  IF (SELECT count(*) FROM students WHERE is_demo) <> 1 THEN RAISE EXCEPTION 'a refused clear must delete nothing: % demo students left', (SELECT count(*) FROM students WHERE is_demo); END IF;
+
+  -- 5. no blockers: only demo rows of center 1 go, the real ones and center 2's demo row stay
+  res := demo_clear();
+  RESET ROLE;
+  IF (res->>'students')::int <> 1 OR (res->>'payments')::int <> 1 OR (res->>'attendance')::int <> 1 OR (res->>'charges')::int <> 1
+     OR (res->>'study_groups')::int <> 1 OR (res->>'leads')::int <> 1 OR (res->>'waitlist_entries')::int <> 1 OR (res->>'expenses')::int <> 1 THEN
+    RAISE EXCEPTION 'unexpected clear result: %', res;
+  END IF;
+  IF EXISTS (SELECT 1 FROM students WHERE org_id = 1 AND is_demo) OR EXISTS (SELECT 1 FROM payments WHERE org_id = 1 AND is_demo)
+     OR EXISTS (SELECT 1 FROM study_groups WHERE org_id = 1 AND is_demo) OR EXISTS (SELECT 1 FROM courses WHERE org_id = 1 AND is_demo) THEN
+    RAISE EXCEPTION 'demo rows of center 1 must be gone';
+  END IF;
+  IF (SELECT count(*) FROM students WHERE org_id = 1 AND NOT is_demo) <> before_students OR (SELECT count(*) FROM payments WHERE org_id = 1 AND NOT is_demo) <> before_payments THEN
+    RAISE EXCEPTION 'real rows must not be touched';
+  END IF;
+  IF (SELECT count(*) FROM students WHERE org_id = 2 AND is_demo) <> 1 THEN RAISE EXCEPTION 'another center demo data must survive'; END IF;
+  IF (SELECT count(*) FROM audit_log WHERE action = 'delete' AND entity_type = 'students') < 1 THEN RAISE EXCEPTION 'demo deletions are audited'; END IF;
+  -- the application role has no DELETE of its own on these tables
+  SET LOCAL ROLE nazoratly_app;
+  PERFORM public.t_expect('42501', $q$DELETE FROM students WHERE is_demo$q$);
+  RESET ROLE;
+END $$;
+ROLLBACK;
+
 -- clean up so the down-migration test starts from the original state (the journal is immutable: only the
 -- superuser of the test database may switch its guards off)
 DROP FUNCTION public.t_post(bigint, date, text, text, text, jsonb, text, int, bigint);

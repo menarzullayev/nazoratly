@@ -73,7 +73,7 @@ afterEach(() => vi.useRealTimers());
 
 describe("expenses sheet", () => {
   it("setup creates Xarajatlar with its header", () => {
-    expect(h.rows(EXPENSES.sheet)[0]).toEqual(["ID", "Sana", "Turi", "Summa", "Izoh", "Bekor qilingan", "Qayerdan to'langan", "Ta'minotchi hisobi"]);
+    expect(h.rows(EXPENSES.sheet)[0]).toEqual(["ID", "Sana", "Turi", "Summa", "Izoh", "Bekor qilingan", "Qayerdan to'langan", "Ta'minotchi hisobi", "Demo"]);
   });
 });
 

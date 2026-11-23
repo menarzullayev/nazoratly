@@ -416,12 +416,17 @@ describe("reports", () => {
   });
 });
 
-describe("the demo reset never touches an immutable journal", () => {
-  it("is refused once the journal has entries", () => {
+describe("demo data never touches the immutable journal", () => {
+  it("a reset with a journal full of real entries leaves the journal alone", () => {
     pay("P0001", 100, "2026-11-02");
     ledger.syncLedger();
-    expect(() => resetSampleData()).toThrow("Jurnalda yozuvlar bor");
     expect(journal()).toHaveLength(2);
+    loadSampleData();
+    ledger.syncLedger(); // demo payments and expenses are not posted
+    expect(journal()).toHaveLength(2);
+    expect(() => resetSampleData()).not.toThrow();
+    expect(journal()).toHaveLength(2);
+    expect(ledger.pendingList().filter((p) => p.sourceKey.startsWith("P0"))).toEqual([]);
   });
 
   it("works on an empty journal and keeps the chart", () => {
@@ -430,6 +435,7 @@ describe("the demo reset never touches an immutable journal", () => {
     loadSampleData();
     resetSampleData();
     expect(read<ledger.ChartRow>(CHART_ACCOUNTS)).toHaveLength(15);
+    expect(journal()).toHaveLength(0);
   });
 });
 

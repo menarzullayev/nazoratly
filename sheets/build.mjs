@@ -17,10 +17,16 @@ await build({
 });
 
 const css = readFileSync("src/ui/style.css", "utf8");
-for (const f of ["Attendance", "Payment", "Drafts"]) {
+const jsqr = readFileSync("node_modules/jsqr/dist/jsQR.js", "utf8"); // QR decoder for the camera (Apache-2.0, inlined: no network)
+for (const f of ["Attendance", "Payment", "Drafts", "QRScan", "Import"]) {
   const html = readFileSync(`src/ui/${f}.html`, "utf8");
   if (!html.includes("/*STYLE*/")) throw new Error(`${f}.html has no style placeholder`);
-  writeFileSync(`dist/${f}.html`, html.replace("/*STYLE*/", css));
+  let out = html.replace("/*STYLE*/", () => css);
+  if (html.includes("/*JSQR*/")) {
+    if (jsqr.toLowerCase().includes("</script")) throw new Error("jsQR contains a closing script tag"); // would end the inline script early
+    out = out.replace("/*JSQR*/", () => jsqr);
+  }
+  writeFileSync(`dist/${f}.html`, out);
 }
 copyFileSync("appsscript.json", "dist/appsscript.json");
 

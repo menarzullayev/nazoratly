@@ -206,7 +206,7 @@ export function sendApprovedReminders(): void {
 // ------------------------------------------------------------------ attendance sidebar
 export interface RosterRow { studentId: string; fullName: string; status: AttendanceRow["status"] | ""; minutesLate: number }
 
-function rosterFor(groupId: string, date: string): { studentId: string; fullName: string }[] {
+export function rosterFor(groupId: string, date: string): { studentId: string; fullName: string }[] {
   const students = new Map(read<StudentRow>(STUDENTS).map((s) => [s.id, s]));
   return read<Enrollment>(ENROLLMENTS)
     .filter((e) => e.groupId === groupId && e.startedOn <= date && (e.endedOn === "" || e.endedOn >= date) && e.status !== "frozen")

@@ -1,7 +1,11 @@
 /** Apps Script entry point: every function Google calls (menu, web app, sidebars) is exposed on globalThis. */
 import * as actions from "./gas/actions";
 import * as admission from "./gas/admission";
+import * as demo from "./gas/demo";
 import * as documents from "./gas/documents";
+import * as importer from "./gas/importer";
+import * as qr from "./gas/qr";
+import * as waitlist from "./gas/waitlist";
 import * as ledger from "./gas/ledger";
 import * as makeup from "./gas/makeup";
 import * as packages from "./gas/packages";
@@ -55,6 +59,25 @@ g.onOpen = (): void => {
         .addItem("Muddatni uzaytirish", "menuPackageExtend")
         .addItem("To'lov eslatma loyihalarini yaratish", "menuPackageDrafts")
         .addItem("Abonementlarni tekshirish", "menuPackageCheck"),
+    )
+    .addSubMenu(
+      SpreadsheetApp.getUi()
+        .createMenu("Navbat (guruh sig'imi)")
+        .addItem("Navbatga yozish", "menuWaitAdd")
+        .addItem("Navbat va bo'sh o'rinlar", "menuWaitView")
+        .addItem("Navbatdagini guruhga yozish", "menuWaitEnroll")
+        .addItem("Navbatdan olib tashlash", "menuWaitRemove")
+        .addItem("Bo'sh o'rin xabarlarini yaratish", "menuWaitDrafts")
+        .addItem("Sig'imni tekshirish", "menuWaitCheck"),
+    )
+    .addSubMenu(
+      SpreadsheetApp.getUi()
+        .createMenu("QR davomat")
+        .addItem("QR skaner (davomat)", "openQrScan")
+        .addItem("Guruh uchun QR kartalar (PDF)", "menuQrCards")
+        .addItem("QR kartani vasiyga yuborish", "menuQrSend")
+        .addItem("QR kartani almashtirish (yo'qolgan)", "menuQrRotate")
+        .addItem("Hamma o'quvchiga QR kod berish", "menuQrIssue"),
     )
     .addSubMenu(
       SpreadsheetApp.getUi()
@@ -119,12 +142,16 @@ g.onOpen = (): void => {
     .addItem("Boshlang'ich sozlash", "menuSetup")
     .addItem("Namuna ma'lumot yuklash", "menuSample")
     .addItem("Namuna ma'lumotni yangilash", "menuSampleReset")
+    .addItem("Demo ma'lumotni tozalash", "menuDemoClear")
+    .addItem("Import (o'quvchi, guruh, lead)", "openImport")
     .addItem("Yordam", "menuHelp")
     .addToUi();
 };
 
 g.openAttendance = (): void => SpreadsheetApp.getUi().showSidebar(html("Attendance", "Davomat", 380, 600));
 g.openDrafts = (): void => SpreadsheetApp.getUi().showSidebar(html("Drafts", "Eslatmalar", 420, 600));
+g.openQrScan = (): void => SpreadsheetApp.getUi().showSidebar(html("QRScan", "QR davomat", 400, 640));
+g.openImport = importer.menu.open;
 g.openPayment = (): void => SpreadsheetApp.getUi().showModalDialog(html("Payment", "To'lov qabul qilish", 460, 560), "To'lov qabul qilish");
 
 g.menuGenerateCharges = (): void => actions.guard("Oylik hisoblar", actions.generateMonthlyCharges);
@@ -139,6 +166,17 @@ g.menuAcceptTrial = admission.menu.accept;
 g.menuDropTrial = admission.menu.drop;
 g.menuLeadToTrial = admission.menu.leadToTrial;
 g.menuFunnel = admission.menu.funnel;
+g.menuWaitAdd = waitlist.menu.add;
+g.menuWaitView = waitlist.menu.view;
+g.menuWaitEnroll = waitlist.menu.enroll;
+g.menuWaitRemove = waitlist.menu.remove;
+g.menuWaitDrafts = waitlist.menu.drafts;
+g.menuWaitCheck = waitlist.menu.check;
+g.menuQrCards = qr.menu.cards;
+g.menuQrSend = qr.menu.send;
+g.menuQrRotate = qr.menu.rotate;
+g.menuQrIssue = qr.menu.issue;
+g.menuDemoClear = demo.menu.clear;
 g.menuPlanCreate = plans.menu.create;
 g.menuPlanView = plans.menu.view;
 g.menuPlanRemove = plans.menu.remove;
@@ -220,6 +258,9 @@ g.getAttendanceGroups = actions.getAttendanceGroups;
 g.getRoster = actions.getRoster;
 g.saveAttendance = actions.saveAttendance;
 g.searchStudents = actions.searchStudents;
+g.scanQr = qr.scanQr;
+g.importPreview = importer.importPreview;
+g.importCommit = importer.importCommit;
 g.getBalance = actions.getBalance;
 g.recordPayment = actions.recordPayment;
 g.getPendingDrafts = actions.getPendingDrafts;

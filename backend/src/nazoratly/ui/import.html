@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Import | nazoratly</title>
+  <link rel="stylesheet" href="/ui/static/ui.css">
+</head>
+<body>
+  <header class="top">
+    <strong>nazoratly: import</strong>
+    <span class="row"><span id="who" class="muted"></span><button id="signout" class="secondary" type="button" hidden>Chiqish</button></span>
+  </header>
+  <main>
+    <section id="login" class="card"></section>
+    <div id="app" hidden>
+      <section class="card stack">
+        <h2>1. Fayl</h2>
+        <div class="row">
+          <div><label for="entity">Nimani import qilamiz</label>
+            <select id="entity">
+              <option value="students">O'quvchilar</option>
+              <option value="groups">Guruhlar</option>
+              <option value="leads">Leadlar (qiziquvchilar)</option>
+            </select></div>
+          <div><label for="file">CSV yoki TSV fayl</label><input id="file" type="file" accept=".csv,.tsv,.txt,text/csv,text/plain"></div>
+        </div>
+        <div><label for="text">...yoki jadvalni shu yerga qo'ying (birinchi qator: ustun nomlari)</label><textarea id="text" spellcheck="false"></textarea></div>
+        <div class="row">
+          <label class="row"><input id="header" type="checkbox" checked> Birinchi qator ustun nomlari</label>
+          <button id="check" type="button">Tekshirish</button>
+        </div>
+        <p id="msg" class="err" role="alert"></p>
+        <p id="hint" class="muted"></p>
+      </section>
+      <section id="step2" class="card stack" hidden>
+        <h2>2. Ustunlar</h2>
+        <p class="muted">Ustunlar sarlavhasi bo'yicha avtomatik topildi. Noto'g'ri bo'lsa, o'zgartiring.</p>
+        <div id="mapping" class="row"></div>
+      </section>
+      <section id="step3" class="card stack" hidden>
+        <h2>3. Natija</h2>
+        <div id="stats" class="stats"></div>
+        <div class="row"><label class="row"><input id="only-problems" type="checkbox"> Faqat muammoli qatorlar</label></div>
+        <div class="scroll"><table><thead><tr><th>Qator</th><th>Holat</th><th>Ma'lumot</th><th>Izoh</th></tr></thead><tbody id="rows"></tbody></table></div>
+        <p id="truncated" class="muted" hidden></p>
+      </section>
+      <section id="step4" class="card stack" hidden>
+        <h2>4. Yozish</h2>
+        <div class="row">
+          <div><label for="on-error">Xatoli qatorlar</label>
+            <select id="on-error"><option value="skip">O'tkazib yuborilsin, qolganlari yozilsin</option><option value="abort">Birortasi xato bo'lsa, hech narsa yozilmasin</option></select></div>
+          <div><label for="dups">Takroriy qatorlar</label>
+            <select id="dups"><option value="skip">O'tkazib yuborilsin</option><option value="create">Baribir yaratilsin</option></select></div>
+        </div>
+        <div class="row"><button id="commit" type="button">Yozish</button></div>
+        <p id="done" role="status"></p>
+      </section>
+    </div>
+  </main>
+  <script src="/ui/static/common.js"></script>
+  <script src="/ui/static/import.js"></script>
+</body>
+</html>

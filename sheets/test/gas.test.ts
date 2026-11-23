@@ -46,10 +46,12 @@ describe("workbook setup", () => {
     expect(h.rows("O'quvchilar")[0]).toContain("Telegram chat ID");
   });
 
-  it("loads demo data once and refuses to mix it into real data", () => {
+  it("loads demo data once, every row flagged, and refuses to load it twice", () => {
     expect(loadSampleData()).toContain("8 o'quvchi");
-    expect(read<StudentRow>(STUDENTS)).toHaveLength(8);
-    expect(() => loadSampleData()).toThrow(/bo'sh emas/);
+    const students = read<StudentRow & { demo?: boolean }>(STUDENTS);
+    expect(students).toHaveLength(11); // 8 enrolled + 3 waiting for a seat
+    expect(students.every((s) => s.demo === true)).toBe(true);
+    expect(() => loadSampleData()).toThrow(/allaqachon yuklangan/);
   });
 
   it("refreshes demo data to today, drops stale rows, keeps settings and Telegram links", () => {
@@ -61,7 +63,7 @@ describe("workbook setup", () => {
     expect(msg).toContain("8 o'quvchi");
     expect(msg).toContain("1 ta o'quvchi");
     const students = read<StudentRow>(STUDENTS);
-    expect(students).toHaveLength(8);
+    expect(students).toHaveLength(11);
     expect(students.find((s) => s.id === "S0001")!.fullName).toBe("Aziz Rahimov");
     const kept = students.find((s) => s.id === "S0005")!;
     expect(kept.guardianChatId).toBe("777");
