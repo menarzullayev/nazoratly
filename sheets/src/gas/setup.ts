@@ -36,7 +36,7 @@ function dropdown(values: string[]): GoogleAppsScript.Spreadsheet.DataValidation
 }
 
 function validationFor(col: ColDef): GoogleAppsScript.Spreadsheet.DataValidation | null {
-  if (col.kind === "enum") return dropdown(Object.values(col.labels ?? {}));
+  if (col.kind === "enum") return dropdown(Object.values(col.labels ?? {}).filter((l) => l !== ""));
   if (col.kind === "bool") return dropdown(["Ha", "Yo'q"]);
   if (col.options) return SpreadsheetApp.newDataValidation().requireValueInList(col.options, true).setAllowInvalid(true).build();
   if (col.kind === "date") {

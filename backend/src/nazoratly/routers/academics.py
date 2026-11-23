@@ -553,7 +553,7 @@ async def patch_group(
         if changes.get("capacity") is not None:
             cur = await fetch_one(
                 conn,
-                "SELECT count(*) AS n FROM enrollments WHERE group_id = %s AND status = 'active'",
+                "SELECT count(*) AS n FROM enrollments WHERE group_id = %s AND status IN ('trial', 'active')",
                 (gid,),
             )
             assert cur is not None
@@ -607,11 +607,13 @@ async def put_schedule(
 
 # ---- enrollments ---------------------------------------------------------------------------------------------
 EnrollStatus = Literal["active", "frozen", "finished"]
+EnrollStatusFilter = Literal["trial", "active", "frozen", "finished"]
 
 
 class EnrollmentIn(Model):
     student_id: uuid.UUID
     started_on: date
+    status: Literal["trial", "active"] = "active"
     monthly_fee_override: Money | None = None
     discount_percent: Annotated[Decimal, Field(ge=0, le=100, max_digits=5, decimal_places=2)] = Decimal(0)
 
@@ -635,16 +637,55 @@ class EnrollmentOut(Out):
     monthly_fee_override: Dec2 | None
     discount_percent: Dec2
     effective_monthly_fee: Dec2
+    accepted_on: date | None
+    first_month_mode: str | None
     created_at: datetime
 
 
 _ENR_SQL = (
     "SELECT e.public_id AS id, s.public_id AS student_id, s.full_name AS student_name, g.public_id AS group_id, g.name AS group_name,"
-    " e.started_on, e.ended_on, e.status, e.monthly_fee_override, e.discount_percent, e.created_at,"
+    " e.started_on, e.ended_on, e.status, e.monthly_fee_override, e.discount_percent, e.created_at, e.accepted_on, e.first_month_mode,"
     " round(COALESCE(e.monthly_fee_override, g.monthly_fee) * (1 - e.discount_percent / 100), 2) AS effective_monthly_fee "
     "FROM enrollments e JOIN students s ON s.org_id = e.org_id AND s.id = e.student_id "
     "JOIN study_groups g ON g.org_id = e.org_id AND g.id = e.group_id"
 )
+
+
+async def insert_enrollment(
+    conn: Conn,
+    *,
+    org_id: int,
+    student_id: int,
+    group_id: int,
+    started_on: date,
+    status: Literal["trial", "active"] = "active",
+    monthly_fee_override: Decimal | None = None,
+    discount_percent: Decimal = Decimal(0),
+) -> int:
+    """Seat check (trials count) and insert; the group row is locked so that concurrent enrollments are serialised."""
+    grp = await fetch_one(
+        conn, "SELECT capacity, status FROM study_groups WHERE id = %s FOR UPDATE", (group_id,)
+    )
+    assert grp is not None
+    if grp["status"] in ("finished", "cancelled"):
+        raise Conflict(f"Group is {grp['status']}")
+    if grp["capacity"] is not None:
+        n = await fetch_one(
+            conn,
+            "SELECT count(*) AS n FROM enrollments WHERE group_id = %s AND status IN ('trial', 'active')",
+            (group_id,),
+        )
+        assert n is not None
+        if n["n"] >= grp["capacity"]:
+            raise Conflict("Group is full")
+    row = await fetch_one(
+        conn,
+        "INSERT INTO enrollments (org_id, student_id, group_id, started_on, monthly_fee_override, discount_percent, status) "
+        "VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id",
+        (org_id, student_id, group_id, started_on, monthly_fee_override, discount_percent, status),
+    )
+    assert row is not None
+    return int(row["id"])
 
 
 @router.post("/groups/{group_id}/enrollments", response_model=EnrollmentOut, status_code=201)
@@ -657,29 +698,17 @@ async def enroll(
     async with db.tx(p.session()) as conn:
         gid = await resolve(conn, "study_groups", group_id, what="group")
         sid = await resolve(conn, "students", body.student_id, what="student")
-        grp = await fetch_one(
-            conn, "SELECT capacity, status FROM study_groups WHERE id = %s FOR UPDATE", (gid,)
-        )  # serialises seat checks
-        assert grp is not None
-        if grp["status"] in ("finished", "cancelled"):
-            raise Conflict(f"Group is {grp['status']}")
-        if grp["capacity"] is not None:
-            n = await fetch_one(
-                conn,
-                "SELECT count(*) AS n FROM enrollments WHERE group_id = %s AND status = 'active'",
-                (gid,),
-            )
-            assert n is not None
-            if n["n"] >= grp["capacity"]:
-                raise Conflict("Group is full")
-        row = await fetch_one(
+        eid = await insert_enrollment(
             conn,
-            "INSERT INTO enrollments (org_id, student_id, group_id, started_on, monthly_fee_override, discount_percent) "
-            "VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
-            (p.org_id, sid, gid, body.started_on, body.monthly_fee_override, body.discount_percent),
+            org_id=p.org_id,
+            student_id=sid,
+            group_id=gid,
+            started_on=body.started_on,
+            status=body.status,
+            monthly_fee_override=body.monthly_fee_override,
+            discount_percent=body.discount_percent,
         )
-        assert row is not None
-        out = await fetch_one(conn, f"{_ENR_SQL} WHERE e.id = %s", (row["id"],))
+        out = await fetch_one(conn, f"{_ENR_SQL} WHERE e.id = %s", (eid,))
     assert out is not None
     return EnrollmentOut.model_validate(out)
 
@@ -692,7 +721,7 @@ async def group_members(
     p: Annotated[Principal, Depends(require("academics:read"))],
     db: DB,
     pg: Paging,
-    status: EnrollStatus | None = "active",
+    status: EnrollStatusFilter | None = "active",
 ) -> Page[EnrollmentOut]:
     async with db.tx(p.session()) as conn:
         gid = await resolve(conn, "study_groups", group_id, what="group")
@@ -751,6 +780,8 @@ async def patch_enrollment(
             and cur["ended_on"] is None
         ):
             changes["ended_on"] = date.today()
+        if cur["status"] == "trial" and changes.get("status") is not None:
+            raise Conflict("A trial is accepted or dropped through /accept and /drop")
         if changes.get("status") == "active" and cur["status"] == "finished":
             raise Conflict("A finished enrollment cannot be reopened; enroll the student again")
         await patch_row(conn, "enrollments", eid, changes)

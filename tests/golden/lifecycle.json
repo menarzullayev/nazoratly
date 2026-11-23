@@ -1,0 +1,23 @@
+{
+  "trial_status": [
+    { "name": "no lesson yet, day 3 of 7", "in": { "started_on": "2026-11-10", "today": "2026-11-13", "lessons_attended": 0, "free_lessons": 1, "free_days": 7 }, "out": "running" },
+    { "name": "one lesson attended on day 1", "in": { "started_on": "2026-11-10", "today": "2026-11-11", "lessons_attended": 1, "free_lessons": 1, "free_days": 7 }, "out": "decision_needed" },
+    { "name": "day 7 reached with no lesson", "in": { "started_on": "2026-11-10", "today": "2026-11-17", "lessons_attended": 0, "free_lessons": 1, "free_days": 7 }, "out": "decision_needed" },
+    { "name": "day 6 is still running", "in": { "started_on": "2026-11-10", "today": "2026-11-16", "lessons_attended": 0, "free_lessons": 1, "free_days": 7 }, "out": "running" },
+    { "name": "zero free lessons means decide immediately", "in": { "started_on": "2026-11-10", "today": "2026-11-10", "lessons_attended": 0, "free_lessons": 0, "free_days": 7 }, "out": "decision_needed" },
+    { "name": "zero free days means decide immediately", "in": { "started_on": "2026-11-10", "today": "2026-11-10", "lessons_attended": 0, "free_lessons": 3, "free_days": 0 }, "out": "decision_needed" },
+    { "name": "trial starting in the future is running", "in": { "started_on": "2026-11-20", "today": "2026-11-13", "lessons_attended": 0, "free_lessons": 1, "free_days": 7 }, "out": "running" },
+    { "name": "two free lessons, one attended", "in": { "started_on": "2026-11-10", "today": "2026-11-12", "lessons_attended": 1, "free_lessons": 2, "free_days": 14 }, "out": "running" }
+  ],
+  "first_month_charge": [
+    { "name": "full month ignores lessons", "in": { "mode": "full", "monthly_fee": 600000, "accepted_on": "2026-11-12", "lesson_dates": ["2026-11-02", "2026-11-04", "2026-11-06", "2026-11-09", "2026-11-12", "2026-11-13", "2026-11-16", "2026-11-18", "2026-11-20", "2026-11-23", "2026-11-25", "2026-11-27"] }, "out": { "amount": 600000, "fallback_to_full": false } },
+    { "name": "free until next month charges nothing", "in": { "mode": "free_until_next", "monthly_fee": 600000, "accepted_on": "2026-11-12", "lesson_dates": ["2026-11-02", "2026-11-12"] }, "out": { "amount": 0, "fallback_to_full": false } },
+    { "name": "prorated: 8 of 12 lessons remain", "in": { "mode": "prorated", "monthly_fee": 600000, "accepted_on": "2026-11-12", "lesson_dates": ["2026-11-02", "2026-11-04", "2026-11-06", "2026-11-09", "2026-11-12", "2026-11-13", "2026-11-16", "2026-11-18", "2026-11-20", "2026-11-23", "2026-11-25", "2026-11-27"] }, "out": { "amount": 400000, "fallback_to_full": false } },
+    { "name": "prorated accepted on the first day pays the whole month", "in": { "mode": "prorated", "monthly_fee": 600000, "accepted_on": "2026-11-01", "lesson_dates": ["2026-11-02", "2026-11-04", "2026-11-06", "2026-11-09", "2026-11-12", "2026-11-13", "2026-11-16", "2026-11-18", "2026-11-20", "2026-11-23", "2026-11-25", "2026-11-27"] }, "out": { "amount": 600000, "fallback_to_full": false } },
+    { "name": "prorated accepted after the last lesson is zero", "in": { "mode": "prorated", "monthly_fee": 600000, "accepted_on": "2026-11-28", "lesson_dates": ["2026-11-02", "2026-11-04", "2026-11-06", "2026-11-09", "2026-11-12", "2026-11-13", "2026-11-16", "2026-11-18", "2026-11-20", "2026-11-23", "2026-11-25", "2026-11-27"] }, "out": { "amount": 0, "fallback_to_full": false } },
+    { "name": "prorated without any lesson falls back to the full month", "in": { "mode": "prorated", "monthly_fee": 600000, "accepted_on": "2026-11-12", "lesson_dates": [] }, "out": { "amount": 600000, "fallback_to_full": true } },
+    { "name": "prorated rounds half up to a whole so'm (7 of 12 of 500000)", "in": { "mode": "prorated", "monthly_fee": 500000, "accepted_on": "2026-11-13", "lesson_dates": ["2026-11-02", "2026-11-04", "2026-11-06", "2026-11-09", "2026-11-12", "2026-11-13", "2026-11-16", "2026-11-18", "2026-11-20", "2026-11-23", "2026-11-25", "2026-11-27"] }, "out": { "amount": 291667, "fallback_to_full": false } },
+    { "name": "prorated exact half rounds up (1 of 2 of 3001)", "in": { "mode": "prorated", "monthly_fee": 3001, "accepted_on": "2026-11-20", "lesson_dates": ["2026-11-10", "2026-11-20"] }, "out": { "amount": 1501, "fallback_to_full": false } },
+    { "name": "zero fee stays zero in every mode", "in": { "mode": "prorated", "monthly_fee": 0, "accepted_on": "2026-11-12", "lesson_dates": ["2026-11-12", "2026-11-20"] }, "out": { "amount": 0, "fallback_to_full": false } }
+  ]
+}

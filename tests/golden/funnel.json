@@ -1,0 +1,59 @@
+{
+  "funnel_report": [
+    {
+      "name": "two sources, one unsourced lead, one lead outside the range",
+      "in": {
+        "range": { "from": "2026-11-01", "to": "2026-11-30" },
+        "leads": [
+          { "stage": "new", "source": "Instagram", "created_on": "2026-11-02" },
+          { "stage": "contacted", "source": "Instagram", "created_on": "2026-11-03" },
+          { "stage": "enrolled", "source": "Instagram", "created_on": "2026-11-04" },
+          { "stage": "trial_scheduled", "source": "Tanish", "created_on": "2026-11-05" },
+          { "stage": "enrolled", "source": "Tanish", "created_on": "2026-11-30" },
+          { "stage": "lost", "source": "Tanish", "created_on": "2026-11-01" },
+          { "stage": "new", "source": null, "created_on": "2026-11-10" },
+          { "stage": "enrolled", "source": "Instagram", "created_on": "2026-10-31" },
+          { "stage": "new", "source": "Instagram", "created_on": "2026-12-01" }
+        ]
+      },
+      "out": {
+        "stages": { "new": 2, "contacted": 1, "trial_scheduled": 1, "trial_attended": 0, "enrolled": 2, "lost": 1 },
+        "by_source": [
+          { "source": "Instagram", "leads": 3, "enrolled": 1, "conversion": 33.3 },
+          { "source": "Tanish", "leads": 3, "enrolled": 1, "conversion": 33.3 },
+          { "source": null, "leads": 1, "enrolled": 0, "conversion": 0.0 }
+        ],
+        "trial_to_enrolled": 66.7
+      }
+    },
+    {
+      "name": "no leads in range",
+      "in": { "range": { "from": "2026-11-01", "to": "2026-11-30" }, "leads": [] },
+      "out": {
+        "stages": { "new": 0, "contacted": 0, "trial_scheduled": 0, "trial_attended": 0, "enrolled": 0, "lost": 0 },
+        "by_source": [],
+        "trial_to_enrolled": 0.0
+      }
+    },
+    {
+      "name": "sources with equal lead counts are ordered by name, unsourced last",
+      "in": {
+        "range": { "from": "2026-11-01", "to": "2026-11-30" },
+        "leads": [
+          { "stage": "enrolled", "source": "Zeta", "created_on": "2026-11-02" },
+          { "stage": "new", "source": "Alfa", "created_on": "2026-11-02" },
+          { "stage": "lost", "source": null, "created_on": "2026-11-02" }
+        ]
+      },
+      "out": {
+        "stages": { "new": 1, "contacted": 0, "trial_scheduled": 0, "trial_attended": 0, "enrolled": 1, "lost": 1 },
+        "by_source": [
+          { "source": "Alfa", "leads": 1, "enrolled": 0, "conversion": 0.0 },
+          { "source": "Zeta", "leads": 1, "enrolled": 1, "conversion": 100.0 },
+          { "source": null, "leads": 1, "enrolled": 0, "conversion": 0.0 }
+        ],
+        "trial_to_enrolled": 100.0
+      }
+    }
+  ]
+}

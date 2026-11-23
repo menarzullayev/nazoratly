@@ -48,6 +48,14 @@ class Conflict(ApiError):
     status_code, code = 409, "conflict"
 
 
+class EnrollmentNotTrial(Conflict):
+    code = "enrollment_not_trial"
+
+
+class AlreadyAccepted(Conflict):
+    code = "already_accepted"
+
+
 class Unprocessable(ApiError):
     status_code, code = 422, "unprocessable"
 

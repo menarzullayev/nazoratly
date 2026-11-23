@@ -33,3 +33,9 @@ Foydalanuvchi bilan hisobotlar o'zbek lotin tilida; kod/izoh/identifikatorlar in
 - Tekshirilmagan (haqiqiy muhitda): eslatmani tasdiqlash paneli, "Tasdiqlanganlarni yuborish", tugmalar (copy_text, "To'lov qildim"), 🎉 effekt, /privacy javobi, to'lov oynasi.
 - Eslatma: Apps Script `ScriptApp.getService().getUrl()` noto'g'ri URL qaytardi; relay target sifatida deployment URL qo'lda `.env` ga yozilgan (NAZORATLY_TG_RELAY_TARGET). Kodni tuzatish kerak (deployment ID'ni sozlamadan olish).
 - Sheets UI'ni brauzer paneli orqali boshqarishda: viewport 1500x900 kerak, aks holda "nazoratly" menyusi "..." ostiga yashirinadi.
+
+## Holat 2026-11-23 (kech, 2): mahsulot kengayishi, 1-bosqich (qabul hayot sikli)
+- Dizayn: `docs/superpowers/specs/2026-11-23-product-expansion-design.md` (16 ta qaror), reja: `docs/superpowers/plans/2026-11-23-phase1-admission-lifecycle.md`. Tadqiqot: `docs/RESEARCH-ochiq-repolar.md`.
+- Qurildi (branch `feat/phase1-lifecycle`): oltin test harness (`tests/golden`), migratsiya 0011, API (settings, sinov, qabul/bekor, lead voronka), Sheets (Sinov holati, Lead varaqlari, Qabul menyusi).
+- KUTMOQDA (egasining ruxsati): (1) 0011 ni haqiqiy lokal bazaga qo'llash (oldin `pg_dump` zaxira), (2) yangi kodni haqiqiy Sheet'ga `clasp push` qilish va u yerda "Boshlang'ich sozlash"ni bosish.
+- Keyingi bosqichlar: davomat/qoplash, to'lov rejasi va PDF, abonement, panel, buxgalteriya, sig'im/QR/import/demo rejim; saytni har bosqichdan keyin yangilash.

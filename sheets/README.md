@@ -12,6 +12,7 @@ Birinchi mijozlar uchun: o'quv markazini Google Sheets ichida professional yurit
 | Qarz | Hisoblanadi (hisob − to'lov, eng eski muddat birinchi, API bilan bir xil FIFO); rangli hisobot, eng katta qarzdorlar |
 | Oylik (o'qituvchi) | Qat'iy / dars uchun / foiz; bonus-jarima qo'lda; tasdiqlangan qatorlar qayta hisoblanganda o'zgarmaydi |
 | Telegram eslatma | Loyiha yaratiladi (yuborilmaydi) → siz ko'rib chiqasiz/tahrirlaysiz/tasdiqlaysiz → yuborish. Faqat vasiy botda **rozilik bergan** o'quvchilarga |
+| Qabul (sinov, lead) | `Yozilishlar` holati **Sinov** (hisob yo'q); `Lead'lar` va `Lead aloqalari` varaqlari; menyu **Qabul**: qaror kutayotgan sinovlar (bepul dars YOKI kun chegarasi, `Sozlamalar`da), sinovni qabul qilish (1 proratsiya / 2 to'liq oy / 3 keyingi oydan; proratsiya uchun `Guruhlar > Jadval` da hafta kunlari: Du-Chor-Ju 18:00), sinovni bekor qilish, lead'ni sinovga yozish, voronka hisoboti. Mavjud jadvalda yangi ustun va varaqlar uchun avval **Boshlang'ich sozlash** ni bosing |
 | Boshqaruv paneli | KPI kartalar, 6 oylik grafik, qarzdorlar |
 
 ## O'rnatish (bir marta)

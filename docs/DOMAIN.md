@@ -53,3 +53,9 @@ Qarzdorlar (`charges_open_due`), o'quvchi balansi, kunlik/oylik tushum (`payment
 - RLS: ilova har tranzaksiyada `SET LOCAL app.org_id` qilishi shart (pooler transaction rejimida ishlaydi).
 - Sinov faqat PostgreSQL 16 da; parallel taqsimot (8 to'lov) va sig'im poygasi API testlarida sinalgan; yuk testlari o'tkazilmagan.
 - Hozirgi sana `CURRENT_DATE` ga bog'liq view'lar (`overdue`) serverning vaqt zonasi bo'yicha; markaz vaqt zonasi (`organizations.timezone`) faqat tushum view'sida qo'llangan.
+
+## 7. Qabul hayot sikli (migratsiya 0011)
+- `enrollments.status` ga `trial` qo'shildi; `accepted_on`, `first_month_mode` (`full|prorated|free_until_next`), `dropped_reason`. Sinov hisob yaratmaydi; ochiq yozilish indeksi (`enrollments_open_pair`) sinovni ham o'z ichiga oladi.
+- `org_settings`: `trial_free_lessons` (0-100, standart 1), `trial_free_days` (0-365, standart 7).
+- `lead_sources`, `leads` (bosqichlar: new, contacted, trial_scheduled, trial_attended, enrolled, lost; `student_id` + `converted_at` birga; bitta o'quvchi bitta lead'dan), `lead_interactions`. Hammasida RLS, audit trigger; agent roli bu jadvallarga tegmaydi.
+- Pastga qaytarish `trial` yozilishlar bo'lsa to'xtaydi (avval qabul qiling yoki bekor qiling).

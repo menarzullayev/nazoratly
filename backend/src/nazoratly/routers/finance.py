@@ -151,6 +151,7 @@ async def generate_charges(
             "FROM enrollments e JOIN study_groups g ON g.org_id = e.org_id AND g.id = e.group_id "
             "JOIN students s ON s.org_id = e.org_id AND s.id = e.student_id "
             "WHERE e.status IN ('active', 'finished') AND e.started_on < %(nxt)s AND (e.ended_on IS NULL OR e.ended_on >= %(first)s) "
+            "AND (e.accepted_on IS NULL OR %(first)s > date_trunc('month', e.accepted_on)::date) "
             "AND g.deleted_at IS NULL AND g.status <> 'cancelled' AND s.deleted_at IS NULL AND (%(gid)s::bigint IS NULL OR e.group_id = %(gid)s) "
             "ORDER BY e.id",
             {"nxt": nxt, "first": first, "gid": gid},

@@ -227,4 +227,36 @@ DO $$ BEGIN
   PERFORM public.t_expect('23505', $q$INSERT INTO student_guardians (org_id, student_id, guardian_id, relation, is_primary) VALUES (1,1,1,'father',true)$q$);
 END $$;
 
+-- ---------------------------------------------------------------- 0011: admission lifecycle
+DO $$ BEGIN
+  INSERT INTO enrollments (org_id, student_id, group_id, started_on, status) VALUES (1,4,1,'2026-11-10','trial');            -- a trial is allowed
+  PERFORM public.t_expect('23514', $q$INSERT INTO enrollments (org_id, student_id, group_id, started_on, status) VALUES (1,2,1,'2026-11-10','bogus')$q$);
+  PERFORM public.t_expect('23505', $q$INSERT INTO enrollments (org_id, student_id, group_id, started_on, status) VALUES (1,4,1,'2026-11-11','active')$q$);   -- a trial is an open enrollment
+  PERFORM public.t_expect('23514', $q$UPDATE enrollments SET accepted_on = '2026-11-12' WHERE student_id = 4 AND status = 'trial'$q$);                    -- a trial has no acceptance
+  PERFORM public.t_expect('23514', $q$UPDATE enrollments SET first_month_mode = 'full' WHERE student_id = 1 AND group_id = 1$q$);                          -- a mode needs accepted_on
+  UPDATE enrollments SET status = 'active', accepted_on = '2026-11-12', first_month_mode = 'prorated' WHERE student_id = 4 AND group_id = 1;               -- accept
+  DELETE FROM enrollments WHERE student_id = 4 AND group_id = 1;
+
+  INSERT INTO org_settings (org_id) VALUES (1);
+  IF (SELECT trial_free_lessons FROM org_settings WHERE org_id = 1) <> 1 OR (SELECT trial_free_days FROM org_settings WHERE org_id = 1) <> 7 THEN
+    RAISE EXCEPTION 'org_settings defaults are wrong';
+  END IF;
+  PERFORM public.t_expect('23505', $q$INSERT INTO org_settings (org_id) VALUES (1)$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO org_settings (org_id, trial_free_days) VALUES (2, -1)$q$);
+
+  INSERT INTO lead_sources (org_id, name) VALUES (1, 'Instagram');
+  PERFORM public.t_expect('23505', $q$INSERT INTO lead_sources (org_id, name) VALUES (1, 'instagram')$q$);                                                 -- names are unique ignoring case
+  INSERT INTO leads (org_id, full_name, phone, source_id) VALUES (1, 'Lead One', '+998901112233', 1);
+  PERFORM public.t_expect('23514', $q$INSERT INTO leads (org_id, full_name, stage) VALUES (1, 'Bad', 'bogus')$q$);
+  PERFORM public.t_expect('23514', $q$UPDATE leads SET student_id = 4 WHERE full_name = 'Lead One'$q$);                                                    -- a student needs converted_at
+  PERFORM public.t_expect('23503', $q$INSERT INTO leads (org_id, full_name, source_id) VALUES (2, 'Cross', 1)$q$);                                          -- source of another org
+  UPDATE leads SET student_id = 4, converted_at = now(), stage = 'enrolled' WHERE full_name = 'Lead One';
+  PERFORM public.t_expect('23505', $q$INSERT INTO leads (org_id, full_name, student_id, converted_at) VALUES (1, 'Twin', 4, now())$q$);                    -- a student comes from one lead
+  INSERT INTO lead_interactions (org_id, lead_id, happened_on, kind, summary, next_follow_up_on) VALUES (1, 1, '2026-11-12', 'call', 'Called the parent', '2026-11-15');
+  PERFORM public.t_expect('23514', $q$INSERT INTO lead_interactions (org_id, lead_id, happened_on, kind, summary) VALUES (1,1,'2026-11-12','fax','x')$q$);
+
+  -- clean up so the down-migration test starts from the original state
+  DELETE FROM lead_interactions; DELETE FROM leads; DELETE FROM lead_sources; DELETE FROM org_settings;
+END $$;
+
 SELECT 'ALL SCHEMA TESTS PASSED' AS result;
