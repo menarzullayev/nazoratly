@@ -42,6 +42,11 @@ class Settings(BaseSettings):
 
     secrets_key: SecretStr | None = None  # Fernet key; needed only to store/use Payme/Click credentials
 
+    tg_relay_target: str | None = None  # Apps Script web app URL that receives relayed Telegram updates
+    tg_relay_secret: SecretStr | None = (
+        None  # Telegram setWebhook secret_token (also sent to the target as ?s=)
+    )
+
     sentry_dsn: SecretStr | None = None
     otel_exporter_otlp_endpoint: str | None = None
     service_name: str = "nazoratly-api"
@@ -53,7 +58,14 @@ class Settings(BaseSettings):
             raise ValueError("NAZORATLY_JWT_SECRET must be at least 32 characters")
         return v
 
-    @field_validator("secrets_key", "sentry_dsn", "otel_exporter_otlp_endpoint", mode="before")
+    @field_validator(
+        "secrets_key",
+        "sentry_dsn",
+        "otel_exporter_otlp_endpoint",
+        "tg_relay_target",
+        "tg_relay_secret",
+        mode="before",
+    )
     @classmethod
     def _blank_is_unset(cls, v: object) -> object:
         return (

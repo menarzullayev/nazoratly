@@ -11,7 +11,9 @@ import {
   ATTENDANCE, CHARGES, DASHBOARD_SHEET, DEBTORS_SHEET, DRAFTS, ENROLLMENTS, GROUPS, PAYMENTS, PAYROLL, STUDENTS, TEACHERS,
 } from "./schema";
 import { readSettings } from "./settings";
-import { getToken, props, sendMessage, setToken, tg, webhookSecret } from "./telegram";
+import { balanceRich, EFFECT_PARTY, receiptRich, reminderRich, type OpenCharge } from "../domain/messages";
+import { applyBotProfile } from "./botProfile";
+import { getToken, props, sendMessage, sendRich, setToken, tg, webhookSecret } from "./telegram";
 
 type StudentRow = Student & { phone?: string; consentDate?: string; consentPolicy?: string; linkCode?: string; linkUrl?: string };
 
@@ -72,6 +74,11 @@ function debtState(): { students: StudentRow[]; debts: StudentDebt[]; balances: 
   const { charges, payments } = loadFinance();
   const r = computeDebts(charges, payments, today());
   return { students: read<StudentRow>(STUDENTS), debts: r.students, balances: r.balances };
+}
+
+/** Open (unpaid) charges of one student, oldest first, for message tables. */
+export function openChargesOf(studentId: string, balances: ReturnType<typeof computeDebts>["balances"]): OpenCharge[] {
+  return balances.filter((b) => b.studentId === studentId && b.outstanding > 0).sort((a, b) => (a.dueDate < b.dueDate ? -1 : 1)).map((b) => ({ month: b.month, dueDate: b.dueDate, outstanding: b.outstanding }));
 }
 
 export function refreshDebtors(): void {
@@ -162,6 +169,8 @@ export function sendApprovedReminders(): void {
     if (!getToken()) throw new Error("Avval Telegram botni sozlang: nazoratly > Telegram sozlash.");
     const students = new Map(read<StudentRow>(STUDENTS).map((s) => [s.id, s]));
     const queue = read<ReminderDraft>(DRAFTS).filter((d) => d.status === "approved").slice(0, 100);
+    const { balances } = debtState();
+    const payInfo = readSettings().payInfo;
     const started = Date.now();
     let sent = 0, failed = 0;
     for (const d of queue) {
@@ -170,7 +179,8 @@ export function sendApprovedReminders(): void {
       let error = "";
       if (!s || !s.consentNotify || !s.guardianChatId) error = "Rozilik yoki Telegram chat yo'q (yuborish paytida tekshirildi)";
       else {
-        const r = sendMessage(s.guardianChatId, d.text);
+        // the human-approved text + a live table of what is owed + one-tap buttons (Bot API 10.x rich message)
+        const r = sendRich(s.guardianChatId, reminderRich({ text: d.text, studentId: s.id, charges: openChargesOf(s.id, balances), payInfo }));
         if (!r.ok) error = r.description ?? "Noma'lum xato";
       }
       updateById(DRAFTS, "id", d.id, error ? { status: "failed", error } : { status: "sent", error: "" });
@@ -261,8 +271,11 @@ export function recordPayment(input: { studentId: string; amount: number; method
   if (input.notifyGuardian) {
     if (!student.consentNotify || !student.guardianChatId) telegram = "Telegram yuborilmadi: vasiy ulanmagan yoki rozilik yo'q";
     else {
-      const text = `To'lov qabul qilindi: ${formatSom(input.amount)} so'm (${input.paidOn}). ${balance.outstanding > 0 ? `Qoldiq: ${formatSom(balance.outstanding)} so'm.` : "Qarz yo'q. Rahmat!"} ${readSettings().center}`;
-      const r = sendMessage(student.guardianChatId, text);
+      const html = receiptRich({
+        center: readSettings().center, student: student.fullName, amount: input.amount, paidOn: input.paidOn, method: input.method || "Naqd",
+        outstanding: balance.outstanding, charges: openChargesOf(student.id, debtState().balances),
+      });
+      const r = sendRich(student.guardianChatId, html, balance.outstanding <= 0 ? { message_effect_id: EFFECT_PARTY } : {});
       telegram = r.ok ? "Vasiyga chek yuborildi" : `Telegram xatosi: ${r.description}`;
     }
   }
@@ -349,6 +362,13 @@ export function refreshDashboard(): void {
 
 // ------------------------------------------------------------------ Telegram setup and guardian linking
 export function setupTelegram(): void {
+  if (getToken()) {
+    const keep = ui().alert("Telegram", "Bot tokeni allaqachon saqlangan. Shu token bilan bot profili va webhook yangilansinmi?\n(Yo'q = yangi token kiritish)", ui().ButtonSet.YES_NO);
+    if (keep === ui().Button.YES) {
+      finishTelegramSetup();
+      return;
+    }
+  }
   const r = ui().prompt("Telegram bot", "@BotFather bergan bot tokenini kiriting. Token faqat Apps Script xavfsiz xotirasida saqlanadi, varaqda ko'rinmaydi.", ui().ButtonSet.OK_CANCEL);
   if (r.getSelectedButton() !== ui().Button.OK) return;
   const token = r.getResponseText().trim();
@@ -359,17 +379,41 @@ export function setupTelegram(): void {
     props().deleteProperty("TELEGRAM_BOT_TOKEN");
     throw new Error(`Token tekshiruvdan o'tmadi: ${me.description}`);
   }
+  finishTelegramSetup();
+}
+
+function finishTelegramSetup(): void {
+  const me = tg("getMe");
+  if (!me.ok) throw new Error(`Bot bilan bog'lanib bo'lmadi: ${me.description}`);
   const username = String((me.result as { username?: string }).username ?? "");
   props().setProperty("BOT_USERNAME", username);
+  const profile = applyBotProfile(readSettings().center);
   const url = ScriptApp.getService().getUrl();
   let hook = "";
-  if (url) {
+  let relay = props().getProperty("RELAY_URL") ?? "";
+  if (!relay) {
+    const r = ui().prompt(
+      "Webhook relay",
+      "Telegram Apps Script'ga to'g'ridan-to'g'ri yubora olmaydi (Apps Script POST'ga redirect qaytaradi). Relay manzilini kiriting (masalan https://sizning-domen/hooks/telegram). Bo'sh qoldirsangiz to'g'ridan-to'g'ri urinib ko'riladi.",
+      ui().ButtonSet.OK_CANCEL,
+    );
+    const v = r.getSelectedButton() === ui().Button.OK ? r.getResponseText().trim() : "";
+    if (/^https:\/\/[^\s]+$/.test(v)) {
+      relay = v;
+      props().setProperty("RELAY_URL", v);
+    }
+  }
+  if (relay) {
+    const w = tg("setWebhook", { url: relay, secret_token: webhookSecret(), allowed_updates: ["message", "callback_query"], drop_pending_updates: true });
+    hook = w.ok ? `Vasiylarni ulash (webhook relay orqali) yoqildi: ${relay}` : `Webhook xatosi: ${w.description}`;
+  } else if (url) {
     const w = tg("setWebhook", { url: `${url}?s=${webhookSecret()}`, allowed_updates: ["message", "callback_query"], drop_pending_updates: true });
     hook = w.ok ? "Vasiylarni ulash (webhook) yoqildi." : `Webhook xatosi: ${w.description}`;
   } else {
     hook = "Vasiylarni botga ulash uchun skriptni Web App sifatida joylang (Deploy > New deployment > Web app, 'Anyone'), so'ng bu amalni qayta bajaring.";
   }
-  ui().alert("Telegram", `Bot ulandi: @${username}\n${hook}`, ui().ButtonSet.OK);
+  const prof = profile.length ? `Bot profili (qisman): ${profile.slice(0, 3).join("; ")}` : "Bot profili yangilandi (buyruqlar uz/ru/en, tavsif).";
+  ui().alert("Telegram", `Bot ulandi: @${username}\n${prof}\n${hook}`, ui().ButtonSet.OK);
 }
 
 export function generateLinkCodes(): void {
@@ -381,6 +425,33 @@ export function generateLinkCodes(): void {
     updateById(STUDENTS, "id", s.id, { linkCode: code, linkUrl: `https://t.me/${username}?start=${code}` });
   }
   toast(`${students.length} ta o'quvchi uchun ulash havolasi yaratildi (O'quvchilar varag'ida).`);
+}
+
+/** /qarz in the bot: the balance of every student linked to this Telegram chat. */
+export function balanceHtmlForChat(chatId: string): string {
+  const { students, debts, balances } = debtState();
+  const mine = students.filter((s) => s.guardianChatId === chatId && s.consentNotify);
+  const debt = new Map(debts.map((d) => [d.studentId, d]));
+  const s = readSettings();
+  return balanceRich({
+    center: s.center,
+    payInfo: s.payInfo,
+    students: mine.map((st) => ({
+      name: st.fullName, outstanding: debt.get(st.id)?.outstanding ?? 0, overdue: debt.get(st.id)?.overdue ?? 0, credit: debt.get(st.id)?.credit ?? 0,
+      charges: openChargesOf(st.id, balances),
+    })),
+  });
+}
+
+/** Values the relay needs (NAZORATLY_TG_RELAY_TARGET / NAZORATLY_TG_RELAY_SECRET). Shown only to the sheet owner. */
+export function showWebhookInfo(): void {
+  const url = ScriptApp.getService().getUrl();
+  if (!url) throw new Error("Avval skriptni Web App sifatida joylang (Deploy > New deployment > Web app).");
+  ui().alert(
+    "Webhook relay sozlamalari",
+    `NAZORATLY_TG_RELAY_TARGET=${url}\nNAZORATLY_TG_RELAY_SECRET=${webhookSecret()}\n\nBu sirni boshqalarga bermang.`,
+    ui().ButtonSet.OK,
+  );
 }
 
 export function showHelp(): void {

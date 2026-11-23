@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as actions from "../src/gas/actions";
 import { read, updateById } from "../src/gas/repo";
-import { ATTENDANCE, CHARGES, DASHBOARD_SHEET, DEBTORS_SHEET, DRAFTS, PAYMENTS, PAYROLL, STUDENTS, ALL_TABLES } from "../src/gas/schema";
+import { ATTENDANCE, CHARGES, DASHBOARD_SHEET, DEBTORS_SHEET, DRAFTS, PAYMENTS, PAYROLL, STUDENTS, ALL_TABLES, SETTING_DEFAULTS } from "../src/gas/schema";
 import { loadSampleData, setupWorkbook } from "../src/gas/setup";
 import { webhookSecret } from "../src/gas/telegram";
 import { handlePost } from "../src/gas/webhook";
@@ -12,9 +12,13 @@ type StudentRow = Student & { linkCode?: string; consentDate?: string };
 let h: Harness;
 
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-11-23T08:00:00Z")); // demo data is relative to today: 2026-09 / 10 / 11
   h = installHarness();
   setupWorkbook();
 });
+
+afterEach(() => vi.useRealTimers());
 
 const student = (id: string) => read<StudentRow>(STUDENTS).find((s) => s.id === id)!;
 const lastAlert = () => h.alerts[h.alerts.length - 1]!.message;
@@ -22,7 +26,8 @@ const lastAlert = () => h.alerts[h.alerts.length - 1]!.message;
 function post(update: unknown, secret = webhookSecret()) {
   return handlePost({ parameter: { s: secret }, postData: { contents: JSON.stringify(update), type: "application/json" } } as never);
 }
-const sent = () => h.fetches.filter((f) => f.body._method === "sendMessage");
+const sent = () => h.fetches.filter((f) => f.body._method === "sendMessage" || f.body._method === "sendRichMessage");
+const textOf = (f: { body: Record<string, unknown> }): string => String(f.body.text ?? (f.body.rich_message as { html?: string } | undefined)?.html ?? "");
 
 /** Full guardian flow: code -> /start -> "Roziman" button. */
 function linkGuardian(id: string, chatId: number): void {
@@ -36,7 +41,7 @@ function linkGuardian(id: string, chatId: number): void {
 describe("workbook setup", () => {
   it("creates every sheet with its headers, and is safe to run twice", () => {
     for (const t of ALL_TABLES) expect(h.rows(t.sheet)[0]).toEqual(t.cols.map((c) => c.header));
-    expect(h.rows("Sozlamalar")).toHaveLength(1 + 6);
+    expect(h.rows("Sozlamalar")).toHaveLength(1 + SETTING_DEFAULTS.length);
     setupWorkbook();
     expect(h.rows("O'quvchilar")[0]).toContain("Telegram chat ID");
   });
@@ -62,14 +67,14 @@ describe("with demo data", () => {
   });
 
   it("monthly charges are idempotent and write real dates", () => {
-    h.prompts.push("2026-04");
+    h.prompts.push("2026-12");
     actions.generateMonthlyCharges();
     expect(lastAlert()).toContain("8 ta yangi hisob");
-    const april = read<Charge>(CHARGES).filter((c) => c.month === "2026-04-01");
+    const april = read<Charge>(CHARGES).filter((c) => c.month === "2026-12-01");
     expect(april).toHaveLength(8);
-    expect(april.every((c) => c.dueDate === "2026-04-10")).toBe(true);
+    expect(april.every((c) => c.dueDate === "2026-12-10")).toBe(true);
     expect(new Set(read<Charge>(CHARGES).map((c) => c.id)).size).toBe(read<Charge>(CHARGES).length);
-    h.prompts.push("2026-04");
+    h.prompts.push("2026-12");
     actions.generateMonthlyCharges();
     expect(lastAlert()).toContain("0 ta yangi hisob");
     expect(lastAlert()).toContain("Avval yaratilgan: 8");
@@ -79,26 +84,26 @@ describe("with demo data", () => {
 
   it("attendance: roster, validation, upsert without duplicates", () => {
     expect(actions.getAttendanceGroups().map((g) => g.id)).toEqual(["G0001", "G0002"]);
-    const roster = actions.getRoster("G0001", "2026-03-16");
+    const roster = actions.getRoster("G0001", "2026-10-26");
     expect(roster.map((r) => r.studentId)).toEqual(["S0005", "S0001", "S0003", "S0007"].sort((a, b) => roster.find((r) => r.studentId === a)!.fullName.localeCompare(roster.find((r) => r.studentId === b)!.fullName)));
     expect(roster.every((r) => r.status === "")).toBe(true);
     const marks = roster.map((r, i) => ({ studentId: r.studentId, status: (i === 0 ? "late" : "present") as AttendanceRow["status"], minutesLate: i === 0 ? 12 : 0 }));
-    expect(actions.saveAttendance({ date: "2026-03-16", groupId: "G0001", marks }).saved).toBe(4);
-    expect(read<AttendanceRow>(ATTENDANCE).filter((a) => a.date === "2026-03-16")).toHaveLength(4);
+    expect(actions.saveAttendance({ date: "2026-10-26", groupId: "G0001", marks }).saved).toBe(4);
+    expect(read<AttendanceRow>(ATTENDANCE).filter((a) => a.date === "2026-10-26")).toHaveLength(4);
     marks[1]!.status = "absent";
-    actions.saveAttendance({ date: "2026-03-16", groupId: "G0001", marks });
-    const saved = read<AttendanceRow>(ATTENDANCE).filter((a) => a.date === "2026-03-16");
+    actions.saveAttendance({ date: "2026-10-26", groupId: "G0001", marks });
+    const saved = read<AttendanceRow>(ATTENDANCE).filter((a) => a.date === "2026-10-26");
     expect(saved).toHaveLength(4); // replaced, not appended
     expect(saved.filter((a) => a.status === "absent")).toHaveLength(1);
-    expect(actions.getRoster("G0001", "2026-03-16").find((r) => r.status === "late")!.minutesLate).toBe(12);
+    expect(actions.getRoster("G0001", "2026-10-26").find((r) => r.status === "late")!.minutesLate).toBe(12);
     // other groups' and other days' rows are untouched
-    expect(read<AttendanceRow>(ATTENDANCE).filter((a) => a.date === "2026-03-02")).toHaveLength(8);
+    expect(read<AttendanceRow>(ATTENDANCE).filter((a) => a.date === "2026-10-05")).toHaveLength(8);
     // negative cases
-    expect(() => actions.saveAttendance({ date: "2026-03-16", groupId: "G0001", marks: [{ studentId: "S0002", status: "present", minutesLate: 0 }] })).toThrow(/ro'yxatida yo'q/);
-    expect(() => actions.saveAttendance({ date: "2026-03-16", groupId: "G0001", marks: [{ studentId: "S0001", status: "present", minutesLate: 5 }] })).toThrow(/faqat/);
-    expect(() => actions.saveAttendance({ date: "2026-03-16", groupId: "G0001", marks: [marks[0]!, marks[0]!] })).toThrow(/ikki marta/);
+    expect(() => actions.saveAttendance({ date: "2026-10-26", groupId: "G0001", marks: [{ studentId: "S0002", status: "present", minutesLate: 0 }] })).toThrow(/ro'yxatida yo'q/);
+    expect(() => actions.saveAttendance({ date: "2026-10-26", groupId: "G0001", marks: [{ studentId: "S0001", status: "present", minutesLate: 5 }] })).toThrow(/faqat/);
+    expect(() => actions.saveAttendance({ date: "2026-10-26", groupId: "G0001", marks: [marks[0]!, marks[0]!] })).toThrow(/ikki marta/);
     expect(() => actions.saveAttendance({ date: "16.03.2026", groupId: "G0001", marks: [] })).toThrow(/Sana/);
-    expect(() => actions.saveAttendance({ date: "2026-03-16", groupId: "G9999", marks: [] })).toThrow(/Guruh/);
+    expect(() => actions.saveAttendance({ date: "2026-10-26", groupId: "G9999", marks: [] })).toThrow(/Guruh/);
     expect(() => actions.getRoster("G0001", "nope")).toThrow();
   });
 
@@ -127,12 +132,14 @@ describe("with demo data", () => {
     const msg = sent()[sent().length - 1]!;
     expect(sent().length).toBe(n + 1);
     expect(msg.body.chat_id).toBe("7001");
-    expect(String(msg.body.text)).toContain("100 000 so'm");
-    expect(String(msg.body.text)).toContain("Qoldiq: 1 000 000");
+    expect(textOf(msg)).toContain("100 000 so'm");
+    expect(textOf(msg)).toMatch(/Qoldiq: <b>1 000 000 so'm/);
+    expect(msg.body._method).toBe("sendRichMessage");
+    expect(textOf(msg)).toContain("<table"); // open charges table
   });
 
   it("payroll: lessons and percent, bonus survives recalculation, approved rows are frozen", () => {
-    h.prompts.push("2026-03");
+    h.prompts.push("2026-10");
     actions.calculatePayroll();
     const get = () => h.rows(PAYROLL).slice(1).map((r) => ({ month: r[0], teacher: r[1], lessons: r[3], collected: r[4], bonus: r[5], total: r[6], status: r[7] }));
     const [t1, t2] = get();
@@ -143,13 +150,13 @@ describe("with demo data", () => {
 
     const row = h.rows(PAYROLL).findIndex((r) => r[1] === "T0001"); // 0-based row in sheet = row-1
     h.sheet(PAYROLL).getRange(row + 1, 6).setValue(-20_000); // penalty typed by hand
-    h.prompts.push("2026-03");
+    h.prompts.push("2026-10");
     actions.calculatePayroll();
     expect(get()[0]).toMatchObject({ bonus: -20_000, total: 250_000 });
 
     h.sheet(PAYROLL).getRange(row + 1, 8).setValue("Tasdiqlangan");
     h.sheet(PAYROLL).getRange(row + 1, 7).setValue(111);
-    h.prompts.push("2026-03");
+    h.prompts.push("2026-10");
     actions.calculatePayroll();
     expect(lastAlert()).toContain("(o'zgartirilmadi): 1");
     expect(get().find((r) => r.teacher === "T0001")).toMatchObject({ total: 111, status: "Tasdiqlangan" });
@@ -234,8 +241,12 @@ describe("Telegram reminders and guardian consent (Model B)", () => {
     expect(delivered).toHaveLength(1);
     expect(delivered[0]!.body.chat_id).toBe("7001");
     // the human's edit is exactly what was sent when the edited draft belongs to the still-consenting guardian
-    if (aStudent === "S0005") expect(delivered[0]!.body.text).toBe("Tahrirlangan matn");
-    else expect(String(delivered[0]!.body.text)).toContain("Bobur Saidov");
+    const html = textOf(delivered[0]!);
+    if (aStudent === "S0005") expect(html).toContain("Tahrirlangan matn");
+    else expect(html).toContain("Bobur Saidov");
+    expect(delivered[0]!.body._method).toBe("sendRichMessage");
+    expect(html).toContain("<tg-button"); // one-tap actions
+    expect(html).toContain("<table");
   });
 
   it("rejected drafts are never sent; Telegram errors are recorded without leaking the token", () => {

@@ -1,9 +1,10 @@
 /** One-click workbook setup: tabs, headers, validation, protection, conditional colours, sample data. */
 import { effectiveFee } from "../domain/billing";
 import { planCharges } from "../domain/billing";
+import { prevMonthStart, monthStart } from "../domain/dates";
 import { nextIds } from "../domain/ids";
 import type { AttendanceRow, Charge, Enrollment, Group, Student, Teacher } from "../domain/types";
-import { append, read, toDate } from "./repo";
+import { append, read, toDate, today } from "./repo";
 import {
   ALL_TABLES,
   ATTENDANCE,
@@ -145,11 +146,14 @@ export function loadSampleData(): string {
     consentNotify: false,
     phone: `+99890123${String(4000 + i)}`,
   }));
+  const cur = monthStart(today());
+  const prev1 = prevMonthStart(cur);
+  const prev2 = prevMonthStart(prev1);
   const enrollments: Enrollment[] = students.map((s, i) => ({
     id: `E${String(i + 1).padStart(4, "0")}`,
     studentId: s.id,
     groupId: i % 2 === 0 ? "G0001" : "G0002",
-    startedOn: "2026-01-12",
+    startedOn: `${prev2.slice(0, 7)}-05`,
     endedOn: "",
     discountPercent: i === 3 ? 10 : 0,
     status: "active",
@@ -159,7 +163,7 @@ export function loadSampleData(): string {
   append(STUDENTS, students);
   append(ENROLLMENTS, enrollments);
 
-  const months = ["2026-01-01", "2026-02-01", "2026-03-01"];
+  const months = [prev2, prev1, cur];
   let charges: Charge[] = [];
   for (const m of months) {
     const plan = planCharges({ month: m, dueDay: 10, enrollments, groups, students, charges });
@@ -175,7 +179,7 @@ export function loadSampleData(): string {
     return Array.from({ length: paidMonths }, (_, k) => ({
       id: "",
       studentId: s.id,
-      paidOn: `2026-0${k + 1}-${String(8 + i).padStart(2, "0")}`,
+      paidOn: ((d) => (d > today() ? today() : d))(`${months[k]!.slice(0, 7)}-${String(8 + i).padStart(2, "0")}`),
       amount: fee,
       method: ["Naqd", "Karta", "Payme", "Click"][(i + k) % 4]!,
       voided: false,
@@ -186,7 +190,7 @@ export function loadSampleData(): string {
   append(PAYMENTS, payments.map((p, i) => ({ ...p, id: pids[i]! })));
 
   const attendance: AttendanceRow[] = [];
-  for (const day of ["2026-03-02", "2026-03-04", "2026-03-09"]) {
+  for (const day of [5, 12, 19].map((d) => `${prev1.slice(0, 7)}-${String(d).padStart(2, "0")}`)) {
     for (const [i, s] of students.entries()) {
       const e = enrollments[i]!;
       const status = (i + day.length + Number(day.slice(-1))) % 7 === 0 ? "absent" : (i + Number(day.slice(-1))) % 5 === 0 ? "late" : "present";

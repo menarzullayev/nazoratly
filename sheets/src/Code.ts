@@ -30,6 +30,7 @@ g.onOpen = (): void => {
         .addItem("Tasdiqlanganlarni yuborish", "menuSendApproved")
         .addSeparator()
         .addItem("Telegram sozlash", "menuSetupTelegram")
+        .addItem("Webhook relay sozlamalari", "menuWebhookInfo")
         .addItem("Vasiylar uchun ulash havolalari", "menuLinkCodes"),
     )
     .addItem("O'qituvchi oyligini hisoblash", "menuPayroll")
@@ -52,6 +53,7 @@ g.menuSendApproved = (): void => actions.guard("Telegram", actions.sendApprovedR
 g.menuSetupTelegram = (): void => actions.guard("Telegram", actions.setupTelegram);
 g.menuLinkCodes = (): void => actions.guard("Ulash havolalari", actions.generateLinkCodes);
 g.menuPayroll = (): void => actions.guard("Oylik", actions.calculatePayroll);
+g.menuWebhookInfo = (): void => actions.guard("Webhook", actions.showWebhookInfo);
 g.menuHelp = (): void => actions.showHelp();
 g.menuSetup = (): void =>
   actions.guard("Sozlash", () => {

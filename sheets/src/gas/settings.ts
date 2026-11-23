@@ -8,6 +8,9 @@ export interface Settings {
   minOverdue: number;
   template: string;
   policyVersion: string;
+  policyText: string;
+  payInfo: string;
+  ownerChatId: string;
 }
 
 export function readSettings(): Settings {
@@ -31,5 +34,8 @@ export function readSettings(): Settings {
     minOverdue: num("minOverdue", 50_000, 0, 1_000_000_000),
     template: map.get("template") || DEFAULT_TEMPLATE,
     policyVersion: map.get("policyVersion") || "2026-11",
+    policyText: map.get("policyText") || "",
+    payInfo: map.get("payInfo") ?? "",
+    ownerChatId: /^-?\d{5,}$/.test(map.get("ownerChatId") ?? "") ? (map.get("ownerChatId") as string) : "",
   };
 }
