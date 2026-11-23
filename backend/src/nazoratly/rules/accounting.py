@@ -263,7 +263,7 @@ def _bucket(days_overdue: int) -> str:
 def payables_aging(bills: list[dict[str, Any]], as_of: str) -> dict[str, Any]:
     """Outstanding amount of each bill in its overdue bucket; fully paid bills are left out."""
     rows: list[dict[str, Any]] = []
-    totals = {b: ZERO for b in BUCKETS}
+    totals = dict.fromkeys(BUCKETS, ZERO)
     for b in sorted(bills, key=lambda x: (x["due_date"], x["id"])):
         left = money(b["amount"]) - money(b["paid"])
         if left <= 0:

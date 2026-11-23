@@ -535,4 +535,228 @@ BEGIN
   DELETE FROM enrollments WHERE group_id = g; DELETE FROM study_groups WHERE id = g;
 END $$;
 
+-- ---------------------------------------------------------------- T-accounting (0015)
+-- helper: posts one balanced, correctly chained entry; `flaw` produces the wrong ones the database must refuse
+CREATE FUNCTION public.t_post(p_org bigint, p_date date, p_memo text, p_st text, p_sk text, p_lines jsonb,
+                              p_flaw text DEFAULT NULL, p_declared int DEFAULT NULL, p_reverses bigint DEFAULT NULL)
+RETURNS bigint LANGUAGE plpgsql AS $$
+DECLARE hd journal_lines%ROWTYPE; eno bigint; eid bigint; l jsonb; prev text; sq bigint; acct accounts%ROWTYPE; h text;
+BEGIN
+  PERFORM ledger_lock(p_org);
+  SELECT COALESCE(max(entry_no), 0) + 1 INTO eno FROM journal_entries WHERE org_id = p_org;
+  INSERT INTO journal_entries (org_id, entry_no, entry_date, memo, source_type, source_key, line_count, reverses_entry_id)
+  VALUES (p_org, eno + CASE WHEN p_flaw = 'entry_no' THEN 5 ELSE 0 END, p_date, p_memo, p_st, p_sk,
+          COALESCE(p_declared, jsonb_array_length(p_lines)), p_reverses) RETURNING id INTO eid;
+  SELECT * INTO hd FROM journal_lines WHERE org_id = p_org ORDER BY seq DESC LIMIT 1;
+  prev := COALESCE(hd.hash, repeat('0', 64));
+  sq := COALESCE(hd.seq, 0);
+  FOR l IN SELECT * FROM jsonb_array_elements(p_lines) LOOP
+    sq := sq + 1 + CASE WHEN p_flaw = 'seq' THEN 1 ELSE 0 END;
+    SELECT * INTO acct FROM accounts WHERE org_id = p_org AND code = l->>0;
+    h := journal_line_hash(prev, sq, eno, p_date, acct.code, (l->>1)::numeric, (l->>2)::numeric, p_st, p_sk, p_memo);
+    INSERT INTO journal_lines (org_id, seq, entry_id, account_id, debit, credit, prev_hash, hash)
+    VALUES (p_org, sq, eid, acct.id, (l->>1)::numeric, (l->>2)::numeric,
+            CASE WHEN p_flaw = 'prev' THEN repeat('a', 64) ELSE prev END, CASE WHEN p_flaw = 'hash' THEN repeat('b', 64) ELSE h END);
+    prev := h;
+  END LOOP;
+  SET CONSTRAINTS ALL IMMEDIATE;
+  SET CONSTRAINTS ALL DEFERRED;
+  RETURN eid;
+END $$;
+GRANT EXECUTE ON FUNCTION public.t_post(bigint, date, text, text, text, jsonb, text, int, bigint) TO PUBLIC;
+
+INSERT INTO accounts (org_id, code, name, type) VALUES
+  (1,'1000','Kassa','asset'), (1,'1010','Bank hisobi','asset'), (1,'2000','Yetkazib beruvchilarga qarz','liability'),
+  (1,'4000','O''quv to''lovlari','income'), (1,'5000','Ijara','expense'), (1,'9999','Eski hisob','asset'),
+  (2,'1000','Kassa','asset'), (2,'4000','O''quv to''lovlari','income');
+UPDATE accounts SET active = false WHERE org_id = 1 AND code = '9999';
+
+DO $$
+DECLARE e1 bigint; e2 bigint; e3 bigint; rv bigint; bill bigint; ex bigint; bp1 bigint; bp2 bigint;
+        stm bigint; sl1 bigint; sl2 bigint; ca bigint; hd text;
+BEGIN
+  -- the same three entries as the golden file (tests/golden/ledger.json, "valid chain of three entries"): the hashes below
+  -- come from an independent hashlib script, so this proves the database computes the same chain as Python and TypeScript
+  e1 := public.t_post(1, '2026-10-05', 'To''lov P0001', 'payment', 'P0001', '[["1000","500000.00","0.00"],["4000","0.00","500000.00"]]');
+  e2 := public.t_post(1, '2026-10-12', 'Ijara | oktyabr', 'expense', 'X0001', '[["5000","120000.50","0.00"],["1000","0.00","120000.50"]]');
+  e3 := public.t_post(1, '2026-11-03', 'Karta', 'payment', 'P0002', '[["1010","300000.00","0.00"],["4000","0.00","300000.00"]]');
+  IF (SELECT array_agg(hash ORDER BY seq) FROM journal_lines WHERE org_id = 1) IS DISTINCT FROM ARRAY[
+      '9b95907aa22d626d2d1defe15583b1237045d17d072d0a25808064bed158c6df','e5d731d28728cf1eb181ffa9d2a3d01633fe37efe9be9cae509aba3399f4767c',
+      '28903e9380394efc4bb5734e35b6d0155816e3b0abce83b72780699f109e9a90','ab88456409c19dde9c106de780a065ecd2f54847cea7baeb65389a94c106824a',
+      'b1bd66dd6c5f5571bcfdf9de2c4a9f958988cd21612efaabf96106081c91c3f6','eb80c24142baee5d906e7109f8177a50120c8d64b4b300559a32320601c8db57'] THEN
+    RAISE EXCEPTION 'database hashes differ from the golden chain: %', (SELECT array_agg(hash ORDER BY seq) FROM journal_lines WHERE org_id = 1);
+  END IF;
+  -- another center has its own chain starting at the genesis
+  PERFORM public.t_post(2, '2026-10-05', 'Beta', 'payment', 'P1', '[["1000","10.00","0.00"],["4000","0.00","10.00"]]');
+  IF (SELECT min(seq) FROM journal_lines WHERE org_id = 2) <> 1 OR (SELECT prev_hash FROM journal_lines WHERE org_id = 2 AND seq = 1) <> repeat('0',64) THEN
+    RAISE EXCEPTION 'each center has its own chain';
+  END IF;
+
+  -- what the database refuses (check_violation 23514 / unique 23505 / restrict 23001)
+  PERFORM public.t_expect('23514', $q$SELECT public.t_post(1, '2026-11-04', 'x', 'manual', '', '[["1000","10.00","0.00"],["4000","0.00","9.99"]]')$q$);
+  PERFORM public.t_expect('23514', $q$SELECT public.t_post(1, '2026-11-04', 'x', 'manual', '', '[["1000","10.00","0.00"],["4000","0.00","10.00"]]', 'hash')$q$);
+  PERFORM public.t_expect('23514', $q$SELECT public.t_post(1, '2026-11-04', 'x', 'manual', '', '[["1000","10.00","0.00"],["4000","0.00","10.00"]]', 'prev')$q$);
+  PERFORM public.t_expect('23514', $q$SELECT public.t_post(1, '2026-11-04', 'x', 'manual', '', '[["1000","10.00","0.00"],["4000","0.00","10.00"]]', 'seq')$q$);
+  PERFORM public.t_expect('23514', $q$SELECT public.t_post(1, '2026-11-04', 'x', 'manual', '', '[["1000","10.00","0.00"],["4000","0.00","10.00"]]', 'entry_no')$q$);
+  PERFORM public.t_expect('23514', $q$SELECT public.t_post(1, '2026-11-04', 'x', 'manual', '', '[["1000","10.00","10.00"],["4000","0.00","0.00"]]')$q$);
+  PERFORM public.t_expect('23514', $q$SELECT public.t_post(1, '2026-11-04', 'x', 'manual', '', '[["1000","10.00","0.00"],["4000","0.00","10.00"]]', NULL, 3)$q$);
+  PERFORM public.t_expect('23514', $q$SELECT public.t_post(1, '2026-11-04', 'x', 'manual', '', '[["1000","10.00","0.00"],["9999","0.00","10.00"]]')$q$);
+  PERFORM public.t_expect('23514', $q$SELECT public.t_post(1, '2026-11-04', 'x', 'reversal', '1', '[["1000","10.00","0.00"],["4000","0.00","10.00"]]')$q$);
+  PERFORM public.t_expect('23505', $q$SELECT public.t_post(1, '2026-11-04', 'again', 'payment', 'P0001', '[["1000","10.00","0.00"],["4000","0.00","10.00"]]')$q$);
+  -- a line cannot be slipped into an old entry
+  PERFORM public.t_expect('23514', format($q$INSERT INTO journal_lines (org_id, seq, entry_id, account_id, debit, credit, prev_hash, hash)
+     SELECT 1, 7, %s, id, 5, 0, (SELECT hash FROM journal_lines WHERE org_id = 1 AND seq = 6), repeat('c',64) FROM accounts WHERE org_id = 1 AND code = '1000'$q$, e1));
+  -- the journal is immutable for everybody, including the owner of the tables
+  PERFORM public.t_expect('23001', $q$UPDATE journal_entries SET memo = 'edited'$q$);
+  PERFORM public.t_expect('23001', $q$DELETE FROM journal_entries$q$);
+  PERFORM public.t_expect('23001', $q$UPDATE journal_lines SET debit = debit + 1$q$);
+  PERFORM public.t_expect('23001', $q$DELETE FROM journal_lines$q$);
+  PERFORM public.t_expect('23001', $q$TRUNCATE journal_lines CASCADE$q$);
+  PERFORM public.t_expect('23001', $q$TRUNCATE journal_entries CASCADE$q$);
+
+  -- accounts: code and type are fixed, never deleted, cash accounts are assets
+  PERFORM public.t_expect('23001', $q$UPDATE accounts SET code = '1001' WHERE org_id = 1 AND code = '1000'$q$);
+  PERFORM public.t_expect('23001', $q$UPDATE accounts SET type = 'liability' WHERE org_id = 1 AND code = '1000'$q$);
+  PERFORM public.t_expect('23001', $q$DELETE FROM accounts WHERE org_id = 1 AND code = '1000'$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO cash_accounts (org_id, account_id, name, kind) SELECT 1, id, 'Daromad', 'bank' FROM accounts WHERE org_id = 1 AND code = '4000'$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO accounts (org_id, code, name, type) VALUES (1, 'AB', 'bad code', 'asset')$q$);
+  UPDATE accounts SET name = 'Kassa (asosiy)' WHERE org_id = 1 AND code = '1000';
+
+  -- closing a month: the record must match the journal exactly and the hash must be right
+  hd := 'eb80c24142baee5d906e7109f8177a50120c8d64b4b300559a32320601c8db57';
+  PERFORM public.t_expect('23514', format($q$INSERT INTO accounting_periods (org_id, month, last_seq, head_hash, total_debit, total_credit, period_hash)
+     VALUES (1, '2026-10-01', 5, %L, 920000.50, 920000.50, repeat('a',64))$q$, hd));
+  PERFORM public.t_expect('23514', $q$INSERT INTO accounting_periods (org_id, month, last_seq, head_hash, total_debit, total_credit, period_hash)
+     VALUES (1, '2026-10-01', 6, repeat('a',64), 920000.50, 920000.50, repeat('b',64))$q$);
+  PERFORM public.t_expect('23514', format($q$INSERT INTO accounting_periods (org_id, month, last_seq, head_hash, total_debit, total_credit, period_hash)
+     VALUES (1, '2026-10-01', 6, %L, 1.00, 1.00, repeat('b',64))$q$, hd));
+  PERFORM public.t_expect('23514', format($q$INSERT INTO accounting_periods (org_id, month, last_seq, head_hash, total_debit, total_credit, period_hash)
+     VALUES (1, '2026-10-01', 6, %L, 920000.50, 920000.50, repeat('b',64))$q$, hd));
+  PERFORM public.t_expect('23514', format($q$INSERT INTO accounting_periods (org_id, month, last_seq, head_hash, total_debit, total_credit, period_hash)
+     VALUES (1, '2026-10-15', 6, %L, 920000.50, 920000.50, repeat('b',64))$q$, hd));
+  PERFORM public.t_expect('23514', format($q$INSERT INTO accounting_periods (org_id, month, last_seq, head_hash, total_debit, total_credit, period_hash)
+     VALUES (1, date_trunc('month', now())::date, 6, %L, 920000.50, 920000.50, repeat('b',64))$q$, hd));
+  -- golden period hash for ("2026-10", last seq 6)
+  INSERT INTO accounting_periods (org_id, month, last_seq, head_hash, total_debit, total_credit, period_hash)
+  VALUES (1, '2026-10-01', 6, hd, 920000.50, 920000.50, 'd42d6af09c883a33720ed8c4585b4556ed74adf1d5ed015e9074085bc3c7535d');
+  PERFORM public.t_expect('23505', format($q$INSERT INTO accounting_periods (org_id, month, last_seq, head_hash, total_debit, total_credit, period_hash)
+     VALUES (1, '2026-10-01', 6, %L, 920000.50, 920000.50, 'd42d6af09c883a33720ed8c4585b4556ed74adf1d5ed015e9074085bc3c7535d')$q$, hd));
+  PERFORM public.t_expect('23001', $q$UPDATE accounting_periods SET closed_at = now()$q$);
+  PERFORM public.t_expect('23001', $q$DELETE FROM accounting_periods$q$);
+  PERFORM public.t_expect('23001', $q$TRUNCATE accounting_periods$q$);
+  -- a closed month takes no more entries (another center's October is unaffected)
+  PERFORM public.t_expect('23514', $q$SELECT public.t_post(1, '2026-10-31', 'late', 'manual', '', '[["1000","10.00","0.00"],["4000","0.00","10.00"]]')$q$);
+  PERFORM public.t_post(2, '2026-10-31', 'Beta late', 'manual', '', '[["1000","10.00","0.00"],["4000","0.00","10.00"]]');
+
+  -- reversals: one per entry, not of a reversal, and mirroring the original
+  rv := public.t_post(1, '2026-11-23', 'Bekor P0001', 'payment_void', 'P0001', '[["1000","0.00","500000.00"],["4000","500000.00","0.00"]]', NULL, NULL, e1);
+  PERFORM public.t_expect('23505', format($q$SELECT public.t_post(1, '2026-11-23', 'again', 'reversal', '1', '[["1000","0.00","500000.00"],["4000","500000.00","0.00"]]', NULL, NULL, %s)$q$, e1));
+  PERFORM public.t_expect('23514', format($q$SELECT public.t_post(1, '2026-11-23', 'rr', 'reversal', 'x', '[["1000","500000.00","0.00"],["4000","0.00","500000.00"]]', NULL, NULL, %s)$q$, rv));
+  PERFORM public.t_expect('23514', format($q$SELECT public.t_post(1, '2026-11-23', 'wrong', 'reversal', '2', '[["1000","1.00","0.00"],["5000","0.00","1.00"]]', NULL, NULL, %s)$q$, e2));
+  PERFORM public.t_expect('23514', format($q$SELECT public.t_post(1, '2026-11-23', 'wrong size', 'reversal', '2', '[["1000","1.00","0.00"],["5000","0.00","0.50"],["4000","0.00","0.50"]]', NULL, NULL, %s)$q$, e2));
+  PERFORM public.t_post(1, '2026-11-23', 'Bekor X0001', 'reversal', '2', '[["5000","0.00","120000.50"],["1000","120000.50","0.00"]]', NULL, NULL, e2);
+
+  -- expenses: where the money left from, one expense per bill
+  INSERT INTO suppliers (org_id, name) VALUES (1, 'Ofis do''koni');
+  PERFORM public.t_expect('23505', $q$INSERT INTO suppliers (org_id, name) VALUES (1, 'Ofis do''koni')$q$);
+  INSERT INTO supplier_bills (org_id, supplier_id, number, bill_date, due_date, category, amount)
+    VALUES (1, (SELECT id FROM suppliers WHERE org_id = 1), 'A-1', '2026-11-01', '2026-11-15', 'equipment', 1000) RETURNING id INTO bill;
+  PERFORM public.t_expect('23514', $q$INSERT INTO supplier_bills (org_id, supplier_id, number, bill_date, due_date, category, amount) VALUES (1, (SELECT id FROM suppliers WHERE org_id = 1), 'A-2', '2026-11-10', '2026-11-01', 'other', 5)$q$);
+  PERFORM public.t_expect('23505', $q$INSERT INTO supplier_bills (org_id, supplier_id, number, bill_date, due_date, category, amount) VALUES (1, (SELECT id FROM suppliers WHERE org_id = 1), 'A-1', '2026-11-10', '2026-11-20', 'other', 5)$q$);
+  INSERT INTO expenses (org_id, category, amount, spent_at, bill_id) VALUES (1, 'equipment', 1000, '2026-11-01', bill) RETURNING id INTO ex;
+  PERFORM public.t_expect('23505', format($q$INSERT INTO expenses (org_id, category, amount, spent_at, bill_id) VALUES (1, 'equipment', 1000, '2026-11-01', %s)$q$, bill));
+  PERFORM public.t_expect('23514', $q$INSERT INTO expenses (org_id, category, amount, spent_at, paid_from) VALUES (1, 'rent', 5, '2026-11-01', 'wallet')$q$);
+  IF (SELECT paid_from FROM expenses WHERE id = ex) <> 'cash' THEN RAISE EXCEPTION 'expenses are paid from cash by default'; END IF;
+  PERFORM public.t_expect('23001', format($q$UPDATE supplier_bills SET amount = 5 WHERE id = %s$q$, bill));
+
+  -- bill settlements: never above the bill, void first, frozen otherwise
+  INSERT INTO bill_payments (org_id, bill_id, amount, paid_on) VALUES (1, bill, 600, '2026-11-05') RETURNING id INTO bp1;
+  PERFORM public.t_expect('23514', format($q$INSERT INTO bill_payments (org_id, bill_id, amount, paid_on) VALUES (1, %s, 400.01, '2026-11-06')$q$, bill));
+  INSERT INTO bill_payments (org_id, bill_id, amount, paid_on, paid_from) VALUES (1, bill, 400, '2026-11-06', 'bank') RETURNING id INTO bp2;
+  PERFORM public.t_expect('23514', format($q$UPDATE supplier_bills SET voided_at = now(), void_reason = 'x' WHERE id = %s$q$, bill));
+  PERFORM public.t_expect('23001', format($q$UPDATE bill_payments SET amount = 1 WHERE id = %s$q$, bp1));
+  UPDATE bill_payments SET voided_at = now(), void_reason = 'wrong' WHERE id = bp2;
+  PERFORM public.t_expect('23001', format($q$UPDATE bill_payments SET voided_at = NULL, void_reason = NULL WHERE id = %s$q$, bp2));
+  INSERT INTO bill_payments (org_id, bill_id, amount, paid_on) VALUES (1, bill, 400, '2026-11-07');   -- a voided settlement frees its amount
+  UPDATE bill_payments SET voided_at = now(), void_reason = 'cancel' WHERE bill_id = bill AND voided_at IS NULL;
+  UPDATE supplier_bills SET voided_at = now(), void_reason = 'duplicate bill' WHERE id = bill;
+  PERFORM public.t_expect('23514', format($q$INSERT INTO bill_payments (org_id, bill_id, amount, paid_on) VALUES (1, %s, 1, '2026-11-08')$q$, bill));
+  PERFORM public.t_expect('23001', format($q$UPDATE supplier_bills SET voided_at = NULL, void_reason = NULL WHERE id = %s$q$, bill));
+
+  -- reconciliation: matches only the statement account's own lines, once; finalize only when it foots and all is matched
+  INSERT INTO cash_accounts (org_id, account_id, name, kind) SELECT 1, id, 'Kassa', 'cash' FROM accounts WHERE org_id = 1 AND code = '1000' RETURNING id INTO ca;
+  PERFORM public.t_expect('23505', $q$INSERT INTO cash_accounts (org_id, account_id, name, kind) SELECT 1, id, 'Kassa 2', 'cash' FROM accounts WHERE org_id = 1 AND code = '1000'$q$);
+  INSERT INTO bank_statements (org_id, cash_account_id, period_from, period_to, opening_balance, closing_balance)
+    VALUES (1, ca, '2026-10-01', '2026-10-31', 0, 500000) RETURNING id INTO stm;
+  PERFORM public.t_expect('23514', format($q$INSERT INTO bank_statements (org_id, cash_account_id, period_from, period_to, opening_balance, closing_balance) VALUES (1, %s, '2026-10-31', '2026-10-01', 0, 0)$q$, ca));
+  INSERT INTO statement_lines (org_id, statement_id, line_date, description, amount) VALUES (1, stm, '2026-10-05', 'kirim', 500000) RETURNING id INTO sl1;
+  INSERT INTO statement_lines (org_id, statement_id, line_date, description, amount) VALUES (1, stm, '2026-10-06', 'duplicate', 500000) RETURNING id INTO sl2;
+  PERFORM public.t_expect('23514', format($q$UPDATE bank_statements SET status = 'finalized', finalized_at = now() WHERE id = %s$q$, stm));   -- unmatched lines
+  PERFORM public.t_expect('23514', format($q$UPDATE statement_lines SET matched_seq = 2, matched_at = now() WHERE id = %s$q$, sl1));         -- a line of another account
+  UPDATE statement_lines SET matched_seq = 1, matched_at = now() WHERE id = sl1;
+  PERFORM public.t_expect('23505', format($q$UPDATE statement_lines SET matched_seq = 1, matched_at = now() WHERE id = %s$q$, sl2));       -- matched twice
+  DELETE FROM statement_lines WHERE id = sl2;
+  PERFORM public.t_expect('23514', format($q$UPDATE bank_statements SET status = 'finalized', finalized_at = now(), closing_balance = 1 WHERE id = %s$q$, stm));  -- does not foot
+  UPDATE bank_statements SET status = 'finalized', finalized_at = now() WHERE id = stm;
+  PERFORM public.t_expect('23001', format($q$UPDATE statement_lines SET description = 'edit' WHERE id = %s$q$, sl1));
+  PERFORM public.t_expect('23001', format($q$INSERT INTO statement_lines (org_id, statement_id, line_date, amount) VALUES (1, %s, '2026-10-07', 1)$q$, stm));
+  PERFORM public.t_expect('23001', format($q$DELETE FROM statement_lines WHERE statement_id = %s$q$, stm));
+  PERFORM public.t_expect('23001', format($q$UPDATE bank_statements SET closing_balance = 5 WHERE id = %s$q$, stm));
+END $$;
+
+-- the application role: tenant isolation and no way around immutability
+BEGIN;
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '1'; SET LOCAL app.user_id = '1';
+DO $$
+DECLARE n bigint;
+BEGIN
+  ASSERT (SELECT count(*) FROM accounts) = 6, 'org 1 sees its own accounts only';
+  ASSERT (SELECT count(*) FROM journal_entries WHERE org_id = 2) = 0, 'org 2 entries are invisible';
+  ASSERT (SELECT count(*) FROM journal_lines WHERE org_id = 2) = 0, 'org 2 lines are invisible';
+  PERFORM public.t_expect('42501', $q$INSERT INTO accounts (org_id, code, name, type) VALUES (2, '7777', 'Hack', 'asset')$q$);
+  PERFORM public.t_expect('42501', $q$UPDATE journal_lines SET debit = 0$q$);
+  PERFORM public.t_expect('42501', $q$DELETE FROM journal_lines$q$);
+  PERFORM public.t_expect('42501', $q$UPDATE journal_entries SET memo = 'x'$q$);
+  PERFORM public.t_expect('42501', $q$DELETE FROM journal_entries$q$);
+  PERFORM public.t_expect('42501', $q$DELETE FROM accounting_periods$q$);
+  PERFORM public.t_expect('42501', $q$TRUNCATE journal_lines CASCADE$q$);
+  PERFORM public.t_expect('42501', $q$DELETE FROM accounts$q$);
+  PERFORM public.t_expect('42501', $q$INSERT INTO suppliers (org_id, name) VALUES (2, 'Hack')$q$);
+  UPDATE accounts SET name = 'Kassa' WHERE code = '1000';
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 1, 'the application can rename its own accounts';
+  -- the application posts through the same checks
+  PERFORM public.t_post(1, '2026-11-24', 'app posting', 'manual', '', '[["1000","7.00","0.00"],["4000","0.00","7.00"]]');
+  PERFORM public.t_expect('23514', $q$SELECT public.t_post(1, '2026-11-24', 'app bad', 'manual', '', '[["1000","7.00","0.00"],["4000","0.00","6.00"]]')$q$);
+  ASSERT (SELECT count(*) FROM journal_lines) = 12, 'org 1 has 6 + 2 + 2 + 2 lines';
+END $$;
+ROLLBACK;
+
+-- clean up so the down-migration test starts from the original state (the journal is immutable: only the
+-- superuser of the test database may switch its guards off)
+DROP FUNCTION public.t_post(bigint, date, text, text, text, jsonb, text, int, bigint);
+ALTER TABLE statement_lines DISABLE TRIGGER USER;
+ALTER TABLE bank_statements DISABLE TRIGGER USER;
+ALTER TABLE journal_lines DISABLE TRIGGER USER;
+ALTER TABLE journal_entries DISABLE TRIGGER USER;
+ALTER TABLE accounting_periods DISABLE TRIGGER USER;
+DELETE FROM statement_lines;
+DELETE FROM bank_statements;
+DELETE FROM journal_lines;
+DELETE FROM journal_entries;
+DELETE FROM accounting_periods;
+ALTER TABLE statement_lines ENABLE TRIGGER USER;
+ALTER TABLE bank_statements ENABLE TRIGGER USER;
+ALTER TABLE journal_lines ENABLE TRIGGER USER;
+ALTER TABLE journal_entries ENABLE TRIGGER USER;
+ALTER TABLE accounting_periods ENABLE TRIGGER USER;
+DELETE FROM cash_accounts;
+DELETE FROM bill_payments;
+DELETE FROM expenses WHERE bill_id IS NOT NULL;
+DELETE FROM supplier_bills;
+DELETE FROM suppliers;
+ALTER TABLE accounts DISABLE TRIGGER USER;
+DELETE FROM accounts;
+ALTER TABLE accounts ENABLE TRIGGER USER;
+
 SELECT 'ALL SCHEMA TESTS PASSED' AS result;
