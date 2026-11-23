@@ -1,4 +1,9 @@
 @import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/unbounded";
+@import "../styles/tokens.css";
 
-html { color-scheme: dark; }
-body { background: #0a0f14; color: #e8eef5; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+html { color-scheme: dark; scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); -webkit-font-smoothing: antialiased; overflow-x: clip; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; } }

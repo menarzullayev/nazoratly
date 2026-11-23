@@ -1,3 +1,4 @@
+import { Wordmark } from "@/components/Wordmark";
 import { getDict } from "@/i18n/get";
 import { LOCALES, NATIVE_NAME, hreflangOf, pathFor, type Locale } from "@/i18n/locales";
 
@@ -11,7 +12,7 @@ export function LangSwitch({ locale }: { locale: Locale }) {
           href={pathFor(l)}
           lang={hreflangOf(l)}
           aria-current={l === locale ? "page" : undefined}
-          className={l === locale ? "font-semibold text-white" : "text-zinc-400 hover:text-white"}
+          className={l === locale ? "font-semibold text-fg" : "text-mute hover:text-fg"}
         >
           {NATIVE_NAME[l]}
         </a>
@@ -27,25 +28,25 @@ export function SiteHome({ locale }: { locale: Locale }) {
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:bg-white focus:p-2 focus:text-black">
         {d.skip}
       </a>
-      <header className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-5 py-5">
-        <span className="text-lg font-semibold tracking-tight">{d.brand}</span>
+      <header className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-3 px-5 py-5">
+        <Wordmark name={d.brand} />
         <LangSwitch locale={locale} />
       </header>
       <main id="main" className="mx-auto max-w-5xl px-5 pb-24 pt-16">
-        <p className="text-sm uppercase tracking-widest text-emerald-400">{d.hero.eyebrow}</p>
-        <h1 className="mt-3 text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">{d.hero.title}</h1>
-        <p className="mt-5 max-w-2xl text-lg text-zinc-300">{d.hero.sub}</p>
+        <p className="text-sm uppercase tracking-widest text-accent">{d.hero.eyebrow}</p>
+        <h1 className="mt-3 text-3xl font-semibold leading-tight tracking-tight break-words sm:text-6xl font-display">{d.hero.title}</h1>
+        <p className="mt-5 max-w-2xl text-lg text-mute">{d.hero.sub}</p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <a href="#contact" className="rounded-xl bg-emerald-400 px-5 py-3 font-semibold text-black">
+          <a href="#contact" className="rounded-xl bg-accent px-5 py-3 font-semibold text-accent-ink">
             {d.hero.ctaPrimary}
           </a>
-          <a href="https://t.me/nazoratlybot" className="rounded-xl border border-zinc-700 px-5 py-3 font-semibold">
+          <a href="https://t.me/nazoratlybot" className="rounded-xl border border-line px-5 py-3 font-semibold">
             {d.hero.ctaSecondary}
           </a>
         </div>
         <section id="contact" className="mt-24" aria-labelledby="contact-title">
           <h2 id="contact-title" className="text-2xl font-semibold">{d.contact.title}</h2>
-          <p className="mt-2 text-zinc-300">{d.contact.lead}</p>
+          <p className="mt-2 text-mute">{d.contact.lead}</p>
           <ul className="mt-4 space-y-2">
             <li>
               {d.contact.telegramLabel}: <a className="underline" href="https://t.me/menarzullayev">{d.contact.telegramHandle}</a>
@@ -59,7 +60,7 @@ export function SiteHome({ locale }: { locale: Locale }) {
           </ul>
         </section>
       </main>
-      <footer className="mx-auto max-w-5xl px-5 pb-10 text-sm text-zinc-500">{d.footer.note}</footer>
+      <footer className="mx-auto max-w-5xl px-5 pb-10 text-sm text-mute">{d.footer.note}</footer>
     </>
   );
 }
