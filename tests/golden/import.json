@@ -1,0 +1,1575 @@
+{
+ "parse_delimited": [
+  {
+   "name": "comma",
+   "in": {
+    "text": "ism,telefon\nAli,901234567\nVali,931112233\n"
+   },
+   "out": [
+    [
+     "ism",
+     "telefon"
+    ],
+    [
+     "Ali",
+     "901234567"
+    ],
+    [
+     "Vali",
+     "931112233"
+    ]
+   ]
+  },
+  {
+   "name": "semicolon",
+   "in": {
+    "text": "ism;telefon\nAli;901234567\n"
+   },
+   "out": [
+    [
+     "ism",
+     "telefon"
+    ],
+    [
+     "Ali",
+     "901234567"
+    ]
+   ]
+  },
+  {
+   "name": "tab",
+   "in": {
+    "text": "ism\ttelefon\nAli\t901234567\n"
+   },
+   "out": [
+    [
+     "ism",
+     "telefon"
+    ],
+    [
+     "Ali",
+     "901234567"
+    ]
+   ]
+  },
+  {
+   "name": "bom and CRLF",
+   "in": {
+    "text": "﻿ism,telefon\r\nAli,901234567\r\n"
+   },
+   "out": [
+    [
+     "ism",
+     "telefon"
+    ],
+    [
+     "Ali",
+     "901234567"
+    ]
+   ]
+  },
+  {
+   "name": "quoted comma",
+   "in": {
+    "text": "ism,izoh\n\"Aliyev, Ali\",\"a \"\"quoted\"\" word\"\n"
+   },
+   "out": [
+    [
+     "ism",
+     "izoh"
+    ],
+    [
+     "Aliyev, Ali",
+     "a \"quoted\" word"
+    ]
+   ]
+  },
+  {
+   "name": "quoted newline",
+   "in": {
+    "text": "ism,izoh\nAli,\"line1\nline2\"\n"
+   },
+   "out": [
+    [
+     "ism",
+     "izoh"
+    ],
+    [
+     "Ali",
+     "line1\nline2"
+    ]
+   ]
+  },
+  {
+   "name": "blank rows dropped",
+   "in": {
+    "text": "ism,telefon\n\nAli,901234567\n , \n\nVali,931112233"
+   },
+   "out": [
+    [
+     "ism",
+     "telefon"
+    ],
+    [
+     "Ali",
+     "901234567"
+    ],
+    [
+     "Vali",
+     "931112233"
+    ]
+   ]
+  },
+  {
+   "name": "no trailing newline",
+   "in": {
+    "text": "a,b\n1,2"
+   },
+   "out": [
+    [
+     "a",
+     "b"
+    ],
+    [
+     "1",
+     "2"
+    ]
+   ]
+  },
+  {
+   "name": "semicolon inside quotes does not decide",
+   "in": {
+    "text": "a,b\n\"x;y;z;w\",2\n"
+   },
+   "out": [
+    [
+     "a",
+     "b"
+    ],
+    [
+     "x;y;z;w",
+     "2"
+    ]
+   ]
+  },
+  {
+   "name": "empty",
+   "in": {
+    "text": ""
+   },
+   "out": []
+  },
+  {
+   "name": "spaces trimmed",
+   "in": {
+    "text": "a , b\n 1 ,2 \n"
+   },
+   "out": [
+    [
+     "a",
+     "b"
+    ],
+    [
+     "1",
+     "2"
+    ]
+   ]
+  },
+  {
+   "name": "short row kept as is",
+   "in": {
+    "text": "a,b,c\n1,2\n"
+   },
+   "out": [
+    [
+     "a",
+     "b",
+     "c"
+    ],
+    [
+     "1",
+     "2"
+    ]
+   ]
+  }
+ ],
+ "detect_columns": [
+  {
+   "name": "headers 0",
+   "in": {
+    "entity": "students",
+    "headers": [
+     "Ism",
+     "Telefon",
+     "Tug'ilgan sana",
+     "Guruh",
+     "Izoh"
+    ]
+   },
+   "out": {
+    "full_name": 0,
+    "phone": 1,
+    "birth_date": 2,
+    "guardian_name": null,
+    "guardian_phone": null,
+    "group": 3,
+    "notes": 4
+   }
+  },
+  {
+   "name": "headers 1",
+   "in": {
+    "entity": "students",
+    "headers": [
+     "F.I.O",
+     "Телефон",
+     "Дата рождения",
+     "Группа",
+     "Комментарий"
+    ]
+   },
+   "out": {
+    "full_name": 0,
+    "phone": 1,
+    "birth_date": 2,
+    "guardian_name": null,
+    "guardian_phone": null,
+    "group": 3,
+    "notes": 4
+   }
+  },
+  {
+   "name": "headers 2",
+   "in": {
+    "entity": "students",
+    "headers": [
+     "Full name",
+     "Phone",
+     "Birth date",
+     "Guardian",
+     "Guardian phone",
+     "Group",
+     "Notes"
+    ]
+   },
+   "out": {
+    "full_name": 0,
+    "phone": 1,
+    "birth_date": 2,
+    "guardian_name": 3,
+    "guardian_phone": 4,
+    "group": 5,
+    "notes": 6
+   }
+  },
+  {
+   "name": "headers 3",
+   "in": {
+    "entity": "students",
+    "headers": [
+     "O‘quvchi ismi",
+     "Telefon raqami",
+     "Ota-ona",
+     "Ota-ona telefoni"
+    ]
+   },
+   "out": {
+    "full_name": 0,
+    "phone": 1,
+    "birth_date": null,
+    "guardian_name": 2,
+    "guardian_phone": 3,
+    "group": null,
+    "notes": null
+   }
+  },
+  {
+   "name": "headers 4",
+   "in": {
+    "entity": "students",
+    "headers": [
+     "col1",
+     "col2"
+    ]
+   },
+   "out": {
+    "full_name": null,
+    "phone": null,
+    "birth_date": null,
+    "guardian_name": null,
+    "guardian_phone": null,
+    "group": null,
+    "notes": null
+   }
+  },
+  {
+   "name": "headers 5",
+   "in": {
+    "entity": "students",
+    "headers": [
+     "name",
+     "name"
+    ]
+   },
+   "out": {
+    "full_name": 0,
+    "phone": null,
+    "birth_date": null,
+    "guardian_name": null,
+    "guardian_phone": null,
+    "group": null,
+    "notes": null
+   }
+  },
+  {
+   "name": "headers 6",
+   "in": {
+    "entity": "students",
+    "headers": [
+     "ISM_FAMILIYA",
+     "TEL",
+     "tugʼilgan kun"
+    ]
+   },
+   "out": {
+    "full_name": 0,
+    "phone": 1,
+    "birth_date": 2,
+    "guardian_name": null,
+    "guardian_phone": null,
+    "group": null,
+    "notes": null
+   }
+  },
+  {
+   "name": "headers 7",
+   "in": {
+    "entity": "groups",
+    "headers": [
+     "Guruh nomi",
+     "Kurs",
+     "O'qituvchi",
+     "Oylik to'lov",
+     "Sig'im",
+     "Boshlanish sanasi"
+    ]
+   },
+   "out": {
+    "name": 0,
+    "course": 1,
+    "teacher": 2,
+    "monthly_fee": 3,
+    "capacity": 4,
+    "start_date": 5
+   }
+  },
+  {
+   "name": "headers 8",
+   "in": {
+    "entity": "groups",
+    "headers": [
+     "name",
+     "course",
+     "monthly_fee",
+     "start_date"
+    ]
+   },
+   "out": {
+    "name": 0,
+    "course": 1,
+    "teacher": null,
+    "monthly_fee": 2,
+    "capacity": null,
+    "start_date": 3
+   }
+  },
+  {
+   "name": "headers 9",
+   "in": {
+    "entity": "groups",
+    "headers": [
+     "Название",
+     "Курс",
+     "Учитель",
+     "Цена",
+     "Вместимость",
+     "Дата начала"
+    ]
+   },
+   "out": {
+    "name": 0,
+    "course": 1,
+    "teacher": 2,
+    "monthly_fee": 3,
+    "capacity": 4,
+    "start_date": 5
+   }
+  },
+  {
+   "name": "headers 10",
+   "in": {
+    "entity": "leads",
+    "headers": [
+     "Ism",
+     "Telefon",
+     "Manba",
+     "Izoh"
+    ]
+   },
+   "out": {
+    "full_name": 0,
+    "phone": 1,
+    "source": 2,
+    "note": 3
+   }
+  },
+  {
+   "name": "headers 11",
+   "in": {
+    "entity": "leads",
+    "headers": [
+     "name",
+     "phone",
+     "source",
+     "note"
+    ]
+   },
+   "out": {
+    "full_name": 0,
+    "phone": 1,
+    "source": 2,
+    "note": 3
+   }
+  },
+  {
+   "name": "headers 12",
+   "in": {
+    "entity": "leads",
+    "headers": [
+     "Имя",
+     "Телефон",
+     "Источник"
+    ]
+   },
+   "out": {
+    "full_name": 0,
+    "phone": 1,
+    "source": 2,
+    "note": null
+   }
+  }
+ ],
+ "normalize_phone": [
+  {
+   "name": "phone 0",
+   "in": {
+    "text": "901234567"
+   },
+   "out": "+998901234567"
+  },
+  {
+   "name": "phone 1",
+   "in": {
+    "text": "90 123 45 67"
+   },
+   "out": "+998901234567"
+  },
+  {
+   "name": "phone 2",
+   "in": {
+    "text": "+998 90 123-45-67"
+   },
+   "out": "+998901234567"
+  },
+  {
+   "name": "phone 3",
+   "in": {
+    "text": "(90) 123 45 67"
+   },
+   "out": "+998901234567"
+  },
+  {
+   "name": "phone 4",
+   "in": {
+    "text": "998901234567"
+   },
+   "out": "+998901234567"
+  },
+  {
+   "name": "phone 5",
+   "in": {
+    "text": "+998901234567"
+   },
+   "out": "+998901234567"
+  },
+  {
+   "name": "phone 6",
+   "in": {
+    "text": "00998901234567"
+   },
+   "out": "+998901234567"
+  },
+  {
+   "name": "phone 7",
+   "in": {
+    "text": "+1 202 555 0147"
+   },
+   "out": "+12025550147"
+  },
+  {
+   "name": "phone 8",
+   "in": {
+    "text": "12345"
+   },
+   "out": null
+  },
+  {
+   "name": "phone 9",
+   "in": {
+    "text": "abc"
+   },
+   "out": null
+  },
+  {
+   "name": "phone 10",
+   "in": {
+    "text": ""
+   },
+   "out": null
+  },
+  {
+   "name": "phone 11",
+   "in": {
+    "text": "+0123456789"
+   },
+   "out": null
+  },
+  {
+   "name": "phone 12",
+   "in": {
+    "text": "+9989012345"
+   },
+   "out": "+9989012345"
+  },
+  {
+   "name": "phone 13",
+   "in": {
+    "text": "8901234567"
+   },
+   "out": null
+  },
+  {
+   "name": "phone 14",
+   "in": {
+    "text": "90123456789012345"
+   },
+   "out": null
+  }
+ ],
+ "parse_date": [
+  {
+   "name": "date 0",
+   "in": {
+    "text": "2010-05-17"
+   },
+   "out": "2010-05-17"
+  },
+  {
+   "name": "date 1",
+   "in": {
+    "text": "17.05.2010"
+   },
+   "out": "2010-05-17"
+  },
+  {
+   "name": "date 2",
+   "in": {
+    "text": "17/05/2010"
+   },
+   "out": "2010-05-17"
+  },
+  {
+   "name": "date 3",
+   "in": {
+    "text": "17-05-2010"
+   },
+   "out": "2010-05-17"
+  },
+  {
+   "name": "date 4",
+   "in": {
+    "text": "2010-5-7"
+   },
+   "out": "2010-05-07"
+  },
+  {
+   "name": "date 5",
+   "in": {
+    "text": "7.5.2010"
+   },
+   "out": "2010-05-07"
+  },
+  {
+   "name": "date 6",
+   "in": {
+    "text": "31.02.2010"
+   },
+   "out": null
+  },
+  {
+   "name": "date 7",
+   "in": {
+    "text": "2010-13-01"
+   },
+   "out": null
+  },
+  {
+   "name": "date 8",
+   "in": {
+    "text": "17.05.10"
+   },
+   "out": null
+  },
+  {
+   "name": "date 9",
+   "in": {
+    "text": ""
+   },
+   "out": null
+  },
+  {
+   "name": "date 10",
+   "in": {
+    "text": "tomorrow"
+   },
+   "out": null
+  },
+  {
+   "name": "date 11",
+   "in": {
+    "text": "2026-02-29"
+   },
+   "out": null
+  },
+  {
+   "name": "date 12",
+   "in": {
+    "text": "2028-02-29"
+   },
+   "out": "2028-02-29"
+  }
+ ],
+ "parse_whole": [
+  {
+   "name": "number 0",
+   "in": {
+    "text": "600000"
+   },
+   "out": 600000
+  },
+  {
+   "name": "number 1",
+   "in": {
+    "text": "600 000"
+   },
+   "out": 600000
+  },
+  {
+   "name": "number 2",
+   "in": {
+    "text": "600,000"
+   },
+   "out": 600000
+  },
+  {
+   "name": "number 3",
+   "in": {
+    "text": "1,200,000"
+   },
+   "out": 1200000
+  },
+  {
+   "name": "number 4",
+   "in": {
+    "text": "600000.00"
+   },
+   "out": 600000
+  },
+  {
+   "name": "number 5",
+   "in": {
+    "text": "600000.50"
+   },
+   "out": null
+  },
+  {
+   "name": "number 6",
+   "in": {
+    "text": "6,00"
+   },
+   "out": null
+  },
+  {
+   "name": "number 7",
+   "in": {
+    "text": "abc"
+   },
+   "out": null
+  },
+  {
+   "name": "number 8",
+   "in": {
+    "text": ""
+   },
+   "out": null
+  },
+  {
+   "name": "number 9",
+   "in": {
+    "text": "-5"
+   },
+   "out": null
+  },
+  {
+   "name": "number 10",
+   "in": {
+    "text": "1 000 000"
+   },
+   "out": 1000000
+  },
+  {
+   "name": "number 11",
+   "in": {
+    "text": "600'000"
+   },
+   "out": 600000
+  },
+  {
+   "name": "number 12",
+   "in": {
+    "text": "0"
+   },
+   "out": 0
+  },
+  {
+   "name": "number 13",
+   "in": {
+    "text": "12,34"
+   },
+   "out": null
+  }
+ ],
+ "validate_row": [
+  {
+   "name": "student minimal",
+   "in": {
+    "entity": "students",
+    "raw": {
+     "full_name": "Ali Karimov"
+    },
+    "today": "2026-11-23"
+   },
+   "out": {
+    "values": {
+     "full_name": "Ali Karimov"
+    },
+    "errors": []
+   }
+  },
+  {
+   "name": "student full",
+   "in": {
+    "entity": "students",
+    "raw": {
+     "full_name": " Ali Karimov ",
+     "phone": "90 123 45 67",
+     "birth_date": "17.05.2010",
+     "guardian_name": "Dilnoza",
+     "guardian_phone": "+998931112233",
+     "group": "IELTS",
+     "notes": "x"
+    },
+    "today": "2026-11-23"
+   },
+   "out": {
+    "values": {
+     "full_name": "Ali Karimov",
+     "phone": "+998901234567",
+     "birth_date": "2010-05-17",
+     "guardian_name": "Dilnoza",
+     "guardian_phone": "+998931112233",
+     "group": "IELTS",
+     "notes": "x"
+    },
+    "errors": []
+   }
+  },
+  {
+   "name": "student blank name",
+   "in": {
+    "entity": "students",
+    "raw": {
+     "full_name": "  ",
+     "phone": "901234567"
+    },
+    "today": "2026-11-23"
+   },
+   "out": {
+    "values": {
+     "phone": "+998901234567"
+    },
+    "errors": [
+     {
+      "field": "full_name",
+      "code": "required"
+     }
+    ]
+   }
+  },
+  {
+   "name": "student bad phone and bad date",
+   "in": {
+    "entity": "students",
+    "raw": {
+     "full_name": "Ali",
+     "phone": "12345",
+     "birth_date": "32.01.2010"
+    },
+    "today": "2026-11-23"
+   },
+   "out": {
+    "values": {
+     "full_name": "Ali"
+    },
+    "errors": [
+     {
+      "field": "phone",
+      "code": "invalid_phone"
+     },
+     {
+      "field": "birth_date",
+      "code": "invalid_date"
+     }
+    ]
+   }
+  },
+  {
+   "name": "student future birth date",
+   "in": {
+    "entity": "students",
+    "raw": {
+     "full_name": "Ali",
+     "birth_date": "2027-01-01"
+    },
+    "today": "2026-11-23"
+   },
+   "out": {
+    "values": {
+     "full_name": "Ali"
+    },
+    "errors": [
+     {
+      "field": "birth_date",
+      "code": "future_date"
+     }
+    ]
+   }
+  },
+  {
+   "name": "student birth date today is fine",
+   "in": {
+    "entity": "students",
+    "raw": {
+     "full_name": "Ali",
+     "birth_date": "2026-11-23"
+    },
+    "today": "2026-11-23"
+   },
+   "out": {
+    "values": {
+     "full_name": "Ali",
+     "birth_date": "2026-11-23"
+    },
+    "errors": []
+   }
+  },
+  {
+   "name": "student ancient birth date",
+   "in": {
+    "entity": "students",
+    "raw": {
+     "full_name": "Ali",
+     "birth_date": "1899-12-31"
+    },
+    "today": "2026-11-23"
+   },
+   "out": {
+    "values": {
+     "full_name": "Ali"
+    },
+    "errors": [
+     {
+      "field": "birth_date",
+      "code": "invalid_date"
+     }
+    ]
+   }
+  },
+  {
+   "name": "student bad guardian phone",
+   "in": {
+    "entity": "students",
+    "raw": {
+     "full_name": "Ali",
+     "guardian_phone": "abc"
+    },
+    "today": "2026-11-23"
+   },
+   "out": {
+    "values": {
+     "full_name": "Ali"
+    },
+    "errors": [
+     {
+      "field": "guardian_phone",
+      "code": "invalid_phone"
+     }
+    ]
+   }
+  },
+  {
+   "name": "student name too long",
+   "in": {
+    "entity": "students",
+    "raw": {
+     "full_name": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    "today": "2026-11-23"
+   },
+   "out": {
+    "values": {},
+    "errors": [
+     {
+      "field": "full_name",
+      "code": "too_long"
+     }
+    ]
+   }
+  },
+  {
+   "name": "student name 200 chars ok",
+   "in": {
+    "entity": "students",
+    "raw": {
+     "full_name": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    "today": "2026-11-23"
+   },
+   "out": {
+    "values": {
+     "full_name": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    "errors": []
+   }
+  },
+  {
+   "name": "group full",
+   "in": {
+    "entity": "groups",
+    "raw": {
+     "name": "IELTS 6.5",
+     "course": "IELTS",
+     "teacher": "Dilnoza Karimova",
+     "monthly_fee": "600 000",
+     "capacity": "12",
+     "start_date": "2026-12-01"
+    },
+    "today": "2026-11-23"
+   },
+   "out": {
+    "values": {
+     "name": "IELTS 6.5",
+     "course": "IELTS",
+     "teacher": "Dilnoza Karimova",
+     "monthly_fee": 600000,
+     "capacity": 12,
+     "start_date": "2026-12-01"
+    },
+    "errors": []
+   }
+  },
+  {
+   "name": "group minimal",
+   "in": {
+    "entity": "groups",
+    "raw": {
+     "name": "Math",
+     "course": "Matematika",
+     "monthly_fee": "400000",
+     "start_date": "01.12.2026"
+    },
+    "today": "2026-11-23"
+   },
+   "out": {
+    "values": {
+     "name": "Math",
+     "course": "Matematika",
+     "monthly_fee": 400000,
+     "start_date": "2026-12-01"
+    },
+    "errors": []
+   }
+  },
+  {
+   "name": "group missing required",
+   "in": {
+    "entity": "groups",
+    "raw": {
+     "name": "",
+     "course": "",
+     "monthly_fee": "",
+     "start_date": ""
+    },
+    "today": "2026-11-23"
+   },
+   "out": {
+    "values": {},
+    "errors": [
+     {
+      "field": "name",
+      "code": "required"
+     },
+     {
+      "field": "course",
+      "code": "required"
+     },
+     {
+      "field": "monthly_fee",
+      "code": "required"
+     },
+     {
+      "field": "start_date",
+      "code": "required"
+     }
+    ]
+   }
+  },
+  {
+   "name": "group bad fee and capacity",
+   "in": {
+    "entity": "groups",
+    "raw": {
+     "name": "G",
+     "course": "C",
+     "monthly_fee": "free",
+     "capacity": "0",
+     "start_date": "2026-12-01"
+    },
+    "today": "2026-11-23"
+   },
+   "out": {
+    "values": {
+     "name": "G",
+     "course": "C",
+     "start_date": "2026-12-01"
+    },
+    "errors": [
+     {
+      "field": "monthly_fee",
+      "code": "invalid_number"
+     },
+     {
+      "field": "capacity",
+      "code": "out_of_range"
+     }
+    ]
+   }
+  },
+  {
+   "name": "group capacity too big",
+   "in": {
+    "entity": "groups",
+    "raw": {
+     "name": "G",
+     "course": "C",
+     "monthly_fee": "1",
+     "capacity": "10001",
+     "start_date": "2026-12-01"
+    },
+    "today": "2026-11-23"
+   },
+   "out": {
+    "values": {
+     "name": "G",
+     "course": "C",
+     "monthly_fee": 1,
+     "start_date": "2026-12-01"
+    },
+    "errors": [
+     {
+      "field": "capacity",
+      "code": "out_of_range"
+     }
+    ]
+   }
+  },
+  {
+   "name": "group zero fee is allowed",
+   "in": {
+    "entity": "groups",
+    "raw": {
+     "name": "G",
+     "course": "C",
+     "monthly_fee": "0",
+     "start_date": "2026-12-01"
+    },
+    "today": "2026-11-23"
+   },
+   "out": {
+    "values": {
+     "name": "G",
+     "course": "C",
+     "monthly_fee": 0,
+     "start_date": "2026-12-01"
+    },
+    "errors": []
+   }
+  },
+  {
+   "name": "lead minimal",
+   "in": {
+    "entity": "leads",
+    "raw": {
+     "full_name": "Jasur"
+    },
+    "today": "2026-11-23"
+   },
+   "out": {
+    "values": {
+     "full_name": "Jasur"
+    },
+    "errors": []
+   }
+  },
+  {
+   "name": "lead full",
+   "in": {
+    "entity": "leads",
+    "raw": {
+     "full_name": "Jasur",
+     "phone": "+998 93 111 22 33",
+     "source": "Instagram",
+     "note": "qayta qo'ng'iroq"
+    },
+    "today": "2026-11-23"
+   },
+   "out": {
+    "values": {
+     "full_name": "Jasur",
+     "phone": "+998931112233",
+     "source": "Instagram",
+     "note": "qayta qo'ng'iroq"
+    },
+    "errors": []
+   }
+  },
+  {
+   "name": "lead bad phone",
+   "in": {
+    "entity": "leads",
+    "raw": {
+     "full_name": "Jasur",
+     "phone": "99"
+    },
+    "today": "2026-11-23"
+   },
+   "out": {
+    "values": {
+     "full_name": "Jasur"
+    },
+    "errors": [
+     {
+      "field": "phone",
+      "code": "invalid_phone"
+     }
+    ]
+   }
+  },
+  {
+   "name": "lead no name",
+   "in": {
+    "entity": "leads",
+    "raw": {
+     "phone": "901234567"
+    },
+    "today": "2026-11-23"
+   },
+   "out": {
+    "values": {
+     "phone": "+998901234567"
+    },
+    "errors": [
+     {
+      "field": "full_name",
+      "code": "required"
+     }
+    ]
+   }
+  }
+ ],
+ "duplicate_keys": [
+  {
+   "name": "keys 0",
+   "in": {
+    "entity": "students",
+    "values": {
+     "full_name": "Ali Karimov",
+     "phone": "+998901234567"
+    }
+   },
+   "out": [
+    "phone:+998901234567"
+   ]
+  },
+  {
+   "name": "keys 1",
+   "in": {
+    "entity": "students",
+    "values": {
+     "full_name": "Ali Karimov",
+     "birth_date": "2010-05-17"
+    }
+   },
+   "out": [
+    "name:ali karimov|2010-05-17"
+   ]
+  },
+  {
+   "name": "keys 2",
+   "in": {
+    "entity": "students",
+    "values": {
+     "full_name": "Ali  Karimov"
+    }
+   },
+   "out": [
+    "name:ali karimov"
+   ]
+  },
+  {
+   "name": "keys 3",
+   "in": {
+    "entity": "students",
+    "values": {
+     "full_name": "A.li Ka-rimov",
+     "phone": "+998901234567",
+     "birth_date": "2010-05-17"
+    }
+   },
+   "out": [
+    "phone:+998901234567",
+    "name:a li ka rimov|2010-05-17"
+   ]
+  },
+  {
+   "name": "keys 4",
+   "in": {
+    "entity": "students",
+    "values": {
+     "full_name": "Oʻtkir"
+    }
+   },
+   "out": [
+    "name:o'tkir"
+   ]
+  },
+  {
+   "name": "keys 5",
+   "in": {
+    "entity": "groups",
+    "values": {
+     "name": "IELTS  6.5"
+    }
+   },
+   "out": [
+    "name:ielts 6 5"
+   ]
+  },
+  {
+   "name": "keys 6",
+   "in": {
+    "entity": "leads",
+    "values": {
+     "full_name": "Jasur",
+     "phone": "+998931112233"
+    }
+   },
+   "out": [
+    "phone:+998931112233"
+   ]
+  }
+ ],
+ "find_duplicates": [
+  {
+   "name": "no duplicates",
+   "in": {
+    "entity": "students",
+    "rows": [
+     {
+      "full_name": "Ali",
+      "phone": "+998901234567"
+     },
+     {
+      "full_name": "Vali",
+      "phone": "+998931112233"
+     }
+    ],
+    "existing": []
+   },
+   "out": [
+    null,
+    null
+   ]
+  },
+  {
+   "name": "same phone twice in the file",
+   "in": {
+    "entity": "students",
+    "rows": [
+     {
+      "full_name": "Ali",
+      "phone": "+998901234567"
+     },
+     {
+      "full_name": "Another",
+      "phone": "+998901234567"
+     }
+    ],
+    "existing": []
+   },
+   "out": [
+    null,
+    {
+     "kind": "file",
+     "of": 0
+    }
+   ]
+  },
+  {
+   "name": "same name and birth date",
+   "in": {
+    "entity": "students",
+    "rows": [
+     {
+      "full_name": "Ali Karimov",
+      "birth_date": "2010-05-17"
+     },
+     {
+      "full_name": "ali karimov",
+      "birth_date": "2010-05-17"
+     }
+    ],
+    "existing": []
+   },
+   "out": [
+    null,
+    {
+     "kind": "file",
+     "of": 0
+    }
+   ]
+  },
+  {
+   "name": "same name different birth date is fine",
+   "in": {
+    "entity": "students",
+    "rows": [
+     {
+      "full_name": "Ali Karimov",
+      "birth_date": "2010-05-17"
+     },
+     {
+      "full_name": "Ali Karimov",
+      "birth_date": "2011-01-01"
+     }
+    ],
+    "existing": []
+   },
+   "out": [
+    null,
+    null
+   ]
+  },
+  {
+   "name": "existing phone",
+   "in": {
+    "entity": "students",
+    "rows": [
+     {
+      "full_name": "Ali",
+      "phone": "+998901234567"
+     }
+    ],
+    "existing": [
+     "phone:+998901234567"
+    ]
+   },
+   "out": [
+    {
+     "kind": "existing",
+     "of": null
+    }
+   ]
+  },
+  {
+   "name": "existing name+birth",
+   "in": {
+    "entity": "students",
+    "rows": [
+     {
+      "full_name": "Ali Karimov",
+      "birth_date": "2010-05-17"
+     }
+    ],
+    "existing": [
+     "name:ali karimov|2010-05-17"
+    ]
+   },
+   "out": [
+    {
+     "kind": "existing",
+     "of": null
+    }
+   ]
+  },
+  {
+   "name": "bare name duplicates only without phone and birth date",
+   "in": {
+    "entity": "students",
+    "rows": [
+     {
+      "full_name": "Ali"
+     },
+     {
+      "full_name": "Ali"
+     },
+     {
+      "full_name": "Ali",
+      "phone": "+998931112233"
+     }
+    ],
+    "existing": []
+   },
+   "out": [
+    null,
+    {
+     "kind": "file",
+     "of": 0
+    },
+    null
+   ]
+  },
+  {
+   "name": "an invalid row claims no key",
+   "in": {
+    "entity": "students",
+    "rows": [
+     null,
+     {
+      "full_name": "Ali",
+      "phone": "+998901234567"
+     }
+    ],
+    "existing": []
+   },
+   "out": [
+    null,
+    null
+   ]
+  },
+  {
+   "name": "third row points to the first occurrence",
+   "in": {
+    "entity": "students",
+    "rows": [
+     {
+      "full_name": "Ali",
+      "phone": "+998901234567"
+     },
+     {
+      "full_name": "B",
+      "phone": "+998931112233"
+     },
+     {
+      "full_name": "C",
+      "phone": "+998901234567"
+     }
+    ],
+    "existing": []
+   },
+   "out": [
+    null,
+    null,
+    {
+     "kind": "file",
+     "of": 0
+    }
+   ]
+  },
+  {
+   "name": "group names",
+   "in": {
+    "entity": "groups",
+    "rows": [
+     {
+      "name": "IELTS 6.5"
+     },
+     {
+      "name": "ielts  6.5"
+     },
+     {
+      "name": "Math"
+     }
+    ],
+    "existing": [
+     "name:math"
+    ]
+   },
+   "out": [
+    null,
+    {
+     "kind": "file",
+     "of": 0
+    },
+    {
+     "kind": "existing",
+     "of": null
+    }
+   ]
+  },
+  {
+   "name": "leads by phone",
+   "in": {
+    "entity": "leads",
+    "rows": [
+     {
+      "full_name": "Jasur",
+      "phone": "+998931112233"
+     },
+     {
+      "full_name": "Jasur Aka",
+      "phone": "+998931112233"
+     }
+    ],
+    "existing": []
+   },
+   "out": [
+    null,
+    {
+     "kind": "file",
+     "of": 0
+    }
+   ]
+  }
+ ]
+}
