@@ -1,3 +1,4 @@
+import { Demo } from "@/components/demo/Demo";
 import { Hero } from "@/components/Hero";
 import { Wordmark } from "@/components/Wordmark";
 import { getDict } from "@/i18n/get";
@@ -36,6 +37,7 @@ export function SiteHome({ locale }: { locale: Locale }) {
       <main id="main">
         <Hero d={d} />
         <div className="mx-auto max-w-5xl px-5 pb-24">
+        <Demo d={d} locale={locale} />
         <section id="contact" className="mt-24" aria-labelledby="contact-title">
           <h2 id="contact-title" className="text-2xl font-semibold">{d.contact.title}</h2>
           <p className="mt-2 text-mute">{d.contact.lead}</p>

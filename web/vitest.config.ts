@@ -5,5 +5,6 @@ const r = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 
 export default defineConfig({
   resolve: { alias: { "@domain": r("../sheets/src/domain"), "@": r(".") } },
-  test: { include: ["test/**/*.test.ts"], environment: "node" },
+  oxc: { jsx: { runtime: "automatic" } },
+  test: { include: ["test/**/*.test.{ts,tsx}"], environment: "node" },
 });
