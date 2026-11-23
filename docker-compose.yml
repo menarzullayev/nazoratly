@@ -72,5 +72,11 @@ services:
       migrate: {condition: service_completed_successfully}
     restart: unless-stopped
 
+  web:
+    build: {context: ., dockerfile: web/Dockerfile}
+    ports:
+      - "127.0.0.1:${NAZORATLY_WEB_PORT:-8012}:80"
+    restart: unless-stopped
+
 volumes:
   nazoratly-pgdata:

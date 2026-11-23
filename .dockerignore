@@ -10,3 +10,7 @@ docs
 *.md
 backend/tests
 .env
+web/out
+web/.next
+web/test-results
+web/playwright-report
