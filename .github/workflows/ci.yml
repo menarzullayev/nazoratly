@@ -79,7 +79,7 @@ jobs:
           npx --yes serve@14 out -l 4173 --no-clipboard &
           npx --yes wait-on@8 http://127.0.0.1:4173/
           B=http://127.0.0.1:4173
-          node scripts/lighthouse.mjs --runs 3 --preset both --min 90 $B/ $B/uz-cyrl/ $B/uz-new/ $B/ru/ $B/en/
+          node scripts/lighthouse.mjs --runs 3 --preset both --min 95 $B/ $B/uz-cyrl/ $B/uz-new/ $B/ru/ $B/en/
 
   secrets:
     runs-on: ubuntu-latest
