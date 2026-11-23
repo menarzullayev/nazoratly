@@ -60,6 +60,10 @@ class NotOpen(Conflict):
     code = "not_open"
 
 
+class NothingOwed(Conflict):
+    code = "nothing_owed"
+
+
 class Unprocessable(ApiError):
     status_code, code = 422, "unprocessable"
 

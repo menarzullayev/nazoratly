@@ -66,5 +66,7 @@ async def patch_settings(
         await load_settings(conn, p.org_id)
         for column, value in changes.items():  # column names come from the model above, never from the client
             stored = None if column == "requisites" and value == "" else value
-            await execute(conn, f"UPDATE org_settings SET {column} = %s WHERE org_id = %s", (stored, p.org_id))
+            await execute(
+                conn, f"UPDATE org_settings SET {column} = %s WHERE org_id = %s", (stored, p.org_id)
+            )
         return await load_settings(conn, p.org_id)
