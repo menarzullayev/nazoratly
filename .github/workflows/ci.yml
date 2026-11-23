@@ -62,6 +62,17 @@ jobs:
       - name: Types, tests, bundle
         run: npm run check
 
+  web:
+    runs-on: ubuntu-latest
+    defaults: {run: {working-directory: web}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: "24"}
+      - run: npm ci --no-audit --no-fund
+      - name: Lint, types, unit tests, static build
+        run: npm run lint && npm run typecheck && npm test && npm run build
+
   secrets:
     runs-on: ubuntu-latest
     steps:
