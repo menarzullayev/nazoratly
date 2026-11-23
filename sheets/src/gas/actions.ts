@@ -1,0 +1,392 @@
+/** Menu actions and the server side of the sidebars. Business rules live in ../domain; this file only moves data. */
+import { planCharges } from "../domain/billing";
+import { computeDebts, debtors, type StudentDebt } from "../domain/debt";
+import { inMonth, isIsoDate, monthStart } from "../domain/dates";
+import { nextId, nextIds } from "../domain/ids";
+import { collectedTuition, computePayroll, heldLessons } from "../domain/payroll";
+import { formatSom, planReminders, type SkipReason } from "../domain/reminders";
+import type { AttendanceRow, Charge, Enrollment, Group, Payment, ReminderDraft, Student, Teacher } from "../domain/types";
+import { append, read, replaceWhere, today, updateById } from "./repo";
+import {
+  ATTENDANCE, CHARGES, DASHBOARD_SHEET, DEBTORS_SHEET, DRAFTS, ENROLLMENTS, GROUPS, PAYMENTS, PAYROLL, STUDENTS, TEACHERS,
+} from "./schema";
+import { readSettings } from "./settings";
+import { getToken, props, sendMessage, setToken, tg, webhookSecret } from "./telegram";
+
+type StudentRow = Student & { phone?: string; consentDate?: string; consentPolicy?: string; linkCode?: string; linkUrl?: string };
+
+const ui = (): GoogleAppsScript.Base.Ui => SpreadsheetApp.getUi();
+const toast = (msg: string, title = "nazoratly"): void => SpreadsheetApp.getActive().toast(msg, title, 6);
+
+export function withLock<T>(fn: () => T): T {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(20_000)) throw new Error("Boshqa amal bajarilmoqda. Bir necha soniyadan keyin qayta urinib ko'ring.");
+  try {
+    return fn();
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** Runs a menu action; any error becomes a readable dialog instead of a silent failure. */
+export function guard(title: string, fn: () => void): void {
+  try {
+    fn();
+  } catch (e) {
+    ui().alert(title, e instanceof Error ? e.message : String(e), ui().ButtonSet.OK);
+  }
+}
+
+function promptMonth(title: string): string | null {
+  const now = today().slice(0, 7);
+  const r = ui().prompt(title, `Oyni kiriting (yyyy-mm). Bo'sh qoldirsangiz: ${now}`, ui().ButtonSet.OK_CANCEL);
+  if (r.getSelectedButton() !== ui().Button.OK) return null;
+  const v = (r.getResponseText().trim() || now).slice(0, 7);
+  if (!isIsoDate(`${v}-01`)) throw new Error(`Noto'g'ri oy: "${v}". Format: 2026-03`);
+  return `${v}-01`;
+}
+
+function loadFinance(): { charges: Charge[]; payments: Payment[] } {
+  return { charges: read<Charge>(CHARGES), payments: read<Payment>(PAYMENTS) };
+}
+
+// ------------------------------------------------------------------ monthly charges
+export function generateMonthlyCharges(): void {
+  const month = promptMonth("Oylik hisoblarni yaratish");
+  if (!month) return;
+  const summary = withLock(() => {
+    const s = readSettings();
+    const charges = read<Charge>(CHARGES);
+    const plan = planCharges({
+      month, dueDay: s.dueDay, enrollments: read<Enrollment>(ENROLLMENTS), groups: read<Group>(GROUPS), students: read<StudentRow>(STUDENTS), charges,
+    });
+    const ids = nextIds("C", charges.map((c) => c.id), plan.create.length);
+    append(CHARGES, plan.create.map((c, i) => ({ ...c, id: ids[i]!, voided: false })));
+    return `${month.slice(0, 7)}: ${plan.create.length} ta yangi hisob yaratildi.\nAvval yaratilgan: ${plan.skippedExisting}.\nNarxi 0 bo'lgani uchun o'tkazib yuborilgan: ${plan.skippedZeroFee}.`;
+  });
+  ui().alert("Oylik hisoblar", summary, ui().ButtonSet.OK);
+}
+
+// ------------------------------------------------------------------ debtors report
+function debtState(): { students: StudentRow[]; debts: StudentDebt[]; balances: ReturnType<typeof computeDebts>["balances"] } {
+  const { charges, payments } = loadFinance();
+  const r = computeDebts(charges, payments, today());
+  return { students: read<StudentRow>(STUDENTS), debts: r.students, balances: r.balances };
+}
+
+export function refreshDebtors(): void {
+  const { students, debts } = debtState();
+  const byId = new Map(students.map((s) => [s.id, s]));
+  const rows = debts.filter((d) => d.outstanding > 0 || d.credit > 0).map((d) => {
+    const s = byId.get(d.studentId);
+    return [d.studentId, s?.fullName ?? "(topilmadi)", s?.guardianName ?? "", d.charged, d.paid, d.outstanding, d.overdue, d.oldestDue, d.maxDaysOverdue, d.credit];
+  });
+  const sh = SpreadsheetApp.getActive().getSheetByName(DEBTORS_SHEET) ?? SpreadsheetApp.getActive().insertSheet(DEBTORS_SHEET);
+  sh.clear();
+  sh.clearConditionalFormatRules();
+  const head = ["O'quvchi ID", "F.I.Sh.", "Vasiy", "Jami hisob", "To'langan", "Qoldiq", "Muddati o'tgan", "Eng eski muddat", "Necha kun", "Kredit (ortiqcha)"];
+  sh.getRange(1, 1, 1, head.length).setValues([head]).setBackground("#202124").setFontColor("#fff").setFontWeight("bold").setWrap(true);
+  if (rows.length) {
+    sh.getRange(2, 1, rows.length, head.length).setValues(rows);
+    sh.getRange(2, 4, rows.length, 3).setNumberFormat("#,##0");
+    sh.getRange(2, 7, rows.length, 1).setNumberFormat("#,##0");
+    sh.getRange(2, 10, rows.length, 1).setNumberFormat("#,##0");
+    const days = sh.getRange(2, 9, rows.length, 1);
+    sh.setConditionalFormatRules([
+      SpreadsheetApp.newConditionalFormatRule().whenNumberGreaterThan(30).setBackground("#fce8e6").setFontColor("#c5221f").setRanges([days]).build(),
+      SpreadsheetApp.newConditionalFormatRule().whenNumberBetween(1, 30).setBackground("#fef7e0").setFontColor("#b06000").setRanges([days]).build(),
+    ]);
+  }
+  sh.setFrozenRows(1);
+  sh.setColumnWidths(1, 1, 90);
+  sh.setColumnWidths(2, 2, 200);
+  sh.setColumnWidths(4, 7, 120);
+  sh.setTabColor("#d93025");
+  sh.activate();
+  toast(`${debtors(debts).length} ta qarzdor, jami muddati o'tgan: ${formatSom(debts.reduce((s, d) => s + d.overdue, 0))} so'm`);
+}
+
+// ------------------------------------------------------------------ reminder drafts + sending
+const REASONS: Record<SkipReason, string> = {
+  no_consent: "roziligi yo'q", no_chat: "Telegram ulanmagan", cooldown: "yaqinda eslatma yaratilgan",
+  below_threshold: "qarz minimal chegaradan kam", student_inactive: "o'quvchi faol emas",
+};
+
+export function createReminderDrafts(): void {
+  const msg = withLock(() => {
+    const s = readSettings();
+    const { students, debts } = debtState();
+    const drafts = read<ReminderDraft>(DRAFTS);
+    const plan = planReminders({
+      debtors: debtors(debts), students, drafts, today: today(), cooldownDays: s.cooldownDays, minOverdueSom: s.minOverdue, template: s.template, centerName: s.center,
+    });
+    const ids = nextIds("R", drafts.map((d) => d.id), plan.drafts.length);
+    append(DRAFTS, plan.drafts.map((d, i) => ({ id: ids[i]!, studentId: d.studentId, createdOn: today(), text: d.text, status: "pending", error: "" })));
+    const counts = new Map<SkipReason, number>();
+    for (const k of plan.skipped) counts.set(k.reason, (counts.get(k.reason) ?? 0) + 1);
+    const skipped = [...counts].map(([r, n]) => `  - ${n} ta: ${REASONS[r]}`).join("\n");
+    return `${plan.drafts.length} ta eslatma loyihasi yaratildi (hali yuborilmadi).\n\nO'tkazib yuborilgan:\n${skipped || "  yo'q"}\n\nKeyingi qadam: nazoratly > Eslatmalarni ko'rib chiqish.`;
+  });
+  ui().alert("Eslatma loyihalari", msg, ui().ButtonSet.OK);
+}
+
+export interface DraftView { id: string; studentName: string; text: string; overdue: number; createdOn: string }
+
+export function getPendingDrafts(): DraftView[] {
+  const { students, debts } = debtState();
+  const byId = new Map(students.map((s) => [s.id, s]));
+  const debt = new Map(debts.map((d) => [d.studentId, d]));
+  return read<ReminderDraft>(DRAFTS).filter((d) => d.status === "pending").map((d) => ({
+    id: d.id, studentName: byId.get(d.studentId)?.fullName ?? d.studentId, text: d.text, overdue: debt.get(d.studentId)?.overdue ?? 0, createdOn: d.createdOn,
+  }));
+}
+
+export function decideDrafts(input: { approve: string[]; reject: string[]; edits: Record<string, string> }): { approved: number; rejected: number } {
+  return withLock(() => {
+    const pending = new Set(read<ReminderDraft>(DRAFTS).filter((d) => d.status === "pending").map((d) => d.id));
+    let approved = 0, rejected = 0;
+    for (const id of input.approve) {
+      if (!pending.has(id)) continue;
+      const text = (input.edits[id] ?? "").trim();
+      if (text.length > 4000) throw new Error("Xabar 4000 belgidan oshmasligi kerak");
+      updateById(DRAFTS, "id", id, { status: "approved", ...(text ? { text } : {}) });
+      approved++;
+    }
+    for (const id of input.reject) if (pending.has(id) && updateById(DRAFTS, "id", id, { status: "rejected" })) rejected++;
+    return { approved, rejected };
+  });
+}
+
+export function sendApprovedReminders(): void {
+  const msg = withLock(() => {
+    if (!getToken()) throw new Error("Avval Telegram botni sozlang: nazoratly > Telegram sozlash.");
+    const students = new Map(read<StudentRow>(STUDENTS).map((s) => [s.id, s]));
+    const queue = read<ReminderDraft>(DRAFTS).filter((d) => d.status === "approved").slice(0, 100);
+    const started = Date.now();
+    let sent = 0, failed = 0;
+    for (const d of queue) {
+      if (Date.now() - started > 4.5 * 60_000) break; // Apps Script limit is 6 min: continue on the next run
+      const s = students.get(d.studentId);
+      let error = "";
+      if (!s || !s.consentNotify || !s.guardianChatId) error = "Rozilik yoki Telegram chat yo'q (yuborish paytida tekshirildi)";
+      else {
+        const r = sendMessage(s.guardianChatId, d.text);
+        if (!r.ok) error = r.description ?? "Noma'lum xato";
+      }
+      updateById(DRAFTS, "id", d.id, error ? { status: "failed", error } : { status: "sent", error: "" });
+      if (error) failed++; else sent++;
+      Utilities.sleep(60);
+    }
+    const left = read<ReminderDraft>(DRAFTS).filter((d) => d.status === "approved").length;
+    return `Yuborildi: ${sent}\nXato: ${failed}${failed ? " (Eslatmalar varag'ida sababi ko'rsatilgan)" : ""}\nNavbatda qoldi: ${left}`;
+  });
+  ui().alert("Telegram", msg, ui().ButtonSet.OK);
+}
+
+// ------------------------------------------------------------------ attendance sidebar
+export interface RosterRow { studentId: string; fullName: string; status: AttendanceRow["status"] | ""; minutesLate: number }
+
+function rosterFor(groupId: string, date: string): { studentId: string; fullName: string }[] {
+  const students = new Map(read<StudentRow>(STUDENTS).map((s) => [s.id, s]));
+  return read<Enrollment>(ENROLLMENTS)
+    .filter((e) => e.groupId === groupId && e.startedOn <= date && (e.endedOn === "" || e.endedOn >= date) && e.status !== "frozen")
+    .map((e) => students.get(e.studentId))
+    .filter((s): s is StudentRow => !!s && s.status !== "left")
+    .map((s) => ({ studentId: s.id, fullName: s.fullName }))
+    .sort((a, b) => a.fullName.localeCompare(b.fullName));
+}
+
+export function getAttendanceGroups(): { id: string; name: string }[] {
+  return read<Group>(GROUPS).filter((g) => g.status === "active" || g.status === "planned").map((g) => ({ id: g.id, name: g.name }));
+}
+
+export function getRoster(groupId: string, date: string): RosterRow[] {
+  if (!isIsoDate(date)) throw new Error("Sana noto'g'ri");
+  const marks = new Map(read<AttendanceRow>(ATTENDANCE).filter((a) => a.groupId === groupId && a.date === date).map((a) => [a.studentId, a]));
+  return rosterFor(groupId, date).map((r) => ({ ...r, status: marks.get(r.studentId)?.status ?? "", minutesLate: marks.get(r.studentId)?.minutesLate ?? 0 }));
+}
+
+export function saveAttendance(input: { date: string; groupId: string; marks: { studentId: string; status: AttendanceRow["status"]; minutesLate: number }[] }): { saved: number } {
+  if (!isIsoDate(input.date)) throw new Error("Sana noto'g'ri");
+  if (!getAttendanceGroups().some((g) => g.id === input.groupId)) throw new Error("Guruh topilmadi yoki faol emas");
+  const allowed = new Set(rosterFor(input.groupId, input.date).map((r) => r.studentId));
+  const seen = new Set<string>();
+  for (const m of input.marks) {
+    if (!allowed.has(m.studentId)) throw new Error(`${m.studentId} bu guruhning shu kundagi ro'yxatida yo'q`);
+    if (seen.has(m.studentId)) throw new Error(`${m.studentId} ikki marta belgilangan`);
+    seen.add(m.studentId);
+    if (!["present", "absent", "late", "excused"].includes(m.status)) throw new Error("Holat noto'g'ri");
+    if (m.status !== "late" && m.minutesLate) throw new Error("Kechikish daqiqasi faqat 'Kechikdi' bilan");
+    if (!Number.isInteger(m.minutesLate) || m.minutesLate < 0 || m.minutesLate > 600) throw new Error("Kechikish daqiqasi 0-600");
+  }
+  return withLock(() => {
+    replaceWhere<AttendanceRow>(ATTENDANCE, (a) => a.date === input.date && a.groupId === input.groupId, input.marks.map((m) => ({ date: input.date, groupId: input.groupId, ...m })));
+    return { saved: input.marks.length };
+  });
+}
+
+// ------------------------------------------------------------------ payment dialog
+export function searchStudents(q: string): { id: string; fullName: string; outstanding: number }[] {
+  const needle = q.trim().toLowerCase();
+  const { students, debts } = debtState();
+  const debt = new Map(debts.map((d) => [d.studentId, d]));
+  return students
+    .filter((s) => s.status !== "left" && (!needle || s.fullName.toLowerCase().includes(needle) || s.id.toLowerCase() === needle))
+    .slice(0, 15)
+    .map((s) => ({ id: s.id, fullName: s.fullName, outstanding: debt.get(s.id)?.outstanding ?? 0 }));
+}
+
+export function getBalance(studentId: string): StudentDebt & { fullName: string } {
+  const { students, debts } = debtState();
+  const s = students.find((x) => x.id === studentId);
+  if (!s) throw new Error("O'quvchi topilmadi");
+  const d = debts.find((x) => x.studentId === studentId) ?? { studentId, charged: 0, paid: 0, outstanding: 0, overdue: 0, credit: 0, oldestDue: "", maxDaysOverdue: 0, openCharges: 0 };
+  return { ...d, fullName: s.fullName };
+}
+
+export function recordPayment(input: { studentId: string; amount: number; method: string; paidOn: string; note: string; notifyGuardian: boolean }): { id: string; balance: StudentDebt; telegram: string } {
+  if (!Number.isInteger(input.amount) || input.amount <= 0 || input.amount > 1_000_000_000) throw new Error("Summa musbat butun son bo'lishi kerak");
+  if (!isIsoDate(input.paidOn)) throw new Error("Sana noto'g'ri");
+  if (input.note.length > 500) throw new Error("Izoh 500 belgidan oshmasin");
+  const student = read<StudentRow>(STUDENTS).find((s) => s.id === input.studentId);
+  if (!student) throw new Error("O'quvchi topilmadi");
+  const id = withLock(() => {
+    const payments = read<Payment>(PAYMENTS);
+    const pid = nextId("P", payments.map((p) => p.id));
+    append(PAYMENTS, [{ id: pid, studentId: input.studentId, paidOn: input.paidOn, amount: input.amount, method: input.method || "Naqd", note: input.note, voided: false }]);
+    return pid;
+  });
+  const balance = getBalance(input.studentId);
+  let telegram = "";
+  if (input.notifyGuardian) {
+    if (!student.consentNotify || !student.guardianChatId) telegram = "Telegram yuborilmadi: vasiy ulanmagan yoki rozilik yo'q";
+    else {
+      const text = `To'lov qabul qilindi: ${formatSom(input.amount)} so'm (${input.paidOn}). ${balance.outstanding > 0 ? `Qoldiq: ${formatSom(balance.outstanding)} so'm.` : "Qarz yo'q. Rahmat!"} ${readSettings().center}`;
+      const r = sendMessage(student.guardianChatId, text);
+      telegram = r.ok ? "Vasiyga chek yuborildi" : `Telegram xatosi: ${r.description}`;
+    }
+  }
+  return { id, balance, telegram };
+}
+
+// ------------------------------------------------------------------ payroll
+export function calculatePayroll(): void {
+  const month = promptMonth("Oylik hisoblash");
+  if (!month) return;
+  const msg = withLock(() => {
+    const teachers = read<Teacher>(TEACHERS).filter((t) => t.status === "active");
+    const groups = read<Group>(GROUPS);
+    const enrollments = read<Enrollment>(ENROLLMENTS);
+    const attendance = read<AttendanceRow>(ATTENDANCE);
+    const { charges, payments } = loadFinance();
+    const { balances } = computeDebts(charges, payments, today());
+    type PayRow = { month: string; teacherId: string; status: string; bonus: number };
+    const existing = read<PayRow>(PAYROLL);
+    const locked = new Set(existing.filter((r) => r.month === month && r.status !== "draft").map((r) => r.teacherId));
+    const bonus = new Map(existing.filter((r) => r.month === month && r.status === "draft").map((r) => [r.teacherId, r.bonus]));
+    const rows = teachers.filter((t) => !locked.has(t.id)).map((t) => {
+      const gids = new Set(groups.filter((g) => g.teacherId === t.id).map((g) => g.id));
+      const r = computePayroll(t, month, { heldLessons: heldLessons(attendance, gids, month), collectedTuition: collectedTuition(balances, enrollments, groups, t.id, month) });
+      const b = bonus.get(t.id) ?? 0;
+      return { month, teacherId: t.id, teacherName: t.fullName, heldLessons: r.heldLessons, collected: r.collectedTuition, bonus: b, total: r.total + b, status: "draft" };
+    });
+    replaceWhere<PayRow>(PAYROLL, (r) => r.month === month && r.status === "draft", rows);
+    return `${month.slice(0, 7)}: ${rows.length} ta o'qituvchi uchun oylik qoralama hisoblandi.${locked.size ? `\nTasdiqlangan/to'langan (o'zgartirilmadi): ${locked.size}` : ""}\nBonus/jarimani qo'lda kiriting, so'ng "Holat"ni Tasdiqlangan qiling.`;
+  });
+  ui().alert("Oylik", msg, ui().ButtonSet.OK);
+}
+
+// ------------------------------------------------------------------ dashboard
+export function refreshDashboard(): void {
+  const ss = SpreadsheetApp.getActive();
+  const sh = ss.getSheetByName(DASHBOARD_SHEET) ?? ss.insertSheet(DASHBOARD_SHEET, 0);
+  const now = today();
+  const month = monthStart(now);
+  const students = read<StudentRow>(STUDENTS);
+  const { charges, payments } = loadFinance();
+  const { students: debts } = computeDebts(charges, payments, now);
+  const attendance = read<AttendanceRow>(ATTENDANCE).filter((a) => inMonth(a.date, month));
+  const active = students.filter((s) => s.status === "active").length;
+  const monthCharged = charges.filter((c) => !c.voided && c.month === month).reduce((s, c) => s + c.amount, 0);
+  const monthPaid = payments.filter((p) => !p.voided && inMonth(p.paidOn, month)).reduce((s, p) => s + p.amount, 0);
+  const outstanding = debts.reduce((s, d) => s + d.outstanding, 0);
+  const overdue = debts.reduce((s, d) => s + d.overdue, 0);
+  const present = attendance.filter((a) => a.status === "present" || a.status === "late").length;
+  const rate = attendance.length ? Math.round((present / attendance.length) * 100) : 0;
+
+  sh.clear();
+  sh.getCharts().forEach((c) => sh.removeChart(c));
+  sh.setHiddenGridlines(true);
+  sh.setColumnWidths(1, 8, 150);
+  sh.getRange("A1").setValue(readSettings().center).setFontSize(22).setFontWeight("bold").setFontFamily("Google Sans");
+  sh.getRange("A2").setValue(`Boshqaruv paneli · ${now}`).setFontColor("#5f6368");
+  const cards: [string, string | number, string][] = [
+    ["Faol o'quvchilar", active, "#e8f0fe"], ["Bu oy hisob", monthCharged, "#fef7e0"], ["Bu oy tushum", monthPaid, "#e6f4ea"],
+    ["Umumiy qoldiq", outstanding, "#f3e8fd"], ["Muddati o'tgan", overdue, "#fce8e6"], ["Davomat (bu oy)", `${rate}%`, "#e8f0fe"],
+  ];
+  cards.forEach(([label, value, bg], i) => {
+    const col = 1 + i;
+    sh.getRange(4, col).setValue(label).setFontColor("#5f6368").setBackground(bg).setFontSize(10);
+    sh.getRange(5, col).setValue(value).setFontSize(20).setFontWeight("bold").setBackground(bg).setNumberFormat("#,##0");
+    sh.getRange(6, col).setBackground(bg);
+  });
+  // last 6 months: charged vs received (feeds the chart)
+  const months: string[] = [];
+  let m = month;
+  for (let i = 0; i < 6; i++) { months.unshift(m); const y = Number(m.slice(0, 4)), mo = Number(m.slice(5, 7)); m = mo === 1 ? `${y - 1}-12-01` : `${y}-${String(mo - 1).padStart(2, "0")}-01`; }
+  const table = months.map((mm) => [mm.slice(0, 7), charges.filter((c) => !c.voided && c.month === mm).reduce((s, c) => s + c.amount, 0), payments.filter((p) => !p.voided && inMonth(p.paidOn, mm)).reduce((s, p) => s + p.amount, 0)]);
+  sh.getRange(8, 1, 1, 3).setValues([["Oy", "Hisoblangan", "Tushgan"]]).setFontWeight("bold").setBackground("#202124").setFontColor("#fff");
+  sh.getRange(9, 1, table.length, 3).setValues(table);
+  sh.getRange(9, 2, table.length, 2).setNumberFormat("#,##0");
+  sh.insertChart(sh.newChart().asColumnChart().addRange(sh.getRange(8, 1, table.length + 1, 3)).setPosition(8, 5, 0, 0).setOption("title", "Hisoblangan va tushgan (oxirgi 6 oy)").setOption("colors", ["#fbbc04", "#34a853"]).setOption("width", 560).setOption("height", 300).build());
+  const top = debts.filter((d) => d.overdue > 0).slice(0, 5);
+  const byId = new Map(students.map((s) => [s.id, s.fullName]));
+  sh.getRange(17, 1).setValue("Eng katta qarzdorlar").setFontWeight("bold");
+  top.forEach((d, i) => { sh.getRange(18 + i, 1, 1, 3).setValues([[byId.get(d.studentId) ?? d.studentId, d.overdue, `${d.maxDaysOverdue} kun`]]); sh.getRange(18 + i, 2).setNumberFormat("#,##0"); });
+  if (!top.length) sh.getRange(18, 1).setValue("Muddati o'tgan qarz yo'q").setFontColor("#188038");
+  sh.activate();
+}
+
+// ------------------------------------------------------------------ Telegram setup and guardian linking
+export function setupTelegram(): void {
+  const r = ui().prompt("Telegram bot", "@BotFather bergan bot tokenini kiriting. Token faqat Apps Script xavfsiz xotirasida saqlanadi, varaqda ko'rinmaydi.", ui().ButtonSet.OK_CANCEL);
+  if (r.getSelectedButton() !== ui().Button.OK) return;
+  const token = r.getResponseText().trim();
+  if (!/^\d{6,}:[\w-]{30,}$/.test(token)) throw new Error("Token formati noto'g'ri (masalan 123456789:AAH...)");
+  setToken(token);
+  const me = tg("getMe");
+  if (!me.ok) {
+    props().deleteProperty("TELEGRAM_BOT_TOKEN");
+    throw new Error(`Token tekshiruvdan o'tmadi: ${me.description}`);
+  }
+  const username = String((me.result as { username?: string }).username ?? "");
+  props().setProperty("BOT_USERNAME", username);
+  const url = ScriptApp.getService().getUrl();
+  let hook = "";
+  if (url) {
+    const w = tg("setWebhook", { url: `${url}?s=${webhookSecret()}`, allowed_updates: ["message", "callback_query"], drop_pending_updates: true });
+    hook = w.ok ? "Vasiylarni ulash (webhook) yoqildi." : `Webhook xatosi: ${w.description}`;
+  } else {
+    hook = "Vasiylarni botga ulash uchun skriptni Web App sifatida joylang (Deploy > New deployment > Web app, 'Anyone'), so'ng bu amalni qayta bajaring.";
+  }
+  ui().alert("Telegram", `Bot ulandi: @${username}\n${hook}`, ui().ButtonSet.OK);
+}
+
+export function generateLinkCodes(): void {
+  const username = props().getProperty("BOT_USERNAME");
+  if (!username) throw new Error("Avval Telegram botni sozlang.");
+  const students = read<StudentRow>(STUDENTS).filter((s) => s.status === "active" && !s.guardianChatId && !s.linkCode);
+  for (const s of students) {
+    const code = Utilities.getUuid().replace(/-/g, "").slice(0, 10).toUpperCase();
+    updateById(STUDENTS, "id", s.id, { linkCode: code, linkUrl: `https://t.me/${username}?start=${code}` });
+  }
+  toast(`${students.length} ta o'quvchi uchun ulash havolasi yaratildi (O'quvchilar varag'ida).`);
+}
+
+export function showHelp(): void {
+  ui().alert(
+    "nazoratly yordam",
+    "1) Boshlang'ich sozlash  2) Sozlamalar varag'ini to'ldiring  3) O'quvchi/guruh/yozilishlarni kiriting\n4) Har oy: Oylik hisoblarni yaratish  5) Kundalik: Davomat va To'lov oynalari\n6) Qarzdorlar hisoboti > Eslatma loyihalari > Ko'rib chiqish > Yuborish\n\nEslatma faqat vasiy botda rozilik bergan o'quvchilarga yaratiladi va faqat siz tasdiqlagandan keyin yuboriladi.",
+    ui().ButtonSet.OK,
+  );
+}

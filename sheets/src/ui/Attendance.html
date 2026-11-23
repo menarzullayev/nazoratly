@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>/*STYLE*/</style>
+</head>
+<body>
+<h1>Davomat belgilash</h1>
+<label for="group">Guruh</label>
+<select id="group" aria-label="Guruh"></select>
+<label for="date">Sana</label>
+<input id="date" type="date" aria-label="Sana">
+<div id="msg" role="status" aria-live="polite"></div>
+<div id="tools" class="row hidden" style="margin-top:12px">
+  <button id="allPresent" type="button">Hammasi keldi</button>
+  <button id="clear" type="button">Tozalash</button>
+</div>
+<div id="list" aria-label="O'quvchilar ro'yxati"></div>
+<div class="footer">
+  <span id="count" class="muted grow">Guruhni tanlang</span>
+  <button id="save" class="primary" type="button" disabled>Saqlash</button>
+</div>
+<script>
+(function () {
+  var STATUSES = [["present","Keldi"],["absent","Kelmadi"],["late","Kechikdi"],["excused","Sababli"]];
+  var state = { rows: [], dirty: false };
+  var $ = function (id) { return document.getElementById(id); };
+  function run(name) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return new Promise(function (resolve, reject) {
+      google.script.run.withSuccessHandler(resolve).withFailureHandler(function (e) { reject(e); })[name].apply(google.script.run, args);
+    });
+  }
+  function banner(kind, text) { $("msg").innerHTML = text ? '<div class="banner ' + kind + '">' + text.replace(/[<>&]/g, "") + "</div>" : ""; }
+  function summary() {
+    var done = state.rows.filter(function (r) { return r.status; }).length;
+    var late = state.rows.filter(function (r) { return r.status === "absent"; }).length;
+    $("count").textContent = state.rows.length ? done + " / " + state.rows.length + " belgilandi · kelmadi: " + late : "Guruhni tanlang";
+    $("save").disabled = !state.rows.length || !state.dirty;
+  }
+  function render() {
+    var list = $("list");
+    list.innerHTML = "";
+    state.rows.forEach(function (r, i) {
+      var card = document.createElement("div");
+      card.className = "card";
+      var name = document.createElement("div");
+      name.style.fontWeight = "600";
+      name.textContent = r.fullName;
+      var seg = document.createElement("div");
+      seg.className = "seg";
+      seg.style.marginTop = "6px";
+      STATUSES.forEach(function (s) {
+        var b = document.createElement("button");
+        b.type = "button"; b.textContent = s[1]; b.className = s[0];
+        b.setAttribute("aria-pressed", String(r.status === s[0]));
+        b.onclick = function () { r.status = r.status === s[0] ? "" : s[0]; if (r.status !== "late") r.minutesLate = 0; state.dirty = true; render(); };
+        seg.appendChild(b);
+      });
+      card.appendChild(name); card.appendChild(seg);
+      if (r.status === "late") {
+        var m = document.createElement("input");
+        m.type = "number"; m.min = "1"; m.max = "600"; m.placeholder = "Necha daqiqa kechikdi"; m.value = r.minutesLate || "";
+        m.setAttribute("aria-label", "Kechikish daqiqasi"); m.style.marginTop = "6px";
+        m.oninput = function () { r.minutesLate = Math.max(0, Math.min(600, parseInt(m.value, 10) || 0)); state.dirty = true; summary(); };
+        card.appendChild(m);
+      }
+      list.appendChild(card);
+    });
+    $("tools").classList.toggle("hidden", !state.rows.length);
+    summary();
+  }
+  function load() {
+    var g = $("group").value, d = $("date").value;
+    if (!g || !d) return;
+    banner("", ""); $("list").innerHTML = '<p class="muted"><span class="spinner"></span> Yuklanmoqda...</p>';
+    run("getRoster", g, d).then(function (rows) {
+      state.rows = rows; state.dirty = false; render();
+      if (!rows.length) banner("warn", "Bu sanada guruhda faol o'quvchi yo'q.");
+    }).catch(function (e) { state.rows = []; render(); banner("err", e && e.message || "Xatolik"); });
+  }
+  $("group").onchange = load;
+  $("date").onchange = load;
+  $("allPresent").onclick = function () { state.rows.forEach(function (r) { r.status = "present"; r.minutesLate = 0; }); state.dirty = true; render(); };
+  $("clear").onclick = function () { state.rows.forEach(function (r) { r.status = ""; r.minutesLate = 0; }); state.dirty = true; render(); };
+  $("save").onclick = function () {
+    var marks = state.rows.filter(function (r) { return r.status; }).map(function (r) { return { studentId: r.studentId, status: r.status, minutesLate: r.status === "late" ? r.minutesLate : 0 }; });
+    var late = marks.filter(function (m) { return m.status === "late" && !m.minutesLate; });
+    if (late.length) { banner("err", "Kechikkanlar uchun daqiqani kiriting."); return; }
+    $("save").disabled = true; $("save").textContent = "Saqlanmoqda...";
+    run("saveAttendance", { date: $("date").value, groupId: $("group").value, marks: marks }).then(function (r) {
+      state.dirty = false; banner("ok", r.saved + " ta yozuv saqlandi."); summary();
+    }).catch(function (e) { banner("err", e && e.message || "Saqlab bo'lmadi"); }).then(function () { $("save").textContent = "Saqlash"; summary(); });
+  };
+  Promise.all([run("getAttendanceGroups"), run("todayIso")]).then(function (res) {
+    var sel = $("group");
+    sel.innerHTML = '<option value="">Guruhni tanlang</option>' + res[0].map(function (g) { return '<option value="' + g.id + '">' + g.name.replace(/[<>&"]/g, "") + "</option>"; }).join("");
+    $("date").value = res[1];
+    if (!res[0].length) banner("warn", "Faol guruh yo'q. Avval Guruhlar varag'ini to'ldiring.");
+  }).catch(function (e) { banner("err", e && e.message || "Yuklab bo'lmadi"); });
+  window.addEventListener("beforeunload", function (ev) { if (state.dirty) { ev.preventDefault(); } });
+})();
+</script>
+</body>
+</html>

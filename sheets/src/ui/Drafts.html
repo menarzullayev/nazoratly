@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>/*STYLE*/</style>
+</head>
+<body>
+<h1>Eslatmalarni ko'rib chiqish</h1>
+<p class="muted">Bu xabarlar hali yuborilmagan. Tasdiqlaganlaringiz "Tasdiqlangan" bo'ladi va menyudagi "Tasdiqlanganlarni yuborish" bilan Telegramga ketadi. Matnni tahrirlashingiz mumkin.</p>
+<div id="msg" role="status" aria-live="polite"></div>
+<div class="row" style="margin-bottom:8px"><button id="all" type="button">Hammasini tanlash</button><button id="none" type="button">Tanlovni bekor qilish</button></div>
+<div id="list"></div>
+<div class="footer">
+  <span id="count" class="muted grow">Yuklanmoqda...</span>
+  <button id="reject" type="button" disabled>Rad etish</button>
+  <button id="approve" class="primary" type="button" disabled>Tasdiqlash</button>
+</div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var items = [], selected = {}, edits = {};
+  function run(name) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return new Promise(function (ok, bad) { google.script.run.withSuccessHandler(ok).withFailureHandler(bad)[name].apply(google.script.run, args); });
+  }
+  function som(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, " "); }
+  function banner(kind, text) { $("msg").innerHTML = text ? '<div class="banner ' + kind + '">' + String(text).replace(/[<>&]/g, "") + "</div>" : ""; }
+  function updateButtons() {
+    var n = Object.keys(selected).filter(function (k) { return selected[k]; }).length;
+    $("approve").disabled = $("reject").disabled = n === 0;
+    $("count").textContent = items.length ? n + " / " + items.length + " tanlandi" : "Kutilayotgan eslatma yo'q";
+  }
+  function render() {
+    var list = $("list"); list.innerHTML = "";
+    items.forEach(function (d) {
+      var card = document.createElement("div"); card.className = "card";
+      var head = document.createElement("label");
+      head.style.cssText = "display:flex;gap:8px;align-items:center;margin:0 0 6px;color:var(--fg);font-size:14px";
+      var cb = document.createElement("input"); cb.type = "checkbox"; cb.style.width = "auto"; cb.checked = !!selected[d.id];
+      cb.onchange = function () { selected[d.id] = cb.checked; updateButtons(); };
+      var t = document.createElement("span"); t.innerHTML = "<b></b> <span class='muted'></span>";
+      t.firstChild.textContent = d.studentName; t.lastChild.textContent = "· muddati o'tgan " + som(d.overdue) + " so'm";
+      head.appendChild(cb); head.appendChild(t);
+      var ta = document.createElement("textarea"); ta.value = edits[d.id] != null ? edits[d.id] : d.text; ta.maxLength = 4000;
+      ta.setAttribute("aria-label", d.studentName + " uchun xabar");
+      ta.oninput = function () { edits[d.id] = ta.value; };
+      card.appendChild(head); card.appendChild(ta); list.appendChild(card);
+    });
+    updateButtons();
+  }
+  function load() {
+    run("getPendingDrafts").then(function (rows) { items = rows; selected = {}; render(); })
+      .catch(function (e) { banner("err", e && e.message || "Yuklab bo'lmadi"); });
+  }
+  function ids() { return items.filter(function (d) { return selected[d.id]; }).map(function (d) { return d.id; }); }
+  function decide(kind) {
+    var chosen = ids(); if (!chosen.length) return;
+    var payload = { approve: kind === "approve" ? chosen : [], reject: kind === "reject" ? chosen : [], edits: edits };
+    $("approve").disabled = $("reject").disabled = true;
+    run("decideDrafts", payload).then(function (r) {
+      banner("ok", r.approved + " ta tasdiqlandi, " + r.rejected + " ta rad etildi."); edits = {}; load();
+    }).catch(function (e) { banner("err", e && e.message || "Saqlab bo'lmadi"); updateButtons(); });
+  }
+  $("all").onclick = function () { items.forEach(function (d) { selected[d.id] = true; }); render(); };
+  $("none").onclick = function () { selected = {}; render(); };
+  $("approve").onclick = function () { decide("approve"); };
+  $("reject").onclick = function () { decide("reject"); };
+  load();
+})();
+</script>
+</body>
+</html>
