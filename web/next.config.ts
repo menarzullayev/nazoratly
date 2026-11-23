@@ -5,7 +5,7 @@ const config: NextConfig = {
   trailingSlash: true,
   images: { unoptimized: true },
   reactStrictMode: true,
-  experimental: { externalDir: true },
+  experimental: { externalDir: true, globalNotFound: true },
 };
 
 export default config;
