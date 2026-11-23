@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date, timedelta
+from datetime import timedelta
 from typing import Any
 
 import httpx
 
 from tests.conftest import Tenant
-from tests.helpers import mk_group, mk_student, ok
+from tests.helpers import mk_group, mk_student, ok, org_today
 
 
 async def enable(t: Tenant) -> dict[str, Any]:
@@ -130,7 +130,7 @@ async def test_clear_is_refused_while_a_real_payment_references_a_demo_student(t
 
 async def test_clear_is_refused_when_a_person_marked_attendance_on_a_demo_lesson(tenant: Tenant) -> None:
     await enable(tenant)
-    today = date.today()
+    today = org_today()
     params = {
         "date_from": today.isoformat(),
         "date_to": (today + timedelta(days=8)).isoformat(),

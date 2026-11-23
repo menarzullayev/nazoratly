@@ -3,17 +3,17 @@ settlement from cash or bank, voiding, due dates, aging (the numbers are the sha
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import timedelta
 from typing import Any
 
 import httpx
 
 from tests.conftest import Tenant
-from tests.helpers import ok
+from tests.helpers import ok, org_today
 from tests.test_accounting import A, entries, shape
 from tests.test_tenancy_and_staff import _add_staff, _login
 
-TODAY = date.today()
+TODAY = org_today()
 
 
 def d(offset: int) -> str:

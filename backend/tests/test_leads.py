@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date, timedelta
+from datetime import timedelta
 from typing import Any
 
 from tests.conftest import Tenant
-from tests.helpers import mk_group, mk_student, ok
+from tests.helpers import mk_group, mk_student, ok, org_today
 
 
 async def source(t: Tenant, name: str = "Instagram") -> dict[str, Any]:
@@ -182,8 +182,8 @@ async def test_funnel_report_matches_a_hand_built_dataset(tenant: Tenant) -> Non
     await lead(tenant, "B1", source_id=friend["id"])
     await lead(tenant, "C1")
     around = {
-        "date_from": (date.today() - timedelta(days=1)).isoformat(),
-        "date_to": (date.today() + timedelta(days=1)).isoformat(),
+        "date_from": (org_today() - timedelta(days=1)).isoformat(),
+        "date_to": (org_today() + timedelta(days=1)).isoformat(),
     }
     rep = await ok(await tenant.get("/v1/reports/funnel", params=around))
     assert rep["stages"] == {
