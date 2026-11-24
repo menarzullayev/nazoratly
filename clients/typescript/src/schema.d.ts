@@ -708,6 +708,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/ai/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Latest generated reports, newest first */
+        get: operations["reports_v1_ai_reports_get"];
+        put?: never;
+        /** Generate a suggestion report (weekly summary, debt follow-up, churn risk); nothing is sent */
+        post: operations["create_report_v1_ai_reports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ai/reports/{report_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Report */
+        get: operations["report_v1_ai_reports__report_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/attendance/scan": {
         parameters: {
             query?: never;
@@ -2902,6 +2937,46 @@ export interface components {
             outstanding: string;
             /** Supplier Name */
             supplier_name: string;
+        };
+        /** AiReportOut */
+        AiReportOut: {
+            /** Anonymized */
+            anonymized: boolean;
+            /** Content */
+            content: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+            /** Fallback Reason */
+            fallback_reason: ("ai_disabled" | "ai_not_configured" | "ai_limit_reached" | "ai_unavailable" | "ai_bad_output" | "nothing_to_report") | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "weekly_summary" | "debt_followup" | "churn_risk";
+            /** Model */
+            model: string | null;
+            /**
+             * Period End
+             * Format: date
+             */
+            period_end: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "ai" | "rules";
         };
         /** AllocateIn */
         AllocateIn: {
@@ -5964,6 +6039,14 @@ export interface components {
             /** Phone */
             phone?: string | null;
         };
+        /** ReportRequest */
+        ReportRequest: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "weekly_summary" | "debt_followup" | "churn_risk";
+        };
         /** RevenuePoint */
         RevenuePoint: {
             /** Method */
@@ -6247,6 +6330,21 @@ export interface components {
         /** SettingsOut */
         SettingsOut: {
             /**
+             * Ai Daily Limit
+             * @description AI-written reports per day; the rest are rule-based
+             */
+            ai_daily_limit: number;
+            /**
+             * Ai Enabled
+             * @description AI-written reports are allowed (off = rule-based reports only)
+             */
+            ai_enabled: boolean;
+            /**
+             * Ai Sees Names
+             * @description the AI may receive real student names (default off: pseudonyms only, names restored locally)
+             */
+            ai_sees_names: boolean;
+            /**
              * Demo Mode
              * @description the center is in demo mode (switched through /v1/demo)
              */
@@ -6276,6 +6374,12 @@ export interface components {
         };
         /** SettingsPatch */
         SettingsPatch: {
+            /** Ai Daily Limit */
+            ai_daily_limit?: number | null;
+            /** Ai Enabled */
+            ai_enabled?: boolean | null;
+            /** Ai Sees Names */
+            ai_sees_names?: boolean | null;
             /** Excused Mode */
             excused_mode?: ("makeup" | "credit" | "none") | null;
             /** Makeup Expiry Days */
@@ -8654,6 +8758,102 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AgentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reports_v1_ai_reports_get: {
+        parameters: {
+            query?: {
+                kind?: ("weekly_summary" | "debt_followup" | "churn_risk") | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiReportOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_report_v1_ai_reports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    report_v1_ai_reports__report_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiReportOut"];
                 };
             };
             /** @description Validation Error */

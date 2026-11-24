@@ -614,6 +614,99 @@
         "title": "AgingRow",
         "type": "object"
       },
+      "AiReportOut": {
+        "properties": {
+          "anonymized": {
+            "title": "Anonymized",
+            "type": "boolean"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "data": {
+            "additionalProperties": true,
+            "title": "Data",
+            "type": "object"
+          },
+          "fallback_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "ai_disabled",
+                  "ai_not_configured",
+                  "ai_limit_reached",
+                  "ai_unavailable",
+                  "ai_bad_output",
+                  "nothing_to_report"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallback Reason"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "weekly_summary",
+              "debt_followup",
+              "churn_risk"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "period_end": {
+            "format": "date",
+            "title": "Period End",
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "ai",
+              "rules"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "period_end",
+          "source",
+          "model",
+          "fallback_reason",
+          "content",
+          "data",
+          "anonymized",
+          "created_at"
+        ],
+        "title": "AiReportOut",
+        "type": "object"
+      },
       "AllocateIn": {
         "additionalProperties": false,
         "properties": {
@@ -8672,6 +8765,25 @@
         "title": "RegisterIn",
         "type": "object"
       },
+      "ReportRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "enum": [
+              "weekly_summary",
+              "debt_followup",
+              "churn_risk"
+            ],
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "ReportRequest",
+        "type": "object"
+      },
       "RevenuePoint": {
         "properties": {
           "method": {
@@ -9303,6 +9415,21 @@
       },
       "SettingsOut": {
         "properties": {
+          "ai_daily_limit": {
+            "description": "AI-written reports per day; the rest are rule-based",
+            "title": "Ai Daily Limit",
+            "type": "integer"
+          },
+          "ai_enabled": {
+            "description": "AI-written reports are allowed (off = rule-based reports only)",
+            "title": "Ai Enabled",
+            "type": "boolean"
+          },
+          "ai_sees_names": {
+            "description": "the AI may receive real student names (default off: pseudonyms only, names restored locally)",
+            "title": "Ai Sees Names",
+            "type": "boolean"
+          },
           "demo_mode": {
             "description": "the center is in demo mode (switched through /v1/demo)",
             "title": "Demo Mode",
@@ -9363,7 +9490,10 @@
           "package_expiry_days",
           "package_low_lessons",
           "demo_mode",
-          "requisites"
+          "requisites",
+          "ai_enabled",
+          "ai_sees_names",
+          "ai_daily_limit"
         ],
         "title": "SettingsOut",
         "type": "object"
@@ -9371,6 +9501,41 @@
       "SettingsPatch": {
         "additionalProperties": false,
         "properties": {
+          "ai_daily_limit": {
+            "anyOf": [
+              {
+                "maximum": 200.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Daily Limit"
+          },
+          "ai_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Enabled"
+          },
+          "ai_sees_names": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Sees Names"
+          },
           "excused_mode": {
             "anyOf": [
               {
@@ -14354,6 +14519,173 @@
         "summary": "Revoke an agent token (irreversible)",
         "tags": [
           "agents & audit"
+        ]
+      }
+    },
+    "/v1/ai/reports": {
+      "get": {
+        "operationId": "reports_v1_ai_reports_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "weekly_summary",
+                    "debt_followup",
+                    "churn_risk"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AiReportOut"
+                  },
+                  "title": "Response Reports V1 Ai Reports Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Latest generated reports, newest first",
+        "tags": [
+          "ai"
+        ]
+      },
+      "post": {
+        "operationId": "create_report_v1_ai_reports_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiReportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Generate a suggestion report (weekly summary, debt follow-up, churn risk); nothing is sent",
+        "tags": [
+          "ai"
+        ]
+      }
+    },
+    "/v1/ai/reports/{report_id}": {
+      "get": {
+        "operationId": "report_v1_ai_reports__report_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "report_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Report Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiReportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Report",
+        "tags": [
+          "ai"
         ]
       }
     },

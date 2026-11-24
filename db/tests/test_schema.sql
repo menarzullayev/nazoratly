@@ -885,6 +885,48 @@ BEGIN
 END $$;
 ROLLBACK;
 
+-- ---------------------------------------------------------------- 0040-0041: AI assistant switches and reports
+BEGIN;
+DO $$
+DECLARE r BIGINT;
+BEGIN
+  INSERT INTO org_settings (org_id) VALUES (1) ON CONFLICT (org_id) DO NOTHING;
+  IF (SELECT ai_enabled FROM org_settings WHERE org_id = 1) IS NOT TRUE THEN RAISE EXCEPTION 'AI is on by default'; END IF;
+  IF (SELECT ai_sees_names FROM org_settings WHERE org_id = 1) IS NOT FALSE THEN RAISE EXCEPTION 'AI must not see names by default'; END IF;
+  IF (SELECT ai_daily_limit FROM org_settings WHERE org_id = 1) <> 20 THEN RAISE EXCEPTION 'default daily limit is 20'; END IF;
+  PERFORM public.t_expect('23514', $q$UPDATE org_settings SET ai_daily_limit = 201 WHERE org_id = 1$q$);
+  PERFORM public.t_expect('23514', $q$UPDATE org_settings SET ai_daily_limit = -1 WHERE org_id = 1$q$);
+
+  -- an AI report carries its model, a rule-based report carries the reason for the fallback
+  INSERT INTO ai_reports (org_id, kind, period_end, source, model, content, data) VALUES (1, 'weekly_summary', '2026-11-24', 'ai', 'haiku', 'text', '{}') RETURNING id INTO r;
+  INSERT INTO ai_reports (org_id, kind, period_end, source, fallback_reason, content, data) VALUES (1, 'debt_followup', '2026-11-24', 'rules', 'ai_limit_reached', 'text', '{}');
+  PERFORM public.t_expect('23514', $q$INSERT INTO ai_reports (org_id, kind, period_end, source, content, data) VALUES (1, 'churn_risk', '2026-11-24', 'ai', 'text', '{}')$q$);                       -- ai without model
+  PERFORM public.t_expect('23514', $q$INSERT INTO ai_reports (org_id, kind, period_end, source, content, data) VALUES (1, 'churn_risk', '2026-11-24', 'rules', 'text', '{}')$q$);                    -- rules without reason
+  PERFORM public.t_expect('23514', $q$INSERT INTO ai_reports (org_id, kind, period_end, source, model, fallback_reason, content, data) VALUES (1, 'churn_risk', '2026-11-24', 'ai', 'haiku', 'ai_disabled', 'text', '{}')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO ai_reports (org_id, kind, period_end, source, model, content, data) VALUES (1, 'bogus', '2026-11-24', 'ai', 'haiku', 'text', '{}')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO ai_reports (org_id, kind, period_end, source, model, content, data) VALUES (1, 'churn_risk', '2026-11-24', 'ai', 'haiku', '   ', '{}')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO ai_reports (org_id, kind, period_end, source, fallback_reason, content, data) VALUES (1, 'churn_risk', '2026-11-24', 'rules', 'because', 'text', '{}')$q$);
+  PERFORM public.t_expect('23503', $q$INSERT INTO ai_reports (org_id, kind, period_end, source, model, content, data) VALUES (999, 'churn_risk', '2026-11-24', 'ai', 'haiku', 'text', '{}')$q$);  -- no such center
+  -- a report is a record: it cannot be changed or deleted
+  PERFORM public.t_expect('23001', format($q$UPDATE ai_reports SET content = 'edited' WHERE id = %s$q$, r));
+  PERFORM public.t_expect('23001', format($q$DELETE FROM ai_reports WHERE id = %s$q$, r));
+  PERFORM public.t_expect('23001', $q$TRUNCATE ai_reports$q$);
+END $$;
+ROLLBACK;
+
+-- the application role: tenant isolated, insert and read only
+BEGIN;
+INSERT INTO ai_reports (org_id, kind, period_end, source, model, content, data) VALUES (1, 'weekly_summary', '2026-11-24', 'ai', 'haiku', 'org 1 text', '{}');
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '2';
+DO $$
+BEGIN
+  ASSERT (SELECT count(*) FROM ai_reports) = 0, 'org 2 does not see the reports of org 1';
+  PERFORM public.t_expect('42501', $q$INSERT INTO ai_reports (org_id, kind, period_end, source, model, content, data) VALUES (1, 'weekly_summary', '2026-11-24', 'ai', 'haiku', 'x', '{}')$q$);
+  PERFORM public.t_expect('42501', $q$UPDATE ai_reports SET content = 'x'$q$);
+  PERFORM public.t_expect('42501', $q$DELETE FROM ai_reports$q$);
+END $$;
+ROLLBACK;
+
 -- clean up so the down-migration test starts from the original state (the journal is immutable: only the
 -- superuser of the test database may switch its guards off)
 DROP FUNCTION public.t_post(bigint, date, text, text, text, jsonb, text, int, bigint);

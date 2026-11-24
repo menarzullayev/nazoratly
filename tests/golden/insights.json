@@ -1,0 +1,1546 @@
+{
+ "fmt_money": [
+  {
+   "n": 0,
+   "out": "0"
+  },
+  {
+   "n": 7,
+   "out": "7"
+  },
+  {
+   "n": 999,
+   "out": "999"
+  },
+  {
+   "n": 1000,
+   "out": "1 000"
+  },
+  {
+   "n": 12345,
+   "out": "12 345"
+  },
+  {
+   "n": 1000000,
+   "out": "1 000 000"
+  },
+  {
+   "n": 1234567890,
+   "out": "1 234 567 890"
+  },
+  {
+   "n": -1000,
+   "out": "-1 000"
+  },
+  {
+   "n": -250,
+   "out": "-250"
+  }
+ ],
+ "rate": [
+  {
+   "attended": 0,
+   "marked": 0,
+   "out": null,
+   "week_out": null
+  },
+  {
+   "attended": 1,
+   "marked": 1,
+   "out": null,
+   "week_out": 100
+  },
+  {
+   "attended": 0,
+   "marked": 2,
+   "out": 0,
+   "week_out": 0
+  },
+  {
+   "attended": 1,
+   "marked": 2,
+   "out": 50,
+   "week_out": 50
+  },
+  {
+   "attended": 1,
+   "marked": 3,
+   "out": 33,
+   "week_out": 33
+  },
+  {
+   "attended": 2,
+   "marked": 3,
+   "out": 67,
+   "week_out": 67
+  },
+  {
+   "attended": 5,
+   "marked": 6,
+   "out": 83,
+   "week_out": 83
+  },
+  {
+   "attended": 8,
+   "marked": 8,
+   "out": 100,
+   "week_out": 100
+  },
+  {
+   "attended": 7,
+   "marked": 9,
+   "out": 78,
+   "week_out": 78
+  }
+ ],
+ "debt_followup": [
+  {
+   "name": "empty",
+   "in": {
+    "today": "2026-11-24",
+    "students": []
+   },
+   "out": []
+  },
+  {
+   "name": "fully paid is not listed",
+   "in": {
+    "today": "2026-11-24",
+    "students": [
+     {
+      "id": "a",
+      "outstanding": 0,
+      "overdue": 0,
+      "oldest_due": null
+     }
+    ]
+   },
+   "out": []
+  },
+  {
+   "name": "not yet due is a reminder",
+   "in": {
+    "today": "2026-11-24",
+    "students": [
+     {
+      "id": "a",
+      "outstanding": 300000,
+      "overdue": 0,
+      "oldest_due": null
+     }
+    ]
+   },
+   "out": [
+    {
+     "id": "a",
+     "outstanding": 300000,
+     "overdue": 0,
+     "age_days": 0,
+     "tone": "reminder",
+     "score": 3
+    }
+   ]
+  },
+  {
+   "name": "age 0 with an overdue amount is soft",
+   "in": {
+    "today": "2026-11-24",
+    "students": [
+     {
+      "id": "a",
+      "outstanding": 200000,
+      "overdue": 200000,
+      "oldest_due": "2026-11-24"
+     }
+    ]
+   },
+   "out": [
+    {
+     "id": "a",
+     "outstanding": 200000,
+     "overdue": 200000,
+     "age_days": 0,
+     "tone": "soft",
+     "score": 2
+    }
+   ]
+  },
+  {
+   "name": "due date in the future never gives a negative age",
+   "in": {
+    "today": "2026-11-24",
+    "students": [
+     {
+      "id": "a",
+      "outstanding": 200000,
+      "overdue": 200000,
+      "oldest_due": "2026-12-01"
+     }
+    ]
+   },
+   "out": [
+    {
+     "id": "a",
+     "outstanding": 200000,
+     "overdue": 200000,
+     "age_days": 0,
+     "tone": "soft",
+     "score": 2
+    }
+   ]
+  },
+  {
+   "name": "overdue without a date is soft age 0",
+   "in": {
+    "today": "2026-11-24",
+    "students": [
+     {
+      "id": "a",
+      "outstanding": 200000,
+      "overdue": 200000,
+      "oldest_due": null
+     }
+    ]
+   },
+   "out": [
+    {
+     "id": "a",
+     "outstanding": 200000,
+     "overdue": 200000,
+     "age_days": 0,
+     "tone": "soft",
+     "score": 2
+    }
+   ]
+  },
+  {
+   "name": "7 days is still soft",
+   "in": {
+    "today": "2026-11-24",
+    "students": [
+     {
+      "id": "a",
+      "outstanding": 200000,
+      "overdue": 200000,
+      "oldest_due": "2026-11-17"
+     }
+    ]
+   },
+   "out": [
+    {
+     "id": "a",
+     "outstanding": 200000,
+     "overdue": 200000,
+     "age_days": 7,
+     "tone": "soft",
+     "score": 16
+    }
+   ]
+  },
+  {
+   "name": "8 days is firm",
+   "in": {
+    "today": "2026-11-24",
+    "students": [
+     {
+      "id": "a",
+      "outstanding": 200000,
+      "overdue": 200000,
+      "oldest_due": "2026-11-16"
+     }
+    ]
+   },
+   "out": [
+    {
+     "id": "a",
+     "outstanding": 200000,
+     "overdue": 200000,
+     "age_days": 8,
+     "tone": "firm",
+     "score": 18
+    }
+   ]
+  },
+  {
+   "name": "30 days is still firm",
+   "in": {
+    "today": "2026-11-24",
+    "students": [
+     {
+      "id": "a",
+      "outstanding": 200000,
+      "overdue": 200000,
+      "oldest_due": "2026-10-25"
+     }
+    ]
+   },
+   "out": [
+    {
+     "id": "a",
+     "outstanding": 200000,
+     "overdue": 200000,
+     "age_days": 30,
+     "tone": "firm",
+     "score": 62
+    }
+   ]
+  },
+  {
+   "name": "31 days is final",
+   "in": {
+    "today": "2026-11-24",
+    "students": [
+     {
+      "id": "a",
+      "outstanding": 200000,
+      "overdue": 200000,
+      "oldest_due": "2026-10-24"
+     }
+    ]
+   },
+   "out": [
+    {
+     "id": "a",
+     "outstanding": 200000,
+     "overdue": 200000,
+     "age_days": 31,
+     "tone": "final",
+     "score": 62
+    }
+   ]
+  },
+  {
+   "name": "age points are capped at 60",
+   "in": {
+    "today": "2026-11-24",
+    "students": [
+     {
+      "id": "a",
+      "outstanding": 100000,
+      "overdue": 100000,
+      "oldest_due": "2026-01-01"
+     }
+    ]
+   },
+   "out": [
+    {
+     "id": "a",
+     "outstanding": 100000,
+     "overdue": 100000,
+     "age_days": 327,
+     "tone": "final",
+     "score": 61
+    }
+   ]
+  },
+  {
+   "name": "amount points are capped at 40",
+   "in": {
+    "today": "2026-11-24",
+    "students": [
+     {
+      "id": "a",
+      "outstanding": 90000000,
+      "overdue": 0,
+      "oldest_due": null
+     }
+    ]
+   },
+   "out": [
+    {
+     "id": "a",
+     "outstanding": 90000000,
+     "overdue": 0,
+     "age_days": 0,
+     "tone": "reminder",
+     "score": 40
+    }
+   ]
+  },
+  {
+   "name": "amount under 100000 gives no amount points",
+   "in": {
+    "today": "2026-11-24",
+    "students": [
+     {
+      "id": "a",
+      "outstanding": 99999,
+      "overdue": 0,
+      "oldest_due": null
+     }
+    ]
+   },
+   "out": [
+    {
+     "id": "a",
+     "outstanding": 99999,
+     "overdue": 0,
+     "age_days": 0,
+     "tone": "reminder",
+     "score": 0
+    }
+   ]
+  },
+  {
+   "name": "order: score desc then id",
+   "in": {
+    "today": "2026-11-24",
+    "students": [
+     {
+      "id": "c",
+      "outstanding": 200000,
+      "overdue": 200000,
+      "oldest_due": "2026-11-10"
+     },
+     {
+      "id": "b",
+      "outstanding": 200000,
+      "overdue": 200000,
+      "oldest_due": "2026-11-10"
+     },
+     {
+      "id": "a",
+      "outstanding": 5000000,
+      "overdue": 0,
+      "oldest_due": null
+     },
+     {
+      "id": "d",
+      "outstanding": 100000,
+      "overdue": 100000,
+      "oldest_due": "2026-11-23"
+     },
+     {
+      "id": "e",
+      "outstanding": 0,
+      "overdue": 0,
+      "oldest_due": null
+     }
+    ]
+   },
+   "out": [
+    {
+     "id": "a",
+     "outstanding": 5000000,
+     "overdue": 0,
+     "age_days": 0,
+     "tone": "reminder",
+     "score": 40
+    },
+    {
+     "id": "b",
+     "outstanding": 200000,
+     "overdue": 200000,
+     "age_days": 14,
+     "tone": "firm",
+     "score": 30
+    },
+    {
+     "id": "c",
+     "outstanding": 200000,
+     "overdue": 200000,
+     "age_days": 14,
+     "tone": "firm",
+     "score": 30
+    },
+    {
+     "id": "d",
+     "outstanding": 100000,
+     "overdue": 100000,
+     "age_days": 1,
+     "tone": "soft",
+     "score": 3
+    }
+   ]
+  },
+  {
+   "name": "partly overdue keeps the whole outstanding",
+   "in": {
+    "today": "2026-11-24",
+    "students": [
+     {
+      "id": "a",
+      "outstanding": 900000,
+      "overdue": 300000,
+      "oldest_due": "2026-11-01"
+     }
+    ]
+   },
+   "out": [
+    {
+     "id": "a",
+     "outstanding": 900000,
+     "overdue": 300000,
+     "age_days": 23,
+     "tone": "firm",
+     "score": 55
+    }
+   ]
+  }
+ ],
+ "debt_message": [
+  {
+   "name": "reminder",
+   "in": {
+    "tone": "reminder",
+    "student": "Ali Valiyev",
+    "amount": 300000,
+    "days": 0
+   },
+   "out": "Assalomu alaykum! Ali Valiyev uchun 300 000 so'm to'lov muddati yaqinlashmoqda. Qulay vaqtda to'lab qo'ysangiz, minnatdor bo'lamiz."
+  },
+  {
+   "name": "soft",
+   "in": {
+    "tone": "soft",
+    "student": "Ali Valiyev",
+    "amount": 1250000,
+    "days": 3
+   },
+   "out": "Assalomu alaykum! Ali Valiyev uchun 1 250 000 so'm to'lov muddati o'tib ketdi. Iltimos, yaqin kunlarda to'lab qo'ying. Savolingiz bo'lsa, yozing."
+  },
+  {
+   "name": "firm",
+   "in": {
+    "tone": "firm",
+    "student": "Dilnoza Aliyeva",
+    "amount": 450000,
+    "days": 12
+   },
+   "out": "Assalomu alaykum! Dilnoza Aliyeva uchun 450 000 so'm qarz 12 kundan beri to'lanmagan. Iltimos, shu hafta ichida to'lang yoki to'lov kunini bizga ayting."
+  },
+  {
+   "name": "final",
+   "in": {
+    "tone": "final",
+    "student": "Ma'rufjon O'rinov",
+    "amount": 12345678,
+    "days": 45
+   },
+   "out": "Assalomu alaykum! Ma'rufjon O'rinov uchun 12 345 678 so'm qarz 45 kundan beri to'lanmagan. Iltimos, biz bilan bog'laning: to'lov rejasini birga kelishib olamiz."
+  },
+  {
+   "name": "small amount has no grouping",
+   "in": {
+    "tone": "soft",
+    "student": "Bobur",
+    "amount": 999,
+    "days": 1
+   },
+   "out": "Assalomu alaykum! Bobur uchun 999 so'm to'lov muddati o'tib ketdi. Iltimos, yaqin kunlarda to'lab qo'ying. Savolingiz bo'lsa, yozing."
+  }
+ ],
+ "churn_risk": [
+  {
+   "name": "empty",
+   "in": {
+    "students": []
+   },
+   "out": []
+  },
+  {
+   "name": "steady attendance is low risk and not listed",
+   "in": {
+    "students": [
+     {
+      "id": "a",
+      "attended_recent": 8,
+      "marked_recent": 8,
+      "attended_prev": 8,
+      "marked_prev": 8,
+      "overdue_age_days": 0,
+      "trial_days_over": null
+     }
+    ]
+   },
+   "out": []
+  },
+  {
+   "name": "attendance rose",
+   "in": {
+    "students": [
+     {
+      "id": "a",
+      "attended_recent": 8,
+      "marked_recent": 8,
+      "attended_prev": 4,
+      "marked_prev": 8,
+      "overdue_age_days": 0,
+      "trial_days_over": null
+     }
+    ]
+   },
+   "out": []
+  },
+  {
+   "name": "fall of 25 points is low (under 30)",
+   "in": {
+    "students": [
+     {
+      "id": "a",
+      "attended_recent": 6,
+      "marked_recent": 8,
+      "attended_prev": 8,
+      "marked_prev": 8,
+      "overdue_age_days": 0,
+      "trial_days_over": null
+     }
+    ]
+   },
+   "out": []
+  },
+  {
+   "name": "fall of 50 points is medium via attendance only",
+   "in": {
+    "students": [
+     {
+      "id": "a",
+      "attended_recent": 2,
+      "marked_recent": 4,
+      "attended_prev": 4,
+      "marked_prev": 4,
+      "overdue_age_days": 0,
+      "trial_days_over": null
+     }
+    ]
+   },
+   "out": [
+    {
+     "id": "a",
+     "score": 40,
+     "level": "medium",
+     "reasons": [
+      "attendance_drop"
+     ],
+     "attendance_recent": 50,
+     "attendance_prev": 100
+    }
+   ]
+  },
+  {
+   "name": "fall capped at 40 points is medium",
+   "in": {
+    "students": [
+     {
+      "id": "a",
+      "attended_recent": 0,
+      "marked_recent": 4,
+      "attended_prev": 4,
+      "marked_prev": 4,
+      "overdue_age_days": 0,
+      "trial_days_over": null
+     }
+    ]
+   },
+   "out": [
+    {
+     "id": "a",
+     "score": 40,
+     "level": "medium",
+     "reasons": [
+      "attendance_drop"
+     ],
+     "attendance_recent": 0,
+     "attendance_prev": 100
+    }
+   ]
+  },
+  {
+   "name": "one marked lesson in the recent window is too few to judge",
+   "in": {
+    "students": [
+     {
+      "id": "a",
+      "attended_recent": 0,
+      "marked_recent": 1,
+      "attended_prev": 4,
+      "marked_prev": 4,
+      "overdue_age_days": 0,
+      "trial_days_over": null
+     }
+    ]
+   },
+   "out": []
+  },
+  {
+   "name": "one marked lesson in the previous window is too few to judge",
+   "in": {
+    "students": [
+     {
+      "id": "a",
+      "attended_recent": 0,
+      "marked_recent": 4,
+      "attended_prev": 1,
+      "marked_prev": 1,
+      "overdue_age_days": 0,
+      "trial_days_over": null
+     }
+    ]
+   },
+   "out": []
+  },
+  {
+   "name": "debt age 30 alone is medium",
+   "in": {
+    "students": [
+     {
+      "id": "a",
+      "attended_recent": 4,
+      "marked_recent": 4,
+      "attended_prev": 4,
+      "marked_prev": 4,
+      "overdue_age_days": 30,
+      "trial_days_over": null
+     }
+    ]
+   },
+   "out": [
+    {
+     "id": "a",
+     "score": 30,
+     "level": "medium",
+     "reasons": [
+      "debt"
+     ],
+     "attendance_recent": 100,
+     "attendance_prev": 100
+    }
+   ]
+  },
+  {
+   "name": "debt age is capped at 30 points",
+   "in": {
+    "students": [
+     {
+      "id": "a",
+      "attended_recent": 4,
+      "marked_recent": 4,
+      "attended_prev": 4,
+      "marked_prev": 4,
+      "overdue_age_days": 200,
+      "trial_days_over": null
+     }
+    ]
+   },
+   "out": [
+    {
+     "id": "a",
+     "score": 30,
+     "level": "medium",
+     "reasons": [
+      "debt"
+     ],
+     "attendance_recent": 100,
+     "attendance_prev": 100
+    }
+   ]
+  },
+  {
+   "name": "debt age 29 alone is low",
+   "in": {
+    "students": [
+     {
+      "id": "a",
+      "attended_recent": 4,
+      "marked_recent": 4,
+      "attended_prev": 4,
+      "marked_prev": 4,
+      "overdue_age_days": 29,
+      "trial_days_over": null
+     }
+    ]
+   },
+   "out": []
+  },
+  {
+   "name": "undecided trial just at the limit is low",
+   "in": {
+    "students": [
+     {
+      "id": "a",
+      "attended_recent": 0,
+      "marked_recent": 0,
+      "attended_prev": 0,
+      "marked_prev": 0,
+      "overdue_age_days": 0,
+      "trial_days_over": 0
+     }
+    ]
+   },
+   "out": []
+  },
+  {
+   "name": "undecided trial 4 days over is medium",
+   "in": {
+    "students": [
+     {
+      "id": "a",
+      "attended_recent": 0,
+      "marked_recent": 0,
+      "attended_prev": 0,
+      "marked_prev": 0,
+      "overdue_age_days": 0,
+      "trial_days_over": 4
+     }
+    ]
+   },
+   "out": [
+    {
+     "id": "a",
+     "score": 30,
+     "level": "medium",
+     "reasons": [
+      "trial_no_answer"
+     ],
+     "attendance_recent": null,
+     "attendance_prev": null
+    }
+   ]
+  },
+  {
+   "name": "undecided trial points are capped at 30",
+   "in": {
+    "students": [
+     {
+      "id": "a",
+      "attended_recent": 0,
+      "marked_recent": 0,
+      "attended_prev": 0,
+      "marked_prev": 0,
+      "overdue_age_days": 0,
+      "trial_days_over": 50
+     }
+    ]
+   },
+   "out": [
+    {
+     "id": "a",
+     "score": 30,
+     "level": "medium",
+     "reasons": [
+      "trial_no_answer"
+     ],
+     "attendance_recent": null,
+     "attendance_prev": null
+    }
+   ]
+  },
+  {
+   "name": "drop plus debt is high",
+   "in": {
+    "students": [
+     {
+      "id": "a",
+      "attended_recent": 0,
+      "marked_recent": 4,
+      "attended_prev": 4,
+      "marked_prev": 4,
+      "overdue_age_days": 20,
+      "trial_days_over": null
+     }
+    ]
+   },
+   "out": [
+    {
+     "id": "a",
+     "score": 60,
+     "level": "high",
+     "reasons": [
+      "attendance_drop",
+      "debt"
+     ],
+     "attendance_recent": 0,
+     "attendance_prev": 100
+    }
+   ]
+  },
+  {
+   "name": "everything together caps at 100",
+   "in": {
+    "students": [
+     {
+      "id": "a",
+      "attended_recent": 0,
+      "marked_recent": 4,
+      "attended_prev": 4,
+      "marked_prev": 4,
+      "overdue_age_days": 100,
+      "trial_days_over": 20
+     }
+    ]
+   },
+   "out": [
+    {
+     "id": "a",
+     "score": 100,
+     "level": "high",
+     "reasons": [
+      "attendance_drop",
+      "debt",
+      "trial_no_answer"
+     ],
+     "attendance_recent": 0,
+     "attendance_prev": 100
+    }
+   ]
+  },
+  {
+   "name": "rounding of the rates is half up",
+   "in": {
+    "students": [
+     {
+      "id": "a",
+      "attended_recent": 1,
+      "marked_recent": 3,
+      "attended_prev": 2,
+      "marked_prev": 3,
+      "overdue_age_days": 30,
+      "trial_days_over": null
+     }
+    ]
+   },
+   "out": [
+    {
+     "id": "a",
+     "score": 64,
+     "level": "high",
+     "reasons": [
+      "attendance_drop",
+      "debt"
+     ],
+     "attendance_recent": 33,
+     "attendance_prev": 67
+    }
+   ]
+  },
+  {
+   "name": "order: score desc then id",
+   "in": {
+    "students": [
+     {
+      "id": "c",
+      "attended_recent": 0,
+      "marked_recent": 4,
+      "attended_prev": 4,
+      "marked_prev": 4,
+      "overdue_age_days": 20,
+      "trial_days_over": null
+     },
+     {
+      "id": "b",
+      "attended_recent": 0,
+      "marked_recent": 4,
+      "attended_prev": 4,
+      "marked_prev": 4,
+      "overdue_age_days": 20,
+      "trial_days_over": null
+     },
+     {
+      "id": "a",
+      "attended_recent": 4,
+      "marked_recent": 4,
+      "attended_prev": 4,
+      "marked_prev": 4,
+      "overdue_age_days": 30,
+      "trial_days_over": null
+     },
+     {
+      "id": "d",
+      "attended_recent": 0,
+      "marked_recent": 4,
+      "attended_prev": 4,
+      "marked_prev": 4,
+      "overdue_age_days": 30,
+      "trial_days_over": null
+     }
+    ]
+   },
+   "out": [
+    {
+     "id": "d",
+     "score": 70,
+     "level": "high",
+     "reasons": [
+      "attendance_drop",
+      "debt"
+     ],
+     "attendance_recent": 0,
+     "attendance_prev": 100
+    },
+    {
+     "id": "b",
+     "score": 60,
+     "level": "high",
+     "reasons": [
+      "attendance_drop",
+      "debt"
+     ],
+     "attendance_recent": 0,
+     "attendance_prev": 100
+    },
+    {
+     "id": "c",
+     "score": 60,
+     "level": "high",
+     "reasons": [
+      "attendance_drop",
+      "debt"
+     ],
+     "attendance_recent": 0,
+     "attendance_prev": 100
+    },
+    {
+     "id": "a",
+     "score": 30,
+     "level": "medium",
+     "reasons": [
+      "debt"
+     ],
+     "attendance_recent": 100,
+     "attendance_prev": 100
+    }
+   ]
+  }
+ ],
+ "weekly_summary": [
+  {
+   "name": "quiet week",
+   "in": {
+    "income": 0,
+    "income_prev": 0,
+    "expenses": 0,
+    "new_students": 0,
+    "left_students": 0,
+    "unpaid": 0,
+    "unpaid_total": 0,
+    "overdue": 0,
+    "attended": 0,
+    "marked": 0,
+    "attended_prev": 0,
+    "marked_prev": 0,
+    "high_risk": 0,
+    "medium_risk": 0
+   },
+   "out": {
+    "income": 0,
+    "income_prev": 0,
+    "income_change_percent": null,
+    "expenses": 0,
+    "net": 0,
+    "new_students": 0,
+    "left_students": 0,
+    "unpaid": 0,
+    "unpaid_total": 0,
+    "overdue": 0,
+    "attendance_percent": null,
+    "attendance_prev_percent": null,
+    "high_risk": 0,
+    "medium_risk": 0,
+    "lines": [
+     "Tushum: 0 so'm (o'tgan hafta: 0 so'm).",
+     "Xarajat: 0 so'm; sof natija: 0 so'm.",
+     "Yangi o'quvchilar: 0, ketganlar: 0.",
+     "Qarzdorlar: 0 ta, jami 0 so'm, shundan muddati o'tgan: 0 ta.",
+     "Davomat: bu hafta belgilangan dars yo'q.",
+     "Ketish xavfi ostidagi o'quvchilar: yuqori 0, o'rta 0."
+    ]
+   }
+  },
+  {
+   "name": "income up with a comparison",
+   "in": {
+    "income": 12000000,
+    "income_prev": 10000000,
+    "expenses": 3000000,
+    "new_students": 4,
+    "left_students": 1,
+    "unpaid": 6,
+    "unpaid_total": 2400000,
+    "overdue": 3,
+    "attended": 90,
+    "marked": 100,
+    "attended_prev": 85,
+    "marked_prev": 100,
+    "high_risk": 2,
+    "medium_risk": 5
+   },
+   "out": {
+    "income": 12000000,
+    "income_prev": 10000000,
+    "income_change_percent": 20,
+    "expenses": 3000000,
+    "net": 9000000,
+    "new_students": 4,
+    "left_students": 1,
+    "unpaid": 6,
+    "unpaid_total": 2400000,
+    "overdue": 3,
+    "attendance_percent": 90,
+    "attendance_prev_percent": 85,
+    "high_risk": 2,
+    "medium_risk": 5,
+    "lines": [
+     "Tushum: 12 000 000 so'm (o'tgan hafta: 10 000 000 so'm, +20%).",
+     "Xarajat: 3 000 000 so'm; sof natija: 9 000 000 so'm.",
+     "Yangi o'quvchilar: 4, ketganlar: 1.",
+     "Qarzdorlar: 6 ta, jami 2 400 000 so'm, shundan muddati o'tgan: 3 ta.",
+     "Davomat: 90% (o'tgan hafta: 85%).",
+     "Ketish xavfi ostidagi o'quvchilar: yuqori 2, o'rta 5."
+    ]
+   }
+  },
+  {
+   "name": "income down",
+   "in": {
+    "income": 7500000,
+    "income_prev": 10000000,
+    "expenses": 1000000,
+    "new_students": 0,
+    "left_students": 0,
+    "unpaid": 0,
+    "unpaid_total": 0,
+    "overdue": 0,
+    "attended": 0,
+    "marked": 0,
+    "attended_prev": 0,
+    "marked_prev": 0,
+    "high_risk": 0,
+    "medium_risk": 0
+   },
+   "out": {
+    "income": 7500000,
+    "income_prev": 10000000,
+    "income_change_percent": -25,
+    "expenses": 1000000,
+    "net": 6500000,
+    "new_students": 0,
+    "left_students": 0,
+    "unpaid": 0,
+    "unpaid_total": 0,
+    "overdue": 0,
+    "attendance_percent": null,
+    "attendance_prev_percent": null,
+    "high_risk": 0,
+    "medium_risk": 0,
+    "lines": [
+     "Tushum: 7 500 000 so'm (o'tgan hafta: 10 000 000 so'm, -25%).",
+     "Xarajat: 1 000 000 so'm; sof natija: 6 500 000 so'm.",
+     "Yangi o'quvchilar: 0, ketganlar: 0.",
+     "Qarzdorlar: 0 ta, jami 0 so'm, shundan muddati o'tgan: 0 ta.",
+     "Davomat: bu hafta belgilangan dars yo'q.",
+     "Ketish xavfi ostidagi o'quvchilar: yuqori 0, o'rta 0."
+    ]
+   }
+  },
+  {
+   "name": "income equal shows no change",
+   "in": {
+    "income": 500000,
+    "income_prev": 500000,
+    "expenses": 0,
+    "new_students": 0,
+    "left_students": 0,
+    "unpaid": 0,
+    "unpaid_total": 0,
+    "overdue": 0,
+    "attended": 0,
+    "marked": 0,
+    "attended_prev": 0,
+    "marked_prev": 0,
+    "high_risk": 0,
+    "medium_risk": 0
+   },
+   "out": {
+    "income": 500000,
+    "income_prev": 500000,
+    "income_change_percent": 0,
+    "expenses": 0,
+    "net": 500000,
+    "new_students": 0,
+    "left_students": 0,
+    "unpaid": 0,
+    "unpaid_total": 0,
+    "overdue": 0,
+    "attendance_percent": null,
+    "attendance_prev_percent": null,
+    "high_risk": 0,
+    "medium_risk": 0,
+    "lines": [
+     "Tushum: 500 000 so'm (o'tgan hafta: 500 000 so'm).",
+     "Xarajat: 0 so'm; sof natija: 500 000 so'm.",
+     "Yangi o'quvchilar: 0, ketganlar: 0.",
+     "Qarzdorlar: 0 ta, jami 0 so'm, shundan muddati o'tgan: 0 ta.",
+     "Davomat: bu hafta belgilangan dars yo'q.",
+     "Ketish xavfi ostidagi o'quvchilar: yuqori 0, o'rta 0."
+    ]
+   }
+  },
+  {
+   "name": "no previous income has no percent",
+   "in": {
+    "income": 500000,
+    "income_prev": 0,
+    "expenses": 0,
+    "new_students": 0,
+    "left_students": 0,
+    "unpaid": 0,
+    "unpaid_total": 0,
+    "overdue": 0,
+    "attended": 0,
+    "marked": 0,
+    "attended_prev": 0,
+    "marked_prev": 0,
+    "high_risk": 0,
+    "medium_risk": 0
+   },
+   "out": {
+    "income": 500000,
+    "income_prev": 0,
+    "income_change_percent": null,
+    "expenses": 0,
+    "net": 500000,
+    "new_students": 0,
+    "left_students": 0,
+    "unpaid": 0,
+    "unpaid_total": 0,
+    "overdue": 0,
+    "attendance_percent": null,
+    "attendance_prev_percent": null,
+    "high_risk": 0,
+    "medium_risk": 0,
+    "lines": [
+     "Tushum: 500 000 so'm (o'tgan hafta: 0 so'm).",
+     "Xarajat: 0 so'm; sof natija: 500 000 so'm.",
+     "Yangi o'quvchilar: 0, ketganlar: 0.",
+     "Qarzdorlar: 0 ta, jami 0 so'm, shundan muddati o'tgan: 0 ta.",
+     "Davomat: bu hafta belgilangan dars yo'q.",
+     "Ketish xavfi ostidagi o'quvchilar: yuqori 0, o'rta 0."
+    ]
+   }
+  },
+  {
+   "name": "net can be negative",
+   "in": {
+    "income": 1000000,
+    "income_prev": 0,
+    "expenses": 2500000,
+    "new_students": 0,
+    "left_students": 0,
+    "unpaid": 0,
+    "unpaid_total": 0,
+    "overdue": 0,
+    "attended": 0,
+    "marked": 0,
+    "attended_prev": 0,
+    "marked_prev": 0,
+    "high_risk": 0,
+    "medium_risk": 0
+   },
+   "out": {
+    "income": 1000000,
+    "income_prev": 0,
+    "income_change_percent": null,
+    "expenses": 2500000,
+    "net": -1500000,
+    "new_students": 0,
+    "left_students": 0,
+    "unpaid": 0,
+    "unpaid_total": 0,
+    "overdue": 0,
+    "attendance_percent": null,
+    "attendance_prev_percent": null,
+    "high_risk": 0,
+    "medium_risk": 0,
+    "lines": [
+     "Tushum: 1 000 000 so'm (o'tgan hafta: 0 so'm).",
+     "Xarajat: 2 500 000 so'm; sof natija: -1 500 000 so'm.",
+     "Yangi o'quvchilar: 0, ketganlar: 0.",
+     "Qarzdorlar: 0 ta, jami 0 so'm, shundan muddati o'tgan: 0 ta.",
+     "Davomat: bu hafta belgilangan dars yo'q.",
+     "Ketish xavfi ostidagi o'quvchilar: yuqori 0, o'rta 0."
+    ]
+   }
+  },
+  {
+   "name": "percent rounds half up",
+   "in": {
+    "income": 10050,
+    "income_prev": 10000,
+    "expenses": 0,
+    "new_students": 0,
+    "left_students": 0,
+    "unpaid": 0,
+    "unpaid_total": 0,
+    "overdue": 0,
+    "attended": 0,
+    "marked": 0,
+    "attended_prev": 0,
+    "marked_prev": 0,
+    "high_risk": 0,
+    "medium_risk": 0
+   },
+   "out": {
+    "income": 10050,
+    "income_prev": 10000,
+    "income_change_percent": 1,
+    "expenses": 0,
+    "net": 10050,
+    "new_students": 0,
+    "left_students": 0,
+    "unpaid": 0,
+    "unpaid_total": 0,
+    "overdue": 0,
+    "attendance_percent": null,
+    "attendance_prev_percent": null,
+    "high_risk": 0,
+    "medium_risk": 0,
+    "lines": [
+     "Tushum: 10 050 so'm (o'tgan hafta: 10 000 so'm, +1%).",
+     "Xarajat: 0 so'm; sof natija: 10 050 so'm.",
+     "Yangi o'quvchilar: 0, ketganlar: 0.",
+     "Qarzdorlar: 0 ta, jami 0 so'm, shundan muddati o'tgan: 0 ta.",
+     "Davomat: bu hafta belgilangan dars yo'q.",
+     "Ketish xavfi ostidagi o'quvchilar: yuqori 0, o'rta 0."
+    ]
+   }
+  },
+  {
+   "name": "percent rounds half up downwards",
+   "in": {
+    "income": 9950,
+    "income_prev": 10000,
+    "expenses": 0,
+    "new_students": 0,
+    "left_students": 0,
+    "unpaid": 0,
+    "unpaid_total": 0,
+    "overdue": 0,
+    "attended": 0,
+    "marked": 0,
+    "attended_prev": 0,
+    "marked_prev": 0,
+    "high_risk": 0,
+    "medium_risk": 0
+   },
+   "out": {
+    "income": 9950,
+    "income_prev": 10000,
+    "income_change_percent": -1,
+    "expenses": 0,
+    "net": 9950,
+    "new_students": 0,
+    "left_students": 0,
+    "unpaid": 0,
+    "unpaid_total": 0,
+    "overdue": 0,
+    "attendance_percent": null,
+    "attendance_prev_percent": null,
+    "high_risk": 0,
+    "medium_risk": 0,
+    "lines": [
+     "Tushum: 9 950 so'm (o'tgan hafta: 10 000 so'm, -1%).",
+     "Xarajat: 0 so'm; sof natija: 9 950 so'm.",
+     "Yangi o'quvchilar: 0, ketganlar: 0.",
+     "Qarzdorlar: 0 ta, jami 0 so'm, shundan muddati o'tgan: 0 ta.",
+     "Davomat: bu hafta belgilangan dars yo'q.",
+     "Ketish xavfi ostidagi o'quvchilar: yuqori 0, o'rta 0."
+    ]
+   }
+  },
+  {
+   "name": "attendance without a previous week",
+   "in": {
+    "income": 0,
+    "income_prev": 0,
+    "expenses": 0,
+    "new_students": 0,
+    "left_students": 0,
+    "unpaid": 0,
+    "unpaid_total": 0,
+    "overdue": 0,
+    "attended": 7,
+    "marked": 9,
+    "attended_prev": 0,
+    "marked_prev": 0,
+    "high_risk": 0,
+    "medium_risk": 0
+   },
+   "out": {
+    "income": 0,
+    "income_prev": 0,
+    "income_change_percent": null,
+    "expenses": 0,
+    "net": 0,
+    "new_students": 0,
+    "left_students": 0,
+    "unpaid": 0,
+    "unpaid_total": 0,
+    "overdue": 0,
+    "attendance_percent": 78,
+    "attendance_prev_percent": null,
+    "high_risk": 0,
+    "medium_risk": 0,
+    "lines": [
+     "Tushum: 0 so'm (o'tgan hafta: 0 so'm).",
+     "Xarajat: 0 so'm; sof natija: 0 so'm.",
+     "Yangi o'quvchilar: 0, ketganlar: 0.",
+     "Qarzdorlar: 0 ta, jami 0 so'm, shundan muddati o'tgan: 0 ta.",
+     "Davomat: 78%.",
+     "Ketish xavfi ostidagi o'quvchilar: yuqori 0, o'rta 0."
+    ]
+   }
+  },
+  {
+   "name": "attendance rounding",
+   "in": {
+    "income": 0,
+    "income_prev": 0,
+    "expenses": 0,
+    "new_students": 0,
+    "left_students": 0,
+    "unpaid": 0,
+    "unpaid_total": 0,
+    "overdue": 0,
+    "attended": 1,
+    "marked": 3,
+    "attended_prev": 2,
+    "marked_prev": 3,
+    "high_risk": 0,
+    "medium_risk": 0
+   },
+   "out": {
+    "income": 0,
+    "income_prev": 0,
+    "income_change_percent": null,
+    "expenses": 0,
+    "net": 0,
+    "new_students": 0,
+    "left_students": 0,
+    "unpaid": 0,
+    "unpaid_total": 0,
+    "overdue": 0,
+    "attendance_percent": 33,
+    "attendance_prev_percent": 67,
+    "high_risk": 0,
+    "medium_risk": 0,
+    "lines": [
+     "Tushum: 0 so'm (o'tgan hafta: 0 so'm).",
+     "Xarajat: 0 so'm; sof natija: 0 so'm.",
+     "Yangi o'quvchilar: 0, ketganlar: 0.",
+     "Qarzdorlar: 0 ta, jami 0 so'm, shundan muddati o'tgan: 0 ta.",
+     "Davomat: 33% (o'tgan hafta: 67%).",
+     "Ketish xavfi ostidagi o'quvchilar: yuqori 0, o'rta 0."
+    ]
+   }
+  }
+ ],
+ "report_line": [
+  {
+   "name": "debt line reminder",
+   "kind": "debt",
+   "in": {
+    "rank": 1,
+    "name": "Ali Valiyev",
+    "outstanding": 300000,
+    "age_days": 0,
+    "tone": "reminder"
+   },
+   "out": "1. Ali Valiyev: 300 000 so'm, 0 kun, ohang: eslatma."
+  },
+  {
+   "name": "debt line soft",
+   "kind": "debt",
+   "in": {
+    "rank": 2,
+    "name": "Bobur",
+    "outstanding": 1250000,
+    "age_days": 5,
+    "tone": "soft"
+   },
+   "out": "2. Bobur: 1 250 000 so'm, 5 kun, ohang: yumshoq."
+  },
+  {
+   "name": "debt line firm",
+   "kind": "debt",
+   "in": {
+    "rank": 3,
+    "name": "Dilnoza Aliyeva",
+    "outstanding": 450000,
+    "age_days": 12,
+    "tone": "firm"
+   },
+   "out": "3. Dilnoza Aliyeva: 450 000 so'm, 12 kun, ohang: qat'iy."
+  },
+  {
+   "name": "debt line final",
+   "kind": "debt",
+   "in": {
+    "rank": 10,
+    "name": "Ma'rufjon O'rinov",
+    "outstanding": 12345678,
+    "age_days": 45,
+    "tone": "final"
+   },
+   "out": "10. Ma'rufjon O'rinov: 12 345 678 so'm, 45 kun, ohang: so'nggi."
+  },
+  {
+   "name": "risk line one reason",
+   "kind": "risk",
+   "in": {
+    "rank": 1,
+    "name": "Ali Valiyev",
+    "score": 40,
+    "level": "medium",
+    "reasons": [
+     "attendance_drop"
+    ]
+   },
+   "out": "1. Ali Valiyev: xavf balli 40 (o'rta); sabab: davomat pasaygan."
+  },
+  {
+   "name": "risk line two reasons",
+   "kind": "risk",
+   "in": {
+    "rank": 2,
+    "name": "Bobur",
+    "score": 64,
+    "level": "high",
+    "reasons": [
+     "attendance_drop",
+     "debt"
+    ]
+   },
+   "out": "2. Bobur: xavf balli 64 (yuqori); sabab: davomat pasaygan, qarzi muddati o'tgan."
+  },
+  {
+   "name": "risk line all reasons",
+   "kind": "risk",
+   "in": {
+    "rank": 3,
+    "name": "Dilnoza",
+    "score": 100,
+    "level": "high",
+    "reasons": [
+     "attendance_drop",
+     "debt",
+     "trial_no_answer"
+    ]
+   },
+   "out": "3. Dilnoza: xavf balli 100 (yuqori); sabab: davomat pasaygan, qarzi muddati o'tgan, sinovdan keyin javob yo'q."
+  },
+  {
+   "name": "risk line trial only",
+   "kind": "risk",
+   "in": {
+    "rank": 4,
+    "name": "Eldor",
+    "score": 30,
+    "level": "medium",
+    "reasons": [
+     "trial_no_answer"
+    ]
+   },
+   "out": "4. Eldor: xavf balli 30 (o'rta); sabab: sinovdan keyin javob yo'q."
+  }
+ ]
+}
