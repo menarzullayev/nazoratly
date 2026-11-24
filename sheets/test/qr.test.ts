@@ -119,7 +119,7 @@ describe("scanning", () => {
 
   it("marks present once and keeps the mark on a second scan", () => {
     expect(scan(codeOf("S0001"))).toMatchObject({ result: "marked", studentName: "Ali Valiyev", status: "present", previous: null });
-    expect(marks()).toEqual([{ date: "2026-11-23", groupId: "G0001", studentId: "S0001", status: "present", minutesLate: 0, demo: false }]);
+    expect(marks()).toEqual([{ date: "2026-11-23", groupId: "G0001", studentId: "S0001", status: "present", minutesLate: 0, demo: false, branchId: "F0001" }]);
     expect(scan(codeOf("S0001"))).toMatchObject({ result: "already_present", status: "present" });
     expect(marks()).toHaveLength(1);
     expect(scan(codeOf("S0002")).result).toBe("marked");

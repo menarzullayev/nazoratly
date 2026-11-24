@@ -27,7 +27,7 @@ from nazoratly.money import (
     rules_for_month,
     write_discount_lines,
 )
-from nazoratly.routers.settings import load_settings
+from nazoratly.routers.settings import load_settings_by_branch
 from nazoratly.rules.entitlements import apply_credits
 from nazoratly.rules.money import (
     DiscountInput,
@@ -191,7 +191,7 @@ async def generate_charges(
         gid = await resolve_opt(conn, "study_groups", body.group_id, what="group")
         rows = await fetch_all(
             conn,
-            "SELECT e.id AS enrollment_id, e.student_id, round(COALESCE(e.monthly_fee_override, g.monthly_fee) * (1 - e.discount_percent / 100), 2) AS fee "
+            "SELECT e.id AS enrollment_id, e.student_id, e.branch_id, round(COALESCE(e.monthly_fee_override, g.monthly_fee) * (1 - e.discount_percent / 100), 2) AS fee "
             "FROM enrollments e JOIN study_groups g ON g.org_id = e.org_id AND g.id = e.group_id "
             "JOIN students s ON s.org_id = e.org_id AND s.id = e.student_id "
             "WHERE e.status IN ('active', 'finished') AND e.started_on < %(nxt)s AND (e.ended_on IS NULL OR e.ended_on >= %(first)s) "
@@ -211,7 +211,9 @@ async def generate_charges(
         )
         assert pkg is not None
         created = existing = zero = discounted = free = 0
-        settings = await load_settings(conn, p.org_id)
+        by_branch = await load_settings_by_branch(
+            conn, p.org_id
+        )  # each enrollment follows ITS branch's rules
         last = nxt - timedelta(days=1)
         student_ids = sorted({int(r["student_id"]) for r in rows if r["fee"] > 0})
         ranks = await family_ranks(conn, student_ids)
@@ -240,6 +242,7 @@ async def generate_charges(
                     continue
                 inputs.append(DiscountInput(rule["kind"], rule["percent"], rule["amount"]))
                 meta.append(rule)
+            settings = by_branch.get(int(r["branch_id"]), by_branch[None])
             fam = family_percent(
                 rank=ranks.get(r["student_id"], 1),
                 second=settings.family_discount_2nd_percent,

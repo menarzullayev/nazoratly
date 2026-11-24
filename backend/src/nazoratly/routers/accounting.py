@@ -564,7 +564,8 @@ async def close_period(
     db: DB,
 ) -> PeriodOut:
     first = date.fromisoformat(f"{month}-01")
-    async with db.tx(p.session()) as conn:
+    # the month close seals the whole center's chain: center-wide staff only, never narrowed to a branch
+    async with db.tx(p.session(unscoped=True)) as conn:
         await svc.ensure_chart(conn, p.org_id)
         await svc.lock_ledger(conn, p.org_id)
         today = await svc.org_today(conn)
@@ -613,7 +614,9 @@ class VerifyOut(Out):
 
 @router.get("/verify", response_model=VerifyOut, summary="Verify the hash chain and the closed periods")
 async def verify(p: Annotated[Principal, Depends(require("accounting:read"))], db: DB) -> VerifyOut:
-    async with db.tx(p.session()) as conn:
+    async with db.tx(
+        p.session(unscoped=True)
+    ) as conn:  # the chain is one per center: not for a branch's partial view
         lines = await svc.load_chain(conn, p.org_id)
         v = verify_chain(lines, await svc.load_periods(conn, p.org_id))
     return VerifyOut(lines=len(lines), **v.as_dict())

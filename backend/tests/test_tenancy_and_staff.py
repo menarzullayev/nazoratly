@@ -55,7 +55,8 @@ async def test_branches_crud(tenant: Tenant) -> None:
     upd = await ok(await tenant.patch(f"/v1/branches/{b['id']}", {"address": "Samarkand"}))
     assert upd["address"] == "Samarkand"
     await ok(await tenant.delete(f"/v1/branches/{b['id']}"))
-    assert (await tenant.get("/v1/branches")).json()["items"] == []
+    left = (await tenant.get("/v1/branches")).json()["items"]
+    assert [(x["name"], x["is_default"]) for x in left] == [("Asosiy filial", True)]  # every center keeps its default branch
 
 
 async def test_staff_roles_and_permissions(client: httpx.AsyncClient, tenant: Tenant) -> None:

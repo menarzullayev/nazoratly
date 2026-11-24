@@ -1536,6 +1536,25 @@ BEGIN
   ASSERT (SELECT count(*) FROM student_branch_moves) = 1, 'the branch left sees the move';
   PERFORM public.t_expect('42501', $q$INSERT INTO student_branch_moves (org_id, student_id, from_branch_id, branch_id, moved_on) VALUES (1, 1, 1, 3, '2026-11-25')$q$);
 END $$;
+RESET ROLE;
+-- a student who moved away stays readable (never writable) for the branch he left
+INSERT INTO students (org_id, full_name, branch_id) VALUES (1, 'BR mover', 3);
+INSERT INTO student_branch_moves (org_id, student_id, from_branch_id, branch_id, moved_on)
+  VALUES (1, (SELECT id FROM students WHERE full_name = 'BR mover'), 1, 3, '2026-11-24');
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '1'; SET LOCAL app.user_id = '1'; SET LOCAL app.branch_id = '1';
+DO $$
+DECLARE n bigint;
+BEGIN
+  ASSERT (SELECT count(*) FROM students WHERE full_name = 'BR mover') = 1, 'the branch left still reads the moved student';
+  PERFORM public.t_expect('42501', $q$UPDATE students SET notes = 'x' WHERE full_name = 'BR mover'$q$);
+END $$;
+RESET ROLE;
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '1'; SET LOCAL app.user_id = '1'; SET LOCAL app.branch_id = '3';
+DO $$
+BEGIN
+  ASSERT (SELECT count(*) FROM students WHERE full_name = 'BR mover') = 1, 'the branch joined sees him';
+  UPDATE students SET notes = 'welcome' WHERE full_name = 'BR mover';
+END $$;
 ROLLBACK;
 
 -- clean up so the down-migration test starts from the original state (the journal is immutable: only the

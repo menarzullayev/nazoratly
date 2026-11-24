@@ -24,6 +24,7 @@ import type { AttendanceRow, Entitlement, Enrollment, Group, Lead, LeadLogRow, P
 import { guard, withLock } from "./actions";
 import { fillLeadIds, writeTable } from "./admission";
 import { pickId } from "./pick";
+import { currentScope } from "./scope";
 import { append, read, readIfPresent, today, updateById } from "./repo";
 import { ATTENDANCE, ENROLLMENTS, ENTITLEMENTS, GROUPS, LEAD_LOG, PAYMENTS, PROMOS, PROMO_USES, REFERRALS, SOURCE_COSTS, STUDENTS } from "./schema";
 import { readSettings } from "./settings";
@@ -238,8 +239,10 @@ export function setSourceCost(source?: string, monthText?: string, amountText?: 
   if (!/^\d+$/.test(a) || !Number.isSafeInteger(amount)) throw new Error("Xarajat butun, manfiy bo'lmagan son bo'lishi kerak.");
   const month = `${m}-01`;
   withLock(() => {
+    const info = currentScope();
+    const branch = info.scope ?? info.defaultId; // a cost belongs to a branch: the one you work in, else the default branch
     const rows = readIfPresent<SourceCostRow>(SOURCE_COSTS);
-    const same = rows.find((r) => r.source.toLowerCase() === src.toLowerCase() && r.month === month);
+    const same = rows.find((r) => r.source.toLowerCase() === src.toLowerCase() && r.month === month && r.branchId === branch);
     if (same) {
       // one figure per source and month: repeating corrects it (the sheet row is found by source + month)
       const sh = SpreadsheetApp.getActive().getSheetByName(SOURCE_COSTS.sheet)!;
@@ -247,15 +250,17 @@ export function setSourceCost(source?: string, monthText?: string, amountText?: 
       const head = (data[0] ?? []).map((h) => String(h).trim());
       const sCol = head.indexOf(SOURCE_COSTS.cols[0]!.header);
       const aCol = head.indexOf(SOURCE_COSTS.cols[2]!.header);
+      const bCol = head.indexOf("Filial");
       for (let r = 1; r < data.length; r++) {
-        if (String(data[r]![sCol]).trim().toLowerCase() === src.toLowerCase()) {
+        const rowBranch = bCol < 0 ? "" : String(data[r]![bCol] ?? "").trim() || info.defaultId;
+        if (String(data[r]![sCol]).trim().toLowerCase() === src.toLowerCase() && (bCol < 0 || rowBranch === branch)) {
           const dc = data[r]![head.indexOf(SOURCE_COSTS.cols[1]!.header)];
           const iso = dc instanceof Date ? Utilities.formatDate(dc, SpreadsheetApp.getActive().getSpreadsheetTimeZone(), "yyyy-MM-dd") : String(dc).trim();
           if (iso === month) sh.getRange(r + 1, aCol + 1).setValue(amount);
         }
       }
     } else {
-      append(SOURCE_COSTS, [{ source: src, month, amount, note: "" }]);
+      append(SOURCE_COSTS, [{ source: src, month, amount, note: "", branchId: branch }]);
     }
   });
   SpreadsheetApp.getActive().toast(`${src} ${m}: ${som(amount)} so'm.`, "nazoratly", 5);

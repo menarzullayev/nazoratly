@@ -11,6 +11,7 @@ export interface ColDef {
   help?: string; // header note
   plain?: boolean; // stored as plain text (codes, hashes, free text): never turned into a number or a formula
   signed?: boolean; // an int column that may be negative
+  optional?: boolean; // a workbook set up before this column existed still works (the value reads as empty)
 }
 
 export interface TableDef {
@@ -52,6 +53,8 @@ const L = {
   discountLineKind: { family: "Oilaviy", individual: "Individual", scholarship: "Stipendiya", early_pay: "Erta to'lov" },
   refundKind: { wrong_payment: "Xato to'lov", leaving: "Ketdi (oy qoldig'i)", package_remainder: "Abonement qoldig'i", to_credit: "Kreditga o'tkazish" },
   payout: { cash: "Naqd", bank: "Bank", credit: "Kredit" },
+  branchStatus: { active: "Faol", closed: "Yopilgan" },
+  staffRole: { owner: "Ega", admin: "Administrator", manager: "Menejer", accountant: "Buxgalter", teacher: "O'qituvchi", viewer: "Ko'ruvchi" },
 } as const;
 
 /** Marks sample rows ("Namuna ma'lumot"). "Demo ma'lumotni tozalash" deletes only flagged rows. */
@@ -689,7 +692,79 @@ export const CERTIFICATES: TableDef = {
 };
 
 export const LEDGER_TABLES: TableDef[] = [JOURNAL, PERIODS, CHART_ACCOUNTS, CASH_ACCOUNTS, REFUNDS, CASH_CLOSES];
-export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, PACKAGES, INSTALLMENTS, DOCUMENTS, EXPENSES, WAITLIST, ...LEDGER_TABLES, STATEMENTS, STATEMENT_LINES, SUPPLIERS, SUPPLIER_BILLS, BILL_PAYMENTS, DISCOUNTS, DISCOUNT_LINES, ROOMS, SCHEDULE_CHANGES, REFERRALS, PROMOS, PROMO_USES, SOURCE_COSTS, MARKS, EXAMS, EXAM_RESULTS, REPORTS, CERTIFICATES];
+// ---- branches (G6): one center, one books, a branch mark on every row ---------------------------------------------------
+export const BRANCHES: TableDef = {
+  sheet: "Filiallar",
+  color: "#00796b",
+  cols: [
+    { key: "id", header: "ID", width: 70, kind: "text", help: "Avtomatik (F01...)" },
+    { key: "name", header: "Filial nomi", width: 220, kind: "text" },
+    { key: "address", header: "Manzil", width: 260, kind: "text" },
+    { key: "status", header: "Holat", width: 100, kind: "enum", labels: L.branchStatus },
+    { key: "isDefault", header: "Asosiy", width: 90, kind: "bool", help: "Filial tanlanmagan yozuvlar shu filialga tushadi. Faqat bittasi 'Ha' bo'ladi (nazoratly > Filiallar > Asosiy filialni almashtirish)" },
+  ],
+};
+
+export const STAFF: TableDef = {
+  sheet: "Xodimlar",
+  color: "#00796b",
+  cols: [
+    { key: "email", header: "Email", width: 240, kind: "text", plain: true, help: "Xodimning Google emaili" },
+    { key: "role", header: "Rol", width: 130, kind: "enum", labels: L.staffRole },
+    { key: "branchId", header: "Filial ID", width: 100, kind: "text", help: "Bo'sh = butun markaz (egasi). To'ldirilsa xodim menyuda va hisobotlarda faqat shu filialni ko'radi va faqat shu filialga yozadi" },
+  ],
+};
+
+export const BRANCH_PRICES: TableDef = {
+  sheet: "Filial narxlari",
+  color: "#00796b",
+  cols: [
+    { key: "branchId", header: "Filial ID", width: 100, kind: "text" },
+    { key: "course", header: "Kurs (guruh nomi)", width: 240, kind: "text", help: "Guruh nomi shu so'z bilan boshlansa shu narx taklif qilinadi" },
+    { key: "monthlyFee", header: "Oylik narx (so'm)", width: 140, kind: "int" },
+  ],
+};
+
+export const BRANCH_SETTINGS: TableDef = {
+  sheet: "Filial sozlamalari",
+  color: "#00796b",
+  cols: [
+    { key: "branchId", header: "Filial ID", width: 100, kind: "text" },
+    { key: "label", header: "Sozlama", width: 300, kind: "text", help: "Sozlamalar varag'idagi nom bilan bir xil. Shu filial uchun markaz qiymati o'rniga ishlaydi" },
+    { key: "value", header: "Qiymat", width: 220, kind: "text", plain: true },
+  ],
+};
+
+export const BRANCH_MOVES: TableDef = {
+  sheet: "Filial ko'chirishlar",
+  color: "#00796b",
+  cols: [
+    { key: "id", header: "ID", width: 70, kind: "text" },
+    { key: "date", header: "Sana", width: 110, kind: "date" },
+    { key: "studentId", header: "O'quvchi ID", width: 100, kind: "text" },
+    { key: "fromBranchId", header: "Qaysi filialdan", width: 110, kind: "text" },
+    { key: "toBranchId", header: "Qaysi filialga", width: 110, kind: "text" },
+    { key: "endedEnrollments", header: "Tugatilgan yozilishlar", width: 140, kind: "int" },
+    { key: "reason", header: "Sabab", width: 260, kind: "text" },
+  ],
+};
+
+export const BRANCH_COL: ColDef = {
+  key: "branchId",
+  header: "Filial",
+  width: 80,
+  kind: "text",
+  plain: true,
+  optional: true,
+  help: "Qator qaysi filialga tegishli (avtomatik). Bo'sh = asosiy filial. Qo'lda o'zgartirmang: o'quvchini nazoratly > Filiallar > Filialga ko'chirish bilan o'tkazing",
+};
+
+/** Tables whose rows carry a branch mark: the same decisions as the strict tables of db/migrations/0050 (the catalog). */
+export const BRANCH_MARKED: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, INSTALLMENTS, PACKAGES, DOCUMENTS, JOURNAL, SUPPLIER_BILLS, BILL_PAYMENTS, WAITLIST, ROOMS, SCHEDULE_CHANGES, REFERRALS, PROMO_USES, SOURCE_COSTS, DISCOUNTS, DISCOUNT_LINES, REFUNDS, CASH_CLOSES, MARKS, EXAMS, EXAM_RESULTS, REPORTS, CERTIFICATES, EXPENSES];
+for (const t of BRANCH_MARKED) if (!t.cols.some((c) => c.key === "branchId")) t.cols.push(BRANCH_COL);
+export const BRANCH_TABLES: TableDef[] = [BRANCHES, STAFF, BRANCH_PRICES, BRANCH_SETTINGS, BRANCH_MOVES];
+
+export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, PACKAGES, INSTALLMENTS, DOCUMENTS, EXPENSES, WAITLIST, ...LEDGER_TABLES, STATEMENTS, STATEMENT_LINES, SUPPLIERS, SUPPLIER_BILLS, BILL_PAYMENTS, DISCOUNTS, DISCOUNT_LINES, ROOMS, SCHEDULE_CHANGES, REFERRALS, PROMOS, PROMO_USES, SOURCE_COSTS, MARKS, EXAMS, EXAM_RESULTS, REPORTS, CERTIFICATES, ...BRANCH_TABLES];
 
 export const SETTINGS_SHEET = "Sozlamalar";
 export const DEBTORS_SHEET = "Qarzdorlar";

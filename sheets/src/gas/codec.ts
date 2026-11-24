@@ -59,13 +59,13 @@ export function decodeRows<T>(def: TableDef, values: Cell[][], fmtDate: (d: Date
   if (!head) return [];
   const index = new Map<string, number>();
   head.forEach((h, i) => index.set(String(h).trim(), i));
-  const missing = def.cols.filter((c) => !index.has(c.header)).map((c) => c.header);
+  const missing = def.cols.filter((c) => !c.optional && !index.has(c.header)).map((c) => c.header);
   if (missing.length) throw new Error(`"${def.sheet}" varag'ida ustun topilmadi: ${missing.join(", ")}`);
   const out: T[] = [];
   for (const row of body) {
     if (row.every((c) => c === "" || c == null)) continue;
     const obj: Row = {};
-    for (const col of def.cols) obj[col.key] = decodeCell(col, row[index.get(col.header)!], fmtDate);
+    for (const col of def.cols) obj[col.key] = decodeCell(col, row[index.get(col.header) ?? -1], fmtDate);
     out.push(obj as unknown as T);
   }
   return out;

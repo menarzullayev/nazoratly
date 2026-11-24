@@ -1,6 +1,9 @@
 /** Thin Apps Script adapter: reads/writes tables as domain objects (all I/O is batched). */
+import { reserveIds } from "../domain/ids";
+import { rowVisible } from "../domain/branches";
 import { decodeRows, encodeRow, type Cell } from "./codec";
-import type { TableDef } from "./schema";
+import { ENROLLMENTS, GROUPS, STUDENTS, type TableDef } from "./schema";
+import { currentScope, isMarked, stampOf } from "./scope";
 
 const tz = (): string => SpreadsheetApp.getActive().getSpreadsheetTimeZone();
 
@@ -17,10 +20,32 @@ export function sheetOf(def: TableDef): GoogleAppsScript.Spreadsheet.Sheet {
   return sh;
 }
 
-export function read<T>(def: TableDef): T[] {
+/** Every row of the tab, whatever the branch (for chains, id allocation and rewrites: never for what a person sees). */
+export function readRaw<T>(def: TableDef): T[] {
   const sh = sheetOf(def);
   if (sh.getLastRow() < 1) return [];
   return decodeRows<T>(def, sh.getDataRange().getValues() as Cell[][], fmtDate);
+}
+
+/**
+ * The rows the person may see: staff of a branch (or a center-wide person who picked a branch) get only that branch, the
+ * Sheets analogue of the API's row-level security. A row with no branch mark belongs to the default branch. Ids of the
+ * hidden rows stay reserved, so two branches never hand out the same S0007.
+ */
+export function read<T>(def: TableDef): T[] {
+  const rows = readRaw<T>(def);
+  if (!isMarked(def)) return rows;
+  const info = currentScope();
+  const out: T[] = [];
+  const hidden: string[] = [];
+  for (const r of rows) {
+    const row = r as unknown as { branchId?: string; id?: string };
+    if (!row.branchId) row.branchId = info.defaultId;
+    if (rowVisible({ scope: info.scope, branch: row.branchId })) out.push(r);
+    else if (typeof row.id === "string" && row.id) hidden.push(row.id);
+  }
+  if (hidden.length) reserveIds(hidden);
+  return out;
 }
 
 /** Like `read`, but an absent sheet (workbook not yet set up for a newer feature) reads as empty. */
@@ -28,12 +53,46 @@ export function readIfPresent<T>(def: TableDef): T[] {
   return SpreadsheetApp.getActive().getSheetByName(def.sheet) ? read<T>(def) : [];
 }
 
+/** The branch of one row of a parent table (cached per call of `append`). */
+function parentLookup(): (parent: TableDef, id: string) => string | null {
+  const cache = new Map<string, Map<string, string>>();
+  return (parent, id) => {
+    let m = cache.get(parent.sheet);
+    if (!m) {
+      m = new Map();
+      if (SpreadsheetApp.getActive().getSheetByName(parent.sheet)) {
+        const info = currentScope();
+        for (const r of readRaw<{ id?: string; branchId?: string }>(parent)) if (r.id) m.set(r.id, r.branchId || info.defaultId);
+      }
+      cache.set(parent.sheet, m);
+    }
+    return m.get(id) ?? null;
+  };
+}
+
+/** Gives every new row its branch mark (explicit > session scope / parent row > the default branch). */
+function stamped(def: TableDef, rows: readonly object[]): object[] {
+  if (!isMarked(def)) return [...rows];
+  const lookup = parentLookup();
+  if (def === ENROLLMENTS) {
+    // a live enrollment joins a student and a group of the SAME branch (a student who moves must leave the old branch's groups first)
+    for (const r of rows as { studentId?: string; groupId?: string; status?: string }[]) {
+      if (!["trial", "active", "frozen"].includes(String(r.status))) continue;
+      const sb = lookup(STUDENTS, String(r.studentId ?? ""));
+      const gb = lookup(GROUPS, String(r.groupId ?? ""));
+      if (sb && gb && sb !== gb) throw new Error(`O'quvchi (${sb}) va guruh (${gb}) turli filiallarda: avval o'quvchini guruh filialiga ko'chiring (nazoratly > Filiallar > Filialga ko'chirish).`);
+    }
+  }
+  return rows.map((r) => ({ ...(r as Record<string, unknown>), branchId: stampOf(def, r as Record<string, unknown>, lookup) }));
+}
+
 function header(sh: GoogleAppsScript.Spreadsheet.Sheet): Cell[] {
   return sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0] as Cell[];
 }
 
-export function append(def: TableDef, rows: readonly object[]): void {
-  if (rows.length === 0) return;
+export function append(def: TableDef, input: readonly object[]): void {
+  if (input.length === 0) return;
+  const rows = stamped(def, input);
   const sh = sheetOf(def);
   const head = header(sh);
   const values = rows.map((r) => encodeRow(def, head, r as Record<string, unknown>, toDate));
@@ -53,6 +112,7 @@ export function updateById(def: TableDef, keyCol: string, id: string, patch: Rec
     for (const [key, value] of Object.entries(patch)) {
       const col = def.cols.find((c) => c.key === key)!;
       const ci = head.findIndex((h) => String(h).trim() === col.header);
+      if (ci < 0 && col.optional) continue; // a workbook set up before this column existed
       const cell = encodeRow({ ...def, cols: [col] }, [col.header], { [key]: value }, toDate)[0];
       sh.getRange(r + 1, ci + 1).setValue(cell as never);
     }
@@ -64,10 +124,11 @@ export function updateById(def: TableDef, keyCol: string, id: string, patch: Rec
 /** Replaces every row matching `predicate` (compared on decoded rows) with `rows`; used for idempotent regeneration. */
 export function replaceWhere<T>(def: TableDef, predicate: (row: T) => boolean, rows: readonly object[]): void {
   const sh = sheetOf(def);
-  const all = read<T>(def);
+  const all = readRaw<T>(def); // the whole tab: rows of other branches must survive a rewrite
   const keep = all.filter((r) => !predicate(r));
   const head = header(sh);
-  const out = [...keep, ...(rows as unknown as T[])].map((r) => encodeRow(def, head, r as Record<string, unknown>, toDate));
+  const fresh = stamped(def, rows);
+  const out = [...keep, ...(fresh as unknown as T[])].map((r) => encodeRow(def, head, r as Record<string, unknown>, toDate));
   if (sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, head.length).clearContent();
   if (out.length) sh.getRange(2, 1, out.length, head.length).setValues(out as unknown as unknown[][]);
 }

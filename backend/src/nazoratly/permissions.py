@@ -17,6 +17,7 @@ ALL: Final = frozenset(
         "accounting:read", "accounting:write", "accounting:close",
         "agent:manage",
         "results:read", "results:write", "results:approve",
+        "branches:manage",
     }
 )  # fmt: skip
 
@@ -45,7 +46,8 @@ _VIEWER: Final = frozenset(
 
 ROLE_PERMISSIONS: Final[dict[str, frozenset[str]]] = {
     "owner": ALL,
-    "admin": ALL - {"org:manage"},
+    "admin": ALL
+    - {"org:manage"},  # branches:manage still needs center-wide staff (no branch on the membership)
     "manager": _MANAGER,
     "accountant": _ACCOUNTANT,
     "teacher": _TEACHER,

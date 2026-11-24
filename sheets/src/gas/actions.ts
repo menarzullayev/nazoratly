@@ -57,6 +57,21 @@ function loadFinance(): { charges: Charge[]; payments: Payment[]; installments: 
 }
 
 // ------------------------------------------------------------------ monthly charges
+/** Joins the per-branch plans of one month into one (counters add up, lists concatenate). `empty` gives the shape. */
+function joinPlans(plans: ReturnType<typeof planCharges>[], empty: () => ReturnType<typeof planCharges>): ReturnType<typeof planCharges> {
+  const out = empty();
+  for (const p of plans) {
+    out.create.push(...p.create);
+    out.free.push(...p.free);
+    out.skippedExisting += p.skippedExisting;
+    out.skippedZeroFee += p.skippedZeroFee;
+    out.skippedFree += p.skippedFree;
+    out.skippedPackageGroups += p.skippedPackageGroups;
+    out.discounted += p.discounted;
+  }
+  return out;
+}
+
 export function generateMonthlyCharges(): void {
   const month = promptMonth("Oylik hisoblarni yaratish");
   if (!month) return;
@@ -64,10 +79,15 @@ export function generateMonthlyCharges(): void {
     const s = readSettings();
     const charges = read<Charge>(CHARGES);
     const students = read<StudentRow>(STUDENTS);
-    const plan = planCharges({
-      month, dueDay: s.dueDay, enrollments: read<Enrollment>(ENROLLMENTS), groups: read<Group>(GROUPS), students, charges,
-      discounts: readIfPresent<StudentDiscount>(DISCOUNTS), family: { second: s.familySecond, third: s.familyThird },
+    // every enrollment follows the rules of ITS branch (family discount, ...): plan branch by branch, then join the plans
+    const allEnrollments = read<Enrollment>(ENROLLMENTS);
+    const groups = read<Group>(GROUPS);
+    const discounts = readIfPresent<StudentDiscount>(DISCOUNTS);
+    const plans = [...new Set(allEnrollments.map((e) => e.branchId ?? ""))].map((b) => {
+      const sb = readSettings(b || null);
+      return planCharges({ month, dueDay: sb.dueDay, enrollments: allEnrollments.filter((e) => (e.branchId ?? "") === b), groups, students, charges, discounts, family: { second: sb.familySecond, third: sb.familyThird } });
     });
+    const plan = joinPlans(plans, () => planCharges({ month, dueDay: s.dueDay, enrollments: [], groups, students, charges, discounts, family: { second: s.familySecond, third: s.familyThird } }));
     const ids = nextIds("C", charges.map((c) => c.id), plan.create.length);
     const reduced = reduceByCredits(plan.create, ids);
     const demo = new Set(students.filter((st) => st.demo === true).map((st) => st.id));

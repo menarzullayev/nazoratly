@@ -139,7 +139,9 @@ def cash_close_branch(*, scope: int | None, requested: int | None, active: Seque
     return {"branch": None, "error": "branch_required"}
 
 
-def resolve_scope(*, member_branch: int | None, requested: int | None, known: Sequence[int]) -> dict[str, Any]:
+def resolve_scope(
+    *, member_branch: int | None, requested: int | None, known: Sequence[int]
+) -> dict[str, Any]:
     """The effective scope of a request: restricted staff (member_branch set) are always scoped to it and may not look
     elsewhere; center-wide staff see the total unless they narrow to a known branch (the X-Branch header)."""
     if member_branch is not None:

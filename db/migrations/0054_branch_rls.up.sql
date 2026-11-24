@@ -13,7 +13,7 @@ DO $$
 DECLARE
   c record;
 BEGIN
-  FOR c IN SELECT * FROM branch_catalog WHERE kind IN ('strict','nullable') AND table_name NOT IN ('guardians','audit_log') LOOP
+  FOR c IN SELECT * FROM branch_catalog WHERE kind IN ('strict','nullable') AND table_name NOT IN ('guardians','audit_log','students') LOOP
     IF c.kind = 'strict' THEN
       EXECUTE format($p$CREATE POLICY branch_scope ON %I AS RESTRICTIVE FOR ALL TO nazoratly_app
         USING (app_branch_id() IS NULL OR branch_id = app_branch_id())
@@ -25,6 +25,14 @@ BEGIN
     END IF;
   END LOOP;
 END $$;
+
+-- a student stays READABLE (not writable) for the branch he moved away from: its payments, attendance and history there
+-- keep their meaning. Writing needs the row to be in the session's branch (WITH CHECK), which a moved student is not.
+CREATE POLICY branch_scope ON students AS RESTRICTIVE FOR ALL TO nazoratly_app
+  USING (app_branch_id() IS NULL OR branch_id = app_branch_id()
+         OR EXISTS (SELECT 1 FROM student_branch_moves m WHERE m.org_id = students.org_id AND m.student_id = students.id
+                      AND m.from_branch_id = app_branch_id()))
+  WITH CHECK (app_branch_id() IS NULL OR branch_id = app_branch_id());
 
 -- a guardian is visible in his own branch and in every branch where one of his children studies
 CREATE POLICY branch_scope ON guardians AS RESTRICTIVE FOR ALL TO nazoratly_app

@@ -1,5 +1,9 @@
 import { DEFAULT_TEMPLATE } from "../domain/reminders";
-import { SETTINGS_SHEET, SETTING_DEFAULTS } from "./schema";
+import { BRANCH_SETTINGS, SETTINGS_SHEET, SETTING_DEFAULTS } from "./schema";
+import { currentScope, rawRead } from "./scope";
+
+/** The settings a branch may override (the same set as the API product's branch_settings). */
+export const BRANCH_SETTING_KEYS = new Set(["trialFreeLessons", "trialFreeDays", "excusedMode", "makeupExpiryDays", "makeupLapses", "packageExpiryDays", "packageLowLessons", "leadReminderDays", "familySecond", "familyThird", "requisites"]);
 
 export interface Settings {
   center: string;
@@ -33,7 +37,9 @@ export interface Settings {
   familyThird: number;
 }
 
-export function readSettings(): Settings {
+/** The settings as they apply to a branch (the branch's own values over the center's). Without an argument: the branch the
+ * person works in, else the center's own values. */
+export function readSettings(branchId?: string | null): Settings {
   const sh = SpreadsheetApp.getActive().getSheetByName(SETTINGS_SHEET);
   const map = new Map<string, string>();
   if (sh && sh.getLastRow() > 1) {
@@ -41,6 +47,14 @@ export function readSettings(): Settings {
       const label = String(row[0]).trim();
       const def = SETTING_DEFAULTS.find((d) => d.label === label);
       if (def) map.set(def.key, String(row[1] ?? "").trim());
+    }
+  }
+  const bid = branchId === undefined ? currentScope().scope : branchId;
+  if (bid) {
+    for (const o of rawRead<{ branchId: string; label: string; value: string }>(BRANCH_SETTINGS)) {
+      if (o.branchId !== bid) continue;
+      const def = SETTING_DEFAULTS.find((d) => d.label === o.label.trim());
+      if (def && BRANCH_SETTING_KEYS.has(def.key)) map.set(def.key, String(o.value ?? "").trim());
     }
   }
   const num = (key: string, fallback: number, min: number, max: number): number => {

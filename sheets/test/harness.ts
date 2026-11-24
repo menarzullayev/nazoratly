@@ -1,3 +1,5 @@
+import { clearReservedIds } from "../src/domain/ids";
+import { resetScope } from "../src/gas/scope";
 /**
  * Minimal in-memory stand-in for the Apps Script runtime (SpreadsheetApp, Utilities, UrlFetchApp, ...), enough to run
  * the REAL adapter code end to end. Cell storage, validation of ranges and the Telegram HTTP boundary are real logic;
@@ -128,11 +130,17 @@ export interface Harness {
   drive: Map<string, { name: string; folder: string; content: string }>;
   sheet(ref: SheetRef): FakeSheet;
   rows(ref: SheetRef): Cell[][];
+  /** the person running the script (Session.getActiveUser): change it to act as branch staff */
+  user: string;
+  /** per-user properties (the chosen view branch) */
+  userProps: Map<string, string>;
   /** protections of a sheet: description and the editors that may write */
   protections(ref: SheetRef): { description: string; editors: string[] }[];
 }
 
 export function installHarness(): Harness {
+  resetScope(); // module state of the script (branch scope, reserved ids) must not leak between tests
+  clearReservedIds();
   const sheets = new Map<string, FakeSheet>();
   const h: Harness = {
     sheets,
@@ -142,6 +150,8 @@ export function installHarness(): Harness {
     fetches: [],
     telegram: { handler: () => ({ status: 200, body: { ok: true, result: {} } }) },
     props: new Map(),
+    user: OWNER,
+    userProps: new Map(),
     webUrl: null,
     drive: new Map(),
     sheet: (ref) => sheets.get(nameOf(ref))!,
@@ -179,9 +189,14 @@ export function installHarness(): Harness {
     sleep: () => {},
     newBlob: (data: string, type: string, name: string) => makeBlob(data, type, name),
   };
-  g.Session = { getEffectiveUser: () => ({ getEmail: () => OWNER }) };
+  g.Session = { getEffectiveUser: () => ({ getEmail: () => OWNER }), getActiveUser: () => ({ getEmail: () => h.user }) };
   g.LockService = { getScriptLock: () => ({ tryLock: () => true, releaseLock: () => {} }) };
   g.PropertiesService = {
+    getUserProperties: () => ({
+      getProperty: (k: string) => h.userProps.get(k) ?? null,
+      setProperty: (k: string, v: string) => { h.userProps.set(k, v); },
+      deleteProperty: (k: string) => { h.userProps.delete(k); },
+    }),
     getScriptProperties: () => ({
       getProperty: (k: string) => h.props.get(k) ?? null,
       setProperty: (k: string, v: string) => { h.props.set(k, v); },
