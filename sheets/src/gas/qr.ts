@@ -8,7 +8,7 @@ import { qrSvg } from "../domain/qrcode";
 import type { AttendanceRow, Enrollment, Group, Student } from "../domain/types";
 import { getAttendanceGroups, guard, rosterFor, withLock } from "./actions";
 import { pickId } from "./pick";
-import { append, read, replaceWhere, today, updateById } from "./repo";
+import { append, read, replaceWhere, today, updateById, updateMany } from "./repo";
 import { ATTENDANCE, ENROLLMENTS, GROUPS, STUDENTS } from "./schema";
 import { readSettings } from "./settings";
 import { getToken, sendDocument } from "./telegram";
@@ -45,11 +45,13 @@ export function ensureQrCodes(onlyIds?: Set<string>): string[] {
     const students = read<StudentRow>(STUDENTS);
     const taken = new Set(students.map((s) => s.qrCode ?? "").filter(Boolean));
     const issued: string[] = [];
+    const patches = new Map<string, Record<string, unknown>>();
     for (const s of students) {
       if (s.qrCode || s.status === "left" || (onlyIds && !onlyIds.has(s.id))) continue;
-      updateById(STUDENTS, "id", s.id, { qrCode: freshCode(taken) });
+      patches.set(s.id, { qrCode: freshCode(taken) });
       issued.push(s.id);
     }
+    updateMany(STUDENTS, "id", patches); // one write for any number of students (see updateMany)
     return issued;
   });
 }

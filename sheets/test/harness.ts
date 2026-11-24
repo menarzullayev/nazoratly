@@ -22,7 +22,7 @@ function chain<T extends object>(target: T): T {
 }
 
 /** Call counters of the sheet boundary (quota guard): reset by installHarness(). */
-export const stats = { reads: 0, writes: 0, rangeCalls: 0, fetches: 0, driveFiles: 0 };
+export const stats = { reads: 0, writes: 0, rangeCalls: 0, fetches: 0, driveFiles: 0, cellsRead: 0, cellsWritten: 0 };
 
 const OWNER = "owner@example.com";
 type Who = string | { getEmail(): string };
@@ -85,10 +85,11 @@ class FakeSheet {
     if (r < 1 || c < 1 || nr < 1 || nc < 1) throw new Error(`bad range ${r},${c},${nr},${nc}`);
     stats.rangeCalls++;
     const range: object = chain({
-      getValues: () => { stats.reads++; sheet.ensure(r + nr - 1, c + nc - 1); return Array.from({ length: nr }, (_, i) => sheet.data[r - 1 + i]!.slice(c - 1, c - 1 + nc)); },
+      getValues: () => { stats.reads++; stats.cellsRead += nr * nc; sheet.ensure(r + nr - 1, c + nc - 1); return Array.from({ length: nr }, (_, i) => sheet.data[r - 1 + i]!.slice(c - 1, c - 1 + nc)); },
       getValue: () => { stats.reads++; sheet.ensure(r, c); return sheet.data[r - 1]![c - 1]; },
       setValues: (v: Cell[][]) => {
         stats.writes++;
+        stats.cellsWritten += nr * nc;
         if (v.length !== nr || v.some((row) => row.length !== nc)) throw new Error(`setValues shape ${v.length}x${v[0]?.length} != ${nr}x${nc}`);
         sheet.ensure(r + nr - 1, c + nc - 1);
         v.forEach((row, i) => row.forEach((x, j) => { sheet.data[r - 1 + i]![c - 1 + j] = x; }));
@@ -154,7 +155,7 @@ export interface Harness {
 }
 
 export function installHarness(): Harness {
-  stats.reads = stats.writes = stats.rangeCalls = stats.fetches = stats.driveFiles = 0;
+  stats.reads = stats.writes = stats.rangeCalls = stats.fetches = stats.driveFiles = stats.cellsRead = stats.cellsWritten = 0;
   resetScope(); // module state of the script (branch scope, reserved ids) must not leak between tests
   clearReservedIds();
   const sheets = new Map<string, FakeSheet>();
