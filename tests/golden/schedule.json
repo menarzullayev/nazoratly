@@ -800,6 +800,32 @@
     "substitute": null
    },
    "out": []
+  },
+  {
+   "name": "move without a teacher",
+   "in": {
+    "kind": "move",
+    "old_date": "2026-12-28",
+    "new_date": "2027-01-04",
+    "teacher": null,
+    "substitute": null
+   },
+   "out": []
+  },
+  {
+   "name": "move without a new date",
+   "in": {
+    "kind": "move",
+    "old_date": "2026-12-28",
+    "new_date": null,
+    "teacher": {
+     "id": "T1",
+     "pay_model": "per_lesson",
+     "pay_rate": "100000"
+    },
+    "substitute": null
+   },
+   "out": []
   }
  ],
  "change_message": [

@@ -123,9 +123,9 @@ def payroll_effect(
             add(teacher, old_month, -lesson_pay(teacher.pay_model, teacher.pay_rate))
         if substitute is not None:
             add(substitute, old_month, lesson_pay(substitute.pay_model, substitute.pay_rate))
-    elif kind == "move" and new_date is not None and teacher is not None:
-        pay = lesson_pay(teacher.pay_model, teacher.pay_rate)
-        if new_date[:7] != old_month:
+    elif kind == "move":
+        if new_date is not None and teacher is not None and new_date[:7] != old_month:
+            pay = lesson_pay(teacher.pay_model, teacher.pay_rate)
             add(teacher, old_month, -pay)
             add(teacher, new_date[:7], pay)
     else:

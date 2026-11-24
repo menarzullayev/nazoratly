@@ -27,6 +27,7 @@ from nazoratly.routers import (
     plans,
     qr,
     reconciliation,
+    schedule,
     settings,
     students,
     waitlist,
@@ -46,6 +47,7 @@ router.include_router(demo.router)
 router.include_router(leads.router)
 router.include_router(settings.router)
 router.include_router(lessons.router)
+router.include_router(schedule.router)
 router.include_router(finance.router)
 router.include_router(plans.router)
 router.include_router(packages.router)

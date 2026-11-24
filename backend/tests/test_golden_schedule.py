@@ -72,9 +72,9 @@ def test_change_message(case: dict[str, Any]) -> None:
 @pytest.mark.parametrize("case", GOLDEN["parse_schedule"], ids=lambda c: c["name"])
 def test_parse_schedule(case: dict[str, Any]) -> None:
     got = S.parse_schedule(case["in"]["text"])
-    assert (None if got is None else [{"weekday": s.weekday, "start": s.start, "end": s.end} for s in got]) == case[
-        "out"
-    ]
+    assert (
+        None if got is None else [{"weekday": s.weekday, "start": s.start, "end": s.end} for s in got]
+    ) == case["out"]
 
 
 @pytest.mark.parametrize("case", GOLDEN["week_range"], ids=lambda c: c["name"])
