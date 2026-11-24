@@ -4,6 +4,7 @@ import { read, today, updateById } from "./repo";
 import { STUDENTS } from "./schema";
 import { readSettings } from "./settings";
 import { verifyJson } from "./results";
+import { handleTeacherUpdate } from "./teacher";
 import { sendRich, tg, webhookSecret, sendMessage } from "./telegram";
 import { balanceHtmlForChat, withLock } from "./actions";
 import type { Student } from "../domain/types";
@@ -30,6 +31,7 @@ export function handlePost(e: GoogleAppsScript.Events.DoPost): GoogleAppsScript.
   } catch {
     return text("ok");
   }
+  if (handleTeacherUpdate(update)) return text("ok"); // the teacher bot (G8): invitation, roll call, messages
   const u = parseUpdate(update);
   const center = readSettings().center;
   if (u.kind === "start") {

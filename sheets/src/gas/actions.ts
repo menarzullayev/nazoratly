@@ -52,7 +52,7 @@ function promptMonth(title: string): string | null {
   return `${v}-01`;
 }
 
-function loadFinance(): { charges: Charge[]; payments: Payment[]; installments: Installment[] } {
+export function loadFinance(): { charges: Charge[]; payments: Payment[]; installments: Installment[] } {
   return { charges: read<Charge>(CHARGES), payments: read<Payment>(PAYMENTS), installments: readIfPresent<Installment>(INSTALLMENTS) };
 }
 

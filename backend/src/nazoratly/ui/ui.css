@@ -48,3 +48,5 @@ th { color: var(--muted); font-weight: 600; }
 .cal-entry.clash { border-left-color: var(--bad); }
 .cal-entry.cancelled { opacity: .65; text-decoration: line-through; }
 .cal-entry .row { gap: 4px; margin-top: 4px; }
+.pre { white-space: pre-line; }
+label.inline { display: inline; font-weight: 400; }

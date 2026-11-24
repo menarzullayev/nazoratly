@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -15,8 +16,9 @@ from nazoratly.config import Settings, get_settings
 from nazoratly.db import Database
 from nazoratly.middleware import BodyLimitMiddleware, RateLimitMiddleware, RequestContextMiddleware
 from nazoratly.observability import configure_logging, configure_sentry, configure_tracing
-from nazoratly.routers import health, pay, relay, ui, v1
+from nazoratly.routers import health, pay, relay, teacher_bot_hook, ui, v1
 from nazoratly.secrets_box import SecretsBox
+from nazoratly.teacher_app import reminder_loop
 
 log = structlog.get_logger()
 
@@ -38,9 +40,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         await db.open()
         app.state.db = db
         log.info("startup", version=__version__, env=settings.env, sentry=sentry_on)
+        stop = asyncio.Event()
+        loop_task: asyncio.Task[None] | None = None
+        if settings.teacher_reminder_interval_s > 0 and settings.env != "test":
+            loop_task = asyncio.create_task(
+                reminder_loop(db, float(settings.teacher_reminder_interval_s), stop)
+            )
         try:
             yield
         finally:
+            stop.set()
+            if loop_task is not None:
+                await loop_task
             await db.close()
             log.info("shutdown")
 
@@ -77,6 +88,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(v1.router)
     app.include_router(pay.callbacks)
     app.include_router(relay.router)
+    app.include_router(teacher_bot_hook.router)
     app.include_router(ui.router)
     configure_tracing(app, settings)
     return app

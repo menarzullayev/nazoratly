@@ -123,6 +123,7 @@ export interface Harness {
   /** answers for the next ui.alert() calls (default "YES"); use "NO" to decline a confirmation */
   answers: string[];
   fetches: { url: string; body: Record<string, unknown> }[];
+  triggers: { fn: string; everyHours: number }[];
   telegram: { handler: (method: string, body: Record<string, unknown>) => { status: number; body: unknown } };
   props: Map<string, string>;
   webUrl: string | null;
@@ -148,6 +149,7 @@ export function installHarness(): Harness {
     prompts: [],
     answers: [],
     fetches: [],
+    triggers: [],
     telegram: { handler: () => ({ status: 200, body: { ok: true, result: {} } }) },
     props: new Map(),
     user: OWNER,
@@ -182,6 +184,10 @@ export function installHarness(): Harness {
   };
   g.Utilities = {
     formatDate: (d: Date, tz: string, fmt: string) => {
+      if (fmt === "yyyy-MM-dd'T'HH:mm") {
+        const p = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(d).map((x) => [x.type, x.value]));
+        return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
+      }
       if (fmt !== "yyyy-MM-dd") throw new Error(`unsupported format ${fmt}`);
       return new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
     },
@@ -227,6 +233,13 @@ export function installHarness(): Harness {
     getFileById: (id: string) => { const f = h.drive.get(id); if (!f) throw new Error("file not found"); return { getBlob: () => makeBlob(f.content, "application/pdf", f.name) }; },
   };
   g.ContentService = { createTextOutput: (s: string) => ({ getContent: () => s }) };
-  g.ScriptApp = { getService: () => ({ getUrl: () => h.webUrl }) };
+  g.ScriptApp = {
+    getService: () => ({ getUrl: () => h.webUrl }),
+    getProjectTriggers: () => h.triggers.map((t) => ({ getHandlerFunction: () => t.fn, id: t })),
+    deleteTrigger: (t: { id: { fn: string } }) => {
+      h.triggers = h.triggers.filter((x) => x !== t.id);
+    },
+    newTrigger: (fn: string) => ({ timeBased: () => ({ everyHours: (n: number) => ({ create: () => h.triggers.push({ fn, everyHours: n }) }) }) }),
+  };
   return h;
 }

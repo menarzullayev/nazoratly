@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Ustoz ilovasi | nazoratly</title>
+  <link rel="stylesheet" href="/ui/static/ui.css">
+</head>
+<body>
+  <header class="top">
+    <strong>nazoratly: ustoz ilovasi</strong>
+    <span class="row"><span id="who" class="muted"></span><button id="signout" class="secondary" type="button" hidden>Chiqish</button></span>
+  </header>
+  <main>
+    <section id="login" class="card"></section>
+    <div id="app" hidden>
+      <nav class="row" id="tabs" aria-label="Bo'limlar">
+        <button type="button" data-tab="today">Bugun</button>
+        <button type="button" data-tab="groups" class="secondary">Guruhlar</button>
+        <button type="button" data-tab="week" class="secondary">Jadval</button>
+        <button type="button" data-tab="pay" class="secondary">Oylik</button>
+        <button type="button" data-tab="msg" class="secondary">Vasiyga xabar</button>
+        <button type="button" data-tab="inbox" class="secondary">Eslatmalar <span id="unread" class="pill warn" hidden>0</span></button>
+      </nav>
+      <p id="status" class="muted" role="status"></p>
+      <section id="tab-today" class="card stack"></section>
+      <section id="tab-groups" class="card stack" hidden></section>
+      <section id="tab-week" class="card stack" hidden></section>
+      <section id="tab-pay" class="card stack" hidden></section>
+      <section id="tab-msg" class="card stack" hidden></section>
+      <section id="tab-inbox" class="card stack" hidden></section>
+    </div>
+  </main>
+  <script src="/ui/static/common.js"></script>
+  <script src="/ui/static/teacher.js"></script>
+</body>
+</html>

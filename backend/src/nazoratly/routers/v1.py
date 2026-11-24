@@ -38,6 +38,9 @@ from nazoratly.routers import (
     schedule,
     settings,
     students,
+    teacher_admin,
+    teacher_auth,
+    teacher_me,
     waitlist,
 )
 
@@ -56,6 +59,9 @@ router.include_router(demo.router)
 router.include_router(growth.router)  # before leads: /leads/reminders must not match /leads/{lead_id}
 router.include_router(leads.router)
 router.include_router(settings.router)
+router.include_router(
+    teacher_admin.router
+)  # before lessons: /lessons/unmarked must not match /lessons/{lesson_id}
 router.include_router(lessons.router)
 router.include_router(schedule.router)
 router.include_router(finance.router)
@@ -75,4 +81,6 @@ router.include_router(payables.router)
 router.include_router(reconciliation.router)
 router.include_router(agents.router)
 router.include_router(ai.router)
+router.include_router(teacher_auth.router)
+router.include_router(teacher_me.router)
 router.include_router(pay.settings_router)

@@ -18,6 +18,7 @@ import * as payables from "./gas/payables";
 import * as plans from "./gas/plans";
 import * as reconcile from "./gas/reconcile";
 import * as schedule from "./gas/schedule";
+import * as teacher from "./gas/teacher";
 import { setupWorkbook, loadSampleData, resetSampleData } from "./gas/setup";
 import { handleGet, handlePost } from "./gas/webhook";
 
@@ -154,6 +155,17 @@ g.onOpen = (): void => {
         .addItem("Qismlar holati", "menuPlanView")
         .addItem("Rejani olib tashlash", "menuPlanRemove")
         .addItem("Rejalarni tekshirish", "menuPlanCheck"),
+    )
+    .addSubMenu(
+      SpreadsheetApp.getUi()
+        .createMenu("Ustoz ilovasi")
+        .addItem("Ustozni taklif qilish (kod)", "menuTeacherInvite")
+        .addItem("Davomat belgilanmagan darslar", "menuTeacherUnmarked")
+        .addItem("Ustoz eslatmalarini hozir yuborish", "menuTeacherRemind")
+        .addItem("Ustozning vasiyga yozish huquqini almashtirish", "menuTeacherMessaging")
+        .addSeparator()
+        .addItem("Avto-eslatmani yoqish (har soat)", "menuTeacherTriggerOn")
+        .addItem("Avto-eslatmani o'chirish", "menuTeacherTriggerOff"),
     )
     .addSubMenu(
       SpreadsheetApp.getUi()
@@ -313,6 +325,13 @@ g.menuPackageCheck = packages.menu.check;
 g.menuDocReceipt = documents.menu.receipt;
 g.menuDocInvoice = documents.menu.invoice;
 g.menuDocSend = documents.menu.send;
+g.menuTeacherInvite = (): void => actions.guard("Ustoz taklifi", teacher.menu.invite);
+g.menuTeacherUnmarked = (): void => actions.guard("Davomat belgilanmagan darslar", teacher.menu.unmarked);
+g.menuTeacherRemind = (): void => actions.guard("Ustoz eslatmalari", teacher.menu.remind);
+g.menuTeacherMessaging = (): void => actions.guard("Vasiyga yozish huquqi", teacher.menu.toggleMessaging);
+g.menuTeacherTriggerOn = (): void => actions.guard("Avto-eslatma", teacher.menu.triggerOn);
+g.menuTeacherTriggerOff = (): void => actions.guard("Avto-eslatma", teacher.menu.triggerOff);
+g.teacherTick = teacher.tick; // the hourly trigger
 g.menuMarkSet = results.menu.mark;
 g.menuMarkRemove = results.menu.removeMark;
 g.menuExamAdd = results.menu.examAdd;

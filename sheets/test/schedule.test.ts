@@ -289,11 +289,11 @@ describe("checks", () => {
 });
 
 describe("the workbook", () => {
-  it("has the new sheets and the group room column, and no new OAuth scope is needed", async () => {
+  it("has the new sheets and the group room column; the scope list is the known one (+ scriptapp of the teacher reminders, G8)", async () => {
     expect(h.sheets.has("Xonalar")).toBe(true);
     expect(h.sheets.has("Dars o'zgarishlari")).toBe(true);
     expect(h.rows(GROUPS)[0]).toContain("Xona ID");
     const manifest = JSON.parse((await import("node:fs")).readFileSync(new URL("../appsscript.json", import.meta.url), "utf8")) as { oauthScopes: string[] };
-    expect(manifest.oauthScopes).toEqual(["https://www.googleapis.com/auth/spreadsheets.currentonly", "https://www.googleapis.com/auth/script.container.ui", "https://www.googleapis.com/auth/script.external_request", "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/userinfo.email"]);
+    expect(manifest.oauthScopes).toEqual(["https://www.googleapis.com/auth/spreadsheets.currentonly", "https://www.googleapis.com/auth/script.container.ui", "https://www.googleapis.com/auth/script.external_request", "https://www.googleapis.com/auth/script.scriptapp", "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/userinfo.email"]);
   });
 });

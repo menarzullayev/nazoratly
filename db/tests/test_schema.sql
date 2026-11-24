@@ -1557,6 +1557,197 @@ BEGIN
 END $$;
 ROLLBACK;
 
+-- ---------------------------------------------------------------- 0065-0067: teacher app (G8)
+BEGIN;
+INSERT INTO users (email, full_name, telegram_user_id) VALUES ('g8-new-teacher@x.uz', 'G8 New Teacher', 777001);
+INSERT INTO users (email, full_name, telegram_user_id) VALUES ('g8-other@x.uz', 'G8 Other', 777002);
+INSERT INTO teachers (org_id, full_name, pay_model, pay_rate) VALUES (1, 'G8 Invited Teacher', 'per_lesson', 40000);
+DO $$
+DECLARE
+  t_id bigint := (SELECT id FROM teachers WHERE full_name = 'G8 Invited Teacher');
+  u_id bigint := (SELECT id FROM users WHERE email = 'g8-new-teacher@x.uz');
+  o_id bigint := (SELECT id FROM users WHERE email = 'g8-other@x.uz');
+  h1 text := repeat('a', 64);
+  h2 text := repeat('b', 64);
+  h3 text := repeat('c', 64);
+  h4 text := repeat('d', 64);
+  got text;
+BEGIN
+  ASSERT (SELECT guardian_messaging_enabled FROM teachers WHERE id = t_id), 'the right to write to guardians is on by default';
+  INSERT INTO teacher_invitations (org_id, teacher_id, token_hash, expires_at) VALUES (1, t_id, h1, now() + interval '7 days');
+  -- one open invitation per teacher; the hash shape is checked; a used row needs its facts
+  PERFORM public.t_expect('23505', format($q$INSERT INTO teacher_invitations (org_id, teacher_id, token_hash, expires_at) VALUES (1, %s, %L, now() + interval '1 day')$q$, t_id, h2));
+  PERFORM public.t_expect('23514', format($q$INSERT INTO teacher_invitations (org_id, teacher_id, token_hash, expires_at, status) VALUES (1, %s, 'nothex', now(), 'revoked')$q$, t_id));
+  PERFORM public.t_expect('23514', format($q$UPDATE teacher_invitations SET status = 'used' WHERE token_hash = %L$q$, h1));
+  PERFORM public.t_expect('23503', format($q$INSERT INTO teacher_invitations (org_id, teacher_id, token_hash, expires_at, status) VALUES (2, %s, %L, now(), 'revoked')$q$, t_id, h3));  -- another center's teacher
+  ASSERT (SELECT teacher_name FROM teacher_invite_peek(h1)) = 'G8 Invited Teacher', 'peek shows who is invited';
+  ASSERT (SELECT count(*) FROM teacher_invite_peek(h2)) = 0, 'peek of an unknown code is empty';
+END $$;
+
+-- the auth role consumes invitations (it reads no teacher table, so the ids come in through settings)
+SELECT set_config('g8.t', (SELECT id::text FROM teachers WHERE full_name = 'G8 Invited Teacher'), true),
+       set_config('g8.u', (SELECT id::text FROM users WHERE email = 'g8-new-teacher@x.uz'), true),
+       set_config('g8.o', (SELECT id::text FROM users WHERE email = 'g8-other@x.uz'), true);
+CREATE FUNCTION public.g8_accept(h text, uid bigint, via text) RETURNS text LANGUAGE plpgsql AS $$
+DECLARE msg text;
+BEGIN
+  BEGIN PERFORM teacher_invite_accept(h, uid, via); msg := 'accepted'; EXCEPTION WHEN check_violation THEN msg := SQLERRM; END;
+  RETURN msg;
+END $$;
+GRANT EXECUTE ON FUNCTION public.g8_accept(text, bigint, text) TO PUBLIC;
+SET LOCAL ROLE nazoratly_auth;
+DO $$
+DECLARE
+  u_id bigint := current_setting('g8.u')::bigint;
+  h1 text := repeat('a', 64);
+BEGIN
+  -- a user who already has another role in the center cannot become the teacher
+  ASSERT public.g8_accept(h1, 1, 'api') = 'user_has_other_role', 'owner cannot take a teacher invitation';
+  ASSERT public.g8_accept(h1, u_id, 'sms') = 'bad channel', 'unknown channel refused';
+  ASSERT public.g8_accept(h1, u_id, 'bot') = 'accepted', 'the invited person accepts';
+  ASSERT public.g8_accept(h1, u_id, 'bot') = 'invitation_used', 'a used invitation cannot be used again';
+  ASSERT public.g8_accept(repeat('f', 64), u_id, 'bot') = 'invitation_unknown', 'unknown code refused';
+END $$;
+RESET ROLE;
+DO $$
+DECLARE
+  t_id bigint := current_setting('g8.t')::bigint;
+  u_id bigint := current_setting('g8.u')::bigint;
+BEGIN
+  ASSERT (SELECT role FROM memberships WHERE org_id = 1 AND user_id = u_id) = 'teacher', 'membership created as teacher';
+  ASSERT (SELECT status FROM memberships WHERE org_id = 1 AND user_id = u_id) = 'active', 'membership is active';
+  ASSERT (SELECT user_id FROM teachers WHERE id = t_id) = u_id, 'teacher profile linked to the account';
+  ASSERT (SELECT status || used_via FROM teacher_invitations WHERE token_hash = repeat('a', 64)) = 'usedbot', 'invitation consumed';
+END $$;
+
+-- expired, "teacher already has an account", revoked
+INSERT INTO teacher_invitations (org_id, teacher_id, token_hash, expires_at, status)
+  SELECT 1, id, repeat('c', 64), now() - interval '1 minute', 'pending' FROM teachers WHERE full_name = 'G8 Invited Teacher';
+SET LOCAL ROLE nazoratly_auth;
+DO $$ BEGIN
+  ASSERT public.g8_accept(repeat('c', 64), current_setting('g8.o')::bigint, 'api') = 'invitation_expired', 'an expired invitation is refused';
+END $$;
+RESET ROLE;
+UPDATE teacher_invitations SET expires_at = now() + interval '1 day' WHERE token_hash = repeat('c', 64);
+SET LOCAL ROLE nazoratly_auth;
+DO $$ BEGIN
+  ASSERT public.g8_accept(repeat('c', 64), current_setting('g8.o')::bigint, 'api') = 'teacher_already_linked', 'a teacher profile belongs to one account';
+END $$;
+RESET ROLE;
+UPDATE teacher_invitations SET status = 'revoked' WHERE token_hash = repeat('c', 64);
+SET LOCAL ROLE nazoratly_auth;
+DO $$ BEGIN
+  ASSERT public.g8_accept(repeat('c', 64), current_setting('g8.o')::bigint, 'api') = 'invitation_revoked', 'a revoked invitation is refused';
+END $$;
+RESET ROLE;
+
+-- the application role: tenant isolated, cannot delete invitations, cannot run the accept function
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '2'; SET LOCAL app.user_id = '2';
+DO $$
+BEGIN
+  ASSERT (SELECT count(*) FROM teacher_invitations) = 0, 'another center sees no invitations';
+  PERFORM public.t_expect('42501', $q$SELECT teacher_invite_accept(repeat('a', 64), 1, 'api')$q$);
+  PERFORM public.t_expect('42501', $q$SELECT * FROM teacher_invite_peek(repeat('a', 64))$q$);
+END $$;
+RESET ROLE;
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '1'; SET LOCAL app.user_id = '1';
+DO $$
+BEGIN
+  ASSERT (SELECT count(*) FROM teacher_invitations) = 2, 'own invitations are visible';
+  PERFORM public.t_expect('42501', $q$DELETE FROM teacher_invitations$q$);
+  INSERT INTO teacher_app_settings (org_id) VALUES (1);
+  ASSERT (SELECT reminder_after_hours || '/' || guardian_daily_limit || '/' || digest_after FROM teacher_app_settings) = '2/20/20:00:00', 'settings defaults';
+  PERFORM public.t_expect('23514', $q$UPDATE teacher_app_settings SET reminder_after_hours = 49$q$);
+  PERFORM public.t_expect('23514', $q$UPDATE teacher_app_settings SET guardian_daily_limit = -1$q$);
+  PERFORM public.t_expect('42501', $q$DELETE FROM teacher_app_settings$q$);
+END $$;
+RESET ROLE;
+
+-- the message log: written together with an outbox message, then immutable for everybody
+DO $$
+DECLARE
+  t_id bigint := (SELECT id FROM teachers WHERE full_name = 'G8 Invited Teacher');
+  s_id bigint := (SELECT id FROM students WHERE full_name = 'Ali Valiyev');
+  ob bigint;
+BEGIN
+  INSERT INTO outbox_messages (org_id, student_id, guardian_id, channel, body, idempotency_key)
+    VALUES (1, s_id, 1, 'telegram', 'Salom', 'g8-test-1') RETURNING id INTO ob;
+  INSERT INTO teacher_guardian_messages (org_id, teacher_id, student_id, guardian_id, group_id, template, body, outbox_message_id)
+    VALUES (1, t_id, s_id, 1, 1, 'praise', 'Salom', ob);
+  PERFORM public.t_expect('23514', format($q$INSERT INTO teacher_guardian_messages (org_id, teacher_id, student_id, guardian_id, group_id, template, body, outbox_message_id) VALUES (1, %s, %s, 1, 1, 'nope', 'x', %s)$q$, t_id, s_id, ob));
+  PERFORM public.t_expect('23505', format($q$INSERT INTO teacher_guardian_messages (org_id, teacher_id, student_id, guardian_id, group_id, body, outbox_message_id) VALUES (1, %s, %s, 1, 1, 'again', %s)$q$, t_id, s_id, ob));
+  PERFORM public.t_expect('23001', $q$UPDATE teacher_guardian_messages SET body = 'changed'$q$);
+  PERFORM public.t_expect('23001', $q$DELETE FROM teacher_guardian_messages$q$);
+  PERFORM public.t_expect('23001', $q$TRUNCATE teacher_guardian_messages$q$);
+END $$;
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '2'; SET LOCAL app.user_id = '2';
+DO $$
+BEGIN
+  ASSERT (SELECT count(*) FROM teacher_guardian_messages) = 0, 'another center sees no teacher messages';
+END $$;
+RESET ROLE;
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '1'; SET LOCAL app.user_id = '3';
+DO $$
+BEGIN
+  ASSERT (SELECT count(*) FROM teacher_guardian_messages) = 1, 'own log is visible';
+  PERFORM public.t_expect('42501', $q$UPDATE teacher_guardian_messages SET body = 'x'$q$);
+  PERFORM public.t_expect('42501', $q$DELETE FROM teacher_guardian_messages$q$);
+END $$;
+RESET ROLE;
+
+-- staff notifications: dedup, privacy, the worker functions, active_org_ids
+DO $$
+DECLARE u_id bigint := (SELECT id FROM users WHERE email = 'g8-new-teacher@x.uz');
+BEGIN
+  INSERT INTO staff_notifications (org_id, user_id, kind, body, dedup_key, day) VALUES (1, u_id, 'unmarked_digest', 'digest', 'digest:2026-11-24:u', '2026-11-24');
+  INSERT INTO staff_notifications (org_id, user_id, kind, body, dedup_key) VALUES (1, 1, 'unmarked_digest', 'for owner', 'digest:2026-11-24:1');
+  PERFORM public.t_expect('23505', format($q$INSERT INTO staff_notifications (org_id, user_id, kind, body, dedup_key) VALUES (1, %s, 'unmarked_digest', 'dup', 'digest:2026-11-24:u')$q$, u_id));
+  PERFORM public.t_expect('23514', format($q$INSERT INTO staff_notifications (org_id, user_id, kind, body, dedup_key) VALUES (1, %s, 'nope', 'x', 'k9')$q$, u_id));
+  PERFORM public.t_expect('23514', format($q$INSERT INTO staff_notifications (org_id, user_id, kind, body, dedup_key, delivery) VALUES (1, %s, 'unmarked_digest', 'x', 'k8', 'sent')$q$, u_id));
+END $$;
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '1'; SET LOCAL app.user_id = '1';
+DO $$
+BEGIN
+  ASSERT (SELECT count(*) FROM staff_notifications) = 1, 'a person sees only his own notifications';
+  ASSERT (SELECT body FROM staff_notifications) = 'for owner', 'own row';
+  PERFORM public.t_expect('42501', $q$INSERT INTO staff_notifications (org_id, user_id, kind, body, dedup_key) VALUES (1, 3, 'unmarked_digest', 'x', 'forged')$q$);
+  UPDATE staff_notifications SET read_at = now();
+  PERFORM public.t_expect('42501', $q$DELETE FROM staff_notifications$q$);
+  ASSERT (SELECT count(*) FROM active_org_ids()) >= 2, 'the reminder loop sees the active centers';
+END $$;
+RESET ROLE;
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '1'; SET LOCAL app.user_id = '';   -- a system session: no user, writes for anybody
+DO $$
+BEGIN
+  INSERT INTO staff_notifications (org_id, user_id, kind, body, dedup_key) VALUES (1, 1, 'unmarked_digest', 'by the sweep', 'digest:2026-11-25:1');
+  ASSERT (SELECT count(*) FROM staff_notifications) = 3, 'the sweep sees every notification of the center';
+END $$;
+RESET ROLE;
+SET LOCAL ROLE nazoratly_worker;
+DO $$
+DECLARE n int; c record;
+BEGIN
+  SELECT count(*) INTO n FROM staff_notice_claim(10);                    -- the owner has no Telegram: nothing to deliver
+  ASSERT n = 1, 'only the linked person is delivered to, got ' || n;
+  PERFORM public.t_expect('42501', $q$SELECT * FROM staff_notifications$q$);
+END $$;
+RESET ROLE;
+DO $$
+DECLARE nid bigint := (SELECT id FROM staff_notifications WHERE dedup_key = 'digest:2026-11-24:u');
+BEGIN
+  ASSERT (SELECT delivery FROM staff_notifications WHERE id = nid) = 'sending', 'claimed';
+  ASSERT (SELECT count(*) FROM staff_notifications WHERE delivery = 'none') = 2, 'owner copies stay in-app only';
+  PERFORM staff_notice_complete(nid, false, 'temporary', 1, false);
+  ASSERT (SELECT delivery || attempts FROM staff_notifications WHERE id = nid) = 'queued1', 'a temporary failure is retried';
+  UPDATE staff_notifications SET send_after = now() WHERE id = nid;
+  PERFORM staff_notice_claim(10);
+  PERFORM staff_notice_complete(nid, true);
+  ASSERT (SELECT delivery FROM staff_notifications WHERE id = nid) = 'sent', 'delivered';
+  PERFORM staff_notice_complete(nid, false, 'late', NULL, true);          -- no effect once sent
+  ASSERT (SELECT delivery FROM staff_notifications WHERE id = nid) = 'sent', 'a finished delivery stays finished';
+END $$;
+ROLLBACK;
+
 -- clean up so the down-migration test starts from the original state (the journal is immutable: only the
 -- superuser of the test database may switch its guards off)
 DROP FUNCTION public.t_post(bigint, date, text, text, text, jsonb, text, int, bigint);

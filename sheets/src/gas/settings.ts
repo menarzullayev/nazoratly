@@ -35,6 +35,9 @@ export interface Settings {
 
   familySecond: number; // percent, 0 = off
   familyThird: number;
+  teacherReminderHours: number;
+  teacherDigestAfter: string; // HH:MM
+  teacherDailyLimit: number;
 }
 
 /** The settings as they apply to a branch (the branch's own values over the center's). Without an argument: the branch the
@@ -94,6 +97,9 @@ export function readSettings(branchId?: string | null): Settings {
 
     familySecond: pct("familySecond"),
     familyThird: pct("familyThird"),
+    teacherReminderHours: num("teacherReminderHours", 2, 0, 48),
+    teacherDigestAfter: /^([01]\d|2[0-3]):[0-5]\d$/.test(map.get("teacherDigestAfter") ?? "") ? (map.get("teacherDigestAfter") as string) : "20:00",
+    teacherDailyLimit: num("teacherDailyLimit", 20, 0, 500),
     ownerChatId: /^-?\d{5,}$/.test(map.get("ownerChatId") ?? "") ? (map.get("ownerChatId") as string) : "",
   };
 }
