@@ -114,3 +114,97 @@ export function maskName(name: string): string {
 export function certificateCaption(center: string, student: string, course: string, number: string, code: string): string {
   return [`${center}: sertifikat ${number}`, `O'quvchi: ${student}`, `Kurs: ${course}`, `Tekshirish kodi: ${code}`, "PDF hujjat ilova qilingan."].join("\n");
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// Printed documents (the Sheets edition renders HTML that Apps Script turns into the PDF; the API product renders the
+// PDF with reportlab from the same facts). Wording of the captions above is golden-tested; layout is not.
+// ---------------------------------------------------------------------------------------------------------------
+const esc = (s: string): string => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const dmy = (iso: string): string => `${iso.slice(8, 10)}.${iso.slice(5, 7)}.${iso.slice(0, 4)}`;
+
+export interface ReportLesson {
+  date: string;
+  grade: number | null;
+  note: string;
+}
+export interface ReportExam {
+  title: string;
+  heldOn: string;
+  score: number;
+  maxScore: number;
+  percent: number;
+}
+export interface ReportSnapshot {
+  centerName: string;
+  requisites: string;
+  studentName: string;
+  groupName: string;
+  periodMonth: string; // first day, ISO
+  monthLabel: string;
+  present: number;
+  late: number;
+  absent: number;
+  excused: number;
+  attendancePercent: number | null;
+  averageGrade: string | null;
+  monthGrade: number | null;
+  monthNote: string;
+  lessons: ReportLesson[];
+  exams: ReportExam[];
+  generatedOn: string;
+}
+
+const STYLE =
+  `<style>body{font-family:Arial,sans-serif;font-size:12px;margin:24px}h1{font-size:20px;margin:14px 0 4px}h2{font-size:14px;margin:16px 0 4px}` +
+  `.c{font-size:17px;font-weight:bold}.s{color:#555;font-size:10px}table{border-collapse:collapse;width:100%;margin-top:6px}` +
+  `td,th{border-bottom:1px solid #bbb;padding:4px;text-align:left}th{border-bottom:2px solid #000}.r{text-align:right}</style>`;
+
+export function renderReportHtml(r: ReportSnapshot): string {
+  const pct = r.attendancePercent !== null ? `${r.attendancePercent}%` : "ma'lumot yo'q";
+  const lessons = r.lessons.length
+    ? `<h2>Darslar bo'yicha</h2><table><tr><th>Sana</th><th>Baho</th><th>Izoh</th></tr>${r.lessons
+        .map((l) => `<tr><td>${dmy(l.date)}</td><td>${l.grade ?? ""}</td><td>${esc(l.note)}</td></tr>`)
+        .join("")}</table>`
+    : "";
+  const exams = r.exams.length
+    ? `<h2>Imtihon va testlar</h2><table><tr><th>Nomi</th><th>Sana</th><th>Ball</th><th class="r">Foiz</th></tr>${r.exams
+        .map((e) => `<tr><td>${esc(e.title)}</td><td>${dmy(e.heldOn)}</td><td>${e.score} / ${e.maxScore}</td><td class="r">${e.percent}%</td></tr>`)
+        .join("")}</table>`
+    : "";
+  return (
+    `<html><head><meta charset="utf-8">${STYLE}</head><body><div class="c">${esc(r.centerName)}</div>` +
+    `${r.requisites ? `<div class="s">${esc(r.requisites).replace(/\n/g, "<br>")}</div>` : ""}` +
+    `<h1>${REPORT_TITLE}: ${esc(r.monthLabel)}</h1><p>O'quvchi: <b>${esc(r.studentName)}</b><br>Guruh: ${esc(r.groupName)}</p>` +
+    `<h2>Davomat</h2><p>Keldi: ${r.present}, kechikdi: ${r.late}, kelmadi: ${r.absent}, sababli: ${r.excused}. Davomat: ${pct}</p>` +
+    `<h2>Baho</h2><p>O'rtacha baho (1-5): ${r.averageGrade ?? "baho qo'yilmagan"}` +
+    `${r.monthGrade !== null ? `<br>Oy bahosi: ${r.monthGrade}` : ""}${r.monthNote ? `<br>O'qituvchi izohi: ${esc(r.monthNote)}` : ""}</p>` +
+    `${lessons}${exams}<p class="s" style="margin-top:30px">Hisobot sanasi: ${dmy(r.generatedOn)}</p></body></html>`
+  );
+}
+
+export interface CertificateSnapshot {
+  centerName: string;
+  requisites: string;
+  studentName: string;
+  courseName: string;
+  groupName: string;
+  startedOn: string;
+  completedOn: string;
+  issuedOn: string;
+  number: string;
+  code: string;
+}
+
+export function renderCertificateHtml(c: CertificateSnapshot): string {
+  return (
+    `<html><head><meta charset="utf-8">${STYLE}<style>body{text-align:center;margin:40px;border:3px double #1a3c6e;padding:30px}` +
+    `.t{font-size:40px;font-weight:bold;margin:10px 0}.n{font-size:26px;font-weight:bold;margin:14px 0}</style></head><body>` +
+    `<div class="c">${esc(c.centerName)}</div><div class="t">${CERTIFICATE_TITLE}</div><div>№ ${esc(c.number)}</div>` +
+    `<p>Ushbu sertifikat</p><div class="n">${esc(c.studentName)}</div>` +
+    `<p>«${esc(c.courseName)}» kursini muvaffaqiyatli tamomlagani uchun beriladi.</p>` +
+    `<p>Guruh: ${esc(c.groupName)}. O'qish davri: ${dmy(c.startedOn)} - ${dmy(c.completedOn)}.</p>` +
+    `<p>Berilgan sana: ${dmy(c.issuedOn)}</p><p>Tekshirish kodi: <b>${esc(c.code)}</b></p>` +
+    `<p class="s">Sertifikat haqiqiyligini shu kod bilan markazdan yoki tekshirish xizmatida aniqlash mumkin.</p>` +
+    `${c.requisites ? `<p class="s">${esc(c.requisites).replace(/\n/g, "<br>")}</p>` : ""}</body></html>`
+  );
+}

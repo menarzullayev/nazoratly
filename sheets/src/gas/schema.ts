@@ -613,8 +613,83 @@ export const CASH_CLOSES: TableDef = {
 };
 
 
+// ---- learning results (G4): teacher notes and grades, exams, monthly reports, certificates ----
+export const MARKS: TableDef = {
+  sheet: "Baholar",
+  color: "#f9ab00",
+  cols: [
+    { key: "scope", header: "Turi", width: 90, kind: "enum", labels: { lesson: "Dars", month: "Oy" }, help: "Dars: bitta dars uchun. Oy: butun oy uchun (sana ustuniga oyning 1-kuni yoziladi)" },
+    { key: "date", header: "Sana", width: 110, kind: "date", help: "Dars sanasi yoki oyning birinchi kuni" },
+    { key: "groupId", header: "Guruh ID", width: 90, kind: "text" },
+    { key: "studentId", header: "O'quvchi ID", width: 100, kind: "text" },
+    { key: "grade", header: "Baho (1-5)", width: 90, kind: "int", help: "1 dan 5 gacha butun son; bo'sh = baho yo'q (faqat izoh)" },
+    { key: "note", header: "Izoh", width: 320, kind: "text", plain: true, help: "O'qituvchi izohi (1000 belgigacha). Hisobotda chiqadi" },
+    { key: "updatedOn", header: "Yangilangan", width: 110, kind: "date" },
+  ],
+};
+
+export const EXAMS: TableDef = {
+  sheet: "Imtihonlar",
+  color: "#f9ab00",
+  cols: [
+    { key: "id", header: "ID", width: 80, kind: "text", help: "Avtomatik beriladi (X0001...)" },
+    { key: "groupId", header: "Guruh ID", width: 90, kind: "text" },
+    { key: "title", header: "Nomi", width: 220, kind: "text", plain: true },
+    { key: "heldOn", header: "Sana", width: 110, kind: "date" },
+    { key: "maxScore", header: "Eng yuqori ball", width: 110, kind: "int", help: "Butun son, 0 dan katta" },
+  ],
+};
+
+export const EXAM_RESULTS: TableDef = {
+  sheet: "Imtihon natijalari",
+  color: "#f9ab00",
+  cols: [
+    { key: "examId", header: "Imtihon ID", width: 100, kind: "text" },
+    { key: "studentId", header: "O'quvchi ID", width: 100, kind: "text" },
+    { key: "score", header: "Ball", width: 80, kind: "int", help: "Butun son, 0 dan imtihonning eng yuqori balligacha" },
+    { key: "note", header: "Izoh", width: 260, kind: "text", plain: true },
+  ],
+};
+
+export const REPORTS: TableDef = {
+  sheet: "Oylik hisobotlar",
+  color: "#f9ab00",
+  cols: [
+    { key: "id", header: "ID", width: 80, kind: "text", help: "Avtomatik beriladi (R0001...)" },
+    { key: "month", header: "Oy", width: 100, kind: "date", help: "Oyning birinchi kuni" },
+    { key: "groupId", header: "Guruh ID", width: 90, kind: "text" },
+    { key: "studentId", header: "O'quvchi ID", width: 100, kind: "text" },
+    { key: "status", header: "Holat", width: 120, kind: "enum", labels: { draft: "Qoralama", approved: "Tasdiqlangan" }, help: "Qoralama vasiyga yuborilmaydi. Tasdiqlash va yuborish: nazoratly > Natijalar menyusi" },
+    { key: "percent", header: "Davomat %", width: 100, kind: "text", plain: true, help: "Hisobot yaratilgan paytdagi davomat foizi; bo'sh = ma'lumot yo'q" },
+    { key: "average", header: "O'rtacha baho", width: 110, kind: "text", plain: true },
+    { key: "link", header: "PDF havolasi", width: 300, kind: "text", help: "Google Drive dagi PDF fayl" },
+    { key: "generatedOn", header: "Yaratilgan", width: 110, kind: "date" },
+    { key: "approvedOn", header: "Tasdiqlangan sana", width: 130, kind: "date", help: "Tasdiqlangandan keyin hisobot o'zgarmaydi" },
+  ],
+};
+
+export const CERTIFICATES: TableDef = {
+  sheet: "Sertifikatlar",
+  color: "#f9ab00",
+  cols: [
+    { key: "number", header: "Raqam", width: 130, kind: "text", plain: true, help: "SR-yyyy-000001" },
+    { key: "code", header: "Tekshirish kodi", width: 170, kind: "text", plain: true, help: "NZC-XXXX-XXXX-XXXX: sertifikatda bosilgan kod. Qo'lda o'zgartirmang" },
+    { key: "enrollmentId", header: "Yozilish ID", width: 100, kind: "text" },
+    { key: "studentId", header: "O'quvchi ID", width: 100, kind: "text" },
+    { key: "groupId", header: "Guruh ID", width: 90, kind: "text" },
+    { key: "courseName", header: "Kurs", width: 200, kind: "text", plain: true },
+    { key: "studentName", header: "O'quvchi ismi", width: 220, kind: "text", plain: true, help: "Sertifikat berilgan paytdagi ism (o'zgarmaydi)" },
+    { key: "issuedOn", header: "Berilgan sana", width: 110, kind: "date" },
+    { key: "completedOn", header: "Tugatgan sana", width: 110, kind: "date" },
+    { key: "link", header: "PDF havolasi", width: 300, kind: "text" },
+    { key: "voided", header: "Bekor qilingan", width: 110, kind: "bool", help: "Sertifikatni menyu orqali bekor qiling (sabab bilan)" },
+    { key: "voidReason", header: "Bekor sababi", width: 220, kind: "text", plain: true },
+    { key: "sentOn", header: "Vasiyga yuborilgan", width: 130, kind: "date" },
+  ],
+};
+
 export const LEDGER_TABLES: TableDef[] = [JOURNAL, PERIODS, CHART_ACCOUNTS, CASH_ACCOUNTS, REFUNDS, CASH_CLOSES];
-export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, PACKAGES, INSTALLMENTS, DOCUMENTS, EXPENSES, WAITLIST, ...LEDGER_TABLES, STATEMENTS, STATEMENT_LINES, SUPPLIERS, SUPPLIER_BILLS, BILL_PAYMENTS, DISCOUNTS, DISCOUNT_LINES, ROOMS, SCHEDULE_CHANGES, REFERRALS, PROMOS, PROMO_USES, SOURCE_COSTS];
+export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, PACKAGES, INSTALLMENTS, DOCUMENTS, EXPENSES, WAITLIST, ...LEDGER_TABLES, STATEMENTS, STATEMENT_LINES, SUPPLIERS, SUPPLIER_BILLS, BILL_PAYMENTS, DISCOUNTS, DISCOUNT_LINES, ROOMS, SCHEDULE_CHANGES, REFERRALS, PROMOS, PROMO_USES, SOURCE_COSTS, MARKS, EXAMS, EXAM_RESULTS, REPORTS, CERTIFICATES];
 
 export const SETTINGS_SHEET = "Sozlamalar";
 export const DEBTORS_SHEET = "Qarzdorlar";

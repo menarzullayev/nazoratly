@@ -53,7 +53,10 @@ def test_month_label(case: dict[str, Any]) -> None:
 @pytest.mark.parametrize("case", GOLDEN["report_caption"], ids=ids)
 def test_report_caption(case: dict[str, Any]) -> None:
     i = case["in"]
-    assert results.report_caption(i["center"], i["student"], i["label"], i["percent"], i["average"]) == case["out"]
+    assert (
+        results.report_caption(i["center"], i["student"], i["label"], i["percent"], i["average"])
+        == case["out"]
+    )
 
 
 @pytest.mark.parametrize("case", GOLDEN["eligible"], ids=ids)
@@ -89,4 +92,7 @@ def test_mask(case: dict[str, Any]) -> None:
 @pytest.mark.parametrize("case", GOLDEN["certificate_caption"], ids=ids)
 def test_certificate_caption(case: dict[str, Any]) -> None:
     i = case["in"]
-    assert results.certificate_caption(i["center"], i["student"], i["course"], i["number"], i["code"]) == case["out"]
+    assert (
+        results.certificate_caption(i["center"], i["student"], i["course"], i["number"], i["code"])
+        == case["out"]
+    )

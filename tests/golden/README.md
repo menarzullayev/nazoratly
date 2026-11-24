@@ -25,3 +25,4 @@ their own way.
 
 
 `money.json` (G1 pul qoidalari: doimiy chegirmalar tartibi va chegarasi, oilaviy foiz, erta to'lov chegirmasi va uni qachon olish, ketgan o'quvchi qoldig'i, abonement qoldig'i, qaytarish xatolari, kassa farqi va izoh talabi). Pul butun so'm (son), foiz satr. Jurnal qatorlari (`refund`, `cash_close`) `accounting.json` ning `posting` bo'limida.
+`results.json` (learning results: grade scale 1-5, attendance percent of a month, average grade, exam percent, Uzbek month label, report and certificate captions, certificate eligibility, number `SR-yyyy-000001`, verification code `NZC-XXXX-XXXX-XXXX` generation and normalisation, the privacy mask of a holder's name). Outputs were reviewed by hand.

@@ -7,6 +7,7 @@ import * as growth from "./gas/growth";
 import * as importer from "./gas/importer";
 import * as insights from "./gas/insights";
 import * as qr from "./gas/qr";
+import * as results from "./gas/results";
 import * as waitlist from "./gas/waitlist";
 import * as ledger from "./gas/ledger";
 import * as makeup from "./gas/makeup";
@@ -137,6 +138,25 @@ g.onOpen = (): void => {
     )
     .addSubMenu(
       SpreadsheetApp.getUi()
+        .createMenu("Natijalar (baho, imtihon, hisobot, sertifikat)")
+        .addItem("Baho / izoh qo'yish", "menuMarkSet")
+        .addItem("Bahoni olib tashlash", "menuMarkRemove")
+        .addSeparator()
+        .addItem("Imtihon qo'shish", "menuExamAdd")
+        .addItem("Imtihon natijasini kiritish", "menuExamScore")
+        .addItem("Imtihon natijalarini ko'rish", "menuExamView")
+        .addSeparator()
+        .addItem("Oylik hisobot yaratish (o'quvchi)", "menuReportMake")
+        .addItem("Guruh uchun hisobotlar yaratish", "menuReportGroup")
+        .addItem("Hisobotni tasdiqlab vasiyga yuborish", "menuReportSend")
+        .addSeparator()
+        .addItem("Sertifikat berish", "menuCertIssue")
+        .addItem("Sertifikatni bekor qilish", "menuCertVoid")
+        .addItem("Sertifikatni vasiyga yuborish", "menuCertSend")
+        .addItem("Sertifikatni tekshirish (kod)", "menuCertVerify"),
+    )
+    .addSubMenu(
+      SpreadsheetApp.getUi()
         .createMenu("Hujjatlar (kvitansiya, to'lov hisobi)")
         .addItem("Kvitansiya yaratish (to'lov)", "menuDocReceipt")
         .addItem("To'lov hisobi yaratish (o'quvchi)", "menuDocInvoice")
@@ -262,6 +282,18 @@ g.menuPackageCheck = packages.menu.check;
 g.menuDocReceipt = documents.menu.receipt;
 g.menuDocInvoice = documents.menu.invoice;
 g.menuDocSend = documents.menu.send;
+g.menuMarkSet = results.menu.mark;
+g.menuMarkRemove = results.menu.removeMark;
+g.menuExamAdd = results.menu.examAdd;
+g.menuExamScore = results.menu.examScore;
+g.menuExamView = results.menu.examView;
+g.menuReportMake = results.menu.reportMake;
+g.menuReportGroup = results.menu.reportGroup;
+g.menuReportSend = results.menu.reportSend;
+g.menuCertIssue = results.menu.certIssue;
+g.menuCertVoid = results.menu.certVoid;
+g.menuCertSend = results.menu.certSend;
+g.menuCertVerify = results.menu.certVerify;
 g.menuEntitlements = makeup.menu.view;
 g.menuScheduleMakeup = makeup.menu.schedule;
 g.menuCancelEntitlement = makeup.menu.cancel;
@@ -341,5 +373,5 @@ g.decideDrafts = actions.decideDrafts;
 g.todayIso = (): string => Utilities.formatDate(new Date(), SpreadsheetApp.getActive().getSpreadsheetTimeZone(), "yyyy-MM-dd");
 
 // Telegram webhook (Web App)
-g.doGet = (): GoogleAppsScript.Content.TextOutput => handleGet();
+g.doGet = (e?: GoogleAppsScript.Events.DoGet): GoogleAppsScript.Content.TextOutput => handleGet(e);
 g.doPost = (e: GoogleAppsScript.Events.DoPost): GoogleAppsScript.Content.TextOutput => handlePost(e);

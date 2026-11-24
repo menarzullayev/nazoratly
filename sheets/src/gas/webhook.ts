@@ -3,6 +3,7 @@ import { parseUpdate } from "../domain/telegramUpdates";
 import { read, today, updateById } from "./repo";
 import { STUDENTS } from "./schema";
 import { readSettings } from "./settings";
+import { verifyJson } from "./results";
 import { sendRich, tg, webhookSecret, sendMessage } from "./telegram";
 import { balanceHtmlForChat, withLock } from "./actions";
 import type { Student } from "../domain/types";
@@ -11,7 +12,10 @@ type StudentRow = Student & { linkCode?: string };
 
 const text = (s: string): GoogleAppsScript.Content.TextOutput => ContentService.createTextOutput(s);
 
-export function handleGet(): GoogleAppsScript.Content.TextOutput {
+export function handleGet(e?: GoogleAppsScript.Events.DoGet): GoogleAppsScript.Content.TextOutput {
+  // public certificate check: ?verify=NZC-XXXX-XXXX-XXXX answers with JSON (the holder's name is masked)
+  const code = e?.parameter?.verify;
+  if (code) return text(verifyJson(code));
   return text("nazoratly webhook ishlayapti");
 }
 

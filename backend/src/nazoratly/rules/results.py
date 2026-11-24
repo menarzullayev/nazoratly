@@ -58,9 +58,7 @@ def month_label(year: int, month: int) -> str:
     return f"{year} yil {MONTHS_UZ[month - 1]}"
 
 
-def report_caption(
-    center: str, student: str, label: str, percent: int | None, average: str | None
-) -> str:
+def report_caption(center: str, student: str, label: str, percent: int | None, average: str | None) -> str:
     """The text that travels with the report PDF (the same wording in both products)."""
     facts = [f"O'quvchi: {student}", f"Davr: {label}"]
     facts.append(f"Davomat: {percent}%" if percent is not None else "Davomat: ma'lumot yo'q")

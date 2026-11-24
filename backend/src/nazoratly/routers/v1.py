@@ -11,6 +11,7 @@ from nazoratly.routers import (
     ai,
     auth,
     cashclose,
+    certificates,
     dashboard,
     demo,
     discounts,
@@ -28,9 +29,11 @@ from nazoratly.routers import (
     payables,
     payroll,
     plans,
+    progress,
     qr,
     reconciliation,
     refunds,
+    results,
     schedule,
     settings,
     students,
@@ -61,6 +64,9 @@ router.include_router(plans.router)
 router.include_router(packages.router)
 router.include_router(dashboard.router)
 router.include_router(documents.router)
+router.include_router(results.router)
+router.include_router(progress.router)
+router.include_router(certificates.router)
 router.include_router(payroll.router)
 router.include_router(accounting.router)
 router.include_router(payables.router)
