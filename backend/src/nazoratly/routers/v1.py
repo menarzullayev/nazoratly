@@ -10,8 +10,10 @@ from nazoratly.routers import (
     agents,
     ai,
     auth,
+    cashclose,
     dashboard,
     demo,
+    discounts,
     documents,
     entitlements,
     finance,
@@ -28,6 +30,7 @@ from nazoratly.routers import (
     plans,
     qr,
     reconciliation,
+    refunds,
     schedule,
     settings,
     students,
@@ -51,6 +54,9 @@ router.include_router(settings.router)
 router.include_router(lessons.router)
 router.include_router(schedule.router)
 router.include_router(finance.router)
+router.include_router(discounts.router)
+router.include_router(refunds.router)
+router.include_router(cashclose.router)
 router.include_router(plans.router)
 router.include_router(packages.router)
 router.include_router(dashboard.router)

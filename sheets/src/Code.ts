@@ -10,6 +10,7 @@ import * as qr from "./gas/qr";
 import * as waitlist from "./gas/waitlist";
 import * as ledger from "./gas/ledger";
 import * as makeup from "./gas/makeup";
+import * as money from "./gas/money";
 import * as packages from "./gas/packages";
 import * as payables from "./gas/payables";
 import * as plans from "./gas/plans";
@@ -83,6 +84,18 @@ g.onOpen = (): void => {
         .addItem("Muddatni uzaytirish", "menuPackageExtend")
         .addItem("To'lov eslatma loyihalarini yaratish", "menuPackageDrafts")
         .addItem("Abonementlarni tekshirish", "menuPackageCheck"),
+    )
+    .addSubMenu(
+      SpreadsheetApp.getUi()
+        .createMenu("Pul qoidalari (chegirma, qaytarish, kassa)")
+        .addItem("Chegirma qo'shish", "menuDiscountAdd")
+        .addItem("Chegirmani tugatish", "menuDiscountEnd")
+        .addItem("Chegirmalar hisoboti", "menuDiscountReport")
+        .addSeparator()
+        .addItem("Qaytarish (pulni qaytarish, kreditga o'tkazish)", "menuRefund")
+        .addSeparator()
+        .addItem("Kassani yopish (smena)", "menuCashClose")
+        .addItem("Kassa holati", "menuCashStatus"),
     )
     .addSubMenu(
       SpreadsheetApp.getUi()
@@ -212,6 +225,13 @@ g.menuGrowthCredits = growth.menu.credits;
 g.menuSourceCost = growth.menu.cost;
 g.menuSourceRoi = growth.menu.roi;
 g.menuLeadReminders = growth.menu.reminders;
+
+g.menuDiscountAdd = money.menu.addDiscount;
+g.menuDiscountEnd = money.menu.endDiscount;
+g.menuDiscountReport = money.menu.discountReport;
+g.menuRefund = money.menu.refund;
+g.menuCashClose = money.menu.cashClose;
+g.menuCashStatus = money.menu.cashStatus;
 g.menuWaitAdd = waitlist.menu.add;
 g.menuWaitView = waitlist.menu.view;
 g.menuWaitEnroll = waitlist.menu.enroll;

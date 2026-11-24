@@ -6,11 +6,11 @@ import { daysBetween, isIsoDate, monthStart } from "../domain/dates";
 import { nextId, nextIds } from "../domain/ids";
 import { enrollmentBalances, packageExpiresOn, type EnrollmentBalance, type Need } from "../domain/packages";
 import { formatDmy, formatSom, planPackageReminders, type SkipReason } from "../domain/reminders";
-import type { AttendanceRow, Charge, Enrollment, Entitlement, Group, Installment, Package, Payment, ReminderDraft, Student } from "../domain/types";
+import type { Refund, AttendanceRow, Charge, Enrollment, Entitlement, Group, Installment, Package, Payment, ReminderDraft, Student } from "../domain/types";
 import { guard, withLock } from "./actions";
 import { pickId } from "./pick";
 import { append, read, readIfPresent, today, updateById } from "./repo";
-import { ATTENDANCE, CHARGES, DRAFTS, ENROLLMENTS, ENTITLEMENTS, GROUPS, INSTALLMENTS, PACKAGES, PAYMENTS, STUDENTS } from "./schema";
+import { REFUNDS, ATTENDANCE, CHARGES, DRAFTS, ENROLLMENTS, ENTITLEMENTS, GROUPS, INSTALLMENTS, PACKAGES, PAYMENTS, STUDENTS } from "./schema";
 import { readSettings } from "./settings";
 
 export const VIEW_SHEET = "Abonement holati";
@@ -27,7 +27,7 @@ const REASONS: Record<SkipReason, string> = {
 /** Balances of the active enrollments in package groups, plus the package rows that cannot be used. */
 export function loadBalances(statuses?: Enrollment["status"][]): { balances: EnrollmentBalance[]; problems: { id: string; reason: string }[] } {
   const charges = read<Charge>(CHARGES);
-  const debts = computeDebts(charges, read<Payment>(PAYMENTS), today(), readIfPresent<Installment>(INSTALLMENTS));
+  const debts = computeDebts(charges, read<Payment>(PAYMENTS), today(), readIfPresent<Installment>(INSTALLMENTS), readIfPresent<Refund>(REFUNDS));
   const s = readSettings();
   return enrollmentBalances({
     groups: read<Group>(GROUPS),

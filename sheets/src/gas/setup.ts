@@ -47,6 +47,9 @@ function validationFor(col: ColDef): GoogleAppsScript.Spreadsheet.DataValidation
   if (col.kind === "date") {
     return SpreadsheetApp.newDataValidation().requireDate().setAllowInvalid(false).setHelpText("To'g'ri sana kiriting (yyyy-mm-dd)").build();
   }
+  if (col.kind === "num") {
+    return SpreadsheetApp.newDataValidation().requireNumberBetween(0, 100).setAllowInvalid(false).setHelpText("0-100 (kasr bo'lishi mumkin)").build();
+  }
   if (col.kind === "int") {
     return SpreadsheetApp.newDataValidation().requireNumberGreaterThanOrEqualTo(col.key === "bonus" || col.signed ? -1_000_000_000 : 0).setAllowInvalid(false).setHelpText("Butun son").build();
   }
@@ -70,6 +73,7 @@ export function setupTable(def: TableDef): void {
     if (rule) body.setDataValidation(rule);
     if (c.kind === "date") body.setNumberFormat("yyyy-mm-dd");
     if (c.kind === "int") body.setNumberFormat("#,##0");
+    if (c.kind === "num") body.setNumberFormat("0.##");
     if (c.plain) body.setNumberFormat("@");
   });
   sh.getRange(2, 1, Math.max(sh.getMaxRows() - 1, 1), n).setFontFamily(FONT).setVerticalAlignment("middle");

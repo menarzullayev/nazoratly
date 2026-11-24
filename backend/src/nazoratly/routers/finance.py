@@ -8,19 +8,34 @@ ordered by (due_date, id), so concurrent allocations serialise instead of deadlo
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, Query, Response
 from pydantic import Field, StringConstraints, model_validator
 
-from nazoratly.accounting import post_expense, post_payment, void_source
+from nazoratly.accounting import org_today, post_expense, post_payment, void_source
 from nazoratly.db import Conn, execute, fetch_all, fetch_one, patch_row, resolve, resolve_opt
 from nazoratly.deps import DB, Paging, Principal, require
 from nazoratly.errors import Conflict, NotFound, Unprocessable
 from nazoratly.idempotency import IdempotentRoute
+from nazoratly.money import (
+    family_ranks,
+    grant_early_discount,
+    revoke_unearned_early,
+    rules_for_month,
+    write_discount_lines,
+)
+from nazoratly.routers.settings import load_settings
 from nazoratly.rules.entitlements import apply_credits
+from nazoratly.rules.money import (
+    DiscountInput,
+    early_discount,
+    early_pay_by,
+    family_percent,
+    lasting_discounts,
+)
 from nazoratly.schemas import Dec2, LongText, Model, Money, Out, Page, PositiveMoney, make_page
 
 router = APIRouter(prefix="/v1", tags=["finance"], route_class=IdempotentRoute)
@@ -86,6 +101,14 @@ class ChargeOut(Out):
     void_reason: str | None
     installments_count: int = Field(description="0 when the charge has no payment plan")
     overdue: Dec2 = Field(description="part of the outstanding amount that is past due (per installment)")
+    gross_amount: Dec2 | None = Field(
+        default=None, description="fee before the lasting discounts (None on older charges)"
+    )
+    early_discount: Dec2 = Field(default=Decimal(0), description="so'm off when paid by early_pay_by")
+    early_pay_by: date | None = None
+    early_granted: bool = Field(
+        default=False, description="the early discount was earned (the amount is already reduced)"
+    )
 
 
 class GenerateChargesIn(Model):
@@ -102,6 +125,10 @@ class GenerateChargesOut(Out):
     skipped_package_groups: int = Field(
         default=0, description="enrollments of package-billed groups (billed when a package is sold)"
     )
+    discounted: int = Field(default=0, description="new charges that got a lasting discount")
+    skipped_free: int = Field(
+        default=0, description="enrollments that are completely free this month (scholarship): no charge"
+    )
 
 
 _OVERDUE_SQL = "COALESCE((SELECT b.overdue_outstanding FROM v_charge_balance b WHERE b.charge_id = c.id), 0)"
@@ -110,7 +137,7 @@ _CHARGE_SQL = (
     " c.amount, c.due_date, COALESCE(a.paid, 0) AS paid, c.amount - COALESCE(a.paid, 0) AS outstanding,"
     " (c.voided_at IS NOT NULL) AS voided, c.void_reason,"
     " (SELECT count(*) FROM charge_installments ci WHERE ci.charge_id = c.id)::int AS installments_count,"
-    f" {_OVERDUE_SQL} AS overdue "
+    f" {_OVERDUE_SQL} AS overdue, c.gross_amount, c.early_discount, c.early_pay_by, (c.early_granted_at IS NOT NULL) AS early_granted "
     "FROM charges c JOIN students s ON s.org_id = c.org_id AND s.id = c.student_id "
     "LEFT JOIN LATERAL (SELECT sum(pa.amount) AS paid FROM payment_allocations pa WHERE pa.charge_id = c.id) a ON TRUE"
 )
@@ -183,10 +210,49 @@ async def generate_charges(
             {"nxt": nxt, "first": first, "gid": gid},
         )
         assert pkg is not None
-        created = existing = zero = 0
+        created = existing = zero = discounted = free = 0
+        settings = await load_settings(conn, p.org_id)
+        last = nxt - timedelta(days=1)
+        student_ids = sorted({int(r["student_id"]) for r in rows if r["fee"] > 0})
+        ranks = await family_ranks(conn, student_ids)
+        rules = await rules_for_month(conn, student_ids, first, last)
         for r in rows:
             if r["fee"] <= 0:
                 zero += 1
+                continue
+            if await fetch_one(
+                conn,
+                "SELECT 1 AS x FROM charges WHERE enrollment_id = %s AND period_month = %s AND kind = 'tuition' AND voided_at IS NULL",
+                (r["enrollment_id"], first),
+            ):
+                existing += 1
+                continue
+            # lasting discounts: scholarship, family, individual (rules/money.py); one early-payment offer per charge
+            inputs: list[DiscountInput] = []
+            meta: list[dict[str, Any] | None] = []
+            early_rule: dict[str, Any] | None = None
+            for rule in rules.get(r["student_id"], []):
+                if rule["enrollment_id"] not in (None, r["enrollment_id"]):
+                    continue
+                if rule["kind"] == "early_pay":
+                    if early_rule is None or rule["percent"] > early_rule["percent"]:
+                        early_rule = rule
+                    continue
+                inputs.append(DiscountInput(rule["kind"], rule["percent"], rule["amount"]))
+                meta.append(rule)
+            fam = family_percent(
+                rank=ranks.get(r["student_id"], 1),
+                second=settings.family_discount_2nd_percent,
+                third=settings.family_discount_3rd_percent,
+            )
+            if fam > 0:
+                inputs.append(DiscountInput("family", fam, None))
+                meta.append(None)
+            result = lasting_discounts(base=r["fee"], discounts=inputs)
+
+            if result.net <= 0:
+                free += 1
+                await write_discount_lines(conn, p.org_id, r, first, result.lines, meta, fam, None)
                 continue
             credits = await fetch_all(
                 conn,
@@ -194,10 +260,16 @@ async def generate_charges(
                 "ORDER BY created_at, id FOR UPDATE",
                 (r["student_id"],),
             )
-            applied = apply_credits(fee=r["fee"], credits=[c["amount"] for c in credits])
+            applied = apply_credits(fee=result.net, credits=[c["amount"] for c in credits])
+            early = (
+                early_discount(net=applied.amount, percent=early_rule["percent"])
+                if early_rule
+                else Decimal(0)
+            )
             cur = await conn.execute(
-                "INSERT INTO charges (org_id, student_id, enrollment_id, kind, period_month, description, amount, due_date, created_by_user_id) "
-                "VALUES (%s, %s, %s, 'tuition', %s, %s, %s, %s, %s) "
+                "INSERT INTO charges (org_id, student_id, enrollment_id, kind, period_month, description, amount, due_date, created_by_user_id, "
+                "gross_amount, early_discount, early_pay_by, early_source_id) "
+                "VALUES (%s, %s, %s, 'tuition', %s, %s, %s, %s, %s, %s, %s, %s, %s) "
                 "ON CONFLICT (enrollment_id, period_month) WHERE kind = 'tuition' AND voided_at IS NULL DO NOTHING "
                 "RETURNING id",
                 (
@@ -209,11 +281,20 @@ async def generate_charges(
                     applied.amount,
                     due,
                     p.user_id,
+                    r["fee"],
+                    early,
+                    early_pay_by(first, early_rule["pay_by_day"]) if early > 0 and early_rule else None,
+                    early_rule["id"] if early > 0 and early_rule else None,
                 ),
             )
             inserted = await cur.fetchone()
             if inserted is not None:
                 created += 1
+                if result.lines:
+                    discounted += 1
+                    await write_discount_lines(
+                        conn, p.org_id, r, first, result.lines, meta, fam, int(inserted["id"])
+                    )
                 for c in credits[
                     : applied.used
                 ]:  # credits are consumed only together with the charge they reduce
@@ -230,6 +311,8 @@ async def generate_charges(
         skipped_existing=existing,
         skipped_zero_fee=zero,
         skipped_package_groups=int(pkg["n"]),
+        discounted=discounted,
+        skipped_free=free,
     )
 
 
@@ -388,6 +471,7 @@ class PaymentOut(Out):
     voided: bool
     void_reason: str | None
     allocated: Dec2
+    refunded: Dec2 = Field(default=Decimal(0), description="given back in cash or to the bank (a refund)")
     unallocated: Dec2
     allocations: list[AllocationOut] = []
 
@@ -395,7 +479,7 @@ class PaymentOut(Out):
 _PAY_SQL = (
     "SELECT p.public_id AS id, s.public_id AS student_id, s.full_name AS student_name, p.amount, p.method, p.paid_at, p.external_ref,"
     " p.note, gu.public_id AS payer_guardian_id, (p.voided_at IS NOT NULL) AS voided, p.void_reason,"
-    " COALESCE(a.allocated, 0) AS allocated, p.amount - COALESCE(a.allocated, 0) AS unallocated "
+    " COALESCE(a.allocated, 0) AS allocated, p.refunded, p.amount - p.refunded - COALESCE(a.allocated, 0) AS unallocated "
     "FROM payments p JOIN students s ON s.org_id = p.org_id AND s.id = p.student_id "
     "LEFT JOIN guardians gu ON gu.org_id = p.org_id AND gu.id = p.payer_guardian_id "
     "LEFT JOIN LATERAL (SELECT sum(pa.amount) AS allocated FROM payment_allocations pa WHERE pa.payment_id = p.id) a ON TRUE"
@@ -418,19 +502,24 @@ async def _payment(conn: Conn, pid: int, *, with_allocations: bool = True) -> Pa
 
 async def _insert_allocation(
     conn: Conn, org_id: int, payment_id: int, charge_id: int, amount: Decimal
-) -> None:
+) -> Decimal:
+    """Applies money to a charge. When that completes the charge's early-payment offer, the discount is granted and the
+    surplus is released again; returns the released amount (it is the payment's unallocated money once more)."""
     await execute(
         conn,
         "INSERT INTO payment_allocations (org_id, payment_id, charge_id, amount) VALUES (%s, %s, %s, %s) "
         "ON CONFLICT (payment_id, charge_id) DO UPDATE SET amount = payment_allocations.amount + EXCLUDED.amount",
         (org_id, payment_id, charge_id, amount),
     )
+    return await grant_early_discount(conn, charge_id)
 
 
 async def allocate_fifo(conn: Conn, org_id: int, payment_id: int) -> Decimal:
     """Apply a payment's unallocated remainder to the student's oldest open charges. Returns the amount applied."""
     pay = await fetch_one(
-        conn, "SELECT student_id, amount, voided_at FROM payments WHERE id = %s FOR UPDATE", (payment_id,)
+        conn,
+        "SELECT student_id, amount, refunded, voided_at FROM payments WHERE id = %s FOR UPDATE",
+        (payment_id,),
     )
     assert pay is not None
     if pay["voided_at"] is not None:
@@ -441,7 +530,7 @@ async def allocate_fifo(conn: Conn, org_id: int, payment_id: int) -> Decimal:
         (payment_id,),
     )
     assert done is not None
-    remaining: Decimal = pay["amount"] - done["s"]
+    remaining: Decimal = pay["amount"] - pay["refunded"] - done["s"]
     # 1) lock the student's charges in a fixed order; 2) read outstanding in a NEW statement. Under READ COMMITTED a
     # statement waiting on a row lock keeps its old snapshot, so computing balances in the locking query would miss
     # allocations committed by the transaction we waited for.
@@ -462,9 +551,9 @@ async def allocate_fifo(conn: Conn, org_id: int, payment_id: int) -> Decimal:
             break
         take = min(remaining, c["outstanding"])
         if take > 0:
-            await _insert_allocation(conn, org_id, payment_id, c["id"], take)
-            remaining -= take
-            applied += take
+            released = await _insert_allocation(conn, org_id, payment_id, c["id"], take)
+            remaining -= take - released  # an earned early discount gives part of it back
+            applied += take - released
     return applied
 
 
@@ -605,6 +694,7 @@ async def remove_allocation(
         )
         if n == 0:
             raise NotFound("allocation not found")
+        await revoke_unearned_early(conn, [cid])
         return await _payment(conn, pid)
 
 
@@ -618,11 +708,18 @@ async def void_payment(
 ) -> PaymentOut:
     async with db.tx(p.session()) as conn:
         pid = await resolve(conn, "payments", payment_id, what="payment")
-        cur = await fetch_one(conn, "SELECT voided_at FROM payments WHERE id = %s FOR UPDATE", (pid,))
+        cur = await fetch_one(
+            conn, "SELECT voided_at, refunded FROM payments WHERE id = %s FOR UPDATE", (pid,)
+        )
         assert cur is not None
         if cur["voided_at"] is not None:
             raise Conflict("Payment is already voided")
-        await execute(conn, "DELETE FROM payment_allocations WHERE payment_id = %s", (pid,))
+        if cur["refunded"] > 0:
+            raise Conflict("The payment has refunds and cannot be voided")
+        released = await fetch_all(
+            conn, "DELETE FROM payment_allocations WHERE payment_id = %s RETURNING charge_id", (pid,)
+        )
+        await revoke_unearned_early(conn, [r["charge_id"] for r in released])
         await execute(
             conn, "UPDATE payments SET voided_at = now(), void_reason = %s WHERE id = %s", (body.reason, pid)
         )
@@ -643,7 +740,7 @@ async def allocate_credit(
         pays = await fetch_all(
             conn,
             "SELECT p.id FROM payments p WHERE p.student_id = %s AND p.voided_at IS NULL "
-            "AND p.amount > COALESCE((SELECT sum(pa.amount) FROM payment_allocations pa WHERE pa.payment_id = p.id), 0) ORDER BY p.paid_at, p.id",
+            "AND p.amount - p.refunded > COALESCE((SELECT sum(pa.amount) FROM payment_allocations pa WHERE pa.payment_id = p.id), 0) ORDER BY p.paid_at, p.id",
             (sid,),
         )
         touched: list[PaymentOut] = []
@@ -914,4 +1011,4 @@ async def summary(
     return SummaryOut(month=first, net=row["revenue"] - row["expenses"] - row["payroll"], **row)
 
 
-_ = (Money, UTC)
+_ = (Money, UTC, org_today)

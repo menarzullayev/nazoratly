@@ -28,6 +28,9 @@ export interface Settings {
   referralCondition: "enrolled" | "paid";
   referralMinPaid: number;
   leadReminderDays: number;
+
+  familySecond: number; // percent, 0 = off
+  familyThird: number;
 }
 
 export function readSettings(): Settings {
@@ -43,6 +46,10 @@ export function readSettings(): Settings {
   const num = (key: string, fallback: number, min: number, max: number): number => {
     const n = Number(map.get(key));
     return Number.isInteger(n) && n >= min && n <= max ? n : fallback;
+  };
+  const pct = (key: string): number => {
+    const n = Number((map.get(key) ?? "").replace(",", "."));
+    return Number.isFinite(n) && n >= 0 && n <= 100 ? Math.round(n * 100) / 100 : 0;
   };
   return {
     center: map.get("center") || "Markaz",
@@ -70,6 +77,9 @@ export function readSettings(): Settings {
     referralCondition: (map.get("referralCondition") ?? "").toLowerCase().startsWith("yozil") ? "enrolled" : "paid",
     referralMinPaid: num("referralMinPaid", 0, 0, 1_000_000_000),
     leadReminderDays: num("leadReminderDays", 3, 1, 60),
+
+    familySecond: pct("familySecond"),
+    familyThird: pct("familyThird"),
     ownerChatId: /^-?\d{5,}$/.test(map.get("ownerChatId") ?? "") ? (map.get("ownerChatId") as string) : "",
   };
 }

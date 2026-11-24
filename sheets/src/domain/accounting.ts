@@ -11,6 +11,9 @@ export const SALARY_PAYABLE = "2100";
 export const CAPITAL = "3000";
 export const TUITION_INCOME = "4000";
 export const TEACHER_PAY = "5100";
+export const REFUNDS = "4200"; // contra-income: money given back
+export const OTHER_INCOME = "4100";
+export const CASH_DIFFERENCE = "5900"; // cash short at a daily cash close
 
 export type AccountType = "asset" | "liability" | "equity" | "income" | "expense";
 export interface ChartAccount {
@@ -27,6 +30,7 @@ export const CHART: readonly ChartAccount[] = [
   { code: "3000", name: "Egasi kapitali", type: "equity" },
   { code: "4000", name: "O'quv to'lovlari", type: "income" },
   { code: "4100", name: "Boshqa daromadlar", type: "income" },
+  { code: "4200", name: "Qaytarilgan to'lovlar", type: "income" },
   { code: "5000", name: "Ijara", type: "expense" },
   { code: "5010", name: "Kommunal xizmatlar", type: "expense" },
   { code: "5020", name: "Boshqa xodimlar maoshi", type: "expense" },
@@ -35,6 +39,7 @@ export const CHART: readonly ChartAccount[] = [
   { code: "5050", name: "Soliqlar", type: "expense" },
   { code: "5090", name: "Boshqa xarajatlar", type: "expense" },
   { code: "5100", name: "O'qituvchilar oyligi", type: "expense" },
+  { code: "5900", name: "Kassa kamomadi", type: "expense" },
 ];
 export const ACCOUNT_TYPES: readonly AccountType[] = ["asset", "liability", "equity", "income", "expense"];
 
@@ -48,7 +53,9 @@ export type PostingEvent =
   | { event: "expense"; category: string; amount: number; paidFrom?: string; bill?: boolean }
   | { event: "bill_payment"; amount: number; paidFrom?: string }
   | { event: "payroll_accrual"; amount: number }
-  | { event: "payroll_payment"; amount: number };
+  | { event: "payroll_payment"; amount: number }
+  | { event: "refund"; payout: string; amount: number }
+  | { event: "cash_close"; direction: "over" | "short"; amount: number };
 
 export function postingLines(e: PostingEvent): LineSpec[] {
   const amount = e.amount;
@@ -68,10 +75,15 @@ export function postingLines(e: PostingEvent): LineSpec[] {
       return [[TEACHER_PAY, amount, 0], [SALARY_PAYABLE, 0, amount]];
     case "payroll_payment":
       return [[SALARY_PAYABLE, amount, 0], [CASH, 0, amount]];
+    case "refund":
+      // a refund that stays as credit moves no money, so nothing is posted
+      return e.payout === "credit" ? [] : [[REFUNDS, amount, 0], [cashAccount(e.payout), 0, amount]];
+    case "cash_close":
+      return e.direction === "over" ? [[CASH, amount, 0], [OTHER_INCOME, 0, amount]] : [[CASH_DIFFERENCE, amount, 0], [CASH, 0, amount]];
   }
 }
 
-export const SOURCE_TYPES = ["payment", "expense", "bill_payment", "payroll_accrual", "payroll_payment"] as const;
+export const SOURCE_TYPES = ["payment", "expense", "bill_payment", "payroll_accrual", "payroll_payment", "refund", "cash_close"] as const;
 export type SourceType = (typeof SOURCE_TYPES)[number];
 
 export interface Source {
@@ -84,6 +96,8 @@ export interface Source {
   category?: string;
   paidFrom?: string;
   bill?: boolean;
+  payout?: string; // refund: cash | bank | credit
+  direction?: "over" | "short"; // cash_close
 }
 export interface PendingItem {
   kind: "post" | "reverse";
@@ -105,6 +119,10 @@ function eventOf(s: Source): PostingEvent {
       return { event: "payroll_accrual", amount: s.amount };
     case "payroll_payment":
       return { event: "payroll_payment", amount: s.amount };
+    case "refund":
+      return { event: "refund", payout: s.payout ?? "cash", amount: s.amount };
+    case "cash_close":
+      return { event: "cash_close", direction: s.direction ?? "over", amount: s.amount };
   }
 }
 

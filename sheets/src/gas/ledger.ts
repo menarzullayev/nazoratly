@@ -6,15 +6,15 @@
  * (only the owner/script and the emails in Sozlamalar can write), but the sheet owner can remove that protection. The hash
  * chain makes any edit detectable ("Jurnalni tekshirish" names the first broken row); it cannot prevent one. */
 import {
-  accountStatement, balanceSheet, CHART, incomeStatement, normalSide, pendingPostings, postedKey, trialBalance, type ChartInfo, type PendingItem, type Source, type Totals,
+  accountStatement, balanceSheet, CHART, incomeStatement, normalSide, pendingPostings, postedKey, postingLines, trialBalance, type ChartInfo, type PendingItem, type Source, type Totals,
 } from "../domain/accounting";
 import { isIsoDate, monthStart } from "../domain/dates";
 import { nextId } from "../domain/ids";
 import { EMPTY_HEAD, makePeriod, nextHead, parseMoney, reverseLines, sealEntry, validateEntry, verifyChain, type Head, type Line, type LineSpec, type Period, type Verdict } from "../domain/ledger";
-import type { Expense, Payment, Student } from "../domain/types";
+import type { Expense, Payment, Refund, Student } from "../domain/types";
 import { guard, withLock } from "./actions";
 import { append, read, readIfPresent, today, updateById } from "./repo";
-import { BILL_PAYMENTS, CASH_ACCOUNTS, CHART_ACCOUNTS, EXPENSES, JOURNAL, LEDGER_TABLES, PAYMENTS, PAYROLL, PERIODS, STUDENTS, type TableDef } from "./schema";
+import { BILL_PAYMENTS, CASH_ACCOUNTS, CHART_ACCOUNTS, EXPENSES, JOURNAL, LEDGER_TABLES, PAYMENTS, PAYROLL, PERIODS, REFUNDS, STUDENTS, type TableDef } from "./schema";
 import { readSettings } from "./settings";
 
 export const REPORT_SHEET = "Buxgalteriya hisoboti";
@@ -76,7 +76,12 @@ export const postedSet = (lines: Line[]): Set<string> => new Set(lines.filter((l
 
 /** Seeds the chart template and the two default cash accounts the first time (idempotent). */
 export function ensureChart(): void {
-  if (hasSheet(CHART_ACCOUNTS) && read<ChartRow>(CHART_ACCOUNTS).length === 0) append(CHART_ACCOUNTS, CHART.map((a) => ({ code: a.code, name: a.name, type: a.type, active: true })));
+  if (hasSheet(CHART_ACCOUNTS)) {
+    // seeds the template, and later additions to it (e.g. 4200 refunds, 5900 cash shortage) for centers that already have a chart
+    const have = new Set(read<ChartRow>(CHART_ACCOUNTS).map((a) => a.code));
+    const missing = CHART.filter((a) => !have.has(a.code));
+    if (missing.length) append(CHART_ACCOUNTS, missing.map((a) => ({ code: a.code, name: a.name, type: a.type, active: true })));
+  }
   if (hasSheet(CASH_ACCOUNTS) && read<CashRow>(CASH_ACCOUNTS).length === 0) {
     append(CASH_ACCOUNTS, [{ code: "1000", name: "Kassa", kind: "cash" }, { code: "1010", name: "Bank hisobi", kind: "bank" }]);
   }
@@ -158,6 +163,11 @@ export function collectSources(): { sources: Source[]; memos: Map<string, string
     if (!b.id || !isIsoDate(b.date) || !(b.amount > 0)) continue;
     add({ type: "bill_payment", key: b.id, date: b.date, amount: tiyin(b.amount), voided: b.voided, paidFrom: b.paidFrom || "cash" }, `Ta'minotchiga to'lov ${b.id} (hisob ${b.billId})`);
   }
+  for (const r of readIfPresent<Refund & { demo?: boolean }>(REFUNDS)) {
+    if (r.demo === true) continue; // demo money never enters the books
+    if (!r.id || !isIsoDate(r.date) || !(r.amount > 0) || r.payout === "credit") continue; // a refund kept as credit moves no money
+    add({ type: "refund", key: r.id, date: r.date, amount: tiyin(r.amount), voided: false, payout: r.payout }, `Qaytarish ${r.id}: ${names.get(r.studentId) ?? r.studentId} (${r.kind}, ${r.payout})`);
+  }
   for (const r of readIfPresent<PayRowLite>(PAYROLL)) {
     if (r.status !== "approved" && r.status !== "paid") continue;
     const key = `${r.month.slice(0, 7)}:${r.teacherId}`;
@@ -221,6 +231,41 @@ export function tryPostPayments(): string {
   } catch (e) {
     return `Jurnalga o'tkazilmadi (${e instanceof Error ? e.message : String(e)}). Menyu: Buxgalteriya > Kutayotganlarni o'tkazish.`;
   }
+}
+
+/** Called right after a refund is recorded: posts the refunds that are still missing (same fallback as payments). */
+export function tryPostRefunds(): string {
+  if (!ledgerReady()) return "";
+  try {
+    syncLedger((i) => i.sourceType.startsWith("refund"));
+    return "";
+  } catch (e) {
+    return `Jurnalga o'tkazilmadi (${e instanceof Error ? e.message : String(e)}). Menyu: Buxgalteriya > Kutayotganlarni o'tkazish.`;
+  }
+}
+
+/** What the books say the cash desk holds through `through` (all cash-kind accounts), in so'm, the last journal line, and
+ * the cash that came in and went out on that very day. */
+export function cashBookBalance(through: string): { balance: number; seq: number; cashIn: number; cashOut: number } {
+  const kinds = readIfPresent<CashRow>(CASH_ACCOUNTS).filter((c) => c.kind === "cash").map((c) => c.code);
+  const codes = new Set(kinds.length ? kinds : ["1000"]);
+  const lines = journalLines();
+  const mine = lines.filter((l) => codes.has(l.account));
+  const upTo = mine.filter((l) => l.date <= through);
+  const day = mine.filter((l) => l.date === through);
+  return {
+    balance: upTo.reduce((n, l) => n + l.debit - l.credit, 0) / SOM,
+    seq: lines.length ? lines[lines.length - 1]!.seq : 0,
+    cashIn: day.reduce((n, l) => n + l.debit, 0) / SOM,
+    cashOut: day.reduce((n, l) => n + l.credit, 0) / SOM,
+  };
+}
+
+/** Books the difference found at a cash close (more cash than booked = other income, less = shortage); returns the entry number. */
+export function postCashDifference(date: string, closeId: string, difference: number): number {
+  const lines = postingLines({ event: "cash_close", direction: difference > 0 ? "over" : "short", amount: tiyin(Math.abs(difference)) });
+  const [no] = postEntries([{ date, memo: `Kassa farqi (${difference > 0 ? "ortiqcha" : "kamomad"}): smena ${closeId}`, sourceType: "cash_close", sourceKey: closeId, lines }]);
+  return no!;
 }
 
 // ---- manual entries and reversals ---------------------------------------------------------------------------------

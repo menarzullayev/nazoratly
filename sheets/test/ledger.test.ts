@@ -37,7 +37,7 @@ afterEach(() => vi.useRealTimers());
 describe("setup: chart, cash accounts and script-only protection", () => {
   it("creates the ledger sheets, seeds the chart and the two cash accounts", () => {
     for (const def of LEDGER_TABLES) expect(h.rows(def.sheet)[0]).toEqual(def.cols.map((c) => c.header));
-    expect(read<ledger.ChartRow>(CHART_ACCOUNTS).map((a) => a.code)).toEqual(["1000", "1010", "2000", "2100", "3000", "4000", "4100", "5000", "5010", "5020", "5030", "5040", "5050", "5090", "5100"]);
+    expect(read<ledger.ChartRow>(CHART_ACCOUNTS).map((a) => a.code)).toEqual(["1000", "1010", "2000", "2100", "3000", "4000", "4100", "4200", "5000", "5010", "5020", "5030", "5040", "5050", "5090", "5100", "5900"]);
     expect(read<{ code: string; kind: string }>(CASH_ACCOUNTS).map((c) => [c.code, c.kind])).toEqual([["1000", "cash"], ["1010", "bank"]]);
     expect(journal()).toEqual([]);
   });
@@ -54,8 +54,8 @@ describe("setup: chart, cash accounts and script-only protection", () => {
 
   it("protecting again replaces the protection (idempotent) and honours the editors listed in the settings", () => {
     setSetting("Jurnalga yozishi mumkin bo'lgan emaillar", "buxgalter@example.com, boshqa@example.com; noto'g'ri");
-    expect(ledger.protectLedgerSheets()).toBe(4);
-    expect(ledger.protectLedgerSheets()).toBe(4);
+    expect(ledger.protectLedgerSheets()).toBe(6);
+    expect(ledger.protectLedgerSheets()).toBe(6);
     for (const def of LEDGER_TABLES) {
       const p = h.protections(def.sheet);
       expect(p).toHaveLength(1);
@@ -67,7 +67,7 @@ describe("setup: chart, cash accounts and script-only protection", () => {
     pay("P0001", 100_000, "2026-11-02");
     ledger.syncLedger();
     setupWorkbook();
-    expect(read<ledger.ChartRow>(CHART_ACCOUNTS)).toHaveLength(15);
+    expect(read<ledger.ChartRow>(CHART_ACCOUNTS)).toHaveLength(17);
     expect(journal()).toHaveLength(2);
     expect(h.protections("Jurnal")).toHaveLength(1);
   });
@@ -434,7 +434,7 @@ describe("demo data never touches the immutable journal", () => {
     setupWorkbook();
     loadSampleData();
     resetSampleData();
-    expect(read<ledger.ChartRow>(CHART_ACCOUNTS)).toHaveLength(15);
+    expect(read<ledger.ChartRow>(CHART_ACCOUNTS)).toHaveLength(17);
     expect(journal()).toHaveLength(0);
   });
 });

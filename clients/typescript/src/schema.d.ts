@@ -950,6 +950,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/cash-close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Closes */
+        get: operations["list_closes_v1_cash_close_get"];
+        put?: never;
+        /** Close the cash desk of a day (smena) */
+        post: operations["close_cash_v1_cash_close_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cash-close/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What the books say the cash desk holds (for the count before closing) */
+        get: operations["preview_v1_cash_close_preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cash-close/{close_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Close */
+        get: operations["get_close_v1_cash_close__close_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/charges": {
         parameters: {
             query?: never;
@@ -1176,6 +1228,41 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/v1/discounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Discounts */
+        get: operations["list_discounts_v1_discounts_get"];
+        put?: never;
+        /** Add a lasting discount rule */
+        post: operations["create_discount_v1_discounts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/discounts/{discount_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** End a rule (or fix its reason); amounts are never edited: add a new rule instead */
+        patch: operations["patch_discount_v1_discounts__discount_id__patch"];
         trace?: never;
     };
     "/v1/documents": {
@@ -2438,6 +2525,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/refunds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Refunds */
+        get: operations["list_refunds_v1_refunds_get"];
+        put?: never;
+        /** Make a refund */
+        post: operations["create_refund_v1_refunds_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/refunds/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** What a refund would do (amounts and problems), nothing is written */
+        post: operations["preview_refund_v1_refunds_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/refunds/{refund_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Refund */
+        get: operations["get_refund_v1_refunds__refund_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/reports/absences": {
         parameters: {
             query?: never;
@@ -2464,6 +2603,23 @@ export interface paths {
         };
         /** Students with overdue debt */
         get: operations["debtors_v1_reports_debtors_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/reports/discounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Discounts given in a month by kind (scholarships separate) */
+        get: operations["discount_report_v1_reports_discounts_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3898,6 +4054,95 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** CashCloseIn */
+        CashCloseIn: {
+            /**
+             * Close Date
+             * @description defaults to today (the center's date); not in the future
+             */
+            close_date?: string | null;
+            /**
+             * Counted
+             * @description the cash actually counted in the drawer, so'm
+             */
+            counted: number | string;
+            /**
+             * Note
+             * @description required when counted differs from the books
+             */
+            note?: string | null;
+            /**
+             * Post Difference
+             * @description also book the difference in the journal (needs the accounting:write right)
+             * @default false
+             */
+            post_difference: boolean;
+        };
+        /** CashCloseOut */
+        CashCloseOut: {
+            /**
+             * Adjustment Entry No
+             * @description the journal entry that booked the difference
+             */
+            adjustment_entry_no: number | null;
+            /** Book Balance */
+            book_balance: string;
+            /**
+             * Close Date
+             * Format: date
+             */
+            close_date: string;
+            /** Counted */
+            counted: string;
+            /** Difference */
+            difference: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Journal Seq
+             * @description last journal line number when the close was made
+             */
+            journal_seq: number;
+            /** Note */
+            note: string | null;
+            /** Shift No */
+            shift_no: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "over" | "short";
+        };
+        /** CashPreview */
+        CashPreview: {
+            /**
+             * Book Balance
+             * @description what the books say the cash desk holds through the date
+             */
+            book_balance: string;
+            /**
+             * Cash In
+             * @description cash received on the date (journal debits of the cash accounts)
+             */
+            cash_in: string;
+            /**
+             * Cash Out
+             * @description cash paid out on the date (journal credits of the cash accounts)
+             */
+            cash_out: string;
+            /**
+             * Close Date
+             * Format: date
+             */
+            close_date: string;
+            /** Journal Seq */
+            journal_seq: number;
+            /** Next Shift No */
+            next_shift_no: number;
+        };
         /** ChangeOut */
         ChangeOut: {
             /**
@@ -4009,6 +4254,25 @@ export interface components {
              * Format: date
              */
             due_date: string;
+            /**
+             * Early Discount
+             * @description so'm off when paid by early_pay_by
+             * @default 0.00
+             */
+            early_discount: string;
+            /**
+             * Early Granted
+             * @description the early discount was earned (the amount is already reduced)
+             * @default false
+             */
+            early_granted: boolean;
+            /** Early Pay By */
+            early_pay_by?: string | null;
+            /**
+             * Gross Amount
+             * @description fee before the lasting discounts (None on older charges)
+             */
+            gross_amount?: string | null;
             /**
              * Id
              * Format: uuid
@@ -4386,6 +4650,130 @@ export interface components {
             };
             /** Demo Mode */
             demo_mode: boolean;
+        };
+        /** DiscountIn */
+        DiscountIn: {
+            /**
+             * Amount
+             * @description so'm off ONE charge (individual only)
+             */
+            amount?: (number | string) | null;
+            /**
+             * Enrollment Id
+             * @description limit the rule to one enrollment (default: every tuition charge of the student)
+             */
+            enrollment_id?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "individual" | "scholarship" | "early_pay";
+            /**
+             * Pay By Day
+             * @description early_pay: the day of the billed month the money must arrive by
+             */
+            pay_by_day?: number | null;
+            /**
+             * Percent
+             * @description percent of the fee (scholarship: 100 = free)
+             */
+            percent?: number | string | null;
+            /** Reason */
+            reason: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /**
+             * Valid From
+             * @description defaults to today (the center's date)
+             */
+            valid_from?: string | null;
+            /**
+             * Valid To
+             * @description empty = until ended
+             */
+            valid_to?: string | null;
+        };
+        /** DiscountKindRow */
+        DiscountKindRow: {
+            /** Amount */
+            amount: string;
+            /** Kind */
+            kind: string;
+            /** Lines */
+            lines: number;
+            /** Students */
+            students: number;
+        };
+        /** DiscountOut */
+        DiscountOut: {
+            /**
+             * Active
+             * @description valid today
+             */
+            active: boolean;
+            /** Amount */
+            amount: string | null;
+            /** Enrollment Id */
+            enrollment_id: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Pay By Day */
+            pay_by_day: number | null;
+            /** Percent */
+            percent: string | null;
+            /** Reason */
+            reason: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+            /**
+             * Valid From
+             * Format: date
+             */
+            valid_from: string;
+            /** Valid To */
+            valid_to: string | null;
+        };
+        /** DiscountPatch */
+        DiscountPatch: {
+            /** Reason */
+            reason?: string | null;
+            /**
+             * Valid To
+             * @description end the rule (the last day it applies)
+             */
+            valid_to?: string | null;
+        };
+        /** DiscountReport */
+        DiscountReport: {
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+            /** Other Total */
+            other_total: string;
+            /** Rows */
+            rows: components["schemas"]["DiscountKindRow"][];
+            /**
+             * Scholarship Total
+             * @description scholarships are shown separately from the other discounts
+             */
+            scholarship_total: string;
+            /** Total */
+            total: string;
         };
         /** DocumentDetail */
         DocumentDetail: {
@@ -4895,12 +5283,24 @@ export interface components {
             /** Created */
             created: number;
             /**
+             * Discounted
+             * @description new charges that got a lasting discount
+             * @default 0
+             */
+            discounted: number;
+            /**
              * Month
              * Format: date
              */
             month: string;
             /** Skipped Existing */
             skipped_existing: number;
+            /**
+             * Skipped Free
+             * @description enrollments that are completely free this month (scholarship): no charge
+             * @default 0
+             */
+            skipped_free: number;
             /**
              * Skipped Package Groups
              * @description enrollments of package-billed groups (billed when a package is sold)
@@ -6218,6 +6618,17 @@ export interface components {
             /** Offset */
             offset: number;
         };
+        /** Page[CashCloseOut] */
+        Page_CashCloseOut_: {
+            /** Has More */
+            has_more: boolean;
+            /** Items */
+            items: components["schemas"]["CashCloseOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
         /** Page[ChargeOut] */
         Page_ChargeOut_: {
             /** Has More */
@@ -6235,6 +6646,17 @@ export interface components {
             has_more: boolean;
             /** Items */
             items: components["schemas"]["CourseOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
+        /** Page[DiscountOut] */
+        Page_DiscountOut_: {
+            /** Has More */
+            has_more: boolean;
+            /** Items */
+            items: components["schemas"]["DiscountOut"][];
             /** Limit */
             limit: number;
             /** Offset */
@@ -6422,6 +6844,17 @@ export interface components {
             has_more: boolean;
             /** Items */
             items: components["schemas"]["PendingTrial"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
+        /** Page[RefundOut] */
+        Page_RefundOut_: {
+            /** Has More */
+            has_more: boolean;
+            /** Items */
+            items: components["schemas"]["RefundOut"][];
             /** Limit */
             limit: number;
             /** Offset */
@@ -6650,6 +7083,12 @@ export interface components {
             paid_at: string;
             /** Payer Guardian Id */
             payer_guardian_id: string | null;
+            /**
+             * Refunded
+             * @description given back in cash or to the bank (a refund)
+             * @default 0.00
+             */
+            refunded: string;
             /**
              * Student Id
              * Format: uuid
@@ -7142,6 +7581,129 @@ export interface components {
             /** Refresh Token */
             refresh_token: string;
         };
+        /** RefundIn */
+        RefundIn: {
+            /**
+             * Amount
+             * @description wrong_payment: so'm to give back (default: all refundable); to_credit: so'm to move to credit
+             */
+            amount?: (number | string) | null;
+            /**
+             * Charge Id
+             * @description leaving, to_credit: the tuition charge
+             */
+            charge_id?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "wrong_payment" | "leaving" | "package_remainder" | "to_credit";
+            /**
+             * Left On
+             * @description leaving: last day attended (default today)
+             */
+            left_on?: string | null;
+            /**
+             * Package Id
+             * @description package_remainder: the package
+             */
+            package_id?: string | null;
+            /**
+             * Payment Id
+             * @description wrong_payment: the mistaken payment
+             */
+            payment_id?: string | null;
+            /**
+             * Payout
+             * @description cash or bank = money leaves; credit = it stays as the student's credit
+             * @enum {string}
+             */
+            payout: "cash" | "bank" | "credit";
+            /** Reason */
+            reason: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+        };
+        /** RefundOut */
+        RefundOut: {
+            /** Amount */
+            amount: string;
+            /** Charge Id */
+            charge_id: string | null;
+            /** Charge Reduction */
+            charge_reduction: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Left On */
+            left_on: string | null;
+            /** Package Id */
+            package_id: string | null;
+            /** Payment Id */
+            payment_id: string | null;
+            /**
+             * Payments
+             * @default []
+             */
+            payments: components["schemas"]["RefundPaymentOut"][];
+            /** Payout */
+            payout: string;
+            /** Reason */
+            reason: string;
+            /**
+             * Refunded On
+             * Format: date
+             */
+            refunded_on: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+        };
+        /** RefundPaymentOut */
+        RefundPaymentOut: {
+            /** Amount */
+            amount: string;
+            /**
+             * Payment Id
+             * Format: uuid
+             */
+            payment_id: string;
+        };
+        /** RefundPreview */
+        RefundPreview: {
+            /**
+             * Amount
+             * @description money that leaves (cash/bank) or becomes credit
+             */
+            amount: string;
+            /** Available */
+            available: string;
+            /**
+             * Charge Reduction
+             * @description how much the tuition charge shrinks
+             */
+            charge_reduction: string;
+            /**
+             * Errors
+             * @description empty when the refund can be made
+             */
+            errors: string[];
+            /** Kind */
+            kind: string;
+            /** Payout */
+            payout: string;
+        };
         /** RegisterIn */
         RegisterIn: {
             /** Center Name */
@@ -7589,6 +8151,16 @@ export interface components {
              */
             excused_mode: "makeup" | "credit" | "none";
             /**
+             * Family Discount 2Nd Percent
+             * @description percent off for the second child of a family (0 = off)
+             */
+            family_discount_2nd_percent: string;
+            /**
+             * Family Discount 3Rd Percent
+             * @description percent off for the third and later children of a family (0 = off)
+             */
+            family_discount_3rd_percent: string;
+            /**
              * Lead Reminder Days
              * @description quiet days after which an open lead shows in the internal reminder list
              */
@@ -7621,6 +8193,10 @@ export interface components {
             ai_sees_names?: boolean | null;
             /** Excused Mode */
             excused_mode?: ("makeup" | "credit" | "none") | null;
+            /** Family Discount 2Nd Percent */
+            family_discount_2nd_percent?: number | string | null;
+            /** Family Discount 3Rd Percent */
+            family_discount_3rd_percent?: number | string | null;
             /** Lead Reminder Days */
             lead_reminder_days?: number | null;
             /** Makeup Expiry Days */
@@ -10636,6 +11212,136 @@ export interface operations {
             };
         };
     };
+    list_closes_v1_cash_close_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_CashCloseOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    close_cash_v1_cash_close_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CashCloseIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashCloseOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_v1_cash_close_preview_get: {
+        parameters: {
+            query?: {
+                /** @description defaults to today */
+                close_date?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_close_v1_cash_close__close_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                close_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashCloseOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_charges_v1_charges_get: {
         parameters: {
             query?: {
@@ -11239,6 +11945,109 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DemoOut"];
+                };
+            };
+        };
+    };
+    list_discounts_v1_discounts_get: {
+        parameters: {
+            query?: {
+                student_id?: string | null;
+                kind?: ("individual" | "scholarship" | "early_pay") | null;
+                active_only?: boolean;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_DiscountOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_discount_v1_discounts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscountIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscountOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_discount_v1_discounts__discount_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                discount_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscountPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscountOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -14326,6 +15135,139 @@ export interface operations {
             };
         };
     };
+    list_refunds_v1_refunds_get: {
+        parameters: {
+            query?: {
+                student_id?: string | null;
+                kind?: ("wrong_payment" | "leaving" | "package_remainder" | "to_credit") | null;
+                date_from?: string | null;
+                date_to?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_RefundOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_refund_v1_refunds_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefundIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefundOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_refund_v1_refunds_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefundIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefundPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_refund_v1_refunds__refund_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                refund_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefundOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     absence_report_v1_reports_absences_get: {
         parameters: {
             query: {
@@ -14379,6 +15321,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DebtorRow"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    discount_report_v1_reports_discounts_get: {
+        parameters: {
+            query: {
+                /** @description any date inside the month */
+                month: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscountReport"];
                 };
             };
             /** @description Validation Error */

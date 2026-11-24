@@ -1,15 +1,16 @@
 /** Menu actions and the server side of the sidebars. Business rules live in ../domain; this file only moves data. */
-import { planCharges } from "../domain/billing";
+import { earlyOffer, planCharges } from "../domain/billing";
 import { computeDebts, debtors, type StudentDebt } from "../domain/debt";
 import { inMonth, isIsoDate, monthStart } from "../domain/dates";
 import { nextId, nextIds } from "../domain/ids";
 import { teacherResolver, type ScheduleChange } from "../domain/calendar";
 import { collectedTuition, computePayroll, heldLessonsFor } from "../domain/payroll";
 import { formatSom, INSTALLMENT_TEMPLATE, planReminders, planUpcomingReminders, UPCOMING_TEMPLATE, type SkipReason } from "../domain/reminders";
-import type { AttendanceRow, Charge, Enrollment, Group, Installment, Payment, ReminderDraft, Student, Teacher } from "../domain/types";
+import type { AttendanceRow, Charge, Enrollment, Group, DiscountLineRow, Installment, Payment, ReminderDraft, Refund, Student, StudentDiscount, Teacher } from "../domain/types";
 import { append, read, readIfPresent, replaceWhere, today, updateById } from "./repo";
 import {
-  ATTENDANCE, CHARGES, DEBTORS_SHEET, DRAFTS, ENROLLMENTS, GROUPS, INSTALLMENTS, PAYMENTS, PAYROLL, STUDENTS, TEACHERS, SCHEDULE_CHANGES } from "./schema";
+  ATTENDANCE, CHARGES, DEBTORS_SHEET, DISCOUNT_LINES, DISCOUNTS, DRAFTS, ENROLLMENTS, GROUPS, INSTALLMENTS, PAYMENTS, PAYROLL, REFUNDS, STUDENTS, TEACHERS, SCHEDULE_CHANGES,
+} from "./schema";
 import { readSettings } from "./settings";
 import { balanceRich, EFFECT_PARTY, receiptRich, reminderRich, type OpenCharge } from "../domain/messages";
 import { applyBotProfile } from "./botProfile";
@@ -62,14 +63,30 @@ export function generateMonthlyCharges(): void {
   const summary = withLock(() => {
     const s = readSettings();
     const charges = read<Charge>(CHARGES);
+    const students = read<StudentRow>(STUDENTS);
     const plan = planCharges({
-      month, dueDay: s.dueDay, enrollments: read<Enrollment>(ENROLLMENTS), groups: read<Group>(GROUPS), students: read<StudentRow>(STUDENTS), charges,
+      month, dueDay: s.dueDay, enrollments: read<Enrollment>(ENROLLMENTS), groups: read<Group>(GROUPS), students, charges,
+      discounts: readIfPresent<StudentDiscount>(DISCOUNTS), family: { second: s.familySecond, third: s.familyThird },
     });
     const ids = nextIds("C", charges.map((c) => c.id), plan.create.length);
     const reduced = reduceByCredits(plan.create, ids);
-    append(CHARGES, plan.create.map((c, i) => ({ ...c, amount: reduced.amounts[i]!, id: ids[i]!, voided: false })));
+    const demo = new Set(students.filter((st) => st.demo === true).map((st) => st.id));
+    const offers = plan.create.map((c, i) => earlyOffer(c, reduced.amounts[i]!));
+    const lineRows = [
+      ...plan.create.flatMap((c, i) => c.discounts.map((d) => ({ studentId: c.studentId, enrollmentId: c.enrollmentId, chargeId: ids[i]!, month: c.month, kind: d.kind, sourceId: d.sourceId, percent: d.percent, amount: d.amount, reason: d.reason, demo: demo.has(c.studentId) }))),
+      ...plan.free.flatMap((f) => f.discounts.map((d) => ({ studentId: f.studentId, enrollmentId: f.enrollmentId, chargeId: "", month: f.month, kind: d.kind, sourceId: d.sourceId, percent: d.percent, amount: d.amount, reason: d.reason, demo: demo.has(f.studentId) }))),
+    ];
+    append(CHARGES, plan.create.map((c, i) => ({ id: ids[i]!, studentId: c.studentId, enrollmentId: c.enrollmentId, month: c.month, amount: reduced.amounts[i]!, dueDate: c.dueDate, note: c.note, voided: false, grossAmount: c.grossAmount, earlyDiscount: offers[i]!.discount, earlyPayBy: offers[i]!.payBy })));
+    // free months have no charge, so only the lines tell that a month was handled: never write one twice
+    const have = new Set(readIfPresent<DiscountLineRow>(DISCOUNT_LINES).map((l) => `${l.enrollmentId}|${l.month}|${l.kind}|${l.sourceId}`));
+    const fresh = lineRows.filter((l) => !have.has(`${l.enrollmentId}|${l.month}|${l.kind}|${l.sourceId}`));
+    if (fresh.length) append(DISCOUNT_LINES, fresh);
     markCreditsUsed(reduced.consumed);
-    return `${month.slice(0, 7)}: ${plan.create.length} ta yangi hisob yaratildi (kreditdan ayirilgan: ${reduced.consumed.length}).\nAvval yaratilgan: ${plan.skippedExisting}.\nNarxi 0 bo'lgani uchun o'tkazib yuborilgan: ${plan.skippedZeroFee}.\nAbonement guruhlari (abonement sotilganda hisob yaratiladi): ${plan.skippedPackageGroups}.`;
+    return `${month.slice(0, 7)}: ${plan.create.length} ta yangi hisob yaratildi (kreditdan ayirilgan: ${reduced.consumed.length}, chegirma bilan: ${plan.discounted}).
+Avval yaratilgan: ${plan.skippedExisting}.
+Narxi 0 bo'lgani uchun o'tkazib yuborilgan: ${plan.skippedZeroFee}.
+To'liq bepul (stipendiya, hisob yaratilmadi): ${plan.skippedFree}.
+Abonement guruhlari (abonement sotilganda hisob yaratiladi): ${plan.skippedPackageGroups}.`;
   });
   ui().alert("Oylik hisoblar", summary, ui().ButtonSet.OK);
 }
@@ -77,7 +94,7 @@ export function generateMonthlyCharges(): void {
 // ------------------------------------------------------------------ debtors report
 function debtState(): { students: StudentRow[]; debts: StudentDebt[]; balances: ReturnType<typeof computeDebts>["balances"] } {
   const { charges, payments, installments } = loadFinance();
-  const r = computeDebts(charges, payments, today(), installments);
+  const r = computeDebts(charges, payments, today(), installments, readIfPresent<Refund>(REFUNDS));
   return { students: read<StudentRow>(STUDENTS), debts: r.students, balances: r.balances };
 }
 
@@ -304,7 +321,7 @@ export function calculatePayroll(): void {
     const enrollments = read<Enrollment>(ENROLLMENTS);
     const attendance = read<AttendanceRow>(ATTENDANCE);
     const { charges, payments, installments } = loadFinance();
-    const { balances } = computeDebts(charges, payments, today(), installments);
+    const { balances } = computeDebts(charges, payments, today(), installments, readIfPresent<Refund>(REFUNDS));
     type PayRow = { month: string; teacherId: string; status: string; bonus: number };
     const existing = read<PayRow>(PAYROLL);
     const locked = new Set(existing.filter((r) => r.month === month && r.status !== "draft").map((r) => r.teacherId));

@@ -22,6 +22,9 @@ SALARY_PAYABLE = "2100"
 CAPITAL = "3000"
 TUITION_INCOME = "4000"
 TEACHER_PAY = "5100"
+REFUNDS = "4200"  # contra-income: money given back, shown as a negative income line
+OTHER_INCOME = "4100"
+CASH_DIFFERENCE = "5900"  # cash short at a daily cash close
 
 # (code, name, type); the normal side follows from the type: asset and expense are debit, the rest credit
 CHART: tuple[tuple[str, str, str], ...] = (
@@ -32,6 +35,7 @@ CHART: tuple[tuple[str, str, str], ...] = (
     ("3000", "Egasi kapitali", "equity"),
     ("4000", "O'quv to'lovlari", "income"),
     ("4100", "Boshqa daromadlar", "income"),
+    ("4200", "Qaytarilgan to'lovlar", "income"),
     ("5000", "Ijara", "expense"),
     ("5010", "Kommunal xizmatlar", "expense"),
     ("5020", "Boshqa xodimlar maoshi", "expense"),
@@ -40,6 +44,7 @@ CHART: tuple[tuple[str, str, str], ...] = (
     ("5050", "Soliqlar", "expense"),
     ("5090", "Boshqa xarajatlar", "expense"),
     ("5100", "O'qituvchilar oyligi", "expense"),
+    ("5900", "Kassa kamomadi", "expense"),
 )
 ACCOUNT_TYPES = ("asset", "liability", "equity", "income", "expense")
 EXPENSE_ACCOUNT = {
@@ -82,6 +87,16 @@ def posting_lines(event: dict[str, Any]) -> Lines:
         return [(TEACHER_PAY, amount, ZERO), (SALARY_PAYABLE, ZERO, amount)]
     if kind == "payroll_payment":
         return [(SALARY_PAYABLE, amount, ZERO), (CASH, ZERO, amount)]
+    if kind == "refund":
+        # money given back (cash or bank); a refund that stays as credit moves no money, so nothing is posted
+        if event["payout"] == "credit":
+            return []
+        return [(REFUNDS, amount, ZERO), (cash_account(event["payout"]), ZERO, amount)]
+    if kind == "cash_close":
+        # the counted cash differs from the books: `over` = more cash than booked, `short` = less
+        if event["direction"] == "over":
+            return [(CASH, amount, ZERO), (OTHER_INCOME, ZERO, amount)]
+        return [(CASH_DIFFERENCE, amount, ZERO), (CASH, ZERO, amount)]
     raise ValueError(f"unknown posting event {kind!r}")
 
 
@@ -91,6 +106,8 @@ _EVENT_OF = {
     "bill_payment": "bill_payment",
     "payroll_accrual": "payroll_accrual",
     "payroll_payment": "payroll_payment",
+    "refund": "refund",
+    "cash_close": "cash_close",
 }
 _ORDER = {t: i for i, t in enumerate(_EVENT_OF)}
 

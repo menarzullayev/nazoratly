@@ -6,11 +6,11 @@ import { computeDebts } from "../domain/debt";
 import { inMonth, isIsoDate, monthStart } from "../domain/dates";
 import { monthlyFinance, paymentStatus, studentMovement, waitingItems, type EnrollmentFact } from "../domain/dashboard";
 import { funnelReport, STAGES } from "../domain/funnel";
-import type { AttendanceRow, Charge, Enrollment, Entitlement, Expense, Group, Installment, Lead, Payment, Student } from "../domain/types";
+import type { Refund, AttendanceRow, Charge, Enrollment, Entitlement, Expense, Group, Installment, Lead, Payment, Student } from "../domain/types";
 import { lessonsAttended } from "./admission";
 import { loadBalances } from "./packages";
 import { read, readIfPresent, today } from "./repo";
-import { ATTENDANCE, CHARGES, DASHBOARD_SHEET, ENROLLMENTS, ENTITLEMENTS, EXPENSES, GROUPS, INSTALLMENTS, LEADS, PAYMENTS, PAYROLL, STUDENTS } from "./schema";
+import { REFUNDS, ATTENDANCE, CHARGES, DASHBOARD_SHEET, ENROLLMENTS, ENTITLEMENTS, EXPENSES, GROUPS, INSTALLMENTS, LEADS, PAYMENTS, PAYROLL, STUDENTS } from "./schema";
 import { loadOffers } from "./waitlist";
 import { readSettings } from "./settings";
 
@@ -86,7 +86,7 @@ export function buildBlocks(): DashboardBlocks {
   const charges = read<Charge>(CHARGES);
   const payments = read<Payment>(PAYMENTS);
   const installments = readIfPresent<Installment>(INSTALLMENTS);
-  const { students: debts } = computeDebts(charges, payments, now, installments);
+  const { students: debts } = computeDebts(charges, payments, now, installments, readIfPresent<Refund>(REFUNDS));
   const debtOf = new Map(debts.map((d) => [d.studentId, d]));
   const { balances } = loadBalances(["active", "frozen"]);
   const packageDebt = new Map<string, number>();
@@ -215,7 +215,7 @@ export function refreshDashboard(): void {
   const students = read<Student>(STUDENTS);
   const charges = read<Charge>(CHARGES);
   const payments = read<Payment>(PAYMENTS);
-  const { students: debts } = computeDebts(charges, payments, now, readIfPresent<Installment>(INSTALLMENTS));
+  const { students: debts } = computeDebts(charges, payments, now, readIfPresent<Installment>(INSTALLMENTS), readIfPresent<Refund>(REFUNDS));
   const attendance = read<AttendanceRow>(ATTENDANCE).filter((a) => inMonth(a.date, month));
   const active = students.filter((s) => s.status === "active").length;
   const monthCharged = charges.filter((c) => !c.voided && c.month === month).reduce((s, c) => s + c.amount, 0);

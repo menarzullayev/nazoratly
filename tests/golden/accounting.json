@@ -36,6 +36,11 @@
    "type": "income"
   },
   {
+   "code": "4200",
+   "name": "Qaytarilgan to'lovlar",
+   "type": "income"
+  },
+  {
    "code": "5000",
    "name": "Ijara",
    "type": "expense"
@@ -73,6 +78,11 @@
   {
    "code": "5100",
    "name": "O'qituvchilar oyligi",
+   "type": "expense"
+  },
+  {
+   "code": "5900",
+   "name": "Kassa kamomadi",
    "type": "expense"
   }
  ],
@@ -480,6 +490,104 @@
     "category": "rent",
     "amount": "-5.00",
     "paid_from": "cash"
+   },
+   "out": []
+  },
+  {
+   "name": "refund in cash",
+   "event": {
+    "event": "refund",
+    "payout": "cash",
+    "amount": "200000.00"
+   },
+   "out": [
+    [
+     "4200",
+     "200000.00",
+     "0.00"
+    ],
+    [
+     "1000",
+     "0.00",
+     "200000.00"
+    ]
+   ]
+  },
+  {
+   "name": "refund to the bank",
+   "event": {
+    "event": "refund",
+    "payout": "bank",
+    "amount": "75000.50"
+   },
+   "out": [
+    [
+     "4200",
+     "75000.50",
+     "0.00"
+    ],
+    [
+     "1010",
+     "0.00",
+     "75000.50"
+    ]
+   ]
+  },
+  {
+   "name": "refund kept as credit posts nothing",
+   "event": {
+    "event": "refund",
+    "payout": "credit",
+    "amount": "200000.00"
+   },
+   "out": []
+  },
+  {
+   "name": "cash close: more cash than booked",
+   "event": {
+    "event": "cash_close",
+    "direction": "over",
+    "amount": "50000.00"
+   },
+   "out": [
+    [
+     "1000",
+     "50000.00",
+     "0.00"
+    ],
+    [
+     "4100",
+     "0.00",
+     "50000.00"
+    ]
+   ]
+  },
+  {
+   "name": "cash close: cash short",
+   "event": {
+    "event": "cash_close",
+    "direction": "short",
+    "amount": "20000.00"
+   },
+   "out": [
+    [
+     "5900",
+     "20000.00",
+     "0.00"
+    ],
+    [
+     "1000",
+     "0.00",
+     "20000.00"
+    ]
+   ]
+  },
+  {
+   "name": "cash close with no difference posts nothing",
+   "event": {
+    "event": "cash_close",
+    "direction": "short",
+    "amount": "0.00"
    },
    "out": []
   }

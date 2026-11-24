@@ -19,6 +19,11 @@ export function decodeCell(col: ColDef, cell: Cell, fmtDate: (d: Date) => string
       const n = typeof cell === "number" ? cell : Number(String(cell).replace(/[\s,]/g, ""));
       return Number.isFinite(n) ? Math.round(n) : 0;
     }
+    case "num": {
+      if (cell === "" || cell == null) return 0;
+      const n = typeof cell === "number" ? cell : Number(String(cell).replace(/\s/g, "").replace(",", "."));
+      return Number.isFinite(n) ? Math.round(n * 100) / 100 : 0;
+    }
     case "bool":
       return typeof cell === "boolean" ? cell : YES.has(String(cell ?? "").trim().toLowerCase());
     case "enum": {
@@ -41,6 +46,7 @@ export function encodeCell(col: ColDef, value: unknown, toDate?: (iso: string) =
     case "enum":
       return col.labels?.[String(value)] ?? String(value ?? "");
     case "int":
+    case "num":
       return typeof value === "number" ? value : Number(value ?? 0) || 0;
     default:
       return value == null ? "" : String(value);

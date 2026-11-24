@@ -4,11 +4,11 @@
 import { computeDebts } from "../domain/debt";
 import { documentNumber, deliveryText, renderDocumentHtml, type DocLine, type DocSnapshot, type DocumentKind } from "../domain/documents";
 import { installmentBalances, validatePlan } from "../domain/installments";
-import type { Charge, Installment, Payment, Student } from "../domain/types";
+import type { Refund, Charge, Installment, Payment, Student } from "../domain/types";
 import { guard, withLock } from "./actions";
 import { pickId } from "./pick";
 import { append, read, readIfPresent, today, updateById } from "./repo";
-import { CHARGES, DOCUMENTS, INSTALLMENTS, PAYMENTS, STUDENTS } from "./schema";
+import { REFUNDS, CHARGES, DOCUMENTS, INSTALLMENTS, PAYMENTS, STUDENTS } from "./schema";
 import { readSettings } from "./settings";
 import { getToken, props, sendDocument, sendRich } from "./telegram";
 
@@ -65,7 +65,7 @@ export function issueReceipt(paymentId?: string): string {
     if (prev) return prev.number; // one receipt per payment
     const student = read<Student>(STUDENTS).find((s) => s.id === payment.studentId);
     const charges = read<Charge>(CHARGES);
-    const debt = computeDebts(charges, read<Payment>(PAYMENTS), today(), readIfPresent<Installment>(INSTALLMENTS)).students.find((d) => d.studentId === payment.studentId);
+    const debt = computeDebts(charges, read<Payment>(PAYMENTS), today(), readIfPresent<Installment>(INSTALLMENTS), readIfPresent<Refund>(REFUNDS)).students.find((d) => d.studentId === payment.studentId);
     const s = readSettings();
     const t = today();
     const snap: DocSnapshot = {
@@ -85,7 +85,7 @@ export function issueInvoice(studentId?: string): string {
     const t = today();
     const charges = read<Charge>(CHARGES);
     const installments = readIfPresent<Installment>(INSTALLMENTS);
-    const { balances } = computeDebts(charges, read<Payment>(PAYMENTS), t, installments);
+    const { balances } = computeDebts(charges, read<Payment>(PAYMENTS), t, installments, readIfPresent<Refund>(REFUNDS));
     const lines: DocLine[] = [];
     for (const b of balances.filter((x) => x.studentId === id && x.outstanding > 0).sort((a, c) => (a.dueDate < c.dueDate ? -1 : 1))) {
       const name = `${KIND_LABEL.tuition} ${b.month.slice(0, 7)}`;
