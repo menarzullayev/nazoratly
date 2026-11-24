@@ -4,6 +4,7 @@ import * as admission from "./gas/admission";
 import * as demo from "./gas/demo";
 import * as documents from "./gas/documents";
 import * as importer from "./gas/importer";
+import * as insights from "./gas/insights";
 import * as qr from "./gas/qr";
 import * as waitlist from "./gas/waitlist";
 import * as ledger from "./gas/ledger";
@@ -33,6 +34,13 @@ g.onOpen = (): void => {
     .addItem("Oylik hisoblarni yaratish", "menuGenerateCharges")
     .addItem("Qarzdorlar hisoboti", "menuDebtors")
     .addItem("Boshqaruv panelini yangilash", "menuDashboard")
+    .addSubMenu(
+      SpreadsheetApp.getUi()
+        .createMenu("Hisobotlar (qoidalar bo'yicha)")
+        .addItem("Haftalik xulosa", "menuInsightWeekly")
+        .addItem("Qarz bo'yicha maslahat va qoralamalar", "menuInsightDebt")
+        .addItem("Ketish xavfi ro'yxati", "menuInsightRisk"),
+    )
     .addSeparator()
     .addSubMenu(
       SpreadsheetApp.getUi()
@@ -157,6 +165,9 @@ g.openPayment = (): void => SpreadsheetApp.getUi().showModalDialog(html("Payment
 g.menuGenerateCharges = (): void => actions.guard("Oylik hisoblar", actions.generateMonthlyCharges);
 g.menuDebtors = (): void => actions.guard("Qarzdorlar", actions.refreshDebtors);
 g.menuDashboard = (): void => actions.guard("Boshqaruv paneli", actions.refreshDashboard);
+g.menuInsightWeekly = (): void => actions.guard("Haftalik xulosa", insights.menu.weekly);
+g.menuInsightDebt = (): void => actions.guard("Qarz bo'yicha maslahat", insights.menu.debt);
+g.menuInsightRisk = (): void => actions.guard("Ketish xavfi", insights.menu.risk);
 g.menuCreateDrafts = (): void => actions.guard("Eslatmalar", actions.createReminderDrafts);
 g.menuSendApproved = (): void => actions.guard("Telegram", actions.sendApprovedReminders);
 g.menuSetupTelegram = (): void => actions.guard("Telegram", actions.setupTelegram);

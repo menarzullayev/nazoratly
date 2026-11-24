@@ -75,3 +75,9 @@ Foydalanuvchi bilan hisobotlar o'zbek lotin tilida; kod/izoh/identifikatorlar in
 - KUTMOQDA (egasining ruxsati): (1) 0016 ni lokal bazaga qo'llash (oldin `pg_dump`; docker image qayta quriladi: `ui/` fayllari), (2) `clasp push` + Sheet'da "Boshlang'ich sozlash" (yangi ustunlar, `Navbat` varag'i). Yangi OAuth ruxsati yo'q.
 - Qaror: demo pul jurnalga tushmaydi; demo o'chirish faqat `demo_clear()` orqali; QR faqat tasodifiy kod; navbat holatga asoslangan (hodisa emas).
 - Tekshirilmagan: kamera orqali skanerlash (haqiqiy qurilma, Google Sheets iframe), Telegramga QR PDF yuborish haqiqiy botda, `/ui/*` sahifalarining mobil ko'rinishi. Sayt (landing) bu bosqichda O'ZGARTIRILMAGAN (8-bosqich: rol tugmalari).
+
+## Holat 2026-11-24: kengayish 2, G5 AI yordamchi (branch `claude/expansion2-ai-9e196e`)
+- API: `POST /v1/ai/reports {kind: weekly_summary|debt_followup|churn_risk}`, `GET /v1/ai/reports[/{id}]`. Faqat taklif va qoralama: hech narsa yuborilmaydi. Migratsiyalar 0040 (org_settings: `ai_enabled`, `ai_sees_names`=false, `ai_daily_limit`=20) va 0041 (`ai_reports`, o'zgarmas).
+- AI: xost tomonidagi ishchi `python -m nazoratly.ai_host_worker` (Docker tashqarisida, `claude -p` tool'siz, Haiku). Env: `NAZORATLY_AI_WORKER_TOKEN` (ishchi va API'da bir xil), API'da `NAZORATLY_AI_WORKER_URL`. Sozlanmasa yoki limit/xato bo'lsa hisobot qoidalar bo'yicha (`source=rules`, `fallback_reason`).
+- Maxfiylik: AI faqat `S001` kabi kodlarni ko'radi; ismlar markazning `ai_sees_names` tanlovi bilan (faqat owner o'zgartiradi). Javob lokal tiklanadi.
+- Sheets: menyu "Hisobotlar (qoidalar bo'yicha)": 3 ta varaq, formulalar `tests/golden/insights.json` orqali API bilan bir xil. Yangi OAuth scope yo'q.

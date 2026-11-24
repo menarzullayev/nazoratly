@@ -8,6 +8,7 @@ from nazoratly.routers import (
     academics,
     accounting,
     agents,
+    ai,
     auth,
     dashboard,
     demo,
@@ -55,4 +56,5 @@ router.include_router(accounting.router)
 router.include_router(payables.router)
 router.include_router(reconciliation.router)
 router.include_router(agents.router)
+router.include_router(ai.router)
 router.include_router(pay.settings_router)

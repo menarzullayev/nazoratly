@@ -10,6 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from nazoratly import __version__, errors
+from nazoratly.ai_transport import build_transport
 from nazoratly.config import Settings, get_settings
 from nazoratly.db import Database
 from nazoratly.middleware import BodyLimitMiddleware, RateLimitMiddleware, RequestContextMiddleware
@@ -56,6 +57,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.secrets_box = (
         SecretsBox(settings.secrets_key.get_secret_value()) if settings.secrets_key else None
     )
+    app.state.ai_transport = build_transport(settings)  # None = AI not configured (rule-based reports only)
     errors.install(app)
 
     app.add_middleware(BodyLimitMiddleware, max_bytes=settings.max_body_bytes)

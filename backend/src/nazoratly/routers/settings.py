@@ -9,6 +9,7 @@ from pydantic import Field, StringConstraints
 
 from nazoratly.db import Conn, execute, fetch_one
 from nazoratly.deps import DB, Principal, require
+from nazoratly.errors import Forbidden
 from nazoratly.idempotency import IdempotentRoute
 from nazoratly.schemas import Model, Out
 
@@ -27,6 +28,11 @@ class SettingsOut(Out):
     requisites: str | None = Field(
         description="the center's own requisites, printed on receipts and invoices"
     )
+    ai_enabled: bool = Field(description="AI-written reports are allowed (off = rule-based reports only)")
+    ai_sees_names: bool = Field(
+        description="the AI may receive real student names (default off: pseudonyms only, names restored locally)"
+    )
+    ai_daily_limit: int = Field(description="AI-written reports per day; the rest are rule-based")
 
 
 class SettingsPatch(Model):
@@ -40,6 +46,9 @@ class SettingsPatch(Model):
     requisites: Annotated[str, StringConstraints(strip_whitespace=True, max_length=1000)] | None = Field(
         default=None, description="empty string clears it"
     )
+    ai_enabled: bool | None = None  # AI switches need org:manage (the owner)
+    ai_sees_names: bool | None = None
+    ai_daily_limit: Annotated[int, Field(ge=0, le=200)] | None = None
 
 
 async def load_settings(conn: Conn, org_id: int) -> SettingsOut:
@@ -49,7 +58,7 @@ async def load_settings(conn: Conn, org_id: int) -> SettingsOut:
     )
     row = await fetch_one(
         conn,
-        "SELECT trial_free_lessons, trial_free_days, excused_mode, makeup_expiry_days, makeup_lapses, package_expiry_days, package_low_lessons, demo_mode, requisites FROM org_settings WHERE org_id = %s",
+        "SELECT trial_free_lessons, trial_free_days, excused_mode, makeup_expiry_days, makeup_lapses, package_expiry_days, package_low_lessons, demo_mode, requisites, ai_enabled, ai_sees_names, ai_daily_limit FROM org_settings WHERE org_id = %s",
         (org_id,),
     )
     assert row is not None
@@ -67,6 +76,8 @@ async def patch_settings(
     body: SettingsPatch, p: Annotated[Principal, Depends(require("academics:write"))], db: DB
 ) -> SettingsOut:
     changes = body.model_dump(exclude_unset=True, exclude_none=True)
+    if any(k.startswith("ai_") for k in changes) and not p.can("org:manage"):
+        raise Forbidden("only the owner can change the AI switches")
     async with db.tx(p.session()) as conn:
         await load_settings(conn, p.org_id)
         for column, value in changes.items():  # column names come from the model above, never from the client

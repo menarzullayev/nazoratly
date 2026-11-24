@@ -47,6 +47,12 @@ class Settings(BaseSettings):
         None  # Telegram setWebhook secret_token (also sent to the target as ?s=)
     )
 
+    # AI assistant (G5): the host-side worker that runs `claude -p`; unset = AI not configured = rule-based reports only.
+    ai_worker_url: str | None = None
+    ai_worker_token: SecretStr | None = None
+    ai_model: str = "haiku"
+    ai_timeout_s: float = Field(default=90.0, gt=0)
+
     sentry_dsn: SecretStr | None = None
     otel_exporter_otlp_endpoint: str | None = None
     service_name: str = "nazoratly-api"
@@ -64,6 +70,8 @@ class Settings(BaseSettings):
         "otel_exporter_otlp_endpoint",
         "tg_relay_target",
         "tg_relay_secret",
+        "ai_worker_url",
+        "ai_worker_token",
         mode="before",
     )
     @classmethod
