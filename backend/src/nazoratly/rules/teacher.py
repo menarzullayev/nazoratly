@@ -73,10 +73,7 @@ def unmarked_lessons(lessons: list[dict[str, Any]], now: str, after_hours: int) 
         if ended > t_now:
             continue
         remind_at = ended + timedelta(hours=after_hours)
-        if lesson["reminded"]:
-            state = "reminded"
-        else:
-            state = "reminder_due" if remind_at <= t_now else "waiting"
+        state = "reminded" if lesson["reminded"] else ("reminder_due" if remind_at <= t_now else "waiting")
         out.append(
             {
                 "id": lesson["id"],

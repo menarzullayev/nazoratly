@@ -241,6 +241,30 @@ class Worker:
         await self._http.aclose()
 
     async def run_once(self) -> int:
+        return await self._run_outbox() + await self._run_staff_notices()
+
+    async def _run_staff_notices(self) -> int:
+        """Internal reminders to staff (G8): the same claim/complete pattern, delivered to the person's own Telegram chat."""
+        async with self.pool.connection() as conn:
+            cur = await conn.execute("SELECT * FROM staff_notice_claim(%s)", (self.settings.worker_batch,))
+            claimed = list(await cur.fetchall())
+        sender = self.senders.get("telegram")
+        for row in claimed:
+            if sender is None:
+                outcome = Outcome(False, "telegram is not configured", permanent=True)
+            else:
+                outcome = await sender.send(
+                    Message(int(row["notice_id"]), "telegram", row["body"], row["telegram_chat_id"], None)
+                )
+            async with self.pool.connection() as conn:
+                await conn.execute(
+                    "SELECT staff_notice_complete(%s, %s, %s, %s, %s)",
+                    (row["notice_id"], outcome.ok, outcome.error, outcome.retry_after_s, outcome.permanent),
+                )
+            log.info("staff_notice_processed", notice_id=row["notice_id"], ok=outcome.ok, error=outcome.error)
+        return len(claimed)
+
+    async def _run_outbox(self) -> int:
         async with self.pool.connection() as conn:
             cur = await conn.execute("SELECT * FROM outbox_claim(%s)", (self.settings.worker_batch,))
             claimed = list(await cur.fetchall())

@@ -57,6 +57,13 @@ $$;
 REVOKE ALL ON FUNCTION active_org_ids() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION active_org_ids() TO nazoratly_app;
 
+-- has this lesson's teacher already been reminded? (the notification rows of other people are private, the fact is not)
+CREATE FUNCTION lesson_reminded(p_lesson bigint) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, pg_temp AS $$
+  SELECT EXISTS (SELECT 1 FROM staff_notifications WHERE org_id = app_org_id() AND lesson_id = p_lesson AND kind = 'lesson_unmarked')
+$$;
+REVOKE ALL ON FUNCTION lesson_reminded(bigint) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION lesson_reminded(bigint) TO nazoratly_app;
+
 CREATE FUNCTION staff_notice_claim(p_limit integer DEFAULT 20)
 RETURNS TABLE (notice_id bigint, org_id bigint, body text, telegram_chat_id bigint, attempts smallint)
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$

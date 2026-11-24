@@ -53,6 +53,15 @@ class Settings(BaseSettings):
     ai_model: str = "haiku"
     ai_timeout_s: float = Field(default=90.0, gt=0)
 
+    # Teacher app (G8). All optional: without them the bot webhook and the Mini App login answer 404 and replies are not sent.
+    telegram_bot_token: SecretStr | None = None  # also checks the Mini App initData signature
+    telegram_bot_username: str | None = None  # without @; builds the t.me invitation link
+    telegram_api_base: str = "https://api.telegram.org"
+    tg_teacher_secret: SecretStr | None = None  # secret_token of the teacher bot webhook
+    teacher_reminder_interval_s: int = Field(
+        default=300, ge=0
+    )  # reminder loop in the API process; 0 = off (env test: off)
+
     sentry_dsn: SecretStr | None = None
     otel_exporter_otlp_endpoint: str | None = None
     service_name: str = "nazoratly-api"
@@ -72,6 +81,9 @@ class Settings(BaseSettings):
         "tg_relay_secret",
         "ai_worker_url",
         "ai_worker_token",
+        "telegram_bot_token",
+        "telegram_bot_username",
+        "tg_teacher_secret",
         mode="before",
     )
     @classmethod
