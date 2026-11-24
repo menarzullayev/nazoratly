@@ -81,3 +81,9 @@ Foydalanuvchi bilan hisobotlar o'zbek lotin tilida; kod/izoh/identifikatorlar in
 - AI: xost tomonidagi ishchi `python -m nazoratly.ai_host_worker` (Docker tashqarisida, `claude -p` tool'siz, Haiku). Env: `NAZORATLY_AI_WORKER_TOKEN` (ishchi va API'da bir xil), API'da `NAZORATLY_AI_WORKER_URL`. Sozlanmasa yoki limit/xato bo'lsa hisobot qoidalar bo'yicha (`source=rules`, `fallback_reason`).
 - Maxfiylik: AI faqat `S001` kabi kodlarni ko'radi; ismlar markazning `ai_sees_names` tanlovi bilan (faqat owner o'zgartiradi). Javob lokal tiklanadi.
 - Sheets: menyu "Hisobotlar (qoidalar bo'yicha)": 3 ta varaq, formulalar `tests/golden/insights.json` orqali API bilan bir xil. Yangi OAuth scope yo'q.
+
+## Holat 2026-11-24: kengayish 2, G2 jadval va xonalar (branch `claude/expansion2-schedule-6fd5ba`, reja `docs/superpowers/plans/2026-11-24-schedule.md`)
+- Qurildi (ikkala mahsulotda): oltin qoidalar `tests/golden/schedule.json` (to'qnashuv, xona sig'imi, o'rinbosar, oylik ta'siri, vasiy xabari, jadval matni), migratsiya 0025 (`lessons.substitute_teacher_id`, `lesson_changes`, `schedule_notices`), API (`/v1/calendar`, `/v1/schedule/checks`, move/cancel/substitute, `/v1/schedule-notices`, `/ui/calendar`), Sheets (`Xonalar`, `Dars o'zgarishlari`, taqvim, menyu "Jadval va xonalar", oylik o'rinbosarga).
+- KUTMOQDA (egasining ruxsati): 0025 ni lokal bazaga qo'llash (oldin `pg_dump`; docker image qayta quriladi: `ui/calendar.*`), `clasp push` + Sheet'da "Boshlang'ich sozlash" (2 yangi varaq, `Guruhlar.Xona ID`). Yangi OAuth ruxsati yo'q.
+- Qaror: vasiy xabari LOYIHA (faqat bog'langan, rozilik bergan vasiyga); tasdiqlash `academics:write` rollarida; to'qnashuv 409, egasi `allow_conflict` bilan o'tkazadi; qat'iy/foizli o'qituvchi darsni yo'qotsa oyligi o'zgarmaydi.
+- Tekshirilmagan: Sheets menyusi va `Taqvim` varag'i haqiqiy Google muhitida; `/ui/calendar` ning mobil ko'rinishi; xabarlarning haqiqiy Telegramga yuborilishi.

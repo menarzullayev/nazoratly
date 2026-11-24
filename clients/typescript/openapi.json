@@ -815,6 +815,28 @@
         "title": "ApproveIn",
         "type": "object"
       },
+      "ApproveNoticeIn": {
+        "additionalProperties": false,
+        "properties": {
+          "channel": {
+            "anyOf": [
+              {
+                "enum": [
+                  "telegram",
+                  "sms"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Channel"
+          }
+        },
+        "title": "ApproveNoticeIn",
+        "type": "object"
+      },
       "AttendanceIn": {
         "additionalProperties": false,
         "properties": {
@@ -1461,6 +1483,323 @@
         "title": "BranchPatch",
         "type": "object"
       },
+      "CalendarDay": {
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/CalendarEntry"
+            },
+            "title": "Entries",
+            "type": "array"
+          },
+          "weekday": {
+            "description": "ISO weekday, 1 = Monday",
+            "title": "Weekday",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "date",
+          "weekday",
+          "entries"
+        ],
+        "title": "CalendarDay",
+        "type": "object"
+      },
+      "CalendarEntry": {
+        "properties": {
+          "capacity_problem": {
+            "description": "ok | group_capacity_over_room | enrolled_over_room",
+            "title": "Capacity Problem",
+            "type": "string"
+          },
+          "conflicts": {
+            "items": {
+              "$ref": "#/components/schemas/ClashOut"
+            },
+            "title": "Conflicts",
+            "type": "array"
+          },
+          "end_time": {
+            "format": "time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "enrolled": {
+            "title": "Enrolled",
+            "type": "integer"
+          },
+          "group_capacity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Capacity"
+          },
+          "group_id": {
+            "format": "uuid",
+            "title": "Group Id",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "is_substitute": {
+            "title": "Is Substitute",
+            "type": "boolean"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "lesson_date": {
+            "format": "date",
+            "title": "Lesson Date",
+            "type": "string"
+          },
+          "lesson_id": {
+            "format": "uuid",
+            "title": "Lesson Id",
+            "type": "string"
+          },
+          "moved_from_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Moved From Date"
+          },
+          "room_capacity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Room Capacity"
+          },
+          "room_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Room Id"
+          },
+          "room_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Room Name"
+          },
+          "start_time": {
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "teacher_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Teacher Id"
+          },
+          "teacher_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Teacher Name"
+          }
+        },
+        "required": [
+          "lesson_id",
+          "group_id",
+          "group_name",
+          "teacher_id",
+          "teacher_name",
+          "is_substitute",
+          "room_id",
+          "room_name",
+          "room_capacity",
+          "group_capacity",
+          "enrolled",
+          "lesson_date",
+          "start_time",
+          "end_time",
+          "status",
+          "kind",
+          "moved_from_date",
+          "conflicts",
+          "capacity_problem"
+        ],
+        "title": "CalendarEntry",
+        "type": "object"
+      },
+      "CalendarOut": {
+        "properties": {
+          "date_from": {
+            "format": "date",
+            "title": "Date From",
+            "type": "string"
+          },
+          "date_to": {
+            "format": "date",
+            "title": "Date To",
+            "type": "string"
+          },
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/CalendarDay"
+            },
+            "title": "Days",
+            "type": "array"
+          },
+          "view": {
+            "enum": [
+              "week",
+              "day"
+            ],
+            "title": "View",
+            "type": "string"
+          }
+        },
+        "required": [
+          "view",
+          "date_from",
+          "date_to",
+          "days"
+        ],
+        "title": "CalendarOut",
+        "type": "object"
+      },
+      "CancelIn": {
+        "additionalProperties": false,
+        "properties": {
+          "notify": {
+            "default": true,
+            "title": "Notify",
+            "type": "boolean"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "title": "CancelIn",
+        "type": "object"
+      },
+      "CapacityWarning": {
+        "properties": {
+          "enrolled": {
+            "title": "Enrolled",
+            "type": "integer"
+          },
+          "group_capacity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Capacity"
+          },
+          "group_id": {
+            "format": "uuid",
+            "title": "Group Id",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "problem": {
+            "title": "Problem",
+            "type": "string"
+          },
+          "room_capacity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Room Capacity"
+          },
+          "room_id": {
+            "format": "uuid",
+            "title": "Room Id",
+            "type": "string"
+          },
+          "room_name": {
+            "title": "Room Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "problem",
+          "group_id",
+          "group_name",
+          "room_id",
+          "room_name",
+          "room_capacity",
+          "group_capacity",
+          "enrolled"
+        ],
+        "title": "CapacityWarning",
+        "type": "object"
+      },
       "CashAccountIn": {
         "additionalProperties": false,
         "properties": {
@@ -1526,6 +1865,175 @@
           "balance"
         ],
         "title": "CashAccountOut",
+        "type": "object"
+      },
+      "ChangeOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "new_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Date"
+          },
+          "new_start_time": {
+            "anyOf": [
+              {
+                "format": "time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Start Time"
+          },
+          "new_teacher_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Teacher Name"
+          },
+          "notices": {
+            "title": "Notices",
+            "type": "integer"
+          },
+          "old_date": {
+            "format": "date",
+            "title": "Old Date",
+            "type": "string"
+          },
+          "old_start_time": {
+            "format": "time",
+            "title": "Old Start Time",
+            "type": "string"
+          },
+          "old_teacher_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Old Teacher Name"
+          },
+          "payroll_effect": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Payroll Effect",
+            "type": "array"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "old_date",
+          "old_start_time",
+          "new_date",
+          "new_start_time",
+          "old_teacher_name",
+          "new_teacher_name",
+          "reason",
+          "payroll_effect",
+          "notices",
+          "created_at"
+        ],
+        "title": "ChangeOut",
+        "type": "object"
+      },
+      "ChangeResult": {
+        "properties": {
+          "allowed_conflicts": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Allowed Conflicts",
+            "type": "array"
+          },
+          "change_id": {
+            "format": "uuid",
+            "title": "Change Id",
+            "type": "string"
+          },
+          "draft_payroll_lines_removed": {
+            "title": "Draft Payroll Lines Removed",
+            "type": "integer"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "lesson": {
+            "$ref": "#/components/schemas/LessonOut"
+          },
+          "notices_created": {
+            "title": "Notices Created",
+            "type": "integer"
+          },
+          "payroll_effect": {
+            "items": {
+              "$ref": "#/components/schemas/PayEffectOut"
+            },
+            "title": "Payroll Effect",
+            "type": "array"
+          },
+          "students_without_notice": {
+            "description": "enrolled students nobody can be told about (no linked guardian, no consent)",
+            "title": "Students Without Notice",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "change_id",
+          "kind",
+          "lesson",
+          "payroll_effect",
+          "draft_payroll_lines_removed",
+          "notices_created",
+          "students_without_notice",
+          "allowed_conflicts"
+        ],
+        "title": "ChangeResult",
         "type": "object"
       },
       "ChargeIn": {
@@ -1752,6 +2260,151 @@
           }
         },
         "title": "ChargePatch",
+        "type": "object"
+      },
+      "ChecksOut": {
+        "properties": {
+          "capacity": {
+            "items": {
+              "$ref": "#/components/schemas/CapacityWarning"
+            },
+            "title": "Capacity",
+            "type": "array"
+          },
+          "conflicts": {
+            "items": {
+              "$ref": "#/components/schemas/ClashPair"
+            },
+            "title": "Conflicts",
+            "type": "array"
+          },
+          "date_from": {
+            "format": "date",
+            "title": "Date From",
+            "type": "string"
+          },
+          "date_to": {
+            "format": "date",
+            "title": "Date To",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date_from",
+          "date_to",
+          "conflicts",
+          "capacity"
+        ],
+        "title": "ChecksOut",
+        "type": "object"
+      },
+      "ClashOut": {
+        "properties": {
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "room",
+              "teacher"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "lesson_id": {
+            "format": "uuid",
+            "title": "Lesson Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "lesson_id",
+          "group_name"
+        ],
+        "title": "ClashOut",
+        "type": "object"
+      },
+      "ClashPair": {
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "group_a": {
+            "title": "Group A",
+            "type": "string"
+          },
+          "group_b": {
+            "title": "Group B",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "room",
+              "teacher"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "lesson_a": {
+            "format": "uuid",
+            "title": "Lesson A",
+            "type": "string"
+          },
+          "lesson_b": {
+            "format": "uuid",
+            "title": "Lesson B",
+            "type": "string"
+          },
+          "room": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Room"
+          },
+          "start_a": {
+            "format": "time",
+            "title": "Start A",
+            "type": "string"
+          },
+          "start_b": {
+            "format": "time",
+            "title": "Start B",
+            "type": "string"
+          },
+          "teacher": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Teacher"
+          }
+        },
+        "required": [
+          "date",
+          "kind",
+          "lesson_a",
+          "group_a",
+          "start_a",
+          "lesson_b",
+          "group_b",
+          "start_b",
+          "room",
+          "teacher"
+        ],
+        "title": "ClashPair",
         "type": "object"
       },
       "ClearOut": {
@@ -3541,6 +4194,12 @@
       },
       "GenerateOut": {
         "properties": {
+          "conflicting_lessons": {
+            "default": 0,
+            "description": "lessons of the range that clash on room or teacher with another lesson (see /v1/schedule/checks)",
+            "title": "Conflicting Lessons",
+            "type": "integer"
+          },
           "created": {
             "title": "Created",
             "type": "integer"
@@ -5387,6 +6046,40 @@
       },
       "LessonOut": {
         "properties": {
+          "cancel_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancel Reason"
+          },
+          "effective_teacher_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Teacher Id"
+          },
+          "effective_teacher_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Teacher Name"
+          },
           "end_time": {
             "format": "time",
             "title": "End Time",
@@ -5415,6 +6108,30 @@
             "title": "Lesson Date",
             "type": "string"
           },
+          "original_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Date"
+          },
+          "original_start_time": {
+            "anyOf": [
+              {
+                "format": "time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Start Time"
+          },
           "room_id": {
             "anyOf": [
               {
@@ -5427,6 +6144,17 @@
             ],
             "title": "Room Id"
           },
+          "room_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Room Name"
+          },
           "start_time": {
             "format": "time",
             "title": "Start Time",
@@ -5435,6 +6163,29 @@
           "status": {
             "title": "Status",
             "type": "string"
+          },
+          "substitute_teacher_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Substitute Teacher Id"
+          },
+          "substitute_teacher_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Substitute Teacher Name"
           },
           "teacher_id": {
             "anyOf": [
@@ -5477,13 +6228,21 @@
           "group_name",
           "teacher_id",
           "teacher_name",
+          "substitute_teacher_id",
+          "substitute_teacher_name",
+          "effective_teacher_id",
+          "effective_teacher_name",
           "room_id",
+          "room_name",
           "lesson_date",
           "start_time",
           "end_time",
           "status",
           "topic",
-          "kind"
+          "kind",
+          "cancel_reason",
+          "original_date",
+          "original_start_time"
         ],
         "title": "LessonOut",
         "type": "object"
@@ -6012,6 +6771,69 @@
         "title": "MonthStudent",
         "type": "object"
       },
+      "MoveIn": {
+        "additionalProperties": false,
+        "properties": {
+          "allow_conflict": {
+            "default": false,
+            "title": "Allow Conflict",
+            "type": "boolean"
+          },
+          "end_time": {
+            "format": "time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "lesson_date": {
+            "format": "date",
+            "title": "Lesson Date",
+            "type": "string"
+          },
+          "notify": {
+            "default": true,
+            "description": "prepare guardian message drafts (a person approves them)",
+            "title": "Notify",
+            "type": "boolean"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "room_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "omit to keep the room",
+            "title": "Room Id"
+          },
+          "start_time": {
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "lesson_date",
+          "start_time",
+          "end_time"
+        ],
+        "title": "MoveIn",
+        "type": "object"
+      },
       "MovementBlock": {
         "properties": {
           "accepted": {
@@ -6092,6 +6914,100 @@
           "amount"
         ],
         "title": "NamedAmount",
+        "type": "object"
+      },
+      "NoticeOut": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "guardian_id": {
+            "format": "uuid",
+            "title": "Guardian Id",
+            "type": "string"
+          },
+          "guardian_name": {
+            "title": "Guardian Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "new_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Date"
+          },
+          "old_date": {
+            "format": "date",
+            "title": "Old Date",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "kind",
+          "student_id",
+          "student_name",
+          "guardian_id",
+          "guardian_name",
+          "body",
+          "group_name",
+          "old_date",
+          "new_date",
+          "created_at",
+          "decided_at"
+        ],
+        "title": "NoticeOut",
         "type": "object"
       },
       "OfferOut": {
@@ -7213,6 +8129,37 @@
         "title": "Page[LessonOut]",
         "type": "object"
       },
+      "Page_NoticeOut_": {
+        "properties": {
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/NoticeOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset",
+          "has_more"
+        ],
+        "title": "Page[NoticeOut]",
+        "type": "object"
+      },
       "Page_OnlineTxOut_": {
         "properties": {
           "has_more": {
@@ -7637,6 +8584,48 @@
           "new_password"
         ],
         "title": "PasswordChangeIn",
+        "type": "object"
+      },
+      "PayEffectOut": {
+        "properties": {
+          "delta": {
+            "title": "Delta",
+            "type": "string"
+          },
+          "month": {
+            "title": "Month",
+            "type": "string"
+          },
+          "payroll_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "status of that teacher's payroll for the month (None = not generated yet); approved/paid payrolls are frozen: correct them with an adjustment line",
+            "title": "Payroll Status"
+          },
+          "teacher_id": {
+            "format": "uuid",
+            "title": "Teacher Id",
+            "type": "string"
+          },
+          "teacher_name": {
+            "title": "Teacher Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "teacher_id",
+          "teacher_name",
+          "month",
+          "delta",
+          "payroll_status"
+        ],
+        "title": "PayEffectOut",
         "type": "object"
       },
       "PayIn": {
@@ -9242,6 +10231,179 @@
         "title": "ScheduleIn",
         "type": "object"
       },
+      "ScheduleSaved": {
+        "properties": {
+          "active_students": {
+            "title": "Active Students",
+            "type": "integer"
+          },
+          "billing_mode": {
+            "enum": [
+              "monthly",
+              "package"
+            ],
+            "title": "Billing Mode",
+            "type": "string"
+          },
+          "branch_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Branch Id"
+          },
+          "capacity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacity"
+          },
+          "capacity_warnings": {
+            "description": "rooms that hold fewer students than the group allows or has",
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Capacity Warnings",
+            "type": "array"
+          },
+          "conflicts": {
+            "description": "weekly slots that clash with another group (only when allow_conflict=true)",
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Conflicts",
+            "type": "array"
+          },
+          "course_id": {
+            "format": "uuid",
+            "title": "Course Id",
+            "type": "string"
+          },
+          "course_name": {
+            "title": "Course Name",
+            "type": "string"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "monthly_fee": {
+            "title": "Monthly Fee",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "package_lessons": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Package Lessons"
+          },
+          "package_price": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Package Price"
+          },
+          "schedule": {
+            "items": {
+              "$ref": "#/components/schemas/ScheduleSlotOut"
+            },
+            "title": "Schedule",
+            "type": "array"
+          },
+          "start_date": {
+            "format": "date",
+            "title": "Start Date",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "teacher_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Teacher Id"
+          },
+          "teacher_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Teacher Name"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "course_id",
+          "course_name",
+          "teacher_id",
+          "teacher_name",
+          "branch_id",
+          "monthly_fee",
+          "capacity",
+          "start_date",
+          "end_date",
+          "status",
+          "billing_mode",
+          "package_lessons",
+          "package_price",
+          "active_students",
+          "schedule"
+        ],
+        "title": "ScheduleSaved",
+        "type": "object"
+      },
       "ScheduleSlot": {
         "additionalProperties": false,
         "properties": {
@@ -10619,6 +11781,46 @@
           "name"
         ],
         "title": "StudentRef",
+        "type": "object"
+      },
+      "SubstituteIn": {
+        "additionalProperties": false,
+        "properties": {
+          "allow_conflict": {
+            "default": false,
+            "title": "Allow Conflict",
+            "type": "boolean"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "teacher_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "the substitute; null removes the substitute",
+            "title": "Teacher Id"
+          }
+        },
+        "required": [
+          "teacher_id"
+        ],
+        "title": "SubstituteIn",
         "type": "object"
       },
       "SupplierIn": {
@@ -15394,6 +16596,121 @@
         ]
       }
     },
+    "/v1/calendar": {
+      "get": {
+        "operationId": "calendar_v1_calendar_get",
+        "parameters": [
+          {
+            "description": "any date inside the week/day",
+            "in": "query",
+            "name": "date",
+            "required": true,
+            "schema": {
+              "description": "any date inside the week/day",
+              "format": "date",
+              "title": "Date",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "view",
+            "required": false,
+            "schema": {
+              "default": "week",
+              "enum": [
+                "week",
+                "day"
+              ],
+              "title": "View",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "group_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Group Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "teacher_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Teacher Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "room_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Room Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Week or day calendar of all lessons (a teacher sees only their own)",
+        "tags": [
+          "schedule"
+        ]
+      }
+    },
     "/v1/charges": {
       "get": {
         "operationId": "list_charges_v1_charges_get",
@@ -18089,6 +19406,18 @@
               "title": "Group Id",
               "type": "string"
             }
+          },
+          {
+            "description": "save although a room or the teacher is busy",
+            "in": "query",
+            "name": "allow_conflict",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "save although a room or the teacher is busy",
+              "title": "Allow Conflict",
+              "type": "boolean"
+            }
           }
         ],
         "requestBody": {
@@ -18110,7 +19439,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GroupDetail"
+                  "$ref": "#/components/schemas/ScheduleSaved"
                 }
               }
             },
@@ -19312,6 +20641,20 @@
       },
       "post": {
         "operationId": "create_lesson_v1_lessons_post",
+        "parameters": [
+          {
+            "description": "save although the room or teacher is busy",
+            "in": "query",
+            "name": "allow_conflict",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "save although the room or teacher is busy",
+              "title": "Allow Conflict",
+              "type": "boolean"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -19413,6 +20756,18 @@
               "format": "uuid",
               "title": "Lesson Id",
               "type": "string"
+            }
+          },
+          {
+            "description": "save although the room or teacher is busy",
+            "in": "query",
+            "name": "allow_conflict",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "save although the room or teacher is busy",
+              "title": "Allow Conflict",
+              "type": "boolean"
             }
           }
         ],
@@ -19618,6 +20973,232 @@
         "summary": "Remove one attendance mark",
         "tags": [
           "lessons & attendance"
+        ]
+      }
+    },
+    "/v1/lessons/{lesson_id}/cancel": {
+      "post": {
+        "operationId": "cancel_lesson_v1_lessons__lesson_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lesson_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Lesson Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cancel a planned lesson (prepares guardian message drafts)",
+        "tags": [
+          "schedule"
+        ]
+      }
+    },
+    "/v1/lessons/{lesson_id}/changes": {
+      "get": {
+        "operationId": "lesson_changes_v1_lessons__lesson_id__changes_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lesson_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Lesson Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ChangeOut"
+                  },
+                  "title": "Response Lesson Changes V1 Lessons  Lesson Id  Changes Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "History of a lesson's changes",
+        "tags": [
+          "schedule"
+        ]
+      }
+    },
+    "/v1/lessons/{lesson_id}/move": {
+      "post": {
+        "operationId": "move_lesson_v1_lessons__lesson_id__move_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lesson_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Lesson Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Move a planned lesson to another date/time/room (prepares guardian message drafts)",
+        "tags": [
+          "schedule"
+        ]
+      }
+    },
+    "/v1/lessons/{lesson_id}/substitute": {
+      "post": {
+        "operationId": "substitute_lesson_v1_lessons__lesson_id__substitute_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lesson_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Lesson Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubstituteIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Set (or clear) the substitute teacher of a lesson; payroll follows the substitute",
+        "tags": [
+          "schedule"
         ]
       }
     },
@@ -21896,6 +23477,254 @@
         "summary": "Patch Room",
         "tags": [
           "academics"
+        ]
+      }
+    },
+    "/v1/schedule-notices": {
+      "get": {
+        "operationId": "list_notices_v1_schedule_notices_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "pending",
+                    "approved",
+                    "rejected"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "pending",
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 1000000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_NoticeOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Guardian message drafts for lesson changes",
+        "tags": [
+          "schedule"
+        ]
+      }
+    },
+    "/v1/schedule-notices/{notice_id}/approve": {
+      "post": {
+        "operationId": "approve_notice_v1_schedule_notices__notice_id__approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "notice_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Notice Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveNoticeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoticeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Approve a notice: queues the guardian message (this call IS the person's approval)",
+        "tags": [
+          "schedule"
+        ]
+      }
+    },
+    "/v1/schedule-notices/{notice_id}/reject": {
+      "post": {
+        "operationId": "reject_notice_v1_schedule_notices__notice_id__reject_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "notice_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Notice Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoticeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Reject a notice: nothing is sent",
+        "tags": [
+          "schedule"
+        ]
+      }
+    },
+    "/v1/schedule/checks": {
+      "get": {
+        "operationId": "checks_v1_schedule_checks_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Date From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Date To",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChecksOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Room/teacher conflicts of a date range and groups that do not fit their room",
+        "tags": [
+          "schedule"
         ]
       }
     },

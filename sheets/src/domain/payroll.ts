@@ -29,6 +29,26 @@ export function heldLessons(attendance: AttendanceRow[], groupIds: Set<string>, 
   return [...seen].filter(([key, attended]) => attended || !makeupDays?.has(key)).length;
 }
 
+/**
+ * Held lessons of ONE teacher: like `heldLessons`, but a lesson belongs to whoever taught it (`teacherOf`: the substitute
+ * of that day, else the group's teacher), so a substituted lesson is paid to the substitute.
+ */
+export function heldLessonsFor(
+  attendance: AttendanceRow[],
+  month: ISODate,
+  teacherId: string,
+  teacherOf: (groupId: string, date: ISODate) => string,
+  makeupDays?: Set<string>,
+): number {
+  const seen = new Map<string, boolean>();
+  for (const a of attendance) {
+    if (!inMonth(a.date, month) || teacherOf(a.groupId, a.date) !== teacherId) continue;
+    const key = `${a.date}|${a.groupId}`;
+    seen.set(key, (seen.get(key) ?? false) || a.status === "present" || a.status === "late");
+  }
+  return [...seen].filter(([key, attended]) => attended || !makeupDays?.has(key)).length;
+}
+
 /** Tuition actually collected in the month for the teacher's groups (paid part of the month's tuition charges). */
 export function collectedTuition(
   balances: ChargeBalance[],

@@ -125,15 +125,15 @@ export function parseSchedule(text: string): WeeklySlot[] | null {
   const m = /^\s*(.+?)\s+(\d{1,2}:\d{2})(?:\s*-\s*(\d{1,2}:\d{2}))?\s*$/.exec(text ?? "");
   if (!m) return null;
   const days: number[] = [];
-  for (const tok of m[1].trim().toLowerCase().split(/[-,/\s]+/)) {
+  for (const tok of m[1]!.trim().toLowerCase().split(/[-,/\s]+/)) {
     if (!tok) continue;
     const wd = WEEKDAY_TOKENS[tok];
     if (wd === undefined) return null;
     if (!days.includes(wd)) days.push(wd);
   }
   if (days.length === 0) return null;
-  if (Number(m[2].split(":")[1]) > 59 || (m[3] !== undefined && Number(m[3].split(":")[1]) > 59)) return null;
-  const startMin = toMinutes(m[2]);
+  if (Number(m[2]!.split(":")[1]) > 59 || (m[3] !== undefined && Number(m[3].split(":")[1]) > 59)) return null;
+  const startMin = toMinutes(m[2]!);
   const endMin = m[3] !== undefined ? toMinutes(m[3]) : startMin + DEFAULT_LESSON_MINUTES;
   if (startMin >= 24 * 60 || endMin > 24 * 60 || endMin <= startMin) return null;
   return days.sort((a, b) => a - b).map((weekday) => ({ weekday, start: fromMinutes(startMin), end: fromMinutes(endMin) }));

@@ -3,13 +3,13 @@ import { planCharges } from "../domain/billing";
 import { computeDebts, debtors, type StudentDebt } from "../domain/debt";
 import { inMonth, isIsoDate, monthStart } from "../domain/dates";
 import { nextId, nextIds } from "../domain/ids";
-import { collectedTuition, computePayroll, heldLessons } from "../domain/payroll";
+import { teacherResolver, type ScheduleChange } from "../domain/calendar";
+import { collectedTuition, computePayroll, heldLessonsFor } from "../domain/payroll";
 import { formatSom, INSTALLMENT_TEMPLATE, planReminders, planUpcomingReminders, UPCOMING_TEMPLATE, type SkipReason } from "../domain/reminders";
 import type { AttendanceRow, Charge, Enrollment, Group, Installment, Payment, ReminderDraft, Student, Teacher } from "../domain/types";
 import { append, read, readIfPresent, replaceWhere, today, updateById } from "./repo";
 import {
-  ATTENDANCE, CHARGES, DEBTORS_SHEET, DRAFTS, ENROLLMENTS, GROUPS, INSTALLMENTS, PAYMENTS, PAYROLL, STUDENTS, TEACHERS,
-} from "./schema";
+  ATTENDANCE, CHARGES, DEBTORS_SHEET, DRAFTS, ENROLLMENTS, GROUPS, INSTALLMENTS, PAYMENTS, PAYROLL, STUDENTS, TEACHERS, SCHEDULE_CHANGES } from "./schema";
 import { readSettings } from "./settings";
 import { balanceRich, EFFECT_PARTY, receiptRich, reminderRich, type OpenCharge } from "../domain/messages";
 import { applyBotProfile } from "./botProfile";
@@ -309,9 +309,11 @@ export function calculatePayroll(): void {
     const existing = read<PayRow>(PAYROLL);
     const locked = new Set(existing.filter((r) => r.month === month && r.status !== "draft").map((r) => r.teacherId));
     const bonus = new Map(existing.filter((r) => r.month === month && r.status === "draft").map((r) => [r.teacherId, r.bonus]));
+    // a lesson is paid to whoever taught it: the substitute of that day (Jadval va xonalar), else the group's teacher
+    const monthEnd = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)).toISOString().slice(0, 10);
+    const teacherOf = teacherResolver(groups, readIfPresent<ScheduleChange>(SCHEDULE_CHANGES), month, monthEnd);
     const rows = teachers.filter((t) => !locked.has(t.id)).map((t) => {
-      const gids = new Set(groups.filter((g) => g.teacherId === t.id).map((g) => g.id));
-      const r = computePayroll(t, month, { heldLessons: heldLessons(attendance, gids, month, makeupDays()), collectedTuition: collectedTuition(balances, enrollments, groups, t.id, month) });
+      const r = computePayroll(t, month, { heldLessons: heldLessonsFor(attendance, month, t.id, teacherOf, makeupDays()), collectedTuition: collectedTuition(balances, enrollments, groups, t.id, month) });
       const b = bonus.get(t.id) ?? 0;
       return { month, teacherId: t.id, teacherName: t.fullName, heldLessons: r.heldLessons, collected: r.collectedTuition, bonus: b, total: r.total + b, status: "draft" };
     });
