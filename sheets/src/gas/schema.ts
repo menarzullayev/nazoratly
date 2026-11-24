@@ -468,6 +468,9 @@ export const SCHEDULE_CHANGES: TableDef = {
     { key: "reason", header: "Sabab", width: 220, kind: "text" },
     { key: "createdOn", header: "Yaratilgan", width: 110, kind: "date" },
     { key: "payEffect", header: "Oylik ta'siri", width: 260, kind: "text", help: "O'zgarish paytida hisoblangan: kim qancha yo'qotadi/oladi (faqat 'Dars uchun' to'lanadigan o'qituvchilar)" },
+  ],
+};
+
 // ---- growth (G3): referrals, promo codes, source costs. Rewards and promo discounts are credits in ENTITLEMENTS. ----
 export const REFERRALS: TableDef = {
   sheet: "Tavsiyalar",
