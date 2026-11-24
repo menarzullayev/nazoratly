@@ -210,8 +210,7 @@ export function setBranchSetting(branchId: string, label: string, value: string)
     const rows = rawRead<{ branchId: string; label: string }>(BRANCH_SETTINGS);
     const at = rows.findIndex((r) => r.branchId === branchId && r.label.trim() === def.label);
     if (at >= 0) {
-      if (value.trim() === "") sh.deleteRow(at + 2);
-      else sh.getRange(at + 2, 3).setValue(value.trim());
+      sh.getRange(at + 2, 3).setValue(value.trim()); // empty = inherit again (readSettings ignores blank values)
     } else if (value.trim() !== "") append(BRANCH_SETTINGS, [{ branchId, label: def.label, value: value.trim() }]);
   });
 }

@@ -106,7 +106,7 @@ const rules = new Map<string, Rule>();
 export function registerBranchRule(def: TableDef, rule: Rule): void {
   rules.set(def.sheet, rule);
 }
-export const isMarked = (def: TableDef): boolean => BRANCH_MARKED.includes(def) || def.cols.some((c) => c.key === "branchId");
+export const isMarked = (def: TableDef): boolean => BRANCH_MARKED.includes(def); // (STAFF/prices/settings have a branchId column too, but it is data, not a mark)
 export const ruleOf = (def: TableDef): Rule => rules.get(def.sheet) ?? { mode: "context", parents: [] };
 
 /** The branch of a row about to be written: explicit > scope/parent (by the table's mode) > the default branch. */

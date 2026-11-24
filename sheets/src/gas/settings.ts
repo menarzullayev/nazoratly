@@ -52,7 +52,7 @@ export function readSettings(branchId?: string | null): Settings {
   const bid = branchId === undefined ? currentScope().scope : branchId;
   if (bid) {
     for (const o of rawRead<{ branchId: string; label: string; value: string }>(BRANCH_SETTINGS)) {
-      if (o.branchId !== bid) continue;
+      if (o.branchId !== bid || String(o.value ?? "").trim() === "") continue; // an empty value = inherit the center's
       const def = SETTING_DEFAULTS.find((d) => d.label === o.label.trim());
       if (def && BRANCH_SETTING_KEYS.has(def.key)) map.set(def.key, String(o.value ?? "").trim());
     }

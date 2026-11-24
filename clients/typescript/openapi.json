@@ -1484,6 +1484,11 @@
             "title": "Id",
             "type": "string"
           },
+          "is_default": {
+            "description": "the center's default branch: where rows land when no branch is chosen",
+            "title": "Is Default",
+            "type": "boolean"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -1497,7 +1502,8 @@
           "id",
           "name",
           "address",
-          "status"
+          "status",
+          "is_default"
         ],
         "title": "BranchOut",
         "type": "object"
@@ -1547,6 +1553,288 @@
           }
         },
         "title": "BranchPatch",
+        "type": "object"
+      },
+      "BranchReportOut": {
+        "properties": {
+          "month": {
+            "format": "date",
+            "title": "Month",
+            "type": "string"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/BranchReportRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "total": {
+            "$ref": "#/components/schemas/BranchReportRow",
+            "description": "always the sum of the rows"
+          }
+        },
+        "required": [
+          "month",
+          "rows",
+          "total"
+        ],
+        "title": "BranchReportOut",
+        "type": "object"
+      },
+      "BranchReportRow": {
+        "properties": {
+          "branch_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "None on the total row",
+            "title": "Branch Id"
+          },
+          "cash_balance": {
+            "description": "what the books say the branch's cash desk holds at the end of the month",
+            "title": "Cash Balance",
+            "type": "string"
+          },
+          "charges": {
+            "description": "tuition and other charges of the month (after discounts), so'm",
+            "title": "Charges",
+            "type": "string"
+          },
+          "debt": {
+            "description": "unpaid charges of the branch, today",
+            "title": "Debt",
+            "type": "string"
+          },
+          "enrollments_active": {
+            "title": "Enrollments Active",
+            "type": "integer"
+          },
+          "expenses": {
+            "description": "expenses of the month, so'm",
+            "title": "Expenses",
+            "type": "string"
+          },
+          "groups_active": {
+            "title": "Groups Active",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "net": {
+            "description": "revenue minus expenses",
+            "title": "Net",
+            "type": "string"
+          },
+          "revenue": {
+            "description": "payments received in the month minus the part given back, so'm",
+            "title": "Revenue",
+            "type": "string"
+          },
+          "students_active": {
+            "title": "Students Active",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "branch_id",
+          "name",
+          "students_active",
+          "groups_active",
+          "enrollments_active",
+          "revenue",
+          "charges",
+          "expenses",
+          "net",
+          "debt",
+          "cash_balance"
+        ],
+        "title": "BranchReportRow",
+        "type": "object"
+      },
+      "BranchSettingsOut": {
+        "properties": {
+          "effective": {
+            "$ref": "#/components/schemas/SettingsOut",
+            "description": "what applies in this branch (its own values over the center's)"
+          },
+          "overrides": {
+            "additionalProperties": true,
+            "description": "the branch's own values; a missing or null key = inherited",
+            "title": "Overrides",
+            "type": "object"
+          }
+        },
+        "required": [
+          "effective",
+          "overrides"
+        ],
+        "title": "BranchSettingsOut",
+        "type": "object"
+      },
+      "BranchSettingsPatch": {
+        "additionalProperties": false,
+        "description": "Send only what changes; `null` makes the branch inherit the center's value again.",
+        "properties": {
+          "excused_mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "makeup",
+                  "credit",
+                  "none"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Excused Mode"
+          },
+          "family_discount_2nd_percent": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Family Discount 2Nd Percent"
+          },
+          "family_discount_3rd_percent": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Family Discount 3Rd Percent"
+          },
+          "lead_reminder_days": {
+            "anyOf": [
+              {
+                "maximum": 60.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lead Reminder Days"
+          },
+          "makeup_expiry_days": {
+            "anyOf": [
+              {
+                "maximum": 365.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Makeup Expiry Days"
+          },
+          "makeup_lapses": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Makeup Lapses"
+          },
+          "package_expiry_days": {
+            "anyOf": [
+              {
+                "maximum": 730.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Package Expiry Days"
+          },
+          "package_low_lessons": {
+            "anyOf": [
+              {
+                "maximum": 50.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Package Low Lessons"
+          },
+          "requisites": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requisites"
+          },
+          "trial_free_days": {
+            "anyOf": [
+              {
+                "maximum": 365.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trial Free Days"
+          },
+          "trial_free_lessons": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trial Free Lessons"
+          }
+        },
+        "title": "BranchSettingsPatch",
         "type": "object"
       },
       "BulkIn": {
@@ -2217,6 +2505,19 @@
       "CashCloseIn": {
         "additionalProperties": false,
         "properties": {
+          "branch_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "the branch of the cash desk: required for center-wide staff when the center has several active branches (or send the X-Branch header); staff of a branch always close their own",
+            "title": "Branch Id"
+          },
           "close_date": {
             "anyOf": [
               {
@@ -2287,6 +2588,11 @@
             "title": "Book Balance",
             "type": "string"
           },
+          "branch_id": {
+            "format": "uuid",
+            "title": "Branch Id",
+            "type": "string"
+          },
           "close_date": {
             "format": "date",
             "title": "Close Date",
@@ -2337,6 +2643,7 @@
         },
         "required": [
           "id",
+          "branch_id",
           "close_date",
           "shift_no",
           "counted",
@@ -2355,6 +2662,12 @@
           "book_balance": {
             "description": "what the books say the cash desk holds through the date",
             "title": "Book Balance",
+            "type": "string"
+          },
+          "branch_id": {
+            "description": "the branch whose cash desk this is",
+            "format": "uuid",
+            "title": "Branch Id",
             "type": "string"
           },
           "cash_in": {
@@ -2382,6 +2695,7 @@
           }
         },
         "required": [
+          "branch_id",
           "close_date",
           "book_balance",
           "cash_in",
@@ -3429,6 +3743,12 @@
             "title": "Amount",
             "type": "string"
           },
+          "branch_id": {
+            "description": "the branch this cost belongs to",
+            "format": "uuid",
+            "title": "Branch Id",
+            "type": "string"
+          },
           "month": {
             "format": "date",
             "title": "Month",
@@ -3457,6 +3777,7 @@
         },
         "required": [
           "source_id",
+          "branch_id",
           "source",
           "month",
           "amount",
@@ -8409,6 +8730,70 @@
         "title": "MoveIn",
         "type": "object"
       },
+      "MoveOut": {
+        "properties": {
+          "ended_enrollments": {
+            "title": "Ended Enrollments",
+            "type": "integer"
+          },
+          "from_branch_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "None when the branch left is not visible to you",
+            "title": "From Branch Id"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "moved_on": {
+            "format": "date",
+            "title": "Moved On",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "to_branch_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Branch Id"
+          }
+        },
+        "required": [
+          "id",
+          "from_branch_id",
+          "to_branch_id",
+          "moved_on",
+          "reason",
+          "ended_enrollments"
+        ],
+        "title": "MoveOut",
+        "type": "object"
+      },
       "MovementBlock": {
         "properties": {
           "accepted": {
@@ -11270,6 +11655,73 @@
         "title": "PreviewOut",
         "type": "object"
       },
+      "PriceIn": {
+        "additionalProperties": false,
+        "properties": {
+          "monthly_fee": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "UZS amount, 2 decimals",
+            "title": "Monthly Fee"
+          }
+        },
+        "required": [
+          "monthly_fee"
+        ],
+        "title": "PriceIn",
+        "type": "object"
+      },
+      "PriceOut": {
+        "properties": {
+          "branch_fee": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "the price in this branch (None = the course fee applies)",
+            "title": "Branch Fee"
+          },
+          "course_fee": {
+            "description": "the course's own default fee",
+            "title": "Course Fee",
+            "type": "string"
+          },
+          "course_id": {
+            "format": "uuid",
+            "title": "Course Id",
+            "type": "string"
+          },
+          "course_name": {
+            "title": "Course Name",
+            "type": "string"
+          },
+          "effective_fee": {
+            "description": "the default monthly fee of a new group of this branch",
+            "title": "Effective Fee",
+            "type": "string"
+          }
+        },
+        "required": [
+          "course_id",
+          "course_name",
+          "course_fee",
+          "branch_fee",
+          "effective_fee"
+        ],
+        "title": "PriceOut",
+        "type": "object"
+      },
       "ProgramIn": {
         "additionalProperties": false,
         "properties": {
@@ -13422,6 +13874,60 @@
         "title": "ScheduleSlotOut",
         "type": "object"
       },
+      "ScopeOut": {
+        "properties": {
+          "center_wide": {
+            "description": "false = the staff member belongs to one branch and sees only it",
+            "title": "Center Wide",
+            "type": "boolean"
+          },
+          "member_branch_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "the branch of the staff member (None = center-wide)",
+            "title": "Member Branch Id"
+          },
+          "view_branch_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "the branch this request works in (X-Branch, or the member's own); None = the whole center",
+            "title": "View Branch Id"
+          },
+          "view_branch_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "View Branch Name"
+          }
+        },
+        "required": [
+          "center_wide",
+          "member_branch_id",
+          "view_branch_id",
+          "view_branch_name"
+        ],
+        "title": "ScopeOut",
+        "type": "object"
+      },
       "SendCardIn": {
         "additionalProperties": false,
         "properties": {
@@ -14438,6 +14944,19 @@
             ],
             "title": "Birth Date"
           },
+          "branch_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "the branch the student belongs to (move him with POST /students/{id}/transfer); None when he moved to a branch you cannot see",
+            "title": "Branch Id"
+          },
           "consents": {
             "items": {
               "$ref": "#/components/schemas/ConsentOut"
@@ -14507,6 +15026,7 @@
         },
         "required": [
           "id",
+          "branch_id",
           "full_name",
           "birth_date",
           "phone",
@@ -14598,6 +15118,19 @@
             ],
             "title": "Birth Date"
           },
+          "branch_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "the branch of the new student; default: the branch you work in (X-Branch / your own), else the center's default",
+            "title": "Branch Id"
+          },
           "full_name": {
             "maxLength": 200,
             "minLength": 1,
@@ -14674,6 +15207,19 @@
             ],
             "title": "Birth Date"
           },
+          "branch_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "the branch the student belongs to (move him with POST /students/{id}/transfer); None when he moved to a branch you cannot see",
+            "title": "Branch Id"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -14729,6 +15275,7 @@
         },
         "required": [
           "id",
+          "branch_id",
           "full_name",
           "birth_date",
           "phone",
@@ -15125,6 +15672,19 @@
       "TeacherIn": {
         "additionalProperties": false,
         "properties": {
+          "branch_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "the teacher's home branch; default: the branch you work in, else the default branch",
+            "title": "Branch Id"
+          },
           "full_name": {
             "maxLength": 200,
             "minLength": 1,
@@ -15202,6 +15762,12 @@
       },
       "TeacherOut": {
         "properties": {
+          "branch_id": {
+            "description": "the teacher's home branch",
+            "format": "uuid",
+            "title": "Branch Id",
+            "type": "string"
+          },
           "full_name": {
             "title": "Full Name",
             "type": "string"
@@ -15253,6 +15819,7 @@
         },
         "required": [
           "id",
+          "branch_id",
           "full_name",
           "phone",
           "pay_model",
@@ -15482,6 +16049,90 @@
           "created_at"
         ],
         "title": "ToolCallOut",
+        "type": "object"
+      },
+      "TransferIn": {
+        "additionalProperties": false,
+        "properties": {
+          "branch_id": {
+            "description": "the branch the student moves to",
+            "format": "uuid",
+            "title": "Branch Id",
+            "type": "string"
+          },
+          "end_enrollments": {
+            "default": false,
+            "description": "end his live enrollments in groups of other branches (otherwise the move is refused while he has any)",
+            "title": "End Enrollments",
+            "type": "boolean"
+          },
+          "moved_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "defaults to today (the center's date)",
+            "title": "Moved On"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "branch_id"
+        ],
+        "title": "TransferIn",
+        "type": "object"
+      },
+      "TransferOut": {
+        "properties": {
+          "ended_enrollments": {
+            "title": "Ended Enrollments",
+            "type": "integer"
+          },
+          "from_branch_id": {
+            "format": "uuid",
+            "title": "From Branch Id",
+            "type": "string"
+          },
+          "moved_on": {
+            "format": "date",
+            "title": "Moved On",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "to_branch_id": {
+            "format": "uuid",
+            "title": "To Branch Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "student_id",
+          "from_branch_id",
+          "to_branch_id",
+          "moved_on",
+          "ended_enrollments"
+        ],
+        "title": "TransferOut",
         "type": "object"
       },
       "TrialBalanceOut": {
@@ -19803,6 +20454,89 @@
         ]
       }
     },
+    "/v1/branch-report": {
+      "get": {
+        "operationId": "branch_report_v1_branch_report_get",
+        "parameters": [
+          {
+            "description": "first day of the month; default: this month",
+            "in": "query",
+            "name": "month",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "first day of the month; default: this month",
+              "title": "Month"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BranchReportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Per-branch figures of a month next to the center total (staff of a branch see only their own row)",
+        "tags": [
+          "branches"
+        ]
+      }
+    },
+    "/v1/branch-scope": {
+      "get": {
+        "operationId": "my_scope_v1_branch_scope_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScopeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Which branch do my requests work in? (send X-Branch to narrow a center-wide view to one branch)",
+        "tags": [
+          "branches"
+        ]
+      }
+    },
     "/v1/branches": {
       "get": {
         "operationId": "list_branches_v1_branches_get",
@@ -20056,6 +20790,334 @@
         "summary": "Patch Branch",
         "tags": [
           "organization"
+        ]
+      }
+    },
+    "/v1/branches/{branch_id}/default": {
+      "post": {
+        "operationId": "make_default_v1_branches__branch_id__default_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "branch_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Branch Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Make this branch the center's default (where rows land when no branch is chosen)",
+        "tags": [
+          "branches"
+        ]
+      }
+    },
+    "/v1/branches/{branch_id}/prices": {
+      "get": {
+        "operationId": "list_prices_v1_branches__branch_id__prices_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "branch_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Branch Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PriceOut"
+                  },
+                  "title": "Response List Prices V1 Branches  Branch Id  Prices Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Course prices in a branch (course default unless the branch has its own)",
+        "tags": [
+          "branches"
+        ]
+      }
+    },
+    "/v1/branches/{branch_id}/prices/{course_id}": {
+      "delete": {
+        "operationId": "delete_price_v1_branches__branch_id__prices__course_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "branch_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Branch Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "course_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Course Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Remove the branch price (the course fee applies again)",
+        "tags": [
+          "branches"
+        ]
+      },
+      "put": {
+        "operationId": "put_price_v1_branches__branch_id__prices__course_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "branch_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Branch Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "course_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Course Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PriceIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Set the price of a course in a branch",
+        "tags": [
+          "branches"
+        ]
+      }
+    },
+    "/v1/branches/{branch_id}/settings": {
+      "get": {
+        "operationId": "get_branch_settings_v1_branches__branch_id__settings_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "branch_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Branch Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BranchSettingsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Settings of a branch: effective values and the branch's own overrides",
+        "tags": [
+          "branches"
+        ]
+      },
+      "patch": {
+        "operationId": "patch_branch_settings_v1_branches__branch_id__settings_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "branch_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Branch Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BranchSettingsPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BranchSettingsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Change the branch's own settings (null = inherit the center's value again)",
+        "tags": [
+          "branches"
         ]
       }
     },
@@ -20335,6 +21397,25 @@
               ],
               "description": "defaults to today",
               "title": "Close Date"
+            }
+          },
+          {
+            "description": "the branch of the cash desk",
+            "in": "query",
+            "name": "branch_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "the branch of the cash desk",
+              "title": "Branch Id"
             }
           }
         ],
@@ -30100,7 +31181,7 @@
             "HTTPBearer": []
           }
         ],
-        "summary": "Patch Settings",
+        "summary": "Change settings (a staff member working in a branch changes that branch's own values)",
         "tags": [
           "settings"
         ]
@@ -30666,6 +31747,58 @@
         "summary": "Student Balance",
         "tags": [
           "finance"
+        ]
+      }
+    },
+    "/v1/students/{student_id}/branch-moves": {
+      "get": {
+        "operationId": "student_moves_v1_students__student_id__branch_moves_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "student_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Student Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MoveOut"
+                  },
+                  "title": "Response Student Moves V1 Students  Student Id  Branch Moves Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Where this student has been (newest first)",
+        "tags": [
+          "branches"
         ]
       }
     },
@@ -31269,6 +32402,64 @@
         "summary": "Everything a student has: notes and grades, exam scores, progress reports, certificates",
         "tags": [
           "learning results"
+        ]
+      }
+    },
+    "/v1/students/{student_id}/transfer": {
+      "post": {
+        "operationId": "transfer_student_v1_students__student_id__transfer_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "student_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Student Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Move a student to another branch (center-wide staff). History and money stay in the branch where they arose",
+        "tags": [
+          "branches"
         ]
       }
     },
