@@ -18,7 +18,6 @@ from tests.conftest import Tenant
 from tests.e2e.journeys import outbox_rows
 from tests.helpers import mk_group, ok
 from tests.test_ai_reports import debtor, generate, good_reply, switch
-from tests.test_ai_reports import fake_ai as fake_ai  # the fixture
 from tests.test_tenancy_and_staff import _add_staff, _login
 
 

@@ -11,7 +11,7 @@ import httpx
 from tests.conftest import Tenant
 from tests.e2e.journeys import TODAY
 from tests.helpers import mk_course, ok
-from tests.test_guardian import (  # noqa: F401  (tg is a fixture)
+from tests.test_guardian import (
     FakeBot,
     contact,
     debt,
@@ -23,7 +23,6 @@ from tests.test_guardian import (  # noqa: F401  (tg is a fixture)
     msg,
     outbox_count,
     sign_in,
-    tg,
 )
 
 
