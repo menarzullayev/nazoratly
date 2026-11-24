@@ -63,9 +63,13 @@ async def staff(client: httpx.AsyncClient, owner: Tenant, role: str) -> tuple[Te
 async def family(t: Tenant, group_id: str, *, notify: bool = True, chat: int = 777001) -> dict[str, Any]:
     """An enrolled student with a linked guardian (Telegram chat) and, when `notify`, an active notifications consent."""
     st = await mk_student(t, f"Student {uuid.uuid4().hex[:5]}")
-    guardian = await ok(await t.post("/v1/guardians", {"full_name": "Dilnoza opa", "telegram_chat_id": chat}), 201)
+    guardian = await ok(
+        await t.post("/v1/guardians", {"full_name": "Dilnoza opa", "telegram_chat_id": chat}), 201
+    )
     await ok(
-        await t.post(f"/v1/students/{st['id']}/guardians", {"guardian_id": guardian["id"], "relation": "mother"}),
+        await t.post(
+            f"/v1/students/{st['id']}/guardians", {"guardian_id": guardian["id"], "relation": "mother"}
+        ),
         201,
     )
     if notify:
@@ -87,7 +91,13 @@ async def test_room_conflict_is_refused_then_allowed(tenant: Tenant) -> None:
     first = await mk_lesson(tenant, g1["id"], room_id=room["id"])
     r = await tenant.post(
         "/v1/lessons",
-        {"group_id": g2["id"], "lesson_date": MON, "start_time": "10:30", "end_time": "11:30", "room_id": room["id"]},
+        {
+            "group_id": g2["id"],
+            "lesson_date": MON,
+            "start_time": "10:30",
+            "end_time": "11:30",
+            "room_id": room["id"],
+        },
     )
     assert r.status_code == 409 and r.json()["error"]["code"] == "schedule_conflict"
     assert kinds(r.json()) == {"room"}
@@ -110,7 +120,9 @@ async def test_teacher_conflict_includes_group_teacher_default(tenant: Tenant) -
     )
     assert r.status_code == 409 and kinds(r.json()) == {"teacher"}
     other = await mk_teacher(tenant)
-    await mk_lesson(tenant, g2["id"], start="10:15", end="10:45", teacher_id=other["id"])  # another teacher: fine
+    await mk_lesson(
+        tenant, g2["id"], start="10:15", end="10:45", teacher_id=other["id"]
+    )  # another teacher: fine
 
 
 async def test_cancelled_lessons_never_clash_and_reactivation_is_checked(tenant: Tenant) -> None:
@@ -119,9 +131,13 @@ async def test_cancelled_lessons_never_clash_and_reactivation_is_checked(tenant:
     a = await mk_lesson(tenant, g1["id"], room_id=room["id"])
     await ok(await tenant.patch(f"/v1/lessons/{a['id']}", {"status": "cancelled"}))
     b = await mk_lesson(tenant, g2["id"], room_id=room["id"])  # the cancelled lesson does not block the room
-    r = await tenant.patch(f"/v1/lessons/{a['id']}", {"status": "planned"})  # but bringing it back would clash
+    r = await tenant.patch(
+        f"/v1/lessons/{a['id']}", {"status": "planned"}
+    )  # but bringing it back would clash
     assert r.status_code == 409 and kinds(r.json()) == {"room"}
-    assert (await tenant.patch(f"/v1/lessons/{a['id']}", {"status": "planned"}, params={"allow_conflict": "true"})).status_code == 200
+    assert (
+        await tenant.patch(f"/v1/lessons/{a['id']}", {"status": "planned"}, params={"allow_conflict": "true"})
+    ).status_code == 200
     assert b["room_id"] == room["id"]
 
 
@@ -130,7 +146,9 @@ async def test_patch_lesson_room_and_time_are_checked(tenant: Tenant) -> None:
     g1, g2 = await mk_group(tenant), await mk_group(tenant)
     await mk_lesson(tenant, g1["id"], room_id=room["id"])
     b = await mk_lesson(tenant, g2["id"], start="12:00", end="13:00")
-    r = await tenant.patch(f"/v1/lessons/{b['id']}", {"room_id": room["id"], "start_time": "10:30", "end_time": "11:30"})
+    r = await tenant.patch(
+        f"/v1/lessons/{b['id']}", {"room_id": room["id"], "start_time": "10:30", "end_time": "11:30"}
+    )
     assert r.status_code == 409
     bad = await tenant.patch(f"/v1/lessons/{b['id']}", {"start_time": "15:00", "end_time": "14:00"})
     assert bad.status_code == 422
@@ -147,9 +165,14 @@ async def test_weekly_schedule_conflicts_and_capacity_warning(tenant: Tenant) ->
     saved = await ok(await tenant.put(f"/v1/groups/{g1['id']}/schedule", [slot]))
     assert saved["conflicts"] == []
     assert [w["problem"] for w in saved["capacity_warnings"]] == ["group_capacity_over_room"]
-    assert saved["capacity_warnings"][0]["room_capacity"] == 8 and saved["capacity_warnings"][0]["group_capacity"] == 12
+    assert (
+        saved["capacity_warnings"][0]["room_capacity"] == 8
+        and saved["capacity_warnings"][0]["group_capacity"] == 12
+    )
     # the same teacher and room, overlapping weekday/time, in another group
-    r = await tenant.put(f"/v1/groups/{g2['id']}/schedule", [{**slot, "start_time": "19:00", "end_time": "20:00"}])
+    r = await tenant.put(
+        f"/v1/groups/{g2['id']}/schedule", [{**slot, "start_time": "19:00", "end_time": "20:00"}]
+    )
     assert r.status_code == 409 and r.json()["error"]["code"] == "schedule_conflict"
     assert kinds(r.json()) == {"room", "teacher"}
     allowed = await ok(
@@ -279,10 +302,16 @@ async def test_schedule_checks_report(client: httpx.AsyncClient, tenant: Tenant)
     assert [w["problem"] for w in rep["capacity"]] == ["group_capacity_over_room"]
     quiet = await ok(await tenant.get("/v1/schedule/checks", params={"date_from": TUE, "date_to": TUE}))
     assert quiet["conflicts"] == []
-    assert (await tenant.get("/v1/schedule/checks", params={"date_from": MON, "date_to": "2027-06-01"})).status_code == 422
-    assert (await tenant.get("/v1/schedule/checks", params={"date_from": TUE, "date_to": MON})).status_code == 422
+    assert (
+        await tenant.get("/v1/schedule/checks", params={"date_from": MON, "date_to": "2027-06-01"})
+    ).status_code == 422
+    assert (
+        await tenant.get("/v1/schedule/checks", params={"date_from": TUE, "date_to": MON})
+    ).status_code == 422
     teacher, _ = await staff(client, tenant, "teacher")
-    assert (await teacher.get("/v1/schedule/checks", params={"date_from": MON, "date_to": MON})).status_code == 403
+    assert (
+        await teacher.get("/v1/schedule/checks", params={"date_from": MON, "date_to": MON})
+    ).status_code == 403
 
 
 # ---- substitute teacher and payroll --------------------------------------------------------------------------------
@@ -298,7 +327,9 @@ async def test_substitute_payroll_goes_to_the_substitute(tenant: Tenant) -> None
     les = await mk_lesson(tenant, grp["id"])
     await ok(await tenant.patch(f"/v1/lessons/{les['id']}", {"status": "held"}))
     assert (await payroll_total(tenant, t1["id"]))[0] == 1  # a draft payroll with the lesson exists
-    res = await ok(await tenant.post(f"/v1/lessons/{les['id']}/substitute", {"teacher_id": t2["id"], "reason": "sick"}))
+    res = await ok(
+        await tenant.post(f"/v1/lessons/{les['id']}/substitute", {"teacher_id": t2["id"], "reason": "sick"})
+    )
     assert res["kind"] == "substitute" and res["lesson"]["substitute_teacher_id"] == t2["id"]
     assert res["lesson"]["effective_teacher_id"] == t2["id"] and res["lesson"]["teacher_id"] == t1["id"]
     assert res["draft_payroll_lines_removed"] == 1  # the old teacher's draft line left the draft
@@ -311,7 +342,9 @@ async def test_substitute_payroll_goes_to_the_substitute(tenant: Tenant) -> None
     assert [i["amount"] for i in p2["items"] if i["kind"] == "lesson"] == ["80000.00"]
     # clearing the substitute gives the lesson back
     back = await ok(await tenant.post(f"/v1/lessons/{les['id']}/substitute", {"teacher_id": None}))
-    assert back["lesson"]["substitute_teacher_id"] is None and back["lesson"]["effective_teacher_id"] == t1["id"]
+    assert (
+        back["lesson"]["substitute_teacher_id"] is None and back["lesson"]["effective_teacher_id"] == t1["id"]
+    )
     assert (await payroll_total(tenant, t1["id"]))[0] == 1 and (await payroll_total(tenant, t2["id"]))[0] == 0
     hist = await ok(await tenant.get(f"/v1/lessons/{les['id']}/changes"))
     assert [h["kind"] for h in hist] == ["substitute", "substitute"]
@@ -326,18 +359,30 @@ async def test_substitute_rules(tenant: Tenant, tenant_b: Tenant) -> None:
     busy = await tenant.post(f"/v1/lessons/{les['id']}/substitute", {"teacher_id": t2["id"]})
     assert busy.status_code == 409 and kinds(busy.json()) == {"teacher"}
     forced = await ok(
-        await tenant.post(f"/v1/lessons/{les['id']}/substitute", {"teacher_id": t2["id"], "allow_conflict": True})
+        await tenant.post(
+            f"/v1/lessons/{les['id']}/substitute", {"teacher_id": t2["id"], "allow_conflict": True}
+        )
     )
     assert len(forced["allowed_conflicts"]) == 1
-    same = await tenant.post(f"/v1/lessons/{les['id']}/substitute", {"teacher_id": t2["id"], "allow_conflict": True})
+    same = await tenant.post(
+        f"/v1/lessons/{les['id']}/substitute", {"teacher_id": t2["id"], "allow_conflict": True}
+    )
     assert same.status_code == 422  # already the substitute
     t3 = await mk_teacher(tenant)
     await ok(await tenant.patch(f"/v1/teachers/{t3['id']}", {"status": "inactive"}))
-    assert (await tenant.post(f"/v1/lessons/{les['id']}/substitute", {"teacher_id": t3["id"]})).status_code == 422
-    assert (await tenant.post(f"/v1/lessons/{les['id']}/substitute", {"teacher_id": str(uuid.uuid4())})).status_code == 404
+    assert (
+        await tenant.post(f"/v1/lessons/{les['id']}/substitute", {"teacher_id": t3["id"]})
+    ).status_code == 422
+    assert (
+        await tenant.post(f"/v1/lessons/{les['id']}/substitute", {"teacher_id": str(uuid.uuid4())})
+    ).status_code == 404
     foreign = await mk_teacher(tenant_b)
-    assert (await tenant.post(f"/v1/lessons/{les['id']}/substitute", {"teacher_id": foreign["id"]})).status_code == 404
-    assert (await tenant_b.post(f"/v1/lessons/{les['id']}/substitute", {"teacher_id": foreign["id"]})).status_code == 404
+    assert (
+        await tenant.post(f"/v1/lessons/{les['id']}/substitute", {"teacher_id": foreign["id"]})
+    ).status_code == 404
+    assert (
+        await tenant_b.post(f"/v1/lessons/{les['id']}/substitute", {"teacher_id": foreign["id"]})
+    ).status_code == 404
 
 
 async def test_fixed_salary_teacher_loses_nothing_and_substitute_per_lesson_gains(tenant: Tenant) -> None:
@@ -376,7 +421,11 @@ async def test_cancel_prepares_drafts_and_changes_payroll(tenant: Tenant) -> Non
     notices = (await ok(await tenant.get("/v1/schedule-notices")))["items"]
     mine = [n for n in notices if n["student_id"] == kid["id"]]
     assert len(mine) == 1 and mine[0]["status"] == "pending" and mine[0]["kind"] == "cancel"
-    assert "Ingliz A1" in mine[0]["body"] and "07.12.2026 10:00" in mine[0]["body"] and "teacher is ill" in mine[0]["body"]
+    assert (
+        "Ingliz A1" in mine[0]["body"]
+        and "07.12.2026 10:00" in mine[0]["body"]
+        and "teacher is ill" in mine[0]["body"]
+    )
     # nothing was queued for sending: a draft is not a message
     out = (await ok(await tenant.get("/v1/outbox")))["items"]
     assert out == []
@@ -391,7 +440,8 @@ async def test_cancel_refused_for_held_lessons_and_attendance(tenant: Tenant) ->
     les = await mk_lesson(tenant, grp["id"])
     await ok(
         await tenant.put(
-            f"/v1/lessons/{les['id']}/attendance", {"records": [{"student_id": st["id"], "status": "present"}]}
+            f"/v1/lessons/{les['id']}/attendance",
+            {"records": [{"student_id": st["id"], "status": "present"}]},
         )
     )  # the lesson becomes 'held'
     r = await tenant.post(f"/v1/lessons/{les['id']}/cancel", {})
@@ -432,7 +482,11 @@ async def test_move_updates_lesson_keeps_the_original_and_prepares_drafts(tenant
         )
     )
     moved = res["lesson"]
-    assert (moved["lesson_date"], moved["start_time"], moved["end_time"]) == ("2026-12-09", "12:00:00", "13:00:00")
+    assert (moved["lesson_date"], moved["start_time"], moved["end_time"]) == (
+        "2026-12-09",
+        "12:00:00",
+        "13:00:00",
+    )
     assert (moved["original_date"], moved["original_start_time"]) == (MON, "10:00:00")
     assert res["payroll_effect"] == [] and res["notices_created"] == 1
     again = await ok(
@@ -442,7 +496,11 @@ async def test_move_updates_lesson_keeps_the_original_and_prepares_drafts(tenant
         )
     )
     assert again["lesson"]["original_date"] == MON  # the first date is kept
-    notice = [n for n in (await ok(await tenant.get("/v1/schedule-notices")))["items"] if n["student_id"] == kid["id"]]
+    notice = [
+        n
+        for n in (await ok(await tenant.get("/v1/schedule-notices")))["items"]
+        if n["student_id"] == kid["id"]
+    ]
     assert len(notice) == 1 and notice[0]["kind"] == "move" and notice[0]["new_date"] == "2026-12-09"
     assert "09.12.2026 12:00" in notice[0]["body"] and "Sabab: Holiday." in notice[0]["body"]
     hist = await ok(await tenant.get(f"/v1/lessons/{les['id']}/changes"))
@@ -459,7 +517,10 @@ async def test_move_to_next_month_shifts_per_lesson_pay(tenant: Tenant) -> None:
             {"lesson_date": NEXT_MONTH, "start_time": "10:00", "end_time": "11:00", "notify": False},
         )
     )
-    assert [(e["month"], e["delta"]) for e in res["payroll_effect"]] == [("2026-12", "-100000.00"), ("2027-01", "100000.00")]
+    assert [(e["month"], e["delta"]) for e in res["payroll_effect"]] == [
+        ("2026-12", "-100000.00"),
+        ("2027-01", "100000.00"),
+    ]
 
 
 async def test_move_rules(tenant: Tenant) -> None:
@@ -475,7 +536,9 @@ async def test_move_rules(tenant: Tenant) -> None:
     clash = {"lesson_date": TUE, "start_time": "12:30", "end_time": "13:30", "room_id": room["id"]}
     r = await tenant.post(f"/v1/lessons/{les['id']}/move", clash)
     assert r.status_code == 409 and kinds(r.json()) == {"room"}
-    ok_move = await ok(await tenant.post(f"/v1/lessons/{les['id']}/move", {**clash, "allow_conflict": True, "notify": False}))
+    ok_move = await ok(
+        await tenant.post(f"/v1/lessons/{les['id']}/move", {**clash, "allow_conflict": True, "notify": False})
+    )
     assert len(ok_move["allowed_conflicts"]) == 1
     # the same group may not have two lessons at the same start
     twin = await mk_lesson(tenant, g1["id"], day="2026-12-11")
@@ -486,7 +549,8 @@ async def test_move_rules(tenant: Tenant) -> None:
     # moved/cancelled lessons cannot be moved again
     await ok(await tenant.post(f"/v1/lessons/{twin['id']}/cancel", {"notify": False}))
     done = await tenant.post(
-        f"/v1/lessons/{twin['id']}/move", {"lesson_date": "2026-12-12", "start_time": "09:00", "end_time": "10:00"}
+        f"/v1/lessons/{twin['id']}/move",
+        {"lesson_date": "2026-12-12", "start_time": "09:00", "end_time": "10:00"},
     )
     assert done.status_code == 409
 
@@ -503,7 +567,9 @@ async def test_changes_need_write_permission_and_are_tenant_scoped(
     for who in (teacher, viewer):
         assert (await who.post(f"/v1/lessons/{les['id']}/move", body)).status_code == 403
         assert (await who.post(f"/v1/lessons/{les['id']}/cancel", {})).status_code == 403
-        assert (await who.post(f"/v1/lessons/{les['id']}/substitute", {"teacher_id": None})).status_code == 403
+        assert (
+            await who.post(f"/v1/lessons/{les['id']}/substitute", {"teacher_id": None})
+        ).status_code == 403
         assert (await who.get("/v1/schedule-notices")).status_code == 403
     assert (await tenant_b.post(f"/v1/lessons/{les['id']}/move", body)).status_code == 404
     assert (await tenant_b.post(f"/v1/lessons/{les['id']}/cancel", {})).status_code == 404
