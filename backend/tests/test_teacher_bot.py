@@ -19,7 +19,7 @@ from nazoratly.main import create_app
 from nazoratly.telegram_auth import BadInitData, sign_init_data, verify_init_data
 from tests.conftest import Tenant
 from tests.helpers import enroll, mk_group, mk_student, mk_teacher, ok, org_today
-from tests.test_teacher_app import PW, center, family, invite, lesson, sql
+from tests.test_teacher_app import center, family, invite, lesson, sql
 
 TOKEN = "123456:TEST-BOT-TOKEN"
 SECRET = "teacher-hook-secret-0123456789"
@@ -270,7 +270,9 @@ async def test_today_roll_call_by_buttons_and_the_rest(
     p2 = [b for b in buttons(second_page) if b[1].startswith("a:")]
     assert len(p2) == 2 * 4 and "2/2" in texts(second_page)[0]
     for code, status in (("a", "absent"), ("l", "late"), ("e", "excused")):
-        pick = next(b for b in p2 if b[1].split(":")[3] == code and b[1].split(":")[2] == p2[0][1].split(":")[2])
+        pick = next(
+            b for b in p2 if b[1].split(":")[3] == code and b[1].split(":")[2] == p2[0][1].split(":")[2]
+        )
         await bot.tap(u, pick[1])
         sid8 = pick[1].split(":")[2]
         entry = next(

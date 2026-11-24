@@ -88,7 +88,13 @@ async def teacher_groups(p: Teacher, db: DB) -> list[OwnGroupOut]:
         t = await require_teacher(conn, p.user_id)
         rows = await own_groups(conn, int(t["id"]))
     return [
-        OwnGroupOut(id=r["public_id"], name=r["name"], course_name=r["course_name"], status=r["status"], students=int(r["students"]))
+        OwnGroupOut(
+            id=r["public_id"],
+            name=r["name"],
+            course_name=r["course_name"],
+            status=r["status"],
+            students=int(r["students"]),
+        )
         for r in rows
     ]
 
