@@ -179,7 +179,7 @@ class RateLimitMiddleware:
             return
         ip = client_ip(scope, self.settings.trust_proxy_headers)
         checks: list[tuple[str, int]] = [(f"all:{ip}", self.settings.rate_limit_per_minute)]
-        if str(scope.get("path", "")).startswith("/v1/auth/"):
+        if str(scope.get("path", "")).startswith(("/v1/auth/", "/v1/cabinet/auth/")):
             checks.append((f"auth:{ip}", self.settings.auth_rate_limit_per_minute))
         for key, limit in checks:
             ok, retry = self.limiter.hit(key, limit)

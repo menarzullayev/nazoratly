@@ -127,7 +127,7 @@ export function stampOf(def: TableDef, row: Record<string, unknown>, parentBranc
 // ---- how each marked table gets its branch (the same chain as the database's branch_catalog) ----------------------------
 import {
   ATTENDANCE, BILL_PAYMENTS, CERTIFICATES, CHARGES, DISCOUNTS, DISCOUNT_LINES, DOCUMENTS, DRAFTS, ENROLLMENTS, ENTITLEMENTS, EXAMS,
-  EXAM_RESULTS, GROUPS, INSTALLMENTS, LEADS, LEAD_LOG, MARKS, PACKAGES, PAYMENTS, PAYROLL, PROMO_USES, REFERRALS, REFUNDS, REPORTS,
+  EXAM_RESULTS, GROUPS, GUARDIAN_LINKS, GUARDIAN_REQUESTS, INSTALLMENTS, LEADS, LEAD_LOG, MARKS, PACKAGES, PAYMENTS, PAYROLL, PROMO_USES, REFERRALS, REFUNDS, REPORTS,
   SCHEDULE_CHANGES, STUDENTS, SUPPLIER_BILLS, TEACHERS, WAITLIST,
 } from "./schema";
 
@@ -151,6 +151,8 @@ follow(REPORTS, [GROUPS, "groupId"], [STUDENTS, "studentId"]);
 follow(CERTIFICATES, [GROUPS, "groupId"], [STUDENTS, "studentId"]);
 follow(REFERRALS, [STUDENTS, "referrerId"], [STUDENTS, "invitedId"]);
 follow(PROMO_USES, [STUDENTS, "studentId"]);
+follow(GUARDIAN_REQUESTS, [STUDENTS, "studentId"]);
+follow(GUARDIAN_LINKS, [STUDENTS, "studentId"]);
 follow(DRAFTS, [STUDENTS, "studentId"]);
 follow(DOCUMENTS, [PAYMENTS, "paymentId"], [STUDENTS, "studentId"]);
 follow(PAYROLL, [TEACHERS, "teacherId"]);

@@ -47,6 +47,13 @@ class Settings(BaseSettings):
         None  # Telegram setWebhook secret_token (also sent to the target as ?s=)
     )
 
+    # Guardian cabinet (G7): the bot that answers guardians, its webhook secret and the public address of the Mini App page.
+    # Nothing is sent unless a token is set; unset = the bot endpoint answers 404 and login codes are not delivered.
+    # (telegram_bot_token / telegram_api_base are shared with the teacher app below)
+    guardian_bot_secret: SecretStr | None = None  # setWebhook secret_token for /hooks/guardian-bot
+    guardian_bot_username: str | None = None  # without @, for deep links
+    public_base_url: str | None = None  # e.g. https://nazoratly.bugvector.uz (Mini App button, portal link)
+
     # AI assistant (G5): the host-side worker that runs `claude -p`; unset = AI not configured = rule-based reports only.
     ai_worker_url: str | None = None
     ai_worker_token: SecretStr | None = None
@@ -79,6 +86,9 @@ class Settings(BaseSettings):
         "otel_exporter_otlp_endpoint",
         "tg_relay_target",
         "tg_relay_secret",
+        "guardian_bot_secret",
+        "guardian_bot_username",
+        "public_base_url",
         "ai_worker_url",
         "ai_worker_token",
         "telegram_bot_token",

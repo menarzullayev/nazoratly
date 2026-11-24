@@ -5,6 +5,7 @@ import * as branches from "./gas/branches";
 import * as demo from "./gas/demo";
 import * as documents from "./gas/documents";
 import * as growth from "./gas/growth";
+import * as guardian from "./gas/guardian";
 import * as importer from "./gas/importer";
 import * as insights from "./gas/insights";
 import * as qr from "./gas/qr";
@@ -71,6 +72,19 @@ g.onOpen = (): void => {
         .addItem("Manba xarajatini kiritish", "menuSourceCost")
         .addItem("Manba ROI hisoboti", "menuSourceRoi")
         .addItem("Lead eslatmalari (ichki ro'yxat)", "menuLeadReminders"),
+    )
+    .addSubMenu(
+      SpreadsheetApp.getUi()
+        .createMenu("Vasiy kabineti (so'rovlar, ulanish)")
+        .addItem("Darsga kela olmaslik: so'rov kiritish", "menuGuardianAbsence")
+        .addItem("To'lov va'dasi: so'rov kiritish", "menuGuardianPromise")
+        .addItem("Qoplash darsi tanlovi: so'rov kiritish", "menuGuardianMakeup")
+        .addItem("So'rovni tasdiqlash", "menuGuardianApprove")
+        .addItem("So'rovni rad etish", "menuGuardianReject")
+        .addSeparator()
+        .addItem("QR-karta ulanishini tasdiqlash", "menuGuardianLinkApprove")
+        .addItem("QR-karta ulanishini rad etish", "menuGuardianLinkReject")
+        .addItem("Qo'lda ulash (Telegram chat ID)", "menuGuardianLinkManual"),
     )
     .addSubMenu(
       SpreadsheetApp.getUi()
@@ -276,6 +290,15 @@ g.menuGrowthCredits = growth.menu.credits;
 g.menuSourceCost = growth.menu.cost;
 g.menuSourceRoi = growth.menu.roi;
 g.menuLeadReminders = growth.menu.reminders;
+
+g.menuGuardianAbsence = guardian.menu.absence;
+g.menuGuardianPromise = guardian.menu.promise;
+g.menuGuardianMakeup = guardian.menu.makeup;
+g.menuGuardianApprove = guardian.menu.approve;
+g.menuGuardianReject = guardian.menu.reject;
+g.menuGuardianLinkApprove = guardian.menu.approveLink;
+g.menuGuardianLinkReject = guardian.menu.rejectLink;
+g.menuGuardianLinkManual = guardian.menu.manualLink;
 
 g.menuDiscountAdd = money.menu.addDiscount;
 g.menuDiscountEnd = money.menu.endDiscount;

@@ -1071,6 +1071,313 @@ export interface paths {
         patch: operations["patch_branch_settings_v1_branches__branch_id__settings_patch"];
         trace?: never;
     };
+    "/v1/cabinet/auth/code/request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Portal sign-in, step 1: a 6-digit code is sent to the guardian's own Telegram chat (always 202: no enumeration) */
+        post: operations["auth_code_request_v1_cabinet_auth_code_request_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cabinet/auth/code/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Portal sign-in, step 2: the code from Telegram (5 attempts per code, 10 minutes) */
+        post: operations["auth_code_verify_v1_cabinet_auth_code_verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cabinet/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** End this session */
+        post: operations["logout_v1_cabinet_auth_logout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cabinet/auth/telegram": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mini App sign-in: send Telegram's `initData`; the signature and its age are checked */
+        post: operations["auth_telegram_v1_cabinet_auth_telegram_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cabinet/certificates/{certificate_id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** PDF of a certificate */
+        get: operations["certificate_pdf_v1_cabinet_certificates__certificate_id__pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cabinet/documents/{document_id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** PDF of a receipt or invoice */
+        get: operations["document_pdf_v1_cabinet_documents__document_id__pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cabinet/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The guardian, his center and the students linked to him */
+        get: operations["me_v1_cabinet_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cabinet/reports/{report_id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** PDF of an approved progress report */
+        get: operations["report_pdf_v1_cabinet_reports__report_id__pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cabinet/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My requests and what the center decided */
+        get: operations["my_requests_v1_cabinet_requests_get"];
+        put?: never;
+        /** Ask the center for something (absence reason, payment promise, make-up slot). Nothing changes until it approves. */
+        post: operations["create_request_v1_cabinet_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cabinet/requests/{request_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Withdraw a request that is still waiting */
+        post: operations["cancel_v1_cabinet_requests__request_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cabinet/students/{student_id}/absence-lessons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Upcoming lessons a guardian can still announce an absence for */
+        get: operations["absence_lessons_v1_cabinet_students__student_id__absence_lessons_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cabinet/students/{student_id}/attendance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Attendance of the last 90 days */
+        get: operations["attendance_v1_cabinet_students__student_id__attendance_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cabinet/students/{student_id}/balance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Debt, payment plan, recent payments, promises */
+        get: operations["balance_v1_cabinet_students__student_id__balance_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cabinet/students/{student_id}/consent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The guardian accepts the privacy terms for this student (needed before anything is shown) */
+        post: operations["accept_consent_v1_cabinet_students__student_id__consent_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cabinet/students/{student_id}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Receipts and invoices */
+        get: operations["documents_v1_cabinet_students__student_id__documents_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cabinet/students/{student_id}/makeup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Open make-up rights with the slots that can be chosen */
+        get: operations["makeup_v1_cabinet_students__student_id__makeup_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cabinet/students/{student_id}/results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Notes, grades, exams, approved progress reports, certificates */
+        get: operations["results_v1_cabinet_students__student_id__results_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cabinet/students/{student_id}/schedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lessons of the next 30 days and the weekly timetable */
+        get: operations["schedule_v1_cabinet_students__student_id__schedule_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/calendar": {
         parameters: {
             query?: never;
@@ -1943,6 +2250,162 @@ export interface paths {
         put?: never;
         /** Put a student on the waiting list of a full group */
         post: operations["join_waitlist_v1_groups__group_id__waitlist_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/guardian/codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Codes of a center (never the code itself) */
+        get: operations["list_codes_v1_guardian_codes_get"];
+        put?: never;
+        /** Issue a one-time link code for a student (shown once; only its hash is stored; valid 72 hours) */
+        post: operations["issue_code_v1_guardian_codes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/guardian/codes/{code_id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revoke an unused code */
+        post: operations["revoke_code_v1_guardian_codes__code_id__revoke_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/guardian/link-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Link requests made with a student's QR card */
+        get: operations["list_link_requests_v1_guardian_link_requests_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/guardian/link-requests/{request_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve a QR-card link request */
+        post: operations["approve_link_request_v1_guardian_link_requests__request_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/guardian/link-requests/{request_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject a QR-card link request */
+        post: operations["reject_link_request_v1_guardian_link_requests__request_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/guardian/links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Who is linked to whom, and how */
+        get: operations["list_links_v1_guardian_links_get"];
+        put?: never;
+        /** Link a guardian's Telegram account to a student by hand */
+        post: operations["manual_link_v1_guardian_links_post"];
+        /** Remove a guardian from a student (his sessions end when no student is left) */
+        delete: operations["remove_link_v1_guardian_links_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/guardian/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What guardians asked for (default: waiting for a decision) */
+        get: operations["requests_list_v1_guardian_requests_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/guardian/requests/{request_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve a request and apply it: absence -> attendance `excused`, make-up -> lesson scheduled, promise -> recorded */
+        post: operations["approve_request_v1_guardian_requests__request_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/guardian/requests/{request_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject a request (nothing changes) */
+        post: operations["reject_request_v1_guardian_requests__request_id__reject_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4011,6 +4474,53 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AbsenceIn */
+        AbsenceIn: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "absence_reason";
+            /**
+             * Lesson Id
+             * Format: uuid
+             */
+            lesson_id: string;
+            /** Reason */
+            reason: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+        };
+        /** AbsenceLesson */
+        AbsenceLesson: {
+            /**
+             * End Time
+             * Format: time
+             */
+            end_time: string;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            /**
+             * Lesson Date
+             * Format: date
+             */
+            lesson_date: string;
+            /**
+             * Start Time
+             * Format: time
+             */
+            start_time: string;
+        };
         /** AbsenceRow */
         AbsenceRow: {
             /** Absences */
@@ -4381,6 +4891,19 @@ export interface components {
             /** Reminder After Hours */
             reminder_after_hours?: number | null;
         };
+        /** ApproveLinkIn */
+        ApproveLinkIn: {
+            /** Full Name */
+            full_name?: string | null;
+            /** Guardian Id */
+            guardian_id?: string | null;
+            /**
+             * Relation
+             * @default guardian
+             * @enum {string}
+             */
+            relation: "mother" | "father" | "guardian" | "self" | "other";
+        };
         /** ApproveNoticeIn */
         ApproveNoticeIn: {
             /** Channel */
@@ -4410,6 +4933,44 @@ export interface components {
         AttendanceIn: {
             /** Records */
             records: components["schemas"]["nazoratly__routers__lessons__MarkIn"][];
+        };
+        /** AttendanceOut */
+        AttendanceOut: {
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Records */
+            records: components["schemas"]["AttendanceRecord"][];
+            /**
+             * Since
+             * Format: date
+             */
+            since: string;
+        };
+        /** AttendanceRecord */
+        AttendanceRecord: {
+            /** Group Name */
+            group_name: string;
+            /** Kind */
+            kind: string;
+            /**
+             * Lesson Date
+             * Format: date
+             */
+            lesson_date: string;
+            /** Minutes Late */
+            minutes_late: number;
+            /**
+             * Start Time
+             * Format: time
+             */
+            start_time: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "present" | "absent" | "late" | "excused";
         };
         /** AuditOut */
         AuditOut: {
@@ -5142,25 +5703,6 @@ export interface components {
             /** Next Shift No */
             next_shift_no: number;
         };
-        /** CertificateBrief */
-        CertificateBrief: {
-            /** Course Name */
-            course_name: string;
-            /** Group Name */
-            group_name: string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Issued On
-             * Format: date
-             */
-            issued_on: string;
-            /** Number */
-            number: string;
-        };
         /** CertificateIn */
         CertificateIn: {
             /**
@@ -5282,7 +5824,7 @@ export interface components {
             draft_payroll_lines_removed: number;
             /** Kind */
             kind: string;
-            lesson: components["schemas"]["LessonOut"];
+            lesson: components["schemas"]["nazoratly__routers__lessons__LessonOut"];
             /** Notices Created */
             notices_created: number;
             /** Payroll Effect */
@@ -5485,6 +6027,89 @@ export interface components {
             /** Demo Mode */
             demo_mode: boolean;
         };
+        /** CodeIn */
+        CodeIn: {
+            /** Guardian Id */
+            guardian_id?: string | null;
+            /**
+             * Relation
+             * @default guardian
+             * @enum {string}
+             */
+            relation: "mother" | "father" | "guardian" | "self" | "other";
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+        };
+        /** CodeIssued */
+        CodeIssued: {
+            /** Code */
+            code: string;
+            /** Deep Link */
+            deep_link: string | null;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Guardian Id */
+            guardian_id: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+        };
+        /** CodeLoginIn */
+        CodeLoginIn: {
+            /** Code */
+            code: string;
+            /** Phone */
+            phone: string;
+        };
+        /** CodeRow */
+        CodeRow: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Guardian Id */
+            guardian_id: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Relation */
+            relation: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "ok" | "used" | "expired" | "revoked";
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+            /** Used At */
+            used_at: string | null;
+        };
         /** CommitIn */
         CommitIn: {
             /**
@@ -5556,31 +6181,6 @@ export interface components {
              * @enum {string}
              */
             purpose: "data_processing" | "notifications" | "ai_assistant_processing" | "marketing";
-        };
-        /** ConsentOut */
-        ConsentOut: {
-            /** Evidence */
-            evidence: string | null;
-            /** Given By Guardian Id */
-            given_by_guardian_id: string | null;
-            /** Given By Self */
-            given_by_self: boolean;
-            /**
-             * Granted At
-             * Format: date-time
-             */
-            granted_at: string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Policy Version */
-            policy_version: string;
-            /** Purpose */
-            purpose: string;
-            /** Revoked At */
-            revoked_at: string | null;
         };
         /** CostIn */
         CostIn: {
@@ -5731,6 +6331,11 @@ export interface components {
             /** Student Name */
             student_name: string;
         };
+        /** DecideIn */
+        DecideIn: {
+            /** Note */
+            note?: string | null;
+        };
         /** DemoOut */
         DemoOut: {
             /** Counts */
@@ -5861,6 +6466,28 @@ export interface components {
              * @description scholarships are shown separately from the other discounts
              */
             scholarship_total: string;
+            /** Total */
+            total: string;
+        };
+        /** DocumentBrief */
+        DocumentBrief: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Issued On
+             * Format: date
+             */
+            issued_on: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "receipt" | "invoice";
+            /** Number */
+            number: string;
             /** Total */
             total: string;
         };
@@ -6259,6 +6886,29 @@ export interface components {
              * @description monthly from this date, the day clamped to the month end
              */
             first_due: string;
+        };
+        /** ExamBrief */
+        ExamBrief: {
+            /** Group Name */
+            group_name: string;
+            /**
+             * Held On
+             * Format: date
+             */
+            held_on: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Max Score */
+            max_score: string;
+            /** Note */
+            note: string | null;
+            /** Score */
+            score: string;
+            /** Title */
+            title: string;
         };
         /** ExamDetail */
         ExamDetail: {
@@ -7221,64 +7871,6 @@ export interface components {
             /** Topic */
             topic?: string | null;
         };
-        /** LessonOut */
-        LessonOut: {
-            /** Cancel Reason */
-            cancel_reason: string | null;
-            /** Effective Teacher Id */
-            effective_teacher_id: string | null;
-            /** Effective Teacher Name */
-            effective_teacher_name: string | null;
-            /**
-             * End Time
-             * Format: time
-             */
-            end_time: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /** Group Name */
-            group_name: string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Kind */
-            kind: string;
-            /**
-             * Lesson Date
-             * Format: date
-             */
-            lesson_date: string;
-            /** Original Date */
-            original_date: string | null;
-            /** Original Start Time */
-            original_start_time: string | null;
-            /** Room Id */
-            room_id: string | null;
-            /** Room Name */
-            room_name: string | null;
-            /**
-             * Start Time
-             * Format: time
-             */
-            start_time: string;
-            /** Status */
-            status: string;
-            /** Substitute Teacher Id */
-            substitute_teacher_id: string | null;
-            /** Substitute Teacher Name */
-            substitute_teacher_name: string | null;
-            /** Teacher Id */
-            teacher_id: string | null;
-            /** Teacher Name */
-            teacher_name: string | null;
-            /** Topic */
-            topic: string | null;
-        };
         /** LessonPatch */
         LessonPatch: {
             /** End Time */
@@ -7339,6 +7931,69 @@ export interface components {
             /** Relation */
             relation?: ("mother" | "father" | "guardian" | "self" | "other") | null;
         };
+        /** LinkRequestRow */
+        LinkRequestRow: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decided At */
+            decided_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "approved" | "rejected";
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+            /** Telegram Name */
+            telegram_name: string | null;
+            /** Telegram User Id */
+            telegram_user_id: number;
+        };
+        /** LinkRow */
+        LinkRow: {
+            /**
+             * Guardian Id
+             * Format: uuid
+             */
+            guardian_id: string;
+            /** Guardian Name */
+            guardian_name: string;
+            /** Linked Via */
+            linked_via: string | null;
+            /** Relation */
+            relation: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+            /** Telegram Linked */
+            telegram_linked: boolean;
+        };
+        /** LoginCodeAccepted */
+        LoginCodeAccepted: {
+            /**
+             * Status
+             * @default sent
+             * @constant
+             */
+            status: "sent";
+        };
         /** LoginIn */
         LoginIn: {
             /**
@@ -7358,6 +8013,95 @@ export interface components {
         LogoutIn: {
             /** Refresh Token */
             refresh_token: string;
+        };
+        /** MakeupIn */
+        MakeupIn: {
+            /**
+             * Entitlement Id
+             * Format: uuid
+             */
+            entitlement_id: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "makeup_choice";
+            /**
+             * Slot Lesson Id
+             * Format: uuid
+             */
+            slot_lesson_id: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+        };
+        /** MakeupRight */
+        MakeupRight: {
+            /**
+             * Expires On
+             * Format: date
+             */
+            expires_on: string;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Missed On
+             * Format: date
+             */
+            missed_on: string;
+            /** Slots */
+            slots: components["schemas"]["SlotOut"][];
+        };
+        /** ManualLinkIn */
+        ManualLinkIn: {
+            /**
+             * Guardian Id
+             * Format: uuid
+             */
+            guardian_id: string;
+            /**
+             * Relation
+             * @default guardian
+             * @enum {string}
+             */
+            relation: "mother" | "father" | "guardian" | "self" | "other";
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Telegram Chat Id */
+            telegram_chat_id: number;
+        };
+        /** MarkBrief */
+        MarkBrief: {
+            /** Grade */
+            grade: number | null;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Lesson Date */
+            lesson_date: string | null;
+            /** Month */
+            month: string | null;
+            /** Note */
+            note: string | null;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "lesson" | "month";
         };
         /** MarkOut */
         MarkOut: {
@@ -7483,7 +8227,7 @@ export interface components {
              */
             group_id: string;
             /** Lessons */
-            lessons: components["schemas"]["LessonOut"][];
+            lessons: components["schemas"]["nazoratly__routers__lessons__LessonOut"][];
             /**
              * Month
              * Format: date
@@ -7590,6 +8334,50 @@ export interface components {
             running: number;
             /** Trials Started */
             trials_started: number;
+        };
+        /** MyRequest */
+        MyRequest: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decided At */
+            decided_at: string | null;
+            /** Decision Note */
+            decision_note: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "absence_reason" | "payment_promise" | "makeup_choice";
+            /** Lesson Date */
+            lesson_date: string | null;
+            /** Promise Amount */
+            promise_amount: string | null;
+            /** Promise Date */
+            promise_date: string | null;
+            /** Reason */
+            reason: string | null;
+            /** Slot Date */
+            slot_date: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "approved" | "rejected" | "cancelled";
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
         };
         /** NamedAmount */
         NamedAmount: {
@@ -7766,6 +8554,42 @@ export interface components {
              * Format: date
              */
             period_month: string;
+        };
+        /** OpenChargeOut */
+        OpenChargeOut: {
+            /** Amount */
+            amount: string;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Next Due */
+            next_due: string | null;
+            /** Outstanding */
+            outstanding: string;
+            /** Overdue */
+            overdue: boolean;
+            /** Overdue Amount */
+            overdue_amount: string;
+            /** Paid */
+            paid: string;
+            /**
+             * Period Month
+             * Format: date
+             */
+            period_month: string;
+            /** Plan */
+            plan: {
+                [key: string]: unknown;
+            } | null;
         };
         /** OrgRef */
         OrgRef: {
@@ -8250,7 +9074,7 @@ export interface components {
             /** Has More */
             has_more: boolean;
             /** Items */
-            items: components["schemas"]["LessonOut"][];
+            items: components["schemas"]["nazoratly__routers__lessons__LessonOut"][];
             /** Limit */
             limit: number;
             /** Offset */
@@ -8541,6 +9365,23 @@ export interface components {
             pay_rate: string;
             payroll: components["schemas"]["PayrollRef"] | null;
         };
+        /** PaymentBrief */
+        PaymentBrief: {
+            /** Amount */
+            amount: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Method */
+            method: string;
+            /**
+             * Paid At
+             * Format: date-time
+             */
+            paid_at: string;
+        };
         /** PaymentIn */
         PaymentIn: {
             /** Allocations */
@@ -8816,6 +9657,11 @@ export interface components {
             /** Total Debit */
             total_debit: string;
         };
+        /** PhoneIn */
+        PhoneIn: {
+            /** Phone */
+            phone: string;
+        };
         /** PlanIn */
         PlanIn: {
             equal?: components["schemas"]["EqualSplitIn"] | null;
@@ -8944,6 +9790,52 @@ export interface components {
             reward_type: "amount" | "percent" | "free_lesson";
             /** Reward Value */
             reward_value: string;
+        };
+        /** PromiseIn */
+        PromiseIn: {
+            /** Amount */
+            amount?: number | string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "payment_promise";
+            /**
+             * Promise Date
+             * Format: date
+             */
+            promise_date: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+        };
+        /** PromiseOut */
+        PromiseOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decision Note */
+            decision_note: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Promise Amount */
+            promise_amount: string | null;
+            /**
+             * Promise Date
+             * Format: date
+             */
+            promise_date: string;
+            /** State */
+            state: string;
+            /** Status */
+            status: string;
         };
         /** ProviderIn */
         ProviderIn: {
@@ -9347,25 +10239,6 @@ export interface components {
             /** Stage */
             stage: string;
         };
-        /** ReportBrief */
-        ReportBrief: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /** Group Name */
-            group_name: string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Month */
-            month: string;
-            /** Status */
-            status: string;
-        };
         /** ReportDetail */
         ReportDetail: {
             /** Approved At */
@@ -9467,6 +10340,57 @@ export interface components {
              */
             kind: "weekly_summary" | "debt_followup" | "churn_risk";
         };
+        /** RequestRow */
+        RequestRow: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decided At */
+            decided_at: string | null;
+            /** Decision Note */
+            decision_note: string | null;
+            /**
+             * Guardian Id
+             * Format: uuid
+             */
+            guardian_id: string;
+            /** Guardian Name */
+            guardian_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "absence_reason" | "payment_promise" | "makeup_choice";
+            /** Lesson Date */
+            lesson_date: string | null;
+            /** Promise Amount */
+            promise_amount: string | null;
+            /** Promise Date */
+            promise_date: string | null;
+            /** Reason */
+            reason: string | null;
+            /** Slot Date */
+            slot_date: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "approved" | "rejected" | "cancelled";
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+        };
         /** ResultRecord */
         ResultRecord: {
             /** Note */
@@ -9483,6 +10407,17 @@ export interface components {
         ResultsIn: {
             /** Records */
             records: components["schemas"]["ResultRecord"][];
+        };
+        /** ResultsOut */
+        ResultsOut: {
+            /** Certificates */
+            certificates: components["schemas"]["nazoratly__routers__cabinet__CertificateBrief"][];
+            /** Exams */
+            exams: components["schemas"]["ExamBrief"][];
+            /** Marks */
+            marks: components["schemas"]["MarkBrief"][];
+            /** Reports */
+            reports: components["schemas"]["nazoratly__routers__cabinet__ReportBrief"][];
         };
         /** RevenuePoint */
         RevenuePoint: {
@@ -9698,6 +10633,23 @@ export interface components {
             start_time: string;
             /** Teacher Id */
             teacher_id?: string | null;
+        };
+        /** ScheduleOut */
+        ScheduleOut: {
+            /**
+             * From
+             * Format: date
+             */
+            from: string;
+            /** Lessons */
+            lessons: components["schemas"]["nazoratly__routers__cabinet__LessonOut"][];
+            /**
+             * To
+             * Format: date
+             */
+            to: string;
+            /** Weekly */
+            weekly: components["schemas"]["WeeklySlot"][];
         };
         /** ScheduleSaved */
         ScheduleSaved: {
@@ -9982,6 +10934,31 @@ export interface components {
             /** Referrer Name */
             referrer_name: string;
         };
+        /** SlotOut */
+        SlotOut: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * End Time
+             * Format: time
+             */
+            end_time: string;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Lesson Id
+             * Format: uuid
+             */
+            lesson_id: string;
+            /**
+             * Start Time
+             * Format: time
+             */
+            start_time: string;
+        };
         /** SourceIn */
         SourceIn: {
             /** Name */
@@ -10218,6 +11195,20 @@ export interface components {
              */
             student_id: string;
         };
+        /** StudentBrief */
+        StudentBrief: {
+            /** Consent */
+            consent: boolean;
+            /** Full Name */
+            full_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Relation */
+            relation: string;
+        };
         /** StudentDetail */
         StudentDetail: {
             balance?: components["schemas"]["nazoratly__routers__students__BalanceOut"] | null;
@@ -10229,7 +11220,7 @@ export interface components {
              */
             branch_id: string | null;
             /** Consents */
-            consents: components["schemas"]["ConsentOut"][];
+            consents: components["schemas"]["nazoratly__routers__students__ConsentOut"][];
             /**
              * Created At
              * Format: date-time
@@ -10335,13 +11326,13 @@ export interface components {
         /** StudentResults */
         StudentResults: {
             /** Certificates */
-            certificates: components["schemas"]["CertificateBrief"][];
+            certificates: components["schemas"]["nazoratly__routers__results__CertificateBrief"][];
             /** Exams */
             exams: components["schemas"]["StudentExam"][];
             /** Marks */
             marks: components["schemas"]["MarkOut"][];
             /** Reports */
-            reports: components["schemas"]["ReportBrief"][];
+            reports: components["schemas"]["nazoratly__routers__results__ReportBrief"][];
             /**
              * Student Id
              * Format: uuid
@@ -10549,6 +11540,16 @@ export interface components {
             /** Status */
             status?: ("active" | "inactive") | null;
         };
+        /** TelegramLoginIn */
+        TelegramLoginIn: {
+            /**
+             * Choice
+             * @description which center, when the Telegram account is linked in several
+             */
+            choice?: number | null;
+            /** Init Data */
+            init_data: string;
+        };
         /** TemplateOut */
         TemplateOut: {
             /** Code */
@@ -10558,24 +11559,6 @@ export interface components {
              * @description with {student}, {group} and {date} placeholders
              */
             text: string;
-        };
-        /** TokenOut */
-        TokenOut: {
-            /** Access Token */
-            access_token: string;
-            /** Expires In */
-            expires_in: number;
-            /** @description selected center; null when the user belongs to several and none was chosen */
-            org: components["schemas"]["OrgRef"] | null;
-            /** Organizations */
-            organizations: components["schemas"]["OrgRef"][];
-            /** Refresh Token */
-            refresh_token: string;
-            /**
-             * Token Type
-             * @default bearer
-             */
-            token_type: string;
         };
         /** ToolCallOut */
         ToolCallOut: {
@@ -10931,6 +11914,23 @@ export interface components {
             /** Student Name */
             student_name: string;
         };
+        /** WeeklySlot */
+        WeeklySlot: {
+            /**
+             * End Time
+             * Format: time
+             */
+            end_time: string;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Start Time
+             * Format: time
+             */
+            start_time: string;
+            /** Weekday */
+            weekday: number;
+        };
         /** VerifyOut */
         nazoratly__routers__accounting__VerifyOut: {
             /**
@@ -10973,6 +11973,141 @@ export interface components {
             organizations: components["schemas"]["OrgRef"][];
             /** Phone */
             phone: string | null;
+        };
+        /** TokenOut */
+        nazoratly__routers__auth__TokenOut: {
+            /** Access Token */
+            access_token: string;
+            /** Expires In */
+            expires_in: number;
+            /** @description selected center; null when the user belongs to several and none was chosen */
+            org: components["schemas"]["OrgRef"] | null;
+            /** Organizations */
+            organizations: components["schemas"]["OrgRef"][];
+            /** Refresh Token */
+            refresh_token: string;
+            /**
+             * Token Type
+             * @default bearer
+             */
+            token_type: string;
+        };
+        /** BalanceOut */
+        nazoratly__routers__cabinet__BalanceOut: {
+            /** Credit */
+            credit: string;
+            /** Open Charges */
+            open_charges: components["schemas"]["OpenChargeOut"][];
+            /** Outstanding Total */
+            outstanding_total: string;
+            /** Overdue Total */
+            overdue_total: string;
+            /** Promises */
+            promises: components["schemas"]["PromiseOut"][];
+            /** Recent Payments */
+            recent_payments: components["schemas"]["PaymentBrief"][];
+        };
+        /** CertificateBrief */
+        nazoratly__routers__cabinet__CertificateBrief: {
+            /** Group Name */
+            group_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Issued On
+             * Format: date
+             */
+            issued_on: string;
+            /** Number */
+            number: string;
+        };
+        /** ConsentOut */
+        nazoratly__routers__cabinet__ConsentOut: {
+            /** Consent */
+            consent: boolean;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+        };
+        /** LessonOut */
+        nazoratly__routers__cabinet__LessonOut: {
+            /**
+             * End Time
+             * Format: time
+             */
+            end_time: string;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            /**
+             * Lesson Date
+             * Format: date
+             */
+            lesson_date: string;
+            /**
+             * Start Time
+             * Format: time
+             */
+            start_time: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "planned" | "held" | "cancelled";
+        };
+        /** MeOut */
+        nazoratly__routers__cabinet__MeOut: {
+            /** Center */
+            center: string;
+            /** Full Name */
+            full_name: string;
+            /**
+             * Guardian Id
+             * Format: uuid
+             */
+            guardian_id: string;
+            /** Promise Max Days */
+            promise_max_days: number;
+            /** Students */
+            students: components["schemas"]["StudentBrief"][];
+        };
+        /** ReportBrief */
+        nazoratly__routers__cabinet__ReportBrief: {
+            /** Group Name */
+            group_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Month */
+            month: string;
+        };
+        /** TokenOut */
+        nazoratly__routers__cabinet__TokenOut: {
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "miniapp" | "portal";
+            /** Token */
+            token: string;
         };
         /** SendOut */
         nazoratly__routers__certificates__SendOut: {
@@ -11106,6 +12241,64 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** LessonOut */
+        nazoratly__routers__lessons__LessonOut: {
+            /** Cancel Reason */
+            cancel_reason: string | null;
+            /** Effective Teacher Id */
+            effective_teacher_id: string | null;
+            /** Effective Teacher Name */
+            effective_teacher_name: string | null;
+            /**
+             * End Time
+             * Format: time
+             */
+            end_time: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            /**
+             * Lesson Date
+             * Format: date
+             */
+            lesson_date: string;
+            /** Original Date */
+            original_date: string | null;
+            /** Original Start Time */
+            original_start_time: string | null;
+            /** Room Id */
+            room_id: string | null;
+            /** Room Name */
+            room_name: string | null;
+            /**
+             * Start Time
+             * Format: time
+             */
+            start_time: string;
+            /** Status */
+            status: string;
+            /** Substitute Teacher Id */
+            substitute_teacher_id: string | null;
+            /** Substitute Teacher Name */
+            substitute_teacher_name: string | null;
+            /** Teacher Id */
+            teacher_id: string | null;
+            /** Teacher Name */
+            teacher_name: string | null;
+            /** Topic */
+            topic: string | null;
+        };
         /** MarkIn */
         nazoratly__routers__lessons__MarkIn: {
             /**
@@ -11188,6 +12381,25 @@ export interface components {
              */
             guardian_id: string;
         };
+        /** CertificateBrief */
+        nazoratly__routers__results__CertificateBrief: {
+            /** Course Name */
+            course_name: string;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Issued On
+             * Format: date
+             */
+            issued_on: string;
+            /** Number */
+            number: string;
+        };
         /** MarkIn */
         nazoratly__routers__results__MarkIn: {
             /** Grade */
@@ -11220,6 +12432,25 @@ export interface components {
              */
             student_id: string;
         };
+        /** ReportBrief */
+        nazoratly__routers__results__ReportBrief: {
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Month */
+            month: string;
+            /** Status */
+            status: string;
+        };
         /** BalanceOut */
         nazoratly__routers__students__BalanceOut: {
             /** Credit */
@@ -11228,6 +12459,31 @@ export interface components {
             outstanding_total: string;
             /** Overdue Total */
             overdue_total: string;
+        };
+        /** ConsentOut */
+        nazoratly__routers__students__ConsentOut: {
+            /** Evidence */
+            evidence: string | null;
+            /** Given By Guardian Id */
+            given_by_guardian_id: string | null;
+            /** Given By Self */
+            given_by_self: boolean;
+            /**
+             * Granted At
+             * Format: date-time
+             */
+            granted_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Policy Version */
+            policy_version: string;
+            /** Purpose */
+            purpose: string;
+            /** Revoked At */
+            revoked_at: string | null;
         };
         /** StudentOut */
         nazoratly__routers__students__StudentOut: {
@@ -12988,7 +14244,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TokenOut"];
+                    "application/json": components["schemas"]["nazoratly__routers__auth__TokenOut"];
                 };
             };
             /** @description Validation Error */
@@ -13021,7 +14277,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TokenOut"];
+                    "application/json": components["schemas"]["nazoratly__routers__auth__TokenOut"];
                 };
             };
             /** @description Validation Error */
@@ -13120,7 +14376,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TokenOut"];
+                    "application/json": components["schemas"]["nazoratly__routers__auth__TokenOut"];
                 };
             };
             /** @description Validation Error */
@@ -13153,7 +14409,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TokenOut"];
+                    "application/json": components["schemas"]["nazoratly__routers__auth__TokenOut"];
                 };
             };
             /** @description Validation Error */
@@ -13219,7 +14475,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TokenOut"];
+                    "application/json": components["schemas"]["nazoratly__routers__auth__TokenOut"];
                 };
             };
             /** @description Validation Error */
@@ -13630,6 +14886,570 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BranchSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    auth_code_request_v1_cabinet_auth_code_request_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhoneIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginCodeAccepted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    auth_code_verify_v1_cabinet_auth_code_verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodeLoginIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["nazoratly__routers__cabinet__TokenOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    logout_v1_cabinet_auth_logout_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    auth_telegram_v1_cabinet_auth_telegram_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelegramLoginIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["nazoratly__routers__cabinet__TokenOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    certificate_pdf_v1_cabinet_certificates__certificate_id__pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                certificate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    document_pdf_v1_cabinet_documents__document_id__pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    me_v1_cabinet_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["nazoratly__routers__cabinet__MeOut"];
+                };
+            };
+        };
+    };
+    report_pdf_v1_cabinet_reports__report_id__pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_requests_v1_cabinet_requests_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyRequest"][];
+                };
+            };
+        };
+    };
+    create_request_v1_cabinet_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AbsenceIn"] | components["schemas"]["PromiseIn"] | components["schemas"]["MakeupIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyRequest"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_v1_cabinet_requests__request_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyRequest"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    absence_lessons_v1_cabinet_students__student_id__absence_lessons_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbsenceLesson"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attendance_v1_cabinet_students__student_id__attendance_get: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    balance_v1_cabinet_students__student_id__balance_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["nazoratly__routers__cabinet__BalanceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_consent_v1_cabinet_students__student_id__consent_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["nazoratly__routers__cabinet__ConsentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    documents_v1_cabinet_students__student_id__documents_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentBrief"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    makeup_v1_cabinet_students__student_id__makeup_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MakeupRight"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    results_v1_cabinet_students__student_id__results_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    schedule_v1_cabinet_students__student_id__schedule_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleOut"];
                 };
             };
             /** @description Validation Error */
@@ -14325,7 +16145,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ConsentOut"];
+                    "application/json": components["schemas"]["nazoratly__routers__students__ConsentOut"];
                 };
             };
             /** @description Validation Error */
@@ -15931,6 +17751,392 @@ export interface operations {
             };
         };
     };
+    list_codes_v1_guardian_codes_get: {
+        parameters: {
+            query?: {
+                student_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CodeRow"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    issue_code_v1_guardian_codes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CodeIssued"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_code_v1_guardian_codes__code_id__revoke_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_link_requests_v1_guardian_link_requests_get: {
+        parameters: {
+            query?: {
+                status?: ("pending" | "approved" | "rejected") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkRequestRow"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_link_request_v1_guardian_link_requests__request_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApproveLinkIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkRequestRow"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_link_request_v1_guardian_link_requests__request_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkRequestRow"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_links_v1_guardian_links_get: {
+        parameters: {
+            query?: {
+                student_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkRow"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    manual_link_v1_guardian_links_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManualLinkIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkRow"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_link_v1_guardian_links_delete: {
+        parameters: {
+            query: {
+                student_id: string;
+                guardian_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    requests_list_v1_guardian_requests_get: {
+        parameters: {
+            query?: {
+                status?: ("pending" | "approved" | "rejected" | "cancelled") | null;
+                kind?: ("absence_reason" | "payment_promise" | "makeup_choice") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestRow"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_request_v1_guardian_requests__request_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecideIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestRow"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_request_v1_guardian_requests__request_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecideIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestRow"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_guardians_v1_guardians_get: {
         parameters: {
             query?: {
@@ -16570,7 +18776,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LessonOut"];
+                    "application/json": components["schemas"]["nazoratly__routers__lessons__LessonOut"];
                 };
             };
             /** @description Validation Error */
@@ -16621,7 +18827,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LessonOut"];
+                    "application/json": components["schemas"]["nazoratly__routers__lessons__LessonOut"];
                 };
             };
             /** @description Validation Error */
@@ -16659,7 +18865,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LessonOut"];
+                    "application/json": components["schemas"]["nazoratly__routers__lessons__LessonOut"];
                 };
             };
             /** @description Validation Error */
@@ -19589,7 +21795,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ConsentOut"][];
+                    "application/json": components["schemas"]["nazoratly__routers__students__ConsentOut"][];
                 };
             };
             /** @description Validation Error */
@@ -19624,7 +21830,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ConsentOut"];
+                    "application/json": components["schemas"]["nazoratly__routers__students__ConsentOut"];
                 };
             };
             /** @description Validation Error */

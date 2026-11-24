@@ -32,6 +32,7 @@ export interface Settings {
   referralCondition: "enrolled" | "paid";
   referralMinPaid: number;
   leadReminderDays: number;
+  guardianPromiseDays: number;
 
   familySecond: number; // percent, 0 = off
   familyThird: number;
@@ -94,6 +95,7 @@ export function readSettings(branchId?: string | null): Settings {
     referralCondition: (map.get("referralCondition") ?? "").toLowerCase().startsWith("yozil") ? "enrolled" : "paid",
     referralMinPaid: num("referralMinPaid", 0, 0, 1_000_000_000),
     leadReminderDays: num("leadReminderDays", 3, 1, 60),
+    guardianPromiseDays: num("guardianPromiseDays", 14, 1, 90),
 
     familySecond: pct("familySecond"),
     familyThird: pct("familyThird"),

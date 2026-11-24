@@ -8,10 +8,26 @@ import { handleTeacherUpdate } from "./teacher";
 import { sendRich, tg, webhookSecret, sendMessage } from "./telegram";
 import { balanceHtmlForChat, withLock } from "./actions";
 import type { Student } from "../domain/types";
+import { awaitingConsent, phoneLinkStudents, qrLinkRequest } from "./guardian";
 
 type StudentRow = Student & { linkCode?: string };
 
 const text = (s: string): GoogleAppsScript.Content.TextOutput => ContentService.createTextOutput(s);
+
+function consentPrompt(chatId: string, center: string, studentName: string, code: string): void {
+  sendMessage(
+    chatId,
+    `${center}: siz ${studentName} ning ota-onasi/vasiysi sifatida ulanmoqchisiz.\n\nUshbu bot orqali to'lov va davomat haqida xabarlar olishga rozilik berasizmi? Istalgan payt /stop yuborib bekor qilishingiz mumkin.`,
+    { reply_markup: { inline_keyboard: [[{ text: "Roziman", callback_data: `y:${code}` }, { text: "Rad etaman", callback_data: "n" }]] } },
+  );
+}
+
+/** Students the center linked to this chat that still wait for the guardian's consent: ask for it. */
+function askConsent(chatId: string, center: string): boolean {
+  const waiting = awaitingConsent(chatId);
+  for (const w of waiting) consentPrompt(chatId, center, w.fullName, w.code);
+  return waiting.length > 0;
+}
 
 export function handleGet(e?: GoogleAppsScript.Events.DoGet): GoogleAppsScript.Content.TextOutput {
   // public certificate check: ?verify=NZC-XXXX-XXXX-XXXX answers with JSON (the holder's name is masked)
@@ -36,8 +52,10 @@ export function handlePost(e: GoogleAppsScript.Events.DoPost): GoogleAppsScript.
   const center = readSettings().center;
   if (u.kind === "start") {
     const s = u.code ? read<StudentRow>(STUDENTS).find((x) => x.linkCode && x.linkCode.toUpperCase() === u.code) : undefined;
-    if (!s) {
-      sendMessage(u.chatId, `Assalomu alaykum! Bu ${center} o'quv markazining rasmiy boti. Ulash uchun markaz bergan havoladan foydalaning.`);
+    if (!s && !u.code && askConsent(u.chatId, center)) {
+      // a link the center approved or made by hand: only the guardian's own consent is left
+    } else if (!s) {
+      sendMessage(u.chatId, `Assalomu alaykum! Bu ${center} o'quv markazining rasmiy boti. Ulash uchun markaz bergan havoladan, o'quvchi kartasidagi kodni yuborish yoki telefon raqamingizni ulashish orqali foydalaning.`);
     } else {
       sendMessage(
         u.chatId,
@@ -45,6 +63,13 @@ export function handlePost(e: GoogleAppsScript.Events.DoPost): GoogleAppsScript.
         { reply_markup: { inline_keyboard: [[{ text: "Roziman", callback_data: `y:${u.code}` }, { text: "Rad etaman", callback_data: "n" }]] } },
       );
     }
+  } else if (u.kind === "qr") {
+    const r = qrLinkRequest(u.chatId, "", u.code);
+    sendMessage(u.chatId, r === "pending" ? "So'rovingiz markazga yuborildi. Markaz tasdiqlagach /start yuboring." : "Bu kartaga o'quvchi topilmadi. Kodni tekshiring yoki markazga murojaat qiling.");
+  } else if (u.kind === "contact") {
+    const hits = phoneLinkStudents(u.phone, u.verified);
+    if (!hits.length) sendMessage(u.chatId, "Bu raqam bo'yicha o'quvchi topilmadi yoki raqam sizniki emas. Markaz bergan havoladan foydalaning.");
+    for (const h of hits) consentPrompt(u.chatId, center, h.fullName, h.code);
   } else if (u.kind === "consent") {
     tg("answerCallbackQuery", { callback_query_id: u.callbackId });
     if (!u.accept) {

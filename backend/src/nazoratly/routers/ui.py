@@ -12,19 +12,33 @@ from fastapi.responses import Response
 router = APIRouter(include_in_schema=False)
 
 UI_DIR = Path(__file__).resolve().parent.parent / "ui"
-PAGES = {"scan": "scan.html", "import": "import.html", "calendar": "calendar.html", "teacher": "teacher.html"}
+PAGES = {
+    "scan": "scan.html",
+    "import": "import.html",
+    "calendar": "calendar.html",
+    "teacher": "teacher.html",
+    "guardian": "guardian.html",
+}
 STATIC = {
     "common.js": "text/javascript; charset=utf-8",
     "scan.js": "text/javascript; charset=utf-8",
     "import.js": "text/javascript; charset=utf-8",
     "calendar.js": "text/javascript; charset=utf-8",
     "teacher.js": "text/javascript; charset=utf-8",
+    "guardian.js": "text/javascript; charset=utf-8",
+    "guardian.css": "text/css; charset=utf-8",
     "jsQR.js": "text/javascript; charset=utf-8",
     "ui.css": "text/css; charset=utf-8",
 }
 CSP = (
     "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; "
     "base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+)
+
+
+# The guardian cabinet is also opened inside Telegram (Mini App), which may frame it on web.telegram.org.
+GUARDIAN_CSP = CSP.replace(
+    "frame-ancestors 'none'", "frame-ancestors https://web.telegram.org https://*.telegram.org"
 )
 
 
@@ -55,7 +69,7 @@ async def page(page: str) -> Response:
         _read(name),
         media_type="text/html; charset=utf-8",
         headers={
-            "Content-Security-Policy": CSP,
+            "Content-Security-Policy": GUARDIAN_CSP if page == "guardian" else CSP,
             "Permissions-Policy": f"{camera}, microphone=(), geolocation=()",
             "Cache-Control": "no-store",
         },
