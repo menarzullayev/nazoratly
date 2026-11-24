@@ -21,7 +21,9 @@ from nazoratly.ai_transport import AiUnavailable
 from tests.conftest import Tenant, make_tenant
 from tests.helpers import enroll, mk_group, mk_student, ok, org_today
 from tests.test_packages import lesson, mark
-from tests.test_plans import charge, pay
+from tests.test_plans import TODAY as PLANS_TODAY
+from tests.test_plans import charge as plans_charge
+from tests.test_plans import pay
 from tests.test_tenancy_and_staff import _add_staff, _login
 
 TODAY = org_today()
@@ -29,6 +31,12 @@ TODAY = org_today()
 
 def d(offset: int) -> str:
     return (TODAY + timedelta(days=offset)).isoformat()
+
+
+async def charge(t: Tenant, student_id: str, amount: str = "900000", due: int = -40) -> dict[str, Any]:
+    """`tests.test_plans.charge` counts offsets from the UTC date; these reports count from the organization's
+    date. They differ between 19:00 and 24:00 UTC, so shift the offset to land on the organization's day."""
+    return await plans_charge(t, student_id, amount, due + (TODAY - PLANS_TODAY).days)
 
 
 class FakeAi:
