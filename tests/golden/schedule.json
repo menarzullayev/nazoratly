@@ -1,0 +1,1121 @@
+{
+ "overlaps": [
+  {
+   "name": "inside",
+   "in": {
+    "a_start": "10:00",
+    "a_end": "11:00",
+    "b_start": "10:15",
+    "b_end": "10:45"
+   },
+   "out": true
+  },
+  {
+   "name": "partial",
+   "in": {
+    "a_start": "10:00",
+    "a_end": "11:00",
+    "b_start": "10:30",
+    "b_end": "11:30"
+   },
+   "out": true
+  },
+  {
+   "name": "touching end",
+   "in": {
+    "a_start": "10:00",
+    "a_end": "11:00",
+    "b_start": "11:00",
+    "b_end": "12:00"
+   },
+   "out": false
+  },
+  {
+   "name": "touching start",
+   "in": {
+    "a_start": "11:00",
+    "a_end": "12:00",
+    "b_start": "10:00",
+    "b_end": "11:00"
+   },
+   "out": false
+  },
+  {
+   "name": "apart",
+   "in": {
+    "a_start": "08:00",
+    "a_end": "09:00",
+    "b_start": "18:00",
+    "b_end": "19:30"
+   },
+   "out": false
+  },
+  {
+   "name": "identical",
+   "in": {
+    "a_start": "09:00",
+    "a_end": "10:30",
+    "b_start": "09:00",
+    "b_end": "10:30"
+   },
+   "out": true
+  },
+  {
+   "name": "late evening",
+   "in": {
+    "a_start": "22:30",
+    "a_end": "23:59",
+    "b_start": "23:00",
+    "b_end": "23:30"
+   },
+   "out": true
+  }
+ ],
+ "find_conflicts": [
+  {
+   "name": "empty",
+   "in": {
+    "candidate": {
+     "id": "c",
+     "date": "2026-12-07",
+     "start": "10:00",
+     "end": "11:00",
+     "room": "R1",
+     "teacher": "T1",
+     "cancelled": false
+    },
+    "others": []
+   },
+   "out": []
+  },
+  {
+   "name": "same room overlapping",
+   "in": {
+    "candidate": {
+     "id": "c",
+     "date": "2026-12-07",
+     "start": "10:00",
+     "end": "11:00",
+     "room": "R1",
+     "teacher": "T1",
+     "cancelled": false
+    },
+    "others": [
+     {
+      "id": "a",
+      "date": "2026-12-07",
+      "start": "10:30",
+      "end": "12:00",
+      "room": "R1",
+      "teacher": "T2",
+      "cancelled": false
+     }
+    ]
+   },
+   "out": [
+    {
+     "kind": "room",
+     "other_id": "a"
+    }
+   ]
+  },
+  {
+   "name": "same teacher overlapping",
+   "in": {
+    "candidate": {
+     "id": "c",
+     "date": "2026-12-07",
+     "start": "10:00",
+     "end": "11:00",
+     "room": "R1",
+     "teacher": "T1",
+     "cancelled": false
+    },
+    "others": [
+     {
+      "id": "a",
+      "date": "2026-12-07",
+      "start": "10:30",
+      "end": "12:00",
+      "room": "R2",
+      "teacher": "T1",
+      "cancelled": false
+     }
+    ]
+   },
+   "out": [
+    {
+     "kind": "teacher",
+     "other_id": "a"
+    }
+   ]
+  },
+  {
+   "name": "both room and teacher",
+   "in": {
+    "candidate": {
+     "id": "c",
+     "date": "2026-12-07",
+     "start": "10:00",
+     "end": "11:00",
+     "room": "R1",
+     "teacher": "T1",
+     "cancelled": false
+    },
+    "others": [
+     {
+      "id": "a",
+      "date": "2026-12-07",
+      "start": "10:00",
+      "end": "11:00",
+      "room": "R1",
+      "teacher": "T1",
+      "cancelled": false
+     }
+    ]
+   },
+   "out": [
+    {
+     "kind": "room",
+     "other_id": "a"
+    },
+    {
+     "kind": "teacher",
+     "other_id": "a"
+    }
+   ]
+  },
+  {
+   "name": "touching times are fine",
+   "in": {
+    "candidate": {
+     "id": "c",
+     "date": "2026-12-07",
+     "start": "10:00",
+     "end": "11:00",
+     "room": "R1",
+     "teacher": "T1",
+     "cancelled": false
+    },
+    "others": [
+     {
+      "id": "a",
+      "date": "2026-12-07",
+      "start": "11:00",
+      "end": "12:00",
+      "room": "R1",
+      "teacher": "T1",
+      "cancelled": false
+     }
+    ]
+   },
+   "out": []
+  },
+  {
+   "name": "other day is fine",
+   "in": {
+    "candidate": {
+     "id": "c",
+     "date": "2026-12-07",
+     "start": "10:00",
+     "end": "11:00",
+     "room": "R1",
+     "teacher": "T1",
+     "cancelled": false
+    },
+    "others": [
+     {
+      "id": "a",
+      "date": "2026-12-08",
+      "start": "10:00",
+      "end": "11:00",
+      "room": "R1",
+      "teacher": "T1",
+      "cancelled": false
+     }
+    ]
+   },
+   "out": []
+  },
+  {
+   "name": "cancelled lesson does not clash",
+   "in": {
+    "candidate": {
+     "id": "c",
+     "date": "2026-12-07",
+     "start": "10:00",
+     "end": "11:00",
+     "room": "R1",
+     "teacher": "T1",
+     "cancelled": false
+    },
+    "others": [
+     {
+      "id": "a",
+      "date": "2026-12-07",
+      "start": "10:00",
+      "end": "11:00",
+      "room": "R1",
+      "teacher": "T1",
+      "cancelled": true
+     }
+    ]
+   },
+   "out": []
+  },
+  {
+   "name": "cancelled candidate never clashes",
+   "in": {
+    "candidate": {
+     "id": "c",
+     "date": "2026-12-07",
+     "start": "10:00",
+     "end": "11:00",
+     "room": "R1",
+     "teacher": "T1",
+     "cancelled": true
+    },
+    "others": [
+     {
+      "id": "a",
+      "date": "2026-12-07",
+      "start": "10:00",
+      "end": "11:00",
+      "room": "R1",
+      "teacher": "T1",
+      "cancelled": false
+     }
+    ]
+   },
+   "out": []
+  },
+  {
+   "name": "same id is ignored",
+   "in": {
+    "candidate": {
+     "id": "a",
+     "date": "2026-12-07",
+     "start": "10:00",
+     "end": "11:00",
+     "room": "R1",
+     "teacher": "T1",
+     "cancelled": false
+    },
+    "others": [
+     {
+      "id": "a",
+      "date": "2026-12-07",
+      "start": "10:00",
+      "end": "11:00",
+      "room": "R1",
+      "teacher": "T1",
+      "cancelled": false
+     }
+    ]
+   },
+   "out": []
+  },
+  {
+   "name": "no room no teacher",
+   "in": {
+    "candidate": {
+     "id": "c",
+     "date": "2026-12-07",
+     "start": "10:00",
+     "end": "11:00",
+     "room": null,
+     "teacher": null,
+     "cancelled": false
+    },
+    "others": [
+     {
+      "id": "a",
+      "date": "2026-12-07",
+      "start": "10:00",
+      "end": "11:00",
+      "room": null,
+      "teacher": null,
+      "cancelled": false
+     }
+    ]
+   },
+   "out": []
+  },
+  {
+   "name": "several, sorted",
+   "in": {
+    "candidate": {
+     "id": "c",
+     "date": "2026-12-07",
+     "start": "10:00",
+     "end": "12:00",
+     "room": "R1",
+     "teacher": "T1",
+     "cancelled": false
+    },
+    "others": [
+     {
+      "id": "z",
+      "date": "2026-12-07",
+      "start": "11:00",
+      "end": "12:00",
+      "room": "R1",
+      "teacher": "T9",
+      "cancelled": false
+     },
+     {
+      "id": "b",
+      "date": "2026-12-07",
+      "start": "09:00",
+      "end": "10:30",
+      "room": "R2",
+      "teacher": "T1",
+      "cancelled": false
+     },
+     {
+      "id": "a",
+      "date": "2026-12-07",
+      "start": "10:00",
+      "end": "11:00",
+      "room": "R1",
+      "teacher": "T1",
+      "cancelled": false
+     },
+     {
+      "id": "q",
+      "date": "2026-12-07",
+      "start": "13:00",
+      "end": "14:00",
+      "room": "R1",
+      "teacher": "T1",
+      "cancelled": false
+     }
+    ]
+   },
+   "out": [
+    {
+     "kind": "room",
+     "other_id": "a"
+    },
+    {
+     "kind": "room",
+     "other_id": "z"
+    },
+    {
+     "kind": "teacher",
+     "other_id": "a"
+    },
+    {
+     "kind": "teacher",
+     "other_id": "b"
+    }
+   ]
+  }
+ ],
+ "capacity_check": [
+  {
+   "name": "fits",
+   "in": {
+    "group_capacity": 12,
+    "enrolled": 8,
+    "room_capacity": 15
+   },
+   "out": "ok"
+  },
+  {
+   "name": "equal fits",
+   "in": {
+    "group_capacity": 15,
+    "enrolled": 15,
+    "room_capacity": 15
+   },
+   "out": "ok"
+  },
+  {
+   "name": "group over room",
+   "in": {
+    "group_capacity": 20,
+    "enrolled": 5,
+    "room_capacity": 15
+   },
+   "out": "group_capacity_over_room"
+  },
+  {
+   "name": "unknown room",
+   "in": {
+    "group_capacity": 20,
+    "enrolled": 30,
+    "room_capacity": null
+   },
+   "out": "ok"
+  },
+  {
+   "name": "no group limit, few enrolled",
+   "in": {
+    "group_capacity": null,
+    "enrolled": 10,
+    "room_capacity": 15
+   },
+   "out": "ok"
+  },
+  {
+   "name": "no group limit, too many enrolled",
+   "in": {
+    "group_capacity": null,
+    "enrolled": 18,
+    "room_capacity": 15
+   },
+   "out": "enrolled_over_room"
+  },
+  {
+   "name": "group limit hides enrolled",
+   "in": {
+    "group_capacity": 12,
+    "enrolled": 18,
+    "room_capacity": 15
+   },
+   "out": "ok"
+  },
+  {
+   "name": "empty",
+   "in": {
+    "group_capacity": null,
+    "enrolled": 0,
+    "room_capacity": 1
+   },
+   "out": "ok"
+  }
+ ],
+ "effective_teacher": [
+  {
+   "name": "group only",
+   "in": {
+    "group": "T1",
+    "lesson": null,
+    "substitute": null
+   },
+   "out": "T1"
+  },
+  {
+   "name": "lesson overrides group",
+   "in": {
+    "group": "T1",
+    "lesson": "T2",
+    "substitute": null
+   },
+   "out": "T2"
+  },
+  {
+   "name": "substitute wins",
+   "in": {
+    "group": "T1",
+    "lesson": "T2",
+    "substitute": "T3"
+   },
+   "out": "T3"
+  },
+  {
+   "name": "substitute without lesson teacher",
+   "in": {
+    "group": "T1",
+    "lesson": null,
+    "substitute": "T3"
+   },
+   "out": "T3"
+  },
+  {
+   "name": "nobody",
+   "in": {
+    "group": null,
+    "lesson": null,
+    "substitute": null
+   },
+   "out": null
+  },
+  {
+   "name": "empty strings are nobody",
+   "in": {
+    "group": "",
+    "lesson": "",
+    "substitute": ""
+   },
+   "out": null
+  }
+ ],
+ "payroll_effect": [
+  {
+   "name": "cancel per-lesson",
+   "in": {
+    "kind": "cancel",
+    "old_date": "2026-12-07",
+    "new_date": null,
+    "teacher": {
+     "id": "T1",
+     "pay_model": "per_lesson",
+     "pay_rate": "100000"
+    },
+    "substitute": null
+   },
+   "out": [
+    {
+     "teacher": "T1",
+     "month": "2026-12",
+     "delta": "-100000"
+    }
+   ]
+  },
+  {
+   "name": "cancel fixed salary: no effect",
+   "in": {
+    "kind": "cancel",
+    "old_date": "2026-12-07",
+    "new_date": null,
+    "teacher": {
+     "id": "T1",
+     "pay_model": "fixed",
+     "pay_rate": "5000000"
+    },
+    "substitute": null
+   },
+   "out": []
+  },
+  {
+   "name": "cancel percent: no effect",
+   "in": {
+    "kind": "cancel",
+    "old_date": "2026-12-07",
+    "new_date": null,
+    "teacher": {
+     "id": "T1",
+     "pay_model": "percent",
+     "pay_rate": "30"
+    },
+    "substitute": null
+   },
+   "out": []
+  },
+  {
+   "name": "cancel without teacher",
+   "in": {
+    "kind": "cancel",
+    "old_date": "2026-12-07",
+    "new_date": null,
+    "teacher": null,
+    "substitute": null
+   },
+   "out": []
+  },
+  {
+   "name": "substitute both per-lesson",
+   "in": {
+    "kind": "substitute",
+    "old_date": "2026-12-07",
+    "new_date": null,
+    "teacher": {
+     "id": "T1",
+     "pay_model": "per_lesson",
+     "pay_rate": "100000"
+    },
+    "substitute": {
+     "id": "T2",
+     "pay_model": "per_lesson",
+     "pay_rate": "80000"
+    }
+   },
+   "out": [
+    {
+     "teacher": "T1",
+     "month": "2026-12",
+     "delta": "-100000"
+    },
+    {
+     "teacher": "T2",
+     "month": "2026-12",
+     "delta": "80000"
+    }
+   ]
+  },
+  {
+   "name": "substitute fixed teacher loses nothing, substitute gains",
+   "in": {
+    "kind": "substitute",
+    "old_date": "2026-12-07",
+    "new_date": null,
+    "teacher": {
+     "id": "T1",
+     "pay_model": "fixed",
+     "pay_rate": "5000000"
+    },
+    "substitute": {
+     "id": "T2",
+     "pay_model": "per_lesson",
+     "pay_rate": "80000"
+    }
+   },
+   "out": [
+    {
+     "teacher": "T2",
+     "month": "2026-12",
+     "delta": "80000"
+    }
+   ]
+  },
+  {
+   "name": "substitute per-lesson, substitute fixed",
+   "in": {
+    "kind": "substitute",
+    "old_date": "2026-12-07",
+    "new_date": null,
+    "teacher": {
+     "id": "T1",
+     "pay_model": "per_lesson",
+     "pay_rate": "100000"
+    },
+    "substitute": {
+     "id": "T2",
+     "pay_model": "fixed",
+     "pay_rate": "4000000"
+    }
+   },
+   "out": [
+    {
+     "teacher": "T1",
+     "month": "2026-12",
+     "delta": "-100000"
+    }
+   ]
+  },
+  {
+   "name": "substitute same rate and teacher",
+   "in": {
+    "kind": "substitute",
+    "old_date": "2026-12-07",
+    "new_date": null,
+    "teacher": {
+     "id": "T1",
+     "pay_model": "per_lesson",
+     "pay_rate": "100000"
+    },
+    "substitute": {
+     "id": "T1",
+     "pay_model": "per_lesson",
+     "pay_rate": "100000"
+    }
+   },
+   "out": []
+  },
+  {
+   "name": "move inside the month",
+   "in": {
+    "kind": "move",
+    "old_date": "2026-12-07",
+    "new_date": "2026-12-20",
+    "teacher": {
+     "id": "T1",
+     "pay_model": "per_lesson",
+     "pay_rate": "100000"
+    },
+    "substitute": null
+   },
+   "out": []
+  },
+  {
+   "name": "move to next month",
+   "in": {
+    "kind": "move",
+    "old_date": "2026-12-28",
+    "new_date": "2027-01-04",
+    "teacher": {
+     "id": "T1",
+     "pay_model": "per_lesson",
+     "pay_rate": "100000"
+    },
+    "substitute": null
+   },
+   "out": [
+    {
+     "teacher": "T1",
+     "month": "2026-12",
+     "delta": "-100000"
+    },
+    {
+     "teacher": "T1",
+     "month": "2027-01",
+     "delta": "100000"
+    }
+   ]
+  },
+  {
+   "name": "move to previous month",
+   "in": {
+    "kind": "move",
+    "old_date": "2026-12-01",
+    "new_date": "2026-11-28",
+    "teacher": {
+     "id": "T1",
+     "pay_model": "per_lesson",
+     "pay_rate": "90000.50"
+    },
+    "substitute": null
+   },
+   "out": [
+    {
+     "teacher": "T1",
+     "month": "2026-11",
+     "delta": "90000.50"
+    },
+    {
+     "teacher": "T1",
+     "month": "2026-12",
+     "delta": "-90000.50"
+    }
+   ]
+  },
+  {
+   "name": "move fixed teacher: no effect",
+   "in": {
+    "kind": "move",
+    "old_date": "2026-12-28",
+    "new_date": "2027-01-04",
+    "teacher": {
+     "id": "T1",
+     "pay_model": "fixed",
+     "pay_rate": "5000000"
+    },
+    "substitute": null
+   },
+   "out": []
+  },
+  {
+   "name": "zero rate: no effect",
+   "in": {
+    "kind": "cancel",
+    "old_date": "2026-12-07",
+    "new_date": null,
+    "teacher": {
+     "id": "T1",
+     "pay_model": "per_lesson",
+     "pay_rate": "0"
+    },
+    "substitute": null
+   },
+   "out": []
+  }
+ ],
+ "change_message": [
+  {
+   "name": "cancel with reason",
+   "in": {
+    "kind": "cancel",
+    "guardian": "Dilnoza opa",
+    "student": "Ali",
+    "group": "Ingliz tili A1",
+    "old_date": "2026-12-07",
+    "old_start": "18:00",
+    "new_date": null,
+    "new_start": null,
+    "reason": "O'qituvchi kasal",
+    "center": "Nazoratly o'quv markazi"
+   },
+   "out": "Assalomu alaykum, Dilnoza opa! Ali o'qiydigan Ingliz tili A1 guruhining 07.12.2026 18:00 dagi darsi bekor qilindi. Sabab: O'qituvchi kasal. Keyingi dars jadval bo'yicha o'tadi. Nazoratly o'quv markazi"
+  },
+  {
+   "name": "cancel without reason",
+   "in": {
+    "kind": "cancel",
+    "guardian": "Dilnoza opa",
+    "student": "Ali",
+    "group": "Ingliz tili A1",
+    "old_date": "2026-12-07",
+    "old_start": "18:00",
+    "new_date": null,
+    "new_start": null,
+    "reason": null,
+    "center": "Nazoratly o'quv markazi"
+   },
+   "out": "Assalomu alaykum, Dilnoza opa! Ali o'qiydigan Ingliz tili A1 guruhining 07.12.2026 18:00 dagi darsi bekor qilindi. Keyingi dars jadval bo'yicha o'tadi. Nazoratly o'quv markazi"
+  },
+  {
+   "name": "cancel blank reason",
+   "in": {
+    "kind": "cancel",
+    "guardian": "Dilnoza opa",
+    "student": "Ali",
+    "group": "Ingliz tili A1",
+    "old_date": "2026-12-07",
+    "old_start": "18:00",
+    "new_date": null,
+    "new_start": null,
+    "reason": "  ",
+    "center": "Nazoratly o'quv markazi"
+   },
+   "out": "Assalomu alaykum, Dilnoza opa! Ali o'qiydigan Ingliz tili A1 guruhining 07.12.2026 18:00 dagi darsi bekor qilindi. Keyingi dars jadval bo'yicha o'tadi. Nazoratly o'quv markazi"
+  },
+  {
+   "name": "move with reason ending in a dot",
+   "in": {
+    "kind": "move",
+    "guardian": "Karim aka",
+    "student": "Vali",
+    "group": "Matematika",
+    "old_date": "2026-12-31",
+    "old_start": "09:30",
+    "new_date": "2027-01-02",
+    "new_start": "10:00",
+    "reason": "Bayram.",
+    "center": "Markaz"
+   },
+   "out": "Assalomu alaykum, Karim aka! Vali o'qiydigan Matematika guruhining 31.12.2026 09:30 dagi darsi ko'chirildi: yangi vaqt 02.01.2027 10:00. Sabab: Bayram. Markaz"
+  },
+  {
+   "name": "move without reason",
+   "in": {
+    "kind": "move",
+    "guardian": "Karim aka",
+    "student": "Vali",
+    "group": "Matematika",
+    "old_date": "2026-12-05",
+    "old_start": "09:30",
+    "new_date": "2026-12-06",
+    "new_start": "09:30",
+    "reason": null,
+    "center": "Markaz"
+   },
+   "out": "Assalomu alaykum, Karim aka! Vali o'qiydigan Matematika guruhining 05.12.2026 09:30 dagi darsi ko'chirildi: yangi vaqt 06.12.2026 09:30. Markaz"
+  }
+ ],
+ "parse_schedule": [
+  {
+   "name": "'Du-Chor-Ju 18:00'",
+   "in": {
+    "text": "Du-Chor-Ju 18:00"
+   },
+   "out": [
+    {
+     "weekday": 1,
+     "start": "18:00",
+     "end": "19:30"
+    },
+    {
+     "weekday": 3,
+     "start": "18:00",
+     "end": "19:30"
+    },
+    {
+     "weekday": 5,
+     "start": "18:00",
+     "end": "19:30"
+    }
+   ]
+  },
+  {
+   "name": "'Se, Pay 17:30-19:00'",
+   "in": {
+    "text": "Se, Pay 17:30-19:00"
+   },
+   "out": [
+    {
+     "weekday": 2,
+     "start": "17:30",
+     "end": "19:00"
+    },
+    {
+     "weekday": 4,
+     "start": "17:30",
+     "end": "19:00"
+    }
+   ]
+  },
+  {
+   "name": "'  du  09:00  '",
+   "in": {
+    "text": "  du  09:00  "
+   },
+   "out": [
+    {
+     "weekday": 1,
+     "start": "09:00",
+     "end": "10:30"
+    }
+   ]
+  },
+  {
+   "name": "'Du-Du-Chor 08:00'",
+   "in": {
+    "text": "Du-Du-Chor 08:00"
+   },
+   "out": [
+    {
+     "weekday": 1,
+     "start": "08:00",
+     "end": "09:30"
+    },
+    {
+     "weekday": 3,
+     "start": "08:00",
+     "end": "09:30"
+    }
+   ]
+  },
+  {
+   "name": "'Sha-Yak 10:00-11:00'",
+   "in": {
+    "text": "Sha-Yak 10:00-11:00"
+   },
+   "out": [
+    {
+     "weekday": 6,
+     "start": "10:00",
+     "end": "11:00"
+    },
+    {
+     "weekday": 7,
+     "start": "10:00",
+     "end": "11:00"
+    }
+   ]
+  },
+  {
+   "name": "'Du-Chor-Ju'",
+   "in": {
+    "text": "Du-Chor-Ju"
+   },
+   "out": null
+  },
+  {
+   "name": "'Du-Xx 18:00'",
+   "in": {
+    "text": "Du-Xx 18:00"
+   },
+   "out": null
+  },
+  {
+   "name": "'Du 25:00'",
+   "in": {
+    "text": "Du 25:00"
+   },
+   "out": null
+  },
+  {
+   "name": "'Du 18:00-17:00'",
+   "in": {
+    "text": "Du 18:00-17:00"
+   },
+   "out": null
+  },
+  {
+   "name": "'Du 18:60'",
+   "in": {
+    "text": "Du 18:60"
+   },
+   "out": null
+  },
+  {
+   "name": "'Du 23:00'",
+   "in": {
+    "text": "Du 23:00"
+   },
+   "out": null
+  },
+  {
+   "name": "'Du 23:00-24:00'",
+   "in": {
+    "text": "Du 23:00-24:00"
+   },
+   "out": [
+    {
+     "weekday": 1,
+     "start": "23:00",
+     "end": "24:00"
+    }
+   ]
+  },
+  {
+   "name": "''",
+   "in": {
+    "text": ""
+   },
+   "out": null
+  },
+  {
+   "name": "'Yak/Pay 07:05'",
+   "in": {
+    "text": "Yak/Pay 07:05"
+   },
+   "out": [
+    {
+     "weekday": 4,
+     "start": "07:05",
+     "end": "08:35"
+    },
+    {
+     "weekday": 7,
+     "start": "07:05",
+     "end": "08:35"
+    }
+   ]
+  }
+ ],
+ "week_range": [
+  {
+   "name": "2026-12-07",
+   "in": {
+    "day": "2026-12-07"
+   },
+   "out": {
+    "monday": "2026-12-07",
+    "sunday": "2026-12-13"
+   }
+  },
+  {
+   "name": "2026-12-09",
+   "in": {
+    "day": "2026-12-09"
+   },
+   "out": {
+    "monday": "2026-12-07",
+    "sunday": "2026-12-13"
+   }
+  },
+  {
+   "name": "2026-12-13",
+   "in": {
+    "day": "2026-12-13"
+   },
+   "out": {
+    "monday": "2026-12-07",
+    "sunday": "2026-12-13"
+   }
+  },
+  {
+   "name": "2026-12-14",
+   "in": {
+    "day": "2026-12-14"
+   },
+   "out": {
+    "monday": "2026-12-14",
+    "sunday": "2026-12-20"
+   }
+  },
+  {
+   "name": "2027-01-01",
+   "in": {
+    "day": "2027-01-01"
+   },
+   "out": {
+    "monday": "2026-12-28",
+    "sunday": "2027-01-03"
+   }
+  },
+  {
+   "name": "2026-03-01",
+   "in": {
+    "day": "2026-03-01"
+   },
+   "out": {
+    "monday": "2026-02-23",
+    "sunday": "2026-03-01"
+   }
+  }
+ ]
+}

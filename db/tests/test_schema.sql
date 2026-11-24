@@ -924,6 +924,53 @@ BEGIN
   PERFORM public.t_expect('42501', $q$INSERT INTO ai_reports (org_id, kind, period_end, source, model, content, data) VALUES (1, 'weekly_summary', '2026-11-24', 'ai', 'haiku', 'x', '{}')$q$);
   PERFORM public.t_expect('42501', $q$UPDATE ai_reports SET content = 'x'$q$);
   PERFORM public.t_expect('42501', $q$DELETE FROM ai_reports$q$);
+
+-- ---------------------------------------------------------------- 0025: substitute teacher, lesson changes, notices
+BEGIN;
+DO $$
+DECLARE ch BIGINT; nt BIGINT; ob BIGINT;
+BEGIN
+  -- substitute teacher must belong to the same center
+  UPDATE lessons SET substitute_teacher_id = 1 WHERE id = 2;
+  INSERT INTO teachers (org_id, full_name) VALUES (2, 'Other center teacher');
+  PERFORM public.t_expect('23503', format($q$UPDATE lessons SET substitute_teacher_id = %s WHERE id = 2$q$, (SELECT max(id) FROM teachers)));
+  -- the moved-from pair travels together
+  PERFORM public.t_expect('23514', $q$UPDATE lessons SET original_date = '2026-11-01' WHERE id = 2$q$);
+  UPDATE lessons SET original_date = '2026-11-01', original_start_time = '09:00' WHERE id = 2;
+  PERFORM public.t_expect('23514', $q$UPDATE lessons SET cancel_reason = '   ' WHERE id = 2$q$);
+
+  -- lesson_changes shape
+  PERFORM public.t_expect('23514', $q$INSERT INTO lesson_changes (org_id, lesson_id, kind, old_date, old_start_time, old_end_time) VALUES (1,2,'teleport','2026-11-04','10:00','11:30')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO lesson_changes (org_id, lesson_id, kind, old_date, old_start_time, old_end_time) VALUES (1,2,'move','2026-11-04','10:00','11:30')$q$);   -- a move needs the new time
+  PERFORM public.t_expect('23514', $q$INSERT INTO lesson_changes (org_id, lesson_id, kind, old_date, old_start_time, old_end_time) VALUES (1,2,'cancel','2026-11-04','11:30','10:00')$q$);
+  PERFORM public.t_expect('23503', $q$INSERT INTO lesson_changes (org_id, lesson_id, kind, old_date, old_start_time, old_end_time) VALUES (2,2,'cancel','2026-11-04','10:00','11:30')$q$);   -- another center's lesson
+  INSERT INTO lesson_changes (org_id, lesson_id, kind, old_date, old_start_time, old_end_time, new_date, new_start_time, new_end_time, reason)
+    VALUES (1,2,'move','2026-11-04','10:00','11:30','2026-11-05','12:00','13:30','holiday') RETURNING id INTO ch;
+
+  -- notices: one per change/student/guardian, the decision fields travel together, decided notices are final
+  INSERT INTO schedule_notices (org_id, change_id, student_id, guardian_id, body) VALUES (1,ch,1,1,'Lesson moved');
+  PERFORM public.t_expect('23505', format($q$INSERT INTO schedule_notices (org_id, change_id, student_id, guardian_id, body) VALUES (1,%s,1,1,'again')$q$, ch));
+  PERFORM public.t_expect('23514', format($q$UPDATE schedule_notices SET status = 'approved' WHERE change_id = %s$q$, ch));              -- no decided_at
+  PERFORM public.t_expect('23514', format($q$UPDATE schedule_notices SET body = 'rewritten' WHERE change_id = %s$q$, ch));
+  PERFORM public.t_expect('23514', format($q$UPDATE schedule_notices SET status = 'bogus', decided_at = now() WHERE change_id = %s$q$, ch));
+  UPDATE schedule_notices SET status = 'rejected', decided_by_user_id = 1, decided_at = now() WHERE change_id = ch;
+  PERFORM public.t_expect('23514', format($q$UPDATE schedule_notices SET status = 'approved', decided_at = now() WHERE change_id = %s$q$, ch));   -- decision is final
+  PERFORM public.t_expect('23514', format($q$UPDATE schedule_notices SET body = 'late edit' WHERE change_id = %s$q$, ch));
+  IF (SELECT count(*) FROM audit_log WHERE entity_type IN ('lesson_changes','schedule_notices')) < 3 THEN RAISE EXCEPTION 'schedule changes are audited'; END IF;
+END $$;
+ROLLBACK;
+
+-- the application role: tenant isolation, an append-only change log
+BEGIN;
+INSERT INTO lesson_changes (org_id, lesson_id, kind, old_date, old_start_time, old_end_time) VALUES (1,2,'cancel','2026-11-04','10:00','11:30');
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '2'; SET LOCAL app.user_id = '1';
+DO $$
+BEGIN
+  ASSERT (SELECT count(*) FROM lesson_changes) = 0, 'another center sees no changes';
+  PERFORM public.t_expect('42501', $q$INSERT INTO lesson_changes (org_id, lesson_id, kind, old_date, old_start_time, old_end_time) VALUES (1,2,'cancel','2026-11-04','10:00','11:30')$q$);
+  PERFORM public.t_expect('42501', $q$UPDATE lesson_changes SET reason = 'x'$q$);
+  PERFORM public.t_expect('42501', $q$DELETE FROM lesson_changes$q$);
+  PERFORM public.t_expect('42501', $q$DELETE FROM schedule_notices$q$);
 END $$;
 ROLLBACK;
 
