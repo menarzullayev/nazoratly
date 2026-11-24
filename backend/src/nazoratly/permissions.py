@@ -16,6 +16,7 @@ ALL: Final = frozenset(
         "reports:read", "audit:read",
         "accounting:read", "accounting:write", "accounting:close",
         "agent:manage",
+        "results:read", "results:write", "results:approve",
     }
 )  # fmt: skip
 
@@ -23,7 +24,7 @@ _MANAGER: Final = frozenset(
     {
         "org:read", "students:read", "students:write", "consents:write", "academics:read", "academics:write",
         "attendance:read", "attendance:write", "finance:read", "finance:write", "reports:read", "staff:read",
-        "accounting:read",
+        "accounting:read", "results:read", "results:write", "results:approve",
     }
 )  # fmt: skip
 
@@ -34,9 +35,13 @@ _ACCOUNTANT: Final = frozenset(
     }
 )  # fmt: skip
 
-_TEACHER: Final = frozenset({"org:read", "academics:read", "attendance:read", "attendance:write"})
+_TEACHER: Final = frozenset(
+    {"org:read", "academics:read", "attendance:read", "attendance:write", "results:read", "results:write"}
+)
 
-_VIEWER: Final = frozenset({"org:read", "students:read", "academics:read", "attendance:read", "reports:read"})
+_VIEWER: Final = frozenset(
+    {"org:read", "students:read", "academics:read", "attendance:read", "reports:read", "results:read"}
+)
 
 ROLE_PERMISSIONS: Final[dict[str, frozenset[str]]] = {
     "owner": ALL,

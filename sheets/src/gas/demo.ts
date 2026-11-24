@@ -4,7 +4,7 @@
 import { demoBlockers, type Blocker, type DemoRow, type DemoTable } from "../domain/demo";
 import { guard, withLock } from "./actions";
 import { readIfPresent, replaceWhere } from "./repo";
-import { ATTENDANCE, CHARGES, DISCOUNT_LINES, DISCOUNTS, DOCUMENTS, DRAFTS, ENROLLMENTS, ENTITLEMENTS, EXPENSES, GROUPS, INSTALLMENTS, LEADS, LEAD_LOG, PACKAGES, PAYMENTS, PROMO_USES, REFERRALS, REFUNDS, SCHEDULE_CHANGES, STUDENTS, TEACHERS, WAITLIST, type TableDef } from "./schema";
+import { ATTENDANCE, CERTIFICATES, CHARGES, DISCOUNT_LINES, DISCOUNTS, DOCUMENTS, DRAFTS, ENROLLMENTS, ENTITLEMENTS, EXAM_RESULTS, EXAMS, EXPENSES, GROUPS, INSTALLMENTS, LEADS, LEAD_LOG, MARKS, PACKAGES, PAYMENTS, PROMO_USES, REFERRALS, REFUNDS, REPORTS, SCHEDULE_CHANGES, STUDENTS, TEACHERS, WAITLIST, type TableDef } from "./schema";
 
 type Row = Record<string, unknown>;
 const flagged = (r: Row): boolean => r.demo === true;
@@ -42,6 +42,11 @@ const REAL_ONLY: Spec[] = [
   { key: "scheduleChanges", def: SCHEDULE_CHANGES, label: "Dars o'zgarishlari", id: (r) => s(r.id), refs: (r) => [["groups", s(r.groupId)], ["teachers", s(r.substituteId)]] },
   { key: "referrals", def: REFERRALS, label: "Tavsiyalar", id: (r) => s(r.id), refs: (r) => [["students", s(r.referrerId)], ["students", s(r.invitedId)]] },
   { key: "promoUses", def: PROMO_USES, label: "Promo ishlatilishi", id: (r) => `${s(r.code)}|${s(r.studentId)}`, refs: (r) => [["students", s(r.studentId)], ["enrollments", s(r.enrollmentId)]] },
+  { key: "marks", def: MARKS, label: "Baholar", id: (r) => `${s(r.scope)}|${s(r.date)}|${s(r.groupId)}|${s(r.studentId)}`, refs: (r) => [["students", s(r.studentId)], ["groups", s(r.groupId)]] },
+  { key: "exams", def: EXAMS, label: "Imtihonlar", id: (r) => s(r.id), refs: (r) => [["groups", s(r.groupId)]] },
+  { key: "examResults", def: EXAM_RESULTS, label: "Imtihon natijalari", id: (r) => `${s(r.examId)}|${s(r.studentId)}`, refs: (r) => [["exams", s(r.examId)], ["students", s(r.studentId)]] },
+  { key: "reports", def: REPORTS, label: "Oylik hisobotlar", id: (r) => s(r.id), refs: (r) => [["students", s(r.studentId)], ["groups", s(r.groupId)]] },
+  { key: "certificates", def: CERTIFICATES, label: "Sertifikatlar", id: (r) => s(r.number), refs: (r) => [["students", s(r.studentId)], ["groups", s(r.groupId)], ["enrollments", s(r.enrollmentId)]] },
   { key: "leadLog", def: LEAD_LOG, label: "Lead aloqalari", id: (r) => `${s(r.leadId)}|${s(r.date)}|${s(r.summary)}`, refs: (r) => [["leads", s(r.leadId)]] },
 ];
 

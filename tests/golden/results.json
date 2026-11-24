@@ -1,0 +1,107 @@
+{
+  "constants": [
+    {"name": "certificate title", "key": "certificate_title", "out": "SERTIFIKAT"},
+    {"name": "report title", "key": "report_title", "out": "OYLIK HISOBOT"}
+  ],
+  "grade": [
+    {"name": "lowest", "in": 1, "out": true},
+    {"name": "middle", "in": 3, "out": true},
+    {"name": "highest", "in": 5, "out": true},
+    {"name": "zero", "in": 0, "out": false},
+    {"name": "above scale", "in": 6, "out": false},
+    {"name": "negative", "in": -1, "out": false}
+  ],
+  "attendance": [
+    {"name": "no marks", "in": [], "out": {"present": 0, "late": 0, "absent": 0, "excused": 0, "counted": 0, "percent": null}},
+    {"name": "late counts as attended", "in": ["present", "present", "late", "absent"], "out": {"present": 2, "late": 1, "absent": 1, "excused": 0, "counted": 4, "percent": 75}},
+    {"name": "one third rounds down", "in": ["present", "absent", "absent"], "out": {"present": 1, "late": 0, "absent": 2, "excused": 0, "counted": 3, "percent": 33}},
+    {"name": "two thirds rounds up", "in": ["present", "present", "absent"], "out": {"present": 2, "late": 0, "absent": 1, "excused": 0, "counted": 3, "percent": 67}},
+    {"name": "excused is outside the denominator", "in": ["present", "excused", "excused"], "out": {"present": 1, "late": 0, "absent": 0, "excused": 2, "counted": 1, "percent": 100}},
+    {"name": "only excused: no percent", "in": ["excused"], "out": {"present": 0, "late": 0, "absent": 0, "excused": 1, "counted": 0, "percent": null}},
+    {"name": "12.5 rounds half up to 13", "in": ["present", "absent", "absent", "absent", "absent", "absent", "absent", "absent"], "out": {"present": 1, "late": 0, "absent": 7, "excused": 0, "counted": 8, "percent": 13}},
+    {"name": "all absent", "in": ["absent", "absent"], "out": {"present": 0, "late": 0, "absent": 2, "excused": 0, "counted": 2, "percent": 0}}
+  ],
+  "average": [
+    {"name": "no grades", "in": [], "out": null},
+    {"name": "single", "in": [4], "out": "4.0"},
+    {"name": "exact half", "in": [5, 4], "out": "4.5"},
+    {"name": "4.33 rounds down", "in": [5, 4, 4], "out": "4.3"},
+    {"name": "4.67 rounds up", "in": [5, 5, 4], "out": "4.7"},
+    {"name": "4.75 rounds half up", "in": [4, 5, 5, 5], "out": "4.8"},
+    {"name": "2.5", "in": [2, 3], "out": "2.5"}
+  ],
+  "exam_percent": [
+    {"name": "78 of 100", "score": "78", "max": "100", "out": 78},
+    {"name": "45 of 60", "score": "45", "max": "60", "out": 75},
+    {"name": "one third", "score": "1", "max": "3", "out": 33},
+    {"name": "two thirds", "score": "2", "max": "3", "out": 67},
+    {"name": "decimals", "score": "12.5", "max": "25", "out": 50},
+    {"name": "12.5 percent rounds half up", "score": "1", "max": "8", "out": 13},
+    {"name": "zero", "score": "0", "max": "50", "out": 0},
+    {"name": "full marks", "score": "50", "max": "50", "out": 100}
+  ],
+  "month_label": [
+    {"name": "november", "in": {"year": 2026, "month": 11}, "out": "2026 yil noyabr"},
+    {"name": "january", "in": {"year": 2026, "month": 1}, "out": "2026 yil yanvar"},
+    {"name": "december", "in": {"year": 2027, "month": 12}, "out": "2027 yil dekabr"}
+  ],
+  "report_caption": [
+    {
+      "name": "full data",
+      "in": {"center": "Bilim Plus", "student": "Ali Valiyev", "label": "2026 yil noyabr", "percent": 75, "average": "4.5"},
+      "out": "Bilim Plus: oylik hisobot\nO'quvchi: Ali Valiyev\nDavr: 2026 yil noyabr\nDavomat: 75%\nO'rtacha baho: 4.5\nPDF hujjat ilova qilingan."
+    },
+    {
+      "name": "no data",
+      "in": {"center": "Bilim Plus", "student": "Ali Valiyev", "label": "2026 yil noyabr", "percent": null, "average": null},
+      "out": "Bilim Plus: oylik hisobot\nO'quvchi: Ali Valiyev\nDavr: 2026 yil noyabr\nDavomat: ma'lumot yo'q\nO'rtacha baho: baho qo'yilmagan\nPDF hujjat ilova qilingan."
+    }
+  ],
+  "eligible": [
+    {"name": "finished enrollment", "enrollment": "finished", "group": "active", "out": true},
+    {"name": "finished enrollment in finished group", "enrollment": "finished", "group": "finished", "out": true},
+    {"name": "active in finished group", "enrollment": "active", "group": "finished", "out": true},
+    {"name": "active in active group", "enrollment": "active", "group": "active", "out": false},
+    {"name": "trial in finished group", "enrollment": "trial", "group": "finished", "out": false},
+    {"name": "frozen in finished group", "enrollment": "frozen", "group": "finished", "out": false},
+    {"name": "active in cancelled group", "enrollment": "active", "group": "cancelled", "out": false}
+  ],
+  "number": [
+    {"name": "first", "in": {"year": 2026, "serial": 1}, "out": "SR-2026-000001"},
+    {"name": "padded", "in": {"year": 2027, "serial": 123456}, "out": "SR-2027-123456"},
+    {"name": "longer than six digits", "in": {"year": 2026, "serial": 1234567}, "out": "SR-2026-1234567"}
+  ],
+  "new_code": [
+    {"name": "bytes 0..11", "in": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], "out": "NZC-ABCD-EFGH-JKLM"},
+    {"name": "top symbol", "in": [31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31], "out": "NZC-9999-9999-9999"},
+    {"name": "only the low 5 bits count", "in": [32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43], "out": "NZC-ABCD-EFGH-JKLM"},
+    {"name": "extra bytes are ignored", "in": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13], "out": "NZC-ABCD-EFGH-JKLM"}
+  ],
+  "parse_code": [
+    {"name": "canonical", "in": "NZC-ABCD-EFGH-JKLM", "out": "NZC-ABCD-EFGH-JKLM"},
+    {"name": "lower case", "in": "nzc-abcd-efgh-jklm", "out": "NZC-ABCD-EFGH-JKLM"},
+    {"name": "spaces instead of dashes", "in": "NZC ABCD EFGH JKLM", "out": "NZC-ABCD-EFGH-JKLM"},
+    {"name": "no separators and padding", "in": "  NZCABCDEFGHJKLM \n", "out": "NZC-ABCD-EFGH-JKLM"},
+    {"name": "forbidden letter I", "in": "NZC-ABCD-EFGH-JKLI", "out": null},
+    {"name": "forbidden digit 0", "in": "NZC-ABCD-EFGH-JKL0", "out": null},
+    {"name": "too short", "in": "NZC-ABCD-EFGH", "out": null},
+    {"name": "too long", "in": "NZC-ABCD-EFGH-JKLM-2345", "out": null},
+    {"name": "other prefix", "in": "NZQ-ABCD-EFGH-JKLM", "out": null},
+    {"name": "empty", "in": "", "out": null}
+  ],
+  "mask": [
+    {"name": "two words", "in": "Ali Valiyev", "out": "A** V******"},
+    {"name": "cyrillic", "in": "Ғуломов Жасур", "out": "Ғ****** Ж****"},
+    {"name": "one word", "in": "Ali", "out": "A**"},
+    {"name": "one letter", "in": "A", "out": "A"},
+    {"name": "extra spaces", "in": "  Ali   Vali ", "out": "A** V***"},
+    {"name": "modifier apostrophe stays masked", "in": "Oʻktam", "out": "O*****"}
+  ],
+  "certificate_caption": [
+    {
+      "name": "all lines",
+      "in": {"center": "Bilim Plus", "student": "Ali Valiyev", "course": "Ingliz tili B1", "number": "SR-2026-000001", "code": "NZC-ABCD-EFGH-JKLM"},
+      "out": "Bilim Plus: sertifikat SR-2026-000001\nO'quvchi: Ali Valiyev\nKurs: Ingliz tili B1\nTekshirish kodi: NZC-ABCD-EFGH-JKLM\nPDF hujjat ilova qilingan."
+    }
+  ]
+}

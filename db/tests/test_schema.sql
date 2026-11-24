@@ -1189,6 +1189,119 @@ BEGIN
 END $$;
 ROLLBACK;
 
+
+-- ---------------------------------------------------------------- 0035-0038: learning results (G4)
+SELECT setval(pg_get_serial_sequence('study_groups','id'), (SELECT max(id) FROM study_groups)), setval(pg_get_serial_sequence('lessons','id'), (SELECT max(id) FROM lessons));
+INSERT INTO study_groups (org_id, course_id, teacher_id, name, monthly_fee, start_date, status) VALUES (1,1,1,'Ingliz A2',500000,'2026-09-01','active');
+INSERT INTO lessons (org_id, group_id, teacher_id, lesson_date, start_time, end_time, status) VALUES (1,3,1,'2026-11-03','10:00','11:30','held');
+-- (no enrollments in group 3 for student 1: used to prove a lesson of another group is refused)
+
+-- notes and grades; exams
+BEGIN;
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '1'; SET LOCAL app.user_id = '1';
+DO $$
+BEGIN
+  INSERT INTO learning_marks (org_id, student_id, group_id, scope, lesson_id, grade, note, author_user_id) VALUES (1,1,1,'lesson',1,5,'Yaxshi ishladi',1);
+  INSERT INTO learning_marks (org_id, student_id, group_id, scope, period_month, grade) VALUES (1,1,1,'month','2026-11-01',4);
+  PERFORM public.t_expect('23505', $q$INSERT INTO learning_marks (org_id, student_id, group_id, scope, lesson_id, grade) VALUES (1,1,1,'lesson',1,3)$q$);
+  PERFORM public.t_expect('23505', $q$INSERT INTO learning_marks (org_id, student_id, group_id, scope, period_month, note) VALUES (1,1,1,'month','2026-11-01','x')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO learning_marks (org_id, student_id, group_id, scope, lesson_id, grade) VALUES (1,2,1,'lesson',2,6)$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO learning_marks (org_id, student_id, group_id, scope, lesson_id, grade) VALUES (1,2,1,'lesson',2,0)$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO learning_marks (org_id, student_id, group_id, scope, lesson_id) VALUES (1,2,1,'lesson',2)$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO learning_marks (org_id, student_id, group_id, scope, lesson_id, note) VALUES (1,2,1,'lesson',2,'   ')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO learning_marks (org_id, student_id, group_id, scope, period_month, grade) VALUES (1,2,1,'month','2026-11-15',3)$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO learning_marks (org_id, student_id, group_id, scope, lesson_id, period_month, grade) VALUES (1,2,1,'lesson',2,'2026-11-01',3)$q$);
+  PERFORM public.t_expect('23503', $q$INSERT INTO learning_marks (org_id, student_id, group_id, scope, lesson_id, grade) VALUES (1,4,1,'lesson',2,3)$q$);
+  PERFORM public.t_expect('23503', $q$INSERT INTO learning_marks (org_id, student_id, group_id, scope, lesson_id, grade) VALUES (1,2,1,'lesson',3,3)$q$);
+  UPDATE learning_marks SET grade = 3 WHERE scope = 'month';
+  ASSERT (SELECT grade FROM learning_marks WHERE scope = 'month') = 3, 'a mark can be corrected';
+  ASSERT (SELECT count(*) FROM audit_log WHERE entity_type = 'learning_marks') >= 3, 'mark changes are audited';
+
+  INSERT INTO exams (org_id, group_id, title, held_on, max_score, created_by_user_id) VALUES (1,1,'Oraliq test','2026-11-10',100,1);
+  PERFORM public.t_expect('23505', $q$INSERT INTO exams (org_id, group_id, title, held_on, max_score) VALUES (1,1,' ORALIQ test','2026-11-10',50)$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO exams (org_id, group_id, title, held_on, max_score) VALUES (1,1,'Nol','2026-11-11',0)$q$);
+  INSERT INTO exam_results (org_id, exam_id, student_id, score, entered_by_user_id) VALUES (1,1,1,87.5,1);
+  PERFORM public.t_expect('23505', $q$INSERT INTO exam_results (org_id, exam_id, student_id, score) VALUES (1,1,1,90)$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO exam_results (org_id, exam_id, student_id, score) VALUES (1,1,2,100.01)$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO exam_results (org_id, exam_id, student_id, score) VALUES (1,1,2,-1)$q$);
+  PERFORM public.t_expect('23503', $q$INSERT INTO exam_results (org_id, exam_id, student_id, score) VALUES (1,1,4,10)$q$);
+  PERFORM public.t_expect('23514', $q$UPDATE exams SET max_score = 80 WHERE id = 1$q$);
+  UPDATE exams SET max_score = 90 WHERE id = 1;
+  PERFORM public.t_expect('23514', $q$UPDATE exams SET group_id = 3 WHERE id = 1$q$);
+END $$;
+-- another center sees none of it
+RESET ROLE;
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '2';
+DO $$ BEGIN
+  ASSERT (SELECT count(*) FROM learning_marks) = 0 AND (SELECT count(*) FROM exams) = 0 AND (SELECT count(*) FROM exam_results) = 0, 'center 2 sees no marks or exams of center 1';
+END $$;
+ROLLBACK;
+
+-- progress reports: a draft can be regenerated; approval freezes it
+BEGIN;
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '1'; SET LOCAL app.user_id = '1';
+DO $$
+BEGIN
+  INSERT INTO progress_reports (org_id, student_id, group_id, period_month, snapshot) VALUES (1,1,1,'2026-11-01','{"a":1}');
+  INSERT INTO progress_report_files (org_id, report_id, pdf) VALUES (1,1,'\x255044462d');
+  PERFORM public.t_expect('23505', $q$INSERT INTO progress_reports (org_id, student_id, group_id, period_month, snapshot) VALUES (1,1,1,'2026-11-01','{}')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO progress_reports (org_id, student_id, group_id, period_month, snapshot) VALUES (1,2,1,'2026-11-05','{}')$q$);
+  PERFORM public.t_expect('23514', $q$UPDATE progress_reports SET status = 'approved' WHERE id = 1$q$);
+  UPDATE progress_reports SET snapshot = '{"a":2}' WHERE id = 1;
+  UPDATE progress_report_files SET pdf = '\x255044462d31' WHERE report_id = 1;
+  PERFORM public.t_expect('23514', $q$UPDATE progress_reports SET group_id = 3 WHERE id = 1$q$);
+  UPDATE progress_reports SET status = 'approved', approved_at = now(), approved_by_user_id = 1 WHERE id = 1;
+  PERFORM public.t_expect('23514', $q$UPDATE progress_reports SET snapshot = '{"a":3}' WHERE id = 1$q$);
+  PERFORM public.t_expect('23514', $q$UPDATE progress_reports SET status = 'draft', approved_at = NULL WHERE id = 1$q$);
+  PERFORM public.t_expect('23514', $q$DELETE FROM progress_reports WHERE id = 1$q$);
+  PERFORM public.t_expect('23514', $q$UPDATE progress_report_files SET pdf = '\x00' WHERE report_id = 1$q$);
+  PERFORM public.t_expect('23514', $q$DELETE FROM progress_report_files WHERE report_id = 1$q$);
+END $$;
+RESET ROLE;
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '2';
+DO $$ BEGIN ASSERT (SELECT count(*) FROM progress_reports) = 0, 'center 2 sees no report of center 1'; END $$;
+ROLLBACK;
+
+-- certificates: numbered, one live per enrollment, immutable except the void, verified by code
+BEGIN;
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '1'; SET LOCAL app.user_id = '1';
+DO $$
+BEGIN
+  ASSERT next_certificate_serial(2026) = 1 AND next_certificate_serial(2026) = 2, 'certificate serials count up per center and year';
+  ASSERT next_certificate_serial(2027) = 1, 'a new year starts at 1';
+  INSERT INTO certificates (org_id, enrollment_id, student_id, group_id, year, serial, number, code, issued_on, completed_on, snapshot, issued_by_user_id)
+    VALUES (1,1,1,1,2026,1,'SR-2026-000001','NZC-ABCD-EFGH-JKLM','2026-11-24','2026-11-20','{"student_name":"Ali Valiyev","course_name":"Ingliz tili"}',1);
+  INSERT INTO certificate_files (org_id, certificate_id, pdf) VALUES (1,1,'\x255044462d');
+  PERFORM public.t_expect('23505', $q$INSERT INTO certificates (org_id, enrollment_id, student_id, group_id, year, serial, number, code, issued_on, completed_on, snapshot) VALUES (1,1,1,1,2026,2,'SR-2026-000002','NZC-ABCD-EFGH-JKLN','2026-11-24','2026-11-20','{}')$q$);
+  PERFORM public.t_expect('23505', $q$INSERT INTO certificates (org_id, enrollment_id, student_id, group_id, year, serial, number, code, issued_on, completed_on, snapshot) VALUES (1,2,2,1,2026,2,'SR-2026-000002','NZC-ABCD-EFGH-JKLM','2026-11-24','2026-11-20','{}')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO certificates (org_id, enrollment_id, student_id, group_id, year, serial, number, code, issued_on, completed_on, snapshot) VALUES (1,2,2,1,2026,2,'SR-2026-000002','NZC-ABCD-EFGH-JKLI','2026-11-24','2026-11-20','{}')$q$);
+  PERFORM public.t_expect('23514', $q$UPDATE certificates SET snapshot = '{}' WHERE id = 1$q$);
+  PERFORM public.t_expect('23514', $q$UPDATE certificates SET code = 'NZC-ZZZZ-ZZZZ-ZZZZ' WHERE id = 1$q$);
+  PERFORM public.t_expect('42501', $q$DELETE FROM certificates WHERE id = 1$q$);
+  PERFORM public.t_expect('23514', $q$UPDATE certificates SET voided_at = now() WHERE id = 1$q$);
+  PERFORM public.t_expect('42501', $q$UPDATE certificate_files SET pdf = '\x00' WHERE certificate_id = 1$q$);
+  PERFORM public.t_expect('42501', $q$SELECT * FROM certificate_verify('NZC-ABCD-EFGH-JKLM')$q$);
+  UPDATE certificates SET voided_at = now(), void_reason = 'noto''g''ri ism', voided_by_user_id = 1 WHERE id = 1;
+  PERFORM public.t_expect('23514', $q$UPDATE certificates SET void_reason = 'again' WHERE id = 1$q$);
+  INSERT INTO certificates (org_id, enrollment_id, student_id, group_id, year, serial, number, code, issued_on, completed_on, snapshot)
+    VALUES (1,1,1,1,2026,2,'SR-2026-000002','NZC-ABCD-EFGH-JKLN','2026-11-24','2026-11-20','{"student_name":"Ali Valiyev","course_name":"Ingliz tili"}');
+END $$;
+RESET ROLE;
+SET LOCAL ROLE nazoratly_auth;
+DO $$
+DECLARE r record;
+BEGIN
+  SELECT * INTO r FROM certificate_verify('NZC-ABCD-EFGH-JKLM');
+  ASSERT r.number = 'SR-2026-000001' AND r.voided AND r.holder = 'Ali Valiyev' AND r.course = 'Ingliz tili' AND r.center = 'Alpha markaz', 'verify finds the voided certificate';
+  SELECT * INTO r FROM certificate_verify('NZC-ABCD-EFGH-JKLN');
+  ASSERT r.number = 'SR-2026-000002' AND NOT r.voided, 'verify finds the live certificate';
+  ASSERT (SELECT count(*) FROM certificate_verify('NZC-0000-0000-0000')) = 0, 'unknown code: no row';
+END $$;
+RESET ROLE;
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '2';
+DO $$ BEGIN ASSERT (SELECT count(*) FROM certificates) = 0, 'center 2 sees no certificate of center 1'; END $$;
+ROLLBACK;
+
 -- clean up so the down-migration test starts from the original state (the journal is immutable: only the
 -- superuser of the test database may switch its guards off)
 DROP FUNCTION public.t_post(bigint, date, text, text, text, jsonb, text, int, bigint);
