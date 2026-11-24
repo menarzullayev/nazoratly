@@ -5,6 +5,9 @@ COPY web/package.json web/package-lock.json web/
 RUN cd web && npm ci --no-audit --no-fund
 COPY web web
 COPY sheets/src/domain sheets/src/domain
+# NEXT_PUBLIC_* is baked into the static site at build time: empty = the "copy the demo Sheet" button is not rendered (docs/DEMO.md)
+ARG NEXT_PUBLIC_DEMO_SHEET_COPY_URL=""
+ENV NEXT_PUBLIC_DEMO_SHEET_COPY_URL=$NEXT_PUBLIC_DEMO_SHEET_COPY_URL
 RUN cd web && npm run build
 
 FROM nginx:1.29-alpine

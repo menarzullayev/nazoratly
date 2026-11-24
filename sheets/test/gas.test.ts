@@ -49,7 +49,7 @@ describe("workbook setup", () => {
   it("loads demo data once, every row flagged, and refuses to load it twice", () => {
     expect(loadSampleData()).toContain("8 o'quvchi");
     const students = read<StudentRow & { demo?: boolean }>(STUDENTS);
-    expect(students).toHaveLength(11); // 8 enrolled + 3 waiting for a seat
+    expect(students).toHaveLength(13); // 8 enrolled + 3 waiting for a seat + 2 students of the Chilonzor branch
     expect(students.every((s) => s.demo === true)).toBe(true);
     expect(() => loadSampleData()).toThrow(/allaqachon yuklangan/);
   });
@@ -63,7 +63,7 @@ describe("workbook setup", () => {
     expect(msg).toContain("8 o'quvchi");
     expect(msg).toContain("1 ta o'quvchi");
     const students = read<StudentRow>(STUDENTS);
-    expect(students).toHaveLength(11);
+    expect(students).toHaveLength(13);
     expect(students.find((s) => s.id === "S0001")!.fullName).toBe("Aziz Rahimov");
     const kept = students.find((s) => s.id === "S0005")!;
     expect(kept.guardianChatId).toBe("777");
@@ -84,28 +84,28 @@ describe("with demo data", () => {
     expect(rows.map((r) => [r[0], r[5]])).toEqual([["S0005", 1_800_000], ["S0002", 800_000], ["S0006", 400_000]]);
     actions.refreshDashboard();
     const dash = h.sheet(DASHBOARD_SHEET);
-    expect(dash.getRange(5, 1).getValue()).toBe(8); // active students
+    expect(dash.getRange(5, 1).getValue()).toBe(10); // active students (8 + 2 of the Chilonzor branch)
     expect(dash.getRange(5, 4).getValue()).toBe(3_000_000); // outstanding
   });
 
   it("monthly charges are idempotent and write real dates", () => {
     h.prompts.push("2026-12");
     actions.generateMonthlyCharges();
-    expect(lastAlert()).toContain("8 ta yangi hisob");
+    expect(lastAlert()).toContain("10 ta yangi hisob");
     const april = read<Charge>(CHARGES).filter((c) => c.month === "2026-12-01");
-    expect(april).toHaveLength(8);
+    expect(april).toHaveLength(10);
     expect(april.every((c) => c.dueDate === "2026-12-10")).toBe(true);
     expect(new Set(read<Charge>(CHARGES).map((c) => c.id)).size).toBe(read<Charge>(CHARGES).length);
     h.prompts.push("2026-12");
     actions.generateMonthlyCharges();
     expect(lastAlert()).toContain("0 ta yangi hisob");
-    expect(lastAlert()).toContain("Avval yaratilgan: 8");
+    expect(lastAlert()).toContain("Avval yaratilgan: 10");
     h.prompts.push("2026-4x");
     expect(() => actions.generateMonthlyCharges()).toThrow(/Noto'g'ri oy/);
   });
 
   it("attendance: roster, validation, upsert without duplicates", () => {
-    expect(actions.getAttendanceGroups().map((g) => g.id)).toEqual(["G0001", "G0002"]);
+    expect(actions.getAttendanceGroups().map((g) => g.id)).toEqual(["G0001", "G0002", "G0003"]);
     const roster = actions.getRoster("G0001", "2026-10-26");
     expect(roster.map((r) => r.studentId)).toEqual(["S0005", "S0001", "S0003", "S0007"].sort((a, b) => roster.find((r) => r.studentId === a)!.fullName.localeCompare(roster.find((r) => r.studentId === b)!.fullName)));
     expect(roster.every((r) => r.status === "")).toBe(true);
