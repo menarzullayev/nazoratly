@@ -15,6 +15,7 @@ from nazoratly.errors import Conflict, Forbidden, NotFound, Unprocessable
 from nazoratly.idempotency import IdempotentRoute
 from nazoratly.routers.academics import assert_group_access, my_teacher_id
 from nazoratly.routers.entitlements import sync_entitlement
+from nazoratly.scheduling import EFFECTIVE_TEACHER_SQL, conflicts_by_lesson, ensure_no_conflict, lesson_slots
 from nazoratly.schemas import LongText, Message, Model, Out, Page, make_page
 
 router = APIRouter(prefix="/v1", tags=["lessons & attendance"], route_class=IdempotentRoute)
@@ -55,13 +56,21 @@ class LessonOut(Out):
     group_name: str
     teacher_id: uuid.UUID | None
     teacher_name: str | None
+    substitute_teacher_id: uuid.UUID | None
+    substitute_teacher_name: str | None
+    effective_teacher_id: uuid.UUID | None
+    effective_teacher_name: str | None
     room_id: uuid.UUID | None
+    room_name: str | None
     lesson_date: date
     start_time: time
     end_time: time
     status: str
     topic: str | None
     kind: str
+    cancel_reason: str | None
+    original_date: date | None
+    original_start_time: time | None
 
 
 class GenerateIn(Model):
@@ -72,13 +81,22 @@ class GenerateIn(Model):
 class GenerateOut(Out):
     created: int
     skipped_existing: int
+    conflicting_lessons: int = Field(
+        default=0,
+        description="lessons of the range that clash on room or teacher with another lesson (see /v1/schedule/checks)",
+    )
 
 
 _LESSON_SQL = (
     "SELECT l.public_id AS id, g.public_id AS group_id, g.name AS group_name, t.public_id AS teacher_id, t.full_name AS teacher_name,"
-    " r.public_id AS room_id, l.lesson_date, l.start_time, l.end_time, l.status, l.topic, l.kind "
+    " st.public_id AS substitute_teacher_id, st.full_name AS substitute_teacher_name,"
+    " et.public_id AS effective_teacher_id, et.full_name AS effective_teacher_name,"
+    " r.public_id AS room_id, r.name AS room_name, l.lesson_date, l.start_time, l.end_time, l.status, l.topic, l.kind,"
+    " l.cancel_reason, l.original_date, l.original_start_time "
     "FROM lessons l JOIN study_groups g ON g.org_id = l.org_id AND g.id = l.group_id "
     "LEFT JOIN teachers t ON t.org_id = l.org_id AND t.id = l.teacher_id "
+    "LEFT JOIN teachers st ON st.org_id = l.org_id AND st.id = l.substitute_teacher_id "
+    f"LEFT JOIN teachers et ON et.org_id = l.org_id AND et.id = {EFFECTIVE_TEACHER_SQL} "
     "LEFT JOIN rooms r ON r.org_id = l.org_id AND r.id = l.room_id"
 )
 
@@ -88,21 +106,29 @@ async def _lesson_for(conn: Conn, p: Principal, lesson_public: uuid.UUID) -> dic
     lid = await resolve(conn, "lessons", lesson_public, what="lesson")
     row = await fetch_one(
         conn,
-        "SELECT l.id, l.group_id, l.teacher_id, l.lesson_date, l.status, l.kind, g.teacher_id AS group_teacher_id "
+        "SELECT l.id, l.group_id, l.teacher_id, l.substitute_teacher_id, l.room_id, l.start_time, l.end_time, l.lesson_date, "
+        "l.status, l.kind, l.original_date, g.teacher_id AS group_teacher_id "
         "FROM lessons l JOIN study_groups g ON g.org_id = l.org_id AND g.id = l.group_id WHERE l.id = %s",
         (lid,),
     )
     assert row is not None
     if p.role == "teacher":
         mine = await my_teacher_id(conn, p)
-        if mine is None or mine not in (row["teacher_id"], row["group_teacher_id"]):
+        if mine is None or mine not in (
+            row["teacher_id"],
+            row["group_teacher_id"],
+            row["substitute_teacher_id"],
+        ):
             raise Forbidden("Teachers can access only their own lessons")
     return row
 
 
 @router.post("/lessons", response_model=LessonOut, status_code=201)
 async def create_lesson(
-    body: LessonIn, p: Annotated[Principal, Depends(require("academics:write"))], db: DB
+    body: LessonIn,
+    p: Annotated[Principal, Depends(require("academics:write"))],
+    db: DB,
+    allow_conflict: Annotated[bool, Query(description="save although the room or teacher is busy")] = False,
 ) -> LessonOut:
     async with db.tx(p.session()) as conn:
         gid = await resolve(conn, "study_groups", body.group_id, what="group")
@@ -112,6 +138,16 @@ async def create_lesson(
             assert g is not None
             tid = g["teacher_id"]
         rid = await resolve_opt(conn, "rooms", body.room_id, what="room")
+        await ensure_no_conflict(
+            conn,
+            lesson_id=None,
+            day=body.lesson_date,
+            start=body.start_time,
+            end=body.end_time,
+            room_id=rid,
+            teacher_id=tid,
+            allow=allow_conflict,
+        )
         row = await fetch_one(
             conn,
             "INSERT INTO lessons (org_id, group_id, teacher_id, room_id, lesson_date, start_time, end_time, topic) "
@@ -150,9 +186,9 @@ async def list_lessons(
         params.append(status)
     async with db.tx(p.session()) as conn:
         if p.role == "teacher":
-            where.append("(l.teacher_id = %s OR g.teacher_id = %s)")
+            where.append("(l.teacher_id = %s OR g.teacher_id = %s OR l.substitute_teacher_id = %s)")
             mine = await my_teacher_id(conn, p) or -1
-            params += [mine, mine]
+            params += [mine, mine, mine]
         rows = await fetch_all(
             conn,
             f"{_LESSON_SQL} WHERE {' AND '.join(where)} ORDER BY l.lesson_date, l.start_time, l.id LIMIT %s OFFSET %s",
@@ -178,6 +214,7 @@ async def patch_lesson(
     body: LessonPatch,
     p: Annotated[Principal, Depends(require("attendance:write"))],
     db: DB,
+    allow_conflict: Annotated[bool, Query(description="save although the room or teacher is busy")] = False,
 ) -> LessonOut:
     changes = body.model_dump(exclude_unset=True)
     structural = changes.keys() & {"teacher_id", "room_id", "start_time", "end_time"}
@@ -196,6 +233,28 @@ async def patch_lesson(
             assert n is not None
             if n["n"]:
                 raise Conflict("Lesson has attendance records; remove them before cancelling")
+        new_status = changes.get("status", lesson["status"])
+        if new_status != "cancelled" and (
+            changes.keys() & {"teacher_id", "room_id", "start_time", "end_time"}
+            or lesson["status"] == "cancelled"
+        ):
+            start = changes.get("start_time", lesson["start_time"])
+            end = changes.get("end_time", lesson["end_time"])
+            if end <= start:
+                raise Unprocessable("end_time must be after start_time")
+            teacher = (changes["teacher_id"] if "teacher_id" in changes else lesson["teacher_id"]) or lesson[
+                "group_teacher_id"
+            ]
+            await ensure_no_conflict(
+                conn,
+                lesson_id=int(str(lesson["id"])),
+                day=cast(date, lesson["lesson_date"]),
+                start=start,
+                end=end,
+                room_id=cast("int | None", changes["room_id"] if "room_id" in changes else lesson["room_id"]),
+                teacher_id=cast("int | None", lesson["substitute_teacher_id"] or teacher),
+                allow=allow_conflict,
+            )
         await patch_row(conn, "lessons", int(str(lesson["id"])), changes)
         out = await fetch_one(conn, f"{_LESSON_SQL} WHERE l.id = %s", (lesson["id"],))
     assert out is not None
@@ -245,7 +304,17 @@ async def generate_lessons(
                     created += cur.rowcount
                     skipped += 1 - cur.rowcount
             day += timedelta(days=1)
-    return GenerateOut(created=created, skipped_existing=skipped)
+        clashing = 0
+        if start <= end:
+            group_lessons = {
+                r["id"] for r in await fetch_all(conn, "SELECT id FROM lessons WHERE group_id = %s", (gid,))
+            }
+            clashing = sum(
+                1
+                for lid in conflicts_by_lesson(await lesson_slots(conn, start, end))
+                if int(lid) in group_lessons
+            )
+    return GenerateOut(created=created, skipped_existing=skipped, conflicting_lessons=clashing)
 
 
 # ---- attendance ----------------------------------------------------------------------------------------------

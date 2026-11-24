@@ -916,6 +916,23 @@ export interface paths {
         patch: operations["patch_branch_v1_branches__branch_id__patch"];
         trace?: never;
     };
+    "/v1/calendar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Week or day calendar of all lessons (a teacher sees only their own) */
+        get: operations["calendar_v1_calendar_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/charges": {
         parameters: {
             query?: never;
@@ -1764,6 +1781,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/lessons/{lesson_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel a planned lesson (prepares guardian message drafts) */
+        post: operations["cancel_lesson_v1_lessons__lesson_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/lessons/{lesson_id}/changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** History of a lesson's changes */
+        get: operations["lesson_changes_v1_lessons__lesson_id__changes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/lessons/{lesson_id}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Move a planned lesson to another date/time/room (prepares guardian message drafts) */
+        post: operations["move_lesson_v1_lessons__lesson_id__move_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/lessons/{lesson_id}/substitute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set (or clear) the substitute teacher of a lesson; payroll follows the substitute */
+        post: operations["substitute_lesson_v1_lessons__lesson_id__substitute_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/me": {
         parameters: {
             query?: never;
@@ -2316,6 +2401,74 @@ export interface paths {
         head?: never;
         /** Patch Room */
         patch: operations["patch_room_v1_rooms__room_id__patch"];
+        trace?: never;
+    };
+    "/v1/schedule-notices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Guardian message drafts for lesson changes */
+        get: operations["list_notices_v1_schedule_notices_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/schedule-notices/{notice_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve a notice: queues the guardian message (this call IS the person's approval) */
+        post: operations["approve_notice_v1_schedule_notices__notice_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/schedule-notices/{notice_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject a notice: nothing is sent */
+        post: operations["reject_notice_v1_schedule_notices__notice_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/schedule/checks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Room/teacher conflicts of a date range and groups that do not fit their room */
+        get: operations["checks_v1_schedule_checks_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/settings": {
@@ -3026,6 +3179,11 @@ export interface components {
              */
             channel?: ("telegram" | "sms") | null;
         };
+        /** ApproveNoticeIn */
+        ApproveNoticeIn: {
+            /** Channel */
+            channel?: ("telegram" | "sms") | null;
+        };
         /** AttendanceIn */
         AttendanceIn: {
             /** Records */
@@ -3268,6 +3426,135 @@ export interface components {
             /** Status */
             status?: ("active" | "closed") | null;
         };
+        /** CalendarDay */
+        CalendarDay: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Entries */
+            entries: components["schemas"]["CalendarEntry"][];
+            /**
+             * Weekday
+             * @description ISO weekday, 1 = Monday
+             */
+            weekday: number;
+        };
+        /** CalendarEntry */
+        CalendarEntry: {
+            /**
+             * Capacity Problem
+             * @description ok | group_capacity_over_room | enrolled_over_room
+             */
+            capacity_problem: string;
+            /** Conflicts */
+            conflicts: components["schemas"]["ClashOut"][];
+            /**
+             * End Time
+             * Format: time
+             */
+            end_time: string;
+            /** Enrolled */
+            enrolled: number;
+            /** Group Capacity */
+            group_capacity: number | null;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Group Name */
+            group_name: string;
+            /** Is Substitute */
+            is_substitute: boolean;
+            /** Kind */
+            kind: string;
+            /**
+             * Lesson Date
+             * Format: date
+             */
+            lesson_date: string;
+            /**
+             * Lesson Id
+             * Format: uuid
+             */
+            lesson_id: string;
+            /** Moved From Date */
+            moved_from_date: string | null;
+            /** Room Capacity */
+            room_capacity: number | null;
+            /** Room Id */
+            room_id: string | null;
+            /** Room Name */
+            room_name: string | null;
+            /**
+             * Start Time
+             * Format: time
+             */
+            start_time: string;
+            /** Status */
+            status: string;
+            /** Teacher Id */
+            teacher_id: string | null;
+            /** Teacher Name */
+            teacher_name: string | null;
+        };
+        /** CalendarOut */
+        CalendarOut: {
+            /**
+             * Date From
+             * Format: date
+             */
+            date_from: string;
+            /**
+             * Date To
+             * Format: date
+             */
+            date_to: string;
+            /** Days */
+            days: components["schemas"]["CalendarDay"][];
+            /**
+             * View
+             * @enum {string}
+             */
+            view: "week" | "day";
+        };
+        /** CancelIn */
+        CancelIn: {
+            /**
+             * Notify
+             * @default true
+             */
+            notify: boolean;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** CapacityWarning */
+        CapacityWarning: {
+            /** Enrolled */
+            enrolled: number;
+            /** Group Capacity */
+            group_capacity: number | null;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Group Name */
+            group_name: string;
+            /** Problem */
+            problem: string;
+            /** Room Capacity */
+            room_capacity: number | null;
+            /**
+             * Room Id
+             * Format: uuid
+             */
+            room_id: string;
+            /** Room Name */
+            room_name: string;
+        };
         /** CashAccountIn */
         CashAccountIn: {
             /**
@@ -3301,6 +3588,73 @@ export interface components {
             kind: string;
             /** Name */
             name: string;
+        };
+        /** ChangeOut */
+        ChangeOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** New Date */
+            new_date: string | null;
+            /** New Start Time */
+            new_start_time: string | null;
+            /** New Teacher Name */
+            new_teacher_name: string | null;
+            /** Notices */
+            notices: number;
+            /**
+             * Old Date
+             * Format: date
+             */
+            old_date: string;
+            /**
+             * Old Start Time
+             * Format: time
+             */
+            old_start_time: string;
+            /** Old Teacher Name */
+            old_teacher_name: string | null;
+            /** Payroll Effect */
+            payroll_effect: {
+                [key: string]: unknown;
+            }[];
+            /** Reason */
+            reason: string | null;
+        };
+        /** ChangeResult */
+        ChangeResult: {
+            /** Allowed Conflicts */
+            allowed_conflicts: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Change Id
+             * Format: uuid
+             */
+            change_id: string;
+            /** Draft Payroll Lines Removed */
+            draft_payroll_lines_removed: number;
+            /** Kind */
+            kind: string;
+            lesson: components["schemas"]["LessonOut"];
+            /** Notices Created */
+            notices_created: number;
+            /** Payroll Effect */
+            payroll_effect: components["schemas"]["PayEffectOut"][];
+            /**
+             * Students Without Notice
+             * @description enrolled students nobody can be told about (no linked guardian, no consent)
+             */
+            students_without_notice: number;
         };
         /** ChargeIn */
         ChargeIn: {
@@ -3392,6 +3746,79 @@ export interface components {
             description?: string | null;
             /** Due Date */
             due_date?: string | null;
+        };
+        /** ChecksOut */
+        ChecksOut: {
+            /** Capacity */
+            capacity: components["schemas"]["CapacityWarning"][];
+            /** Conflicts */
+            conflicts: components["schemas"]["ClashPair"][];
+            /**
+             * Date From
+             * Format: date
+             */
+            date_from: string;
+            /**
+             * Date To
+             * Format: date
+             */
+            date_to: string;
+        };
+        /** ClashOut */
+        ClashOut: {
+            /** Group Name */
+            group_name: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "room" | "teacher";
+            /**
+             * Lesson Id
+             * Format: uuid
+             */
+            lesson_id: string;
+        };
+        /** ClashPair */
+        ClashPair: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Group A */
+            group_a: string;
+            /** Group B */
+            group_b: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "room" | "teacher";
+            /**
+             * Lesson A
+             * Format: uuid
+             */
+            lesson_a: string;
+            /**
+             * Lesson B
+             * Format: uuid
+             */
+            lesson_b: string;
+            /** Room */
+            room: string | null;
+            /**
+             * Start A
+             * Format: time
+             */
+            start_a: string;
+            /**
+             * Start B
+             * Format: time
+             */
+            start_b: string;
+            /** Teacher */
+            teacher: string | null;
         };
         /** ClearOut */
         ClearOut: {
@@ -4127,6 +4554,12 @@ export interface components {
         };
         /** GenerateOut */
         GenerateOut: {
+            /**
+             * Conflicting Lessons
+             * @description lessons of the range that clash on room or teacher with another lesson (see /v1/schedule/checks)
+             * @default 0
+             */
+            conflicting_lessons: number;
             /** Created */
             created: number;
             /** Skipped Existing */
@@ -4726,6 +5159,12 @@ export interface components {
         };
         /** LessonOut */
         LessonOut: {
+            /** Cancel Reason */
+            cancel_reason: string | null;
+            /** Effective Teacher Id */
+            effective_teacher_id: string | null;
+            /** Effective Teacher Name */
+            effective_teacher_name: string | null;
             /**
              * End Time
              * Format: time
@@ -4750,8 +5189,14 @@ export interface components {
              * Format: date
              */
             lesson_date: string;
+            /** Original Date */
+            original_date: string | null;
+            /** Original Start Time */
+            original_start_time: string | null;
             /** Room Id */
             room_id: string | null;
+            /** Room Name */
+            room_name: string | null;
             /**
              * Start Time
              * Format: time
@@ -4759,6 +5204,10 @@ export interface components {
             start_time: string;
             /** Status */
             status: string;
+            /** Substitute Teacher Id */
+            substitute_teacher_id: string | null;
+            /** Substitute Teacher Name */
+            substitute_teacher_name: string | null;
             /** Teacher Id */
             teacher_id: string | null;
             /** Teacher Name */
@@ -4964,6 +5413,42 @@ export interface components {
             /** Student Name */
             student_name: string;
         };
+        /** MoveIn */
+        MoveIn: {
+            /**
+             * Allow Conflict
+             * @default false
+             */
+            allow_conflict: boolean;
+            /**
+             * End Time
+             * Format: time
+             */
+            end_time: string;
+            /**
+             * Lesson Date
+             * Format: date
+             */
+            lesson_date: string;
+            /**
+             * Notify
+             * @description prepare guardian message drafts (a person approves them)
+             * @default true
+             */
+            notify: boolean;
+            /** Reason */
+            reason?: string | null;
+            /**
+             * Room Id
+             * @description omit to keep the room
+             */
+            room_id?: string | null;
+            /**
+             * Start Time
+             * Format: time
+             */
+            start_time: string;
+        };
         /** MovementBlock */
         MovementBlock: {
             /** Accepted */
@@ -4993,6 +5478,50 @@ export interface components {
             code: string;
             /** Name */
             name: string;
+        };
+        /** NoticeOut */
+        NoticeOut: {
+            /** Body */
+            body: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decided At */
+            decided_at: string | null;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Guardian Id
+             * Format: uuid
+             */
+            guardian_id: string;
+            /** Guardian Name */
+            guardian_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** New Date */
+            new_date: string | null;
+            /**
+             * Old Date
+             * Format: date
+             */
+            old_date: string;
+            /** Status */
+            status: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
         };
         /** OfferOut */
         OfferOut: {
@@ -5444,6 +5973,17 @@ export interface components {
             /** Offset */
             offset: number;
         };
+        /** Page[NoticeOut] */
+        Page_NoticeOut_: {
+            /** Has More */
+            has_more: boolean;
+            /** Items */
+            items: components["schemas"]["NoticeOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
         /** Page[OnlineTxOut] */
         Page_OnlineTxOut_: {
             /** Has More */
@@ -5593,6 +6133,25 @@ export interface components {
             current_password: string;
             /** New Password */
             new_password: string;
+        };
+        /** PayEffectOut */
+        PayEffectOut: {
+            /** Delta */
+            delta: string;
+            /** Month */
+            month: string;
+            /**
+             * Payroll Status
+             * @description status of that teacher's payroll for the month (None = not generated yet); approved/paid payrolls are frozen: correct them with an adjustment line
+             */
+            payroll_status: string | null;
+            /**
+             * Teacher Id
+             * Format: uuid
+             */
+            teacher_id: string;
+            /** Teacher Name */
+            teacher_name: string;
         };
         /** PayIn */
         PayIn: {
@@ -6234,6 +6793,69 @@ export interface components {
             /** Teacher Id */
             teacher_id?: string | null;
         };
+        /** ScheduleSaved */
+        ScheduleSaved: {
+            /** Active Students */
+            active_students: number;
+            /**
+             * Billing Mode
+             * @enum {string}
+             */
+            billing_mode: "monthly" | "package";
+            /** Branch Id */
+            branch_id: string | null;
+            /** Capacity */
+            capacity: number | null;
+            /**
+             * Capacity Warnings
+             * @description rooms that hold fewer students than the group allows or has
+             */
+            capacity_warnings?: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Conflicts
+             * @description weekly slots that clash with another group (only when allow_conflict=true)
+             */
+            conflicts?: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Course Id
+             * Format: uuid
+             */
+            course_id: string;
+            /** Course Name */
+            course_name: string;
+            /** End Date */
+            end_date: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Monthly Fee */
+            monthly_fee: string;
+            /** Name */
+            name: string;
+            /** Package Lessons */
+            package_lessons: number | null;
+            /** Package Price */
+            package_price: string | null;
+            /** Schedule */
+            schedule: components["schemas"]["ScheduleSlotOut"][];
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** Status */
+            status: string;
+            /** Teacher Id */
+            teacher_id: string | null;
+            /** Teacher Name */
+            teacher_name: string | null;
+        };
         /** ScheduleSlot */
         ScheduleSlot: {
             /**
@@ -6734,6 +7356,21 @@ export interface components {
             id: string;
             /** Name */
             name: string;
+        };
+        /** SubstituteIn */
+        SubstituteIn: {
+            /**
+             * Allow Conflict
+             * @default false
+             */
+            allow_conflict: boolean;
+            /** Reason */
+            reason?: string | null;
+            /**
+             * Teacher Id
+             * @description the substitute; null removes the substitute
+             */
+            teacher_id: string | null;
         };
         /** SupplierIn */
         SupplierIn: {
@@ -9297,6 +9934,42 @@ export interface operations {
             };
         };
     };
+    calendar_v1_calendar_get: {
+        parameters: {
+            query: {
+                /** @description any date inside the week/day */
+                date: string;
+                view?: "week" | "day";
+                group_id?: string | null;
+                teacher_id?: string | null;
+                room_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_charges_v1_charges_get: {
         parameters: {
             query?: {
@@ -10779,7 +11452,10 @@ export interface operations {
     };
     put_schedule_v1_groups__group_id__schedule_put: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description save although a room or the teacher is busy */
+                allow_conflict?: boolean;
+            };
             header?: never;
             path: {
                 group_id: string;
@@ -10798,7 +11474,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GroupDetail"];
+                    "application/json": components["schemas"]["ScheduleSaved"];
                 };
             };
             /** @description Validation Error */
@@ -11413,7 +12089,10 @@ export interface operations {
     };
     create_lesson_v1_lessons_post: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description save although the room or teacher is busy */
+                allow_conflict?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -11477,7 +12156,10 @@ export interface operations {
     };
     patch_lesson_v1_lessons__lesson_id__patch: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description save although the room or teacher is busy */
+                allow_conflict?: boolean;
+            };
             header?: never;
             path: {
                 lesson_id: string;
@@ -11595,6 +12277,142 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_lesson_v1_lessons__lesson_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    lesson_changes_v1_lessons__lesson_id__changes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    move_lesson_v1_lessons__lesson_id__move_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    substitute_lesson_v1_lessons__lesson_id__substitute_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubstituteIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeResult"];
                 };
             };
             /** @description Validation Error */
@@ -12807,6 +13625,137 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RoomOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_notices_v1_schedule_notices_get: {
+        parameters: {
+            query?: {
+                status?: ("pending" | "approved" | "rejected") | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_NoticeOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_notice_v1_schedule_notices__notice_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notice_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApproveNoticeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoticeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_notice_v1_schedule_notices__notice_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notice_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoticeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    checks_v1_schedule_checks_get: {
+        parameters: {
+            query: {
+                date_from: string;
+                date_to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChecksOut"];
                 };
             };
             /** @description Validation Error */

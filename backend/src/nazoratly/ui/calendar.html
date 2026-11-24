@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Dars jadvali | nazoratly</title>
+  <link rel="stylesheet" href="/ui/static/ui.css">
+</head>
+<body>
+  <header class="top">
+    <strong>nazoratly: dars jadvali</strong>
+    <span class="row"><span id="who" class="muted"></span><button id="signout" class="secondary" type="button" hidden>Chiqish</button></span>
+  </header>
+  <main>
+    <section id="login" class="card"></section>
+    <div id="app" hidden>
+      <section class="card stack">
+        <div class="row">
+          <div><label for="day">Sana</label><input id="day" type="date"></div>
+          <div><label for="view">Ko'rinish</label><select id="view"><option value="week">Hafta</option><option value="day">Kun</option></select></div>
+          <button id="prev" class="secondary" type="button" aria-label="Oldingi">&larr;</button>
+          <button id="today" class="secondary" type="button">Bugun</button>
+          <button id="next" class="secondary" type="button" aria-label="Keyingi">&rarr;</button>
+        </div>
+        <p id="range" class="muted" role="status"></p>
+        <div id="grid" class="cal-grid"></div>
+      </section>
+      <section class="card stack" id="notices-card" hidden>
+        <h2>Vasiylarga xabar loyihalari <span id="notice-count" class="pill warn">0</span></h2>
+        <p class="muted">Bekor qilingan yoki ko'chirilgan darslar uchun. Siz tasdiqlamaguncha hech narsa yuborilmaydi.</p>
+        <p id="notice-msg" class="muted" role="status"></p>
+        <div id="notices" class="stack"></div>
+      </section>
+    </div>
+  </main>
+  <script src="/ui/static/common.js"></script>
+  <script src="/ui/static/calendar.js"></script>
+</body>
+</html>

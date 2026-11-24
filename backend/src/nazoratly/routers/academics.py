@@ -17,6 +17,7 @@ from nazoratly.errors import Conflict, Forbidden, GroupFull, NotFound, Unprocess
 from nazoratly.idempotency import IdempotentRoute
 from nazoratly.routers.students import like_pattern
 from nazoratly.rules import capacity as seats
+from nazoratly.scheduling import ScheduleConflict, weekly_check
 from nazoratly.schemas import (
     Dec2,
     LongText,
@@ -473,6 +474,16 @@ class GroupDetail(GroupOut):
     schedule: list[ScheduleSlotOut]
 
 
+class ScheduleSaved(GroupDetail):
+    conflicts: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="weekly slots that clash with another group (only when allow_conflict=true)",
+    )
+    capacity_warnings: list[dict[str, Any]] = Field(
+        default_factory=list, description="rooms that hold fewer students than the group allows or has"
+    )
+
+
 _GROUP_SQL = (
     "SELECT g.public_id AS id, g.name, c.public_id AS course_id, c.name AS course_name, t.public_id AS teacher_id,"
     " t.full_name AS teacher_name, b.public_id AS branch_id, g.monthly_fee, g.capacity, g.start_date, g.end_date, g.status, g.billing_mode, g.package_lessons, g.package_price,"
@@ -651,26 +662,59 @@ async def delete_group(
     return Message(message="group deleted")
 
 
-@router.put("/groups/{group_id}/schedule", response_model=GroupDetail, summary="Replace the weekly schedule")
+@router.put(
+    "/groups/{group_id}/schedule", response_model=ScheduleSaved, summary="Replace the weekly schedule"
+)
 async def put_schedule(
     group_id: uuid.UUID,
     body: list[ScheduleSlot],
     p: Annotated[Principal, Depends(require("academics:write"))],
     db: DB,
-) -> GroupDetail:
+    allow_conflict: Annotated[bool, Query(description="save although a room or the teacher is busy")] = False,
+) -> ScheduleSaved:
     if len({(s.weekday, s.start_time) for s in body}) != len(body):
         raise Unprocessable("Duplicate weekday/start_time slots")
     async with db.tx(p.session()) as conn:
         gid = await resolve(conn, "study_groups", group_id, what="group")
-        await execute(conn, "DELETE FROM group_schedules WHERE group_id = %s", (gid,))
+        slots: list[tuple[int, time, time, int | None]] = []
         for s in body:
-            rid = await resolve_opt(conn, "rooms", s.room_id, what="room")
+            slots.append(
+                (
+                    s.weekday,
+                    s.start_time,
+                    s.end_time,
+                    await resolve_opt(conn, "rooms", s.room_id, what="room"),
+                )
+            )
+        teacher = await fetch_one(conn, "SELECT teacher_id FROM study_groups WHERE id = %s", (gid,))
+        assert teacher is not None
+        # a group's own slots must not overlap each other when they share the room or the teacher
+        for i, a in enumerate(slots):
+            for b in slots[i + 1 :]:
+                if (
+                    a[0] == b[0]
+                    and a[1] < b[2]
+                    and b[1] < a[2]
+                    and (teacher["teacher_id"] is not None or (a[3] is not None and a[3] == b[3]))
+                ):
+                    raise Unprocessable("The group's own weekly slots overlap")
+        check = await weekly_check(conn, group_id=gid, teacher_id=teacher["teacher_id"], slots=slots)
+        if check.conflicts and not allow_conflict:
+            raise ScheduleConflict(
+                "A room or the teacher is already busy in the weekly schedule (pass allow_conflict=true to save anyway)",
+                details={"conflicts": check.conflicts},
+            )
+        await execute(conn, "DELETE FROM group_schedules WHERE group_id = %s", (gid,))
+        for weekday, start, end, rid in slots:
             await execute(
                 conn,
                 "INSERT INTO group_schedules (org_id, group_id, weekday, start_time, end_time, room_id) VALUES (%s, %s, %s, %s, %s, %s)",
-                (p.org_id, gid, s.weekday, s.start_time, s.end_time, rid),
+                (p.org_id, gid, weekday, start, end, rid),
             )
-        return await _group_detail(conn, gid)
+        detail = await _group_detail(conn, gid)
+        return ScheduleSaved(
+            **detail.model_dump(), conflicts=check.conflicts, capacity_warnings=check.capacity
+        )
 
 
 # ---- enrollments ---------------------------------------------------------------------------------------------

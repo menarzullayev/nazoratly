@@ -32,6 +32,7 @@ const L = {
   attendance: { present: "Keldi", absent: "Kelmadi", late: "Kechikdi", excused: "Sababli" },
   billing: { monthly: "Oylik", package: "Abonement" },
   waitStatus: { waiting: "Kutmoqda", enrolled: "Yozildi", removed: "Olib tashlandi" },
+  changeKind: { move: "Ko'chirish", cancel: "Bekor qilish", substitute: "O'rinbosar" },
   payModel: { fixed: "Qat'iy oylik", per_lesson: "Dars uchun", percent: "Foiz" },
   teacherStatus: { active: "Faol", inactive: "Nofaol" },
   draftStatus: { pending: "Kutilmoqda", approved: "Tasdiqlangan", sent: "Yuborilgan", rejected: "Rad etilgan", failed: "Xato" },
@@ -77,13 +78,14 @@ export const GROUPS: TableDef = {
     { key: "name", header: "Guruh nomi", width: 200, kind: "text" },
     { key: "teacherId", header: "O'qituvchi ID", width: 110, kind: "text" },
     { key: "monthlyFee", header: "Oylik narx (so'm)", width: 130, kind: "int" },
-    { key: "schedule", header: "Jadval", width: 200, kind: "text", help: "Masalan: Du-Chor-Ju 18:00" },
+    { key: "schedule", header: "Jadval", width: 200, kind: "text", help: "Masalan: Du-Chor-Ju 18:00 yoki Du-Chor-Ju 18:00-19:30 (tugash vaqti yozilmasa dars 90 daqiqa). Kunlar: Du Se Chor Pay Ju Sha Yak. Taqvim: nazoratly > Jadval va xonalar" },
     { key: "status", header: "Holat", width: 100, kind: "enum", labels: L.groupStatus },
     { key: "billingMode", header: "Hisoblash turi", width: 120, kind: "enum", labels: L.billing, help: "Oylik: har oy hisob yaratiladi. Abonement: to'lov darslar sonini beradi (menyu: Abonement)" },
     { key: "packageLessons", header: "Abonement darslari", width: 120, kind: "int", help: "Bitta abonementdagi darslar soni (faqat Abonement guruhlari)" },
     { key: "packagePrice", header: "Abonement narxi (so'm)", width: 140, kind: "int", help: "Bitta abonement narxi (faqat Abonement guruhlari)" },
     { key: "capacity", header: "Sig'im (o'rinlar)", width: 110, kind: "int", help: "Guruhdagi eng ko'p o'quvchi (sinovdagilar ham sanaladi). Bo'sh = cheklanmagan. To'lsa: nazoratly > Navbat" },
     DEMO,
+    { key: "roomId", header: "Xona ID", width: 90, kind: "text", help: "Guruh darslari o'tadigan xona (Xonalar varag'idan, masalan X0001). Bo'sh = xonasiz. Jadval: nazoratly > Jadval" },
   ],
 };
 
@@ -432,8 +434,38 @@ export const WAITLIST: TableDef = {
   ],
 };
 
+export const ROOMS: TableDef = {
+  sheet: "Xonalar",
+  color: "#188038",
+  cols: [
+    { key: "id", header: "ID", width: 70, kind: "text", help: "Avtomatik beriladi (X0001...)" },
+    { key: "name", header: "Xona nomi", width: 200, kind: "text" },
+    { key: "capacity", header: "Sig'im (o'rinlar)", width: 120, kind: "int", help: "Xonaga sig'adigan o'quvchilar soni. Bo'sh = noma'lum (ogohlantirish berilmaydi)" },
+  ],
+};
+
+export const SCHEDULE_CHANGES: TableDef = {
+  sheet: "Dars o'zgarishlari",
+  color: "#f9ab00",
+  cols: [
+    { key: "id", header: "ID", width: 70, kind: "text", help: "Avtomatik (J0001...). O'zgarishlar shu tartibda qo'llanadi: qatorlarni o'chirmang" },
+    { key: "kind", header: "Turi", width: 110, kind: "enum", labels: L.changeKind },
+    { key: "groupId", header: "Guruh ID", width: 90, kind: "text" },
+    { key: "date", header: "Dars sanasi", width: 110, kind: "date", help: "O'zgartirilgan paytdagi dars sanasi" },
+    { key: "start", header: "Dars boshlanishi", width: 110, kind: "text", plain: true, help: "SS:DD (masalan 18:00)" },
+    { key: "newDate", header: "Yangi sana", width: 110, kind: "date", help: "Faqat ko'chirishda" },
+    { key: "newStart", header: "Yangi boshlanish", width: 110, kind: "text", plain: true },
+    { key: "newEnd", header: "Yangi tugash", width: 110, kind: "text", plain: true },
+    { key: "newRoomId", header: "Yangi xona ID", width: 100, kind: "text", help: "Bo'sh = xona o'zgarmaydi" },
+    { key: "substituteId", header: "O'rinbosar ID", width: 110, kind: "text", help: "O'rinbosar o'qituvchi (faqat 'O'rinbosar' turida). Bo'sh = o'rinbosarni olib tashlash" },
+    { key: "reason", header: "Sabab", width: 220, kind: "text" },
+    { key: "createdOn", header: "Yaratilgan", width: 110, kind: "date" },
+    { key: "payEffect", header: "Oylik ta'siri", width: 260, kind: "text", help: "O'zgarish paytida hisoblangan: kim qancha yo'qotadi/oladi (faqat 'Dars uchun' to'lanadigan o'qituvchilar)" },
+  ],
+};
+
 export const LEDGER_TABLES: TableDef[] = [JOURNAL, PERIODS, CHART_ACCOUNTS, CASH_ACCOUNTS];
-export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, PACKAGES, INSTALLMENTS, DOCUMENTS, EXPENSES, WAITLIST, ...LEDGER_TABLES, STATEMENTS, STATEMENT_LINES, SUPPLIERS, SUPPLIER_BILLS, BILL_PAYMENTS];
+export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, PACKAGES, INSTALLMENTS, DOCUMENTS, EXPENSES, WAITLIST, ...LEDGER_TABLES, STATEMENTS, STATEMENT_LINES, SUPPLIERS, SUPPLIER_BILLS, BILL_PAYMENTS, ROOMS, SCHEDULE_CHANGES];
 
 export const SETTINGS_SHEET = "Sozlamalar";
 export const DEBTORS_SHEET = "Qarzdorlar";

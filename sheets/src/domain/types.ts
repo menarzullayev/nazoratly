@@ -23,6 +23,7 @@ export interface Group {
   packageLessons?: number; // lessons in one package (package-billed groups)
   packagePrice?: number; // so'm for one package (package-billed groups)
   capacity?: number; // most students (trials count); empty = unlimited
+  roomId?: string; // the room the group's lessons are held in (Xonalar sheet); empty = none
   demo?: boolean;
 }
 

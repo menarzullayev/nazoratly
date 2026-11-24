@@ -13,6 +13,7 @@ import * as packages from "./gas/packages";
 import * as payables from "./gas/payables";
 import * as plans from "./gas/plans";
 import * as reconcile from "./gas/reconcile";
+import * as schedule from "./gas/schedule";
 import { setupWorkbook, loadSampleData, resetSampleData } from "./gas/setup";
 import { handleGet, handlePost } from "./gas/webhook";
 
@@ -77,6 +78,17 @@ g.onOpen = (): void => {
         .addItem("Navbatdan olib tashlash", "menuWaitRemove")
         .addItem("Bo'sh o'rin xabarlarini yaratish", "menuWaitDrafts")
         .addItem("Sig'imni tekshirish", "menuWaitCheck"),
+    )
+    .addSubMenu(
+      SpreadsheetApp.getUi()
+        .createMenu("Jadval va xonalar")
+        .addItem("Haftalik taqvim", "menuCalWeek")
+        .addItem("Kunlik taqvim", "menuCalDay")
+        .addItem("Xona qo'shish", "menuRoomAdd")
+        .addItem("Jadvalni tekshirish (to'qnashuv, sig'im)", "menuScheduleCheck")
+        .addItem("Darsni ko'chirish", "menuLessonMove")
+        .addItem("Darsni bekor qilish", "menuLessonCancel")
+        .addItem("O'rinbosar o'qituvchi", "menuLessonSubstitute"),
     )
     .addSubMenu(
       SpreadsheetApp.getUi()
@@ -183,6 +195,13 @@ g.menuWaitEnroll = waitlist.menu.enroll;
 g.menuWaitRemove = waitlist.menu.remove;
 g.menuWaitDrafts = waitlist.menu.drafts;
 g.menuWaitCheck = waitlist.menu.check;
+g.menuCalWeek = schedule.menu.week;
+g.menuCalDay = schedule.menu.day;
+g.menuRoomAdd = schedule.menu.room;
+g.menuScheduleCheck = schedule.menu.check;
+g.menuLessonMove = schedule.menu.move;
+g.menuLessonCancel = schedule.menu.cancel;
+g.menuLessonSubstitute = schedule.menu.substitute;
 g.menuQrCards = qr.menu.cards;
 g.menuQrSend = qr.menu.send;
 g.menuQrRotate = qr.menu.rotate;
