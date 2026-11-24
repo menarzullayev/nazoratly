@@ -12,10 +12,11 @@ for (const path of PATHS) {
       expect(new Set(hrefs)).toEqual(new Set(IDS));
     });
 
-    test("features section lists the ten implemented capabilities and no unbuilt promises", async ({ page }) => {
+    test("features section lists the ten original and eight newer capabilities and no unbuilt promises", async ({ page }) => {
       await page.goto(path);
       const items = page.locator("#features li");
-      await expect(items).toHaveCount(10);
+      await expect(items).toHaveCount(18);
+      await expect(page.locator("#features h4")).toHaveCount(8);
       const text = (await page.locator("#features").innerText()).toLowerCase();
       expect(text).not.toMatch(/github|open.?source|\bpayme\b|\bsms\b/);
     });
