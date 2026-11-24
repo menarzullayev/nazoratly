@@ -3,6 +3,7 @@ import * as actions from "./gas/actions";
 import * as admission from "./gas/admission";
 import * as demo from "./gas/demo";
 import * as documents from "./gas/documents";
+import * as growth from "./gas/growth";
 import * as importer from "./gas/importer";
 import * as insights from "./gas/insights";
 import * as qr from "./gas/qr";
@@ -52,6 +53,20 @@ g.onOpen = (): void => {
         .addSeparator()
         .addItem("Lead'ni sinovga yozish", "menuLeadToTrial")
         .addItem("Voronka hisoboti", "menuFunnel"),
+    )
+    .addSubMenu(
+      SpreadsheetApp.getUi()
+        .createMenu("O'sish (tavsiya, promo, manba)")
+        .addItem("Tavsiya qo'shish", "menuReferralAdd")
+        .addItem("Tavsiya mukofotlarini hisoblash", "menuReferralBook")
+        .addItem("Tavsiyani bekor qilish", "menuReferralCancel")
+        .addSeparator()
+        .addItem("Promo kodni qo'llash", "menuPromoRedeem")
+        .addItem("Marketing chegirmalari hisoboti", "menuGrowthCredits")
+        .addSeparator()
+        .addItem("Manba xarajatini kiritish", "menuSourceCost")
+        .addItem("Manba ROI hisoboti", "menuSourceRoi")
+        .addItem("Lead eslatmalari (ichki ro'yxat)", "menuLeadReminders"),
     )
     .addSubMenu(
       SpreadsheetApp.getUi()
@@ -189,6 +204,14 @@ g.menuAcceptTrial = admission.menu.accept;
 g.menuDropTrial = admission.menu.drop;
 g.menuLeadToTrial = admission.menu.leadToTrial;
 g.menuFunnel = admission.menu.funnel;
+g.menuReferralAdd = growth.menu.addReferral;
+g.menuReferralBook = growth.menu.book;
+g.menuReferralCancel = growth.menu.cancelReferral;
+g.menuPromoRedeem = growth.menu.redeem;
+g.menuGrowthCredits = growth.menu.credits;
+g.menuSourceCost = growth.menu.cost;
+g.menuSourceRoi = growth.menu.roi;
+g.menuLeadReminders = growth.menu.reminders;
 g.menuWaitAdd = waitlist.menu.add;
 g.menuWaitView = waitlist.menu.view;
 g.menuWaitEnroll = waitlist.menu.enroll;

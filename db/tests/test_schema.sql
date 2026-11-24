@@ -927,6 +927,106 @@ BEGIN
 END $$;
 ROLLBACK;
 
+-- ---------------------------------------------------------------- 0030-0034: growth (credits, referrals, promo, source costs, reminders)
+BEGIN;
+INSERT INTO org_settings (org_id) VALUES (1);
+INSERT INTO lead_sources (org_id, name) VALUES (1, 'Instagram'), (2, 'Beta source');
+DO $$
+DECLARE r BIGINT; c BIGINT; x BIGINT; s1 BIGINT; s2 BIGINT;
+BEGIN
+  -- 0034: reminder setting
+  IF (SELECT lead_reminder_days FROM org_settings WHERE org_id = 1) <> 3 THEN RAISE EXCEPTION 'lead_reminder_days default is wrong'; END IF;
+  PERFORM public.t_expect('23514', $q$UPDATE org_settings SET lead_reminder_days = 0 WHERE org_id = 1$q$);
+  PERFORM public.t_expect('23514', $q$UPDATE org_settings SET lead_reminder_days = 61 WHERE org_id = 1$q$);
+  UPDATE org_settings SET lead_reminder_days = 5 WHERE org_id = 1;
+
+  -- 0031: the center's rule
+  INSERT INTO referral_programs (org_id, reward_type, reward_value, condition, min_paid) VALUES (1, 'percent', 10, 'paid', 100000);
+  PERFORM public.t_expect('23505', $q$INSERT INTO referral_programs (org_id, reward_type, reward_value) VALUES (1, 'amount', 5)$q$);          -- one rule per center
+  PERFORM public.t_expect('23514', $q$INSERT INTO referral_programs (org_id, reward_type, reward_value) VALUES (2, 'amount', 0)$q$);          -- a reward has a value
+  PERFORM public.t_expect('23514', $q$INSERT INTO referral_programs (org_id, reward_type, reward_value) VALUES (2, 'percent', 1001)$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO referral_programs (org_id, reward_type, reward_value) VALUES (2, 'free_lesson', 1.5)$q$);   -- whole lessons only
+  PERFORM public.t_expect('23514', $q$INSERT INTO referral_programs (org_id, reward_type, reward_value, condition) VALUES (2, 'amount', 5, 'soon')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO referral_programs (org_id, reward_type, reward_value, min_paid) VALUES (2, 'amount', 5, -1)$q$);
+  PERFORM public.t_expect('23503', $q$INSERT INTO referral_programs (org_id, reward_type, reward_value) VALUES (99, 'amount', 5)$q$);
+
+  -- referrals: student 1 invites student 2
+  INSERT INTO referrals (org_id, referrer_student_id, invited_student_id, reward_type, reward_value, condition, min_paid, invited_on)
+    VALUES (1, 1, 2, 'percent', 10, 'paid', 100000, '2026-11-24') RETURNING id INTO r;
+  PERFORM public.t_expect('23514', $q$INSERT INTO referrals (org_id, referrer_student_id, invited_student_id, reward_type, reward_value, condition, min_paid, invited_on) VALUES (1,4,4,'amount',5,'paid',0,'2026-11-24')$q$);   -- not self
+  PERFORM public.t_expect('23505', $q$INSERT INTO referrals (org_id, referrer_student_id, invited_student_id, reward_type, reward_value, condition, min_paid, invited_on) VALUES (1,4,2,'amount',5,'paid',0,'2026-11-24')$q$);   -- invited once
+  PERFORM public.t_expect('23503', $q$INSERT INTO referrals (org_id, referrer_student_id, invited_student_id, reward_type, reward_value, condition, min_paid, invited_on) VALUES (1,1,3,'amount',5,'paid',0,'2026-11-24')$q$);   -- student 3 is org 2
+  PERFORM public.t_expect('23514', $q$INSERT INTO referrals (org_id, referrer_student_id, invited_student_id, status, reward_type, reward_value, condition, min_paid, invited_on) VALUES (1,1,4,'rewarded','amount',5,'paid',0,'2026-11-24')$q$);  -- rewarded needs date and amount
+  PERFORM public.t_expect('23514', $q$INSERT INTO referrals (org_id, referrer_student_id, invited_student_id, status, reward_type, reward_value, condition, min_paid, invited_on) VALUES (1,1,4,'bogus','amount',5,'paid',0,'2026-11-24')$q$);
+  PERFORM public.t_expect('23514', $q$UPDATE referrals SET status = 'rewarded' WHERE id = (SELECT min(id) FROM referrals)$q$);
+
+  -- 0030: credits of a referral
+  INSERT INTO absence_entitlements (org_id, student_id, kind, amount, expires_on, source, referral_id, note)
+    VALUES (1, 1, 'credit', 50000, '2027-11-24', 'referral', r, 'invited Vali Aliyev');
+  PERFORM public.t_expect('23514', $q$INSERT INTO absence_entitlements (org_id, student_id, kind, amount, expires_on, source) VALUES (1,1,'credit',5,'2027-11-24','referral')$q$);    -- a referral credit needs its referral
+  PERFORM public.t_expect('23514', $q$INSERT INTO absence_entitlements (org_id, student_id, kind, amount, expires_on, source, referral_id) VALUES (1,1,'credit',5,'2027-11-24','absence',(SELECT min(id) FROM referrals))$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO absence_entitlements (org_id, student_id, kind, expires_on, source, referral_id) VALUES (1,1,'makeup','2027-11-24','referral',(SELECT min(id) FROM referrals))$q$);   -- never a make-up right
+  PERFORM public.t_expect('23514', $q$INSERT INTO absence_entitlements (org_id, student_id, kind, amount, expires_on, source, referral_id, group_id) VALUES (1,1,'credit',5,'2027-11-24','referral',(SELECT min(id) FROM referrals),1)$q$);   -- no group
+  PERFORM public.t_expect('23514', $q$INSERT INTO absence_entitlements (org_id, student_id, kind, amount, expires_on, source, referral_id) VALUES (1,1,'credit',0,'2027-11-24','referral',(SELECT min(id) FROM referrals))$q$);  -- a growth credit has money
+  PERFORM public.t_expect('23514', $q$INSERT INTO absence_entitlements (org_id, student_id, kind, amount, expires_on) VALUES (1,1,'credit',5,'2027-11-24')$q$);       -- an absence credit still needs its lesson
+  PERFORM public.t_expect('23514', $q$INSERT INTO absence_entitlements (org_id, student_id, kind, amount, expires_on, source) VALUES (1,1,'credit',5,'2027-11-24','bogus')$q$);
+  PERFORM public.t_expect('23503', $q$INSERT INTO absence_entitlements (org_id, student_id, kind, amount, expires_on, source, referral_id) VALUES (2,3,'credit',5,'2027-11-24','referral',(SELECT min(id) FROM referrals))$q$);   -- another center's referral
+
+  -- 0032: promo campaigns
+  INSERT INTO promo_campaigns (org_id, code, name, kind, value, valid_from, valid_to, max_uses)
+    VALUES (1, 'KUZ50', 'Kuz -50%', 'percent', 50, '2026-11-01', '2026-11-30', 10) RETURNING id INTO c;
+  PERFORM public.t_expect('23505', $q$INSERT INTO promo_campaigns (org_id, code, name, kind, value, valid_from) VALUES (1,'KUZ50','Again','amount',5,'2026-11-01')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO promo_campaigns (org_id, code, name, kind, value, valid_from) VALUES (1,'kuz','Low case','amount',5,'2026-11-01')$q$);       -- codes are upper case
+  PERFORM public.t_expect('23514', $q$INSERT INTO promo_campaigns (org_id, code, name, kind, value, valid_from) VALUES (1,'AB','Short','amount',5,'2026-11-01')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO promo_campaigns (org_id, code, name, kind, value, valid_from) VALUES (1,'OVER100','Over','percent',101,'2026-11-01')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO promo_campaigns (org_id, code, name, kind, value, valid_from) VALUES (1,'ZERO','Zero','amount',0,'2026-11-01')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO promo_campaigns (org_id, code, name, kind, value, valid_from, valid_to) VALUES (1,'BACK','Back','amount',5,'2026-11-10','2026-11-09')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO promo_campaigns (org_id, code, name, kind, value, valid_from, max_uses) VALUES (1,'NOUSE','No use','amount',5,'2026-11-01',0)$q$);
+  INSERT INTO promo_campaigns (org_id, code, name, kind, value, valid_from) VALUES (2, 'KUZ50', 'Other center, same code', 'amount', 5, '2026-11-01');   -- codes are per center
+
+  -- redemptions
+  INSERT INTO promo_redemptions (org_id, campaign_id, student_id, enrollment_id, fee, amount, redeemed_on)
+    VALUES (1, c, 2, 2, 500000, 250000, '2026-11-24') RETURNING id INTO x;
+  PERFORM public.t_expect('23505', $q$INSERT INTO promo_redemptions (org_id, campaign_id, student_id, fee, amount, redeemed_on) VALUES (1,(SELECT min(id) FROM promo_campaigns),2,500000,1,'2026-11-24')$q$);   -- once per student
+  PERFORM public.t_expect('23514', $q$INSERT INTO promo_redemptions (org_id, campaign_id, student_id, fee, amount, redeemed_on) VALUES (1,(SELECT min(id) FROM promo_campaigns),1,500000,0,'2026-11-24')$q$);
+  PERFORM public.t_expect('23503', $q$INSERT INTO promo_redemptions (org_id, campaign_id, student_id, fee, amount, redeemed_on) VALUES (1,(SELECT min(id) FROM promo_campaigns),3,500000,1,'2026-11-24')$q$);   -- student of another center
+  INSERT INTO absence_entitlements (org_id, student_id, kind, amount, expires_on, source, promo_redemption_id, note)
+    VALUES (1, 2, 'credit', 250000, '2027-11-24', 'promo', x, 'KUZ50');
+  PERFORM public.t_expect('23514', $q$INSERT INTO absence_entitlements (org_id, student_id, kind, amount, expires_on, source) VALUES (1,2,'credit',5,'2027-11-24','promo')$q$);    -- a promo credit needs its redemption
+  PERFORM public.t_expect('23514', $q$INSERT INTO absence_entitlements (org_id, student_id, kind, amount, expires_on, source, referral_id, promo_redemption_id) VALUES (1,2,'credit',5,'2027-11-24','promo',(SELECT min(id) FROM referrals),(SELECT min(id) FROM promo_redemptions))$q$);
+  -- a used campaign keeps its worth and start; switching it off and moving its end stay possible
+  PERFORM public.t_expect('23001', $q$UPDATE promo_campaigns SET value = 60 WHERE code = 'KUZ50' AND org_id = 1$q$);
+  PERFORM public.t_expect('23001', $q$UPDATE promo_campaigns SET valid_from = '2026-10-01' WHERE code = 'KUZ50' AND org_id = 1$q$);
+  UPDATE promo_campaigns SET active = false, valid_to = '2026-11-20', name = 'Kuz (closed)' WHERE code = 'KUZ50' AND org_id = 1;
+
+  -- 0033: costs per source and month
+  SELECT id INTO s1 FROM lead_sources WHERE org_id = 1 AND name = 'Instagram';
+  SELECT id INTO s2 FROM lead_sources WHERE org_id = 2;
+  INSERT INTO lead_source_costs (org_id, source_id, month, amount, note) VALUES (1, s1, '2026-11-01', 400000, 'ads');
+  IF s1 IS NULL OR s2 IS NULL THEN RAISE EXCEPTION 'seed sources missing'; END IF;
+  PERFORM public.t_expect('23505', format($q$INSERT INTO lead_source_costs (org_id, source_id, month, amount) VALUES (1,%s,'2026-11-01',1)$q$, s1));          -- one figure per source and month
+  PERFORM public.t_expect('23514', format($q$INSERT INTO lead_source_costs (org_id, source_id, month, amount) VALUES (1,%s,'2026-12-15',1)$q$, s1));         -- first day of a month
+  PERFORM public.t_expect('23514', format($q$INSERT INTO lead_source_costs (org_id, source_id, month, amount) VALUES (1,%s,'2026-12-01',-1)$q$, s1));
+  PERFORM public.t_expect('23503', format($q$INSERT INTO lead_source_costs (org_id, source_id, month, amount) VALUES (1,%s,'2026-12-01',1)$q$, s2));         -- a source of another center
+  INSERT INTO lead_source_costs (org_id, source_id, month, amount) VALUES (1, s1, '2026-12-01', 0);                                                         -- zero is a valid cost
+END $$;
+
+-- tenant isolation and no deletes for the application role
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '2'; SET LOCAL app.user_id = '2';
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM referral_programs) <> 0 OR (SELECT count(*) FROM referrals) <> 0 OR (SELECT count(*) FROM promo_redemptions) <> 0
+     OR (SELECT count(*) FROM lead_source_costs) <> 0 OR (SELECT count(*) FROM absence_entitlements WHERE source <> 'absence') <> 0 THEN
+    RAISE EXCEPTION 'another center growth rows must be invisible';
+  END IF;
+  IF (SELECT count(*) FROM promo_campaigns) <> 1 THEN RAISE EXCEPTION 'center 2 sees only its own campaign'; END IF;
+  PERFORM public.t_expect('42501', $q$INSERT INTO referrals (org_id, referrer_student_id, invited_student_id, reward_type, reward_value, condition, min_paid, invited_on) VALUES (1,1,4,'amount',5,'paid',0,'2026-11-24')$q$);
+  PERFORM public.t_expect('42501', $q$INSERT INTO lead_source_costs (org_id, source_id, month, amount) VALUES (1,1,'2027-01-01',1)$q$);
+  PERFORM public.t_expect('42501', $q$DELETE FROM promo_campaigns$q$);
+  PERFORM public.t_expect('42501', $q$DELETE FROM referral_programs$q$);
+END $$;
+ROLLBACK;
+
 -- ---------------------------------------------------------------- 0025: substitute teacher, lesson changes, notices
 BEGIN;
 DO $$

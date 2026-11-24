@@ -24,6 +24,9 @@ class SettingsOut(Out):
     makeup_lapses: bool
     package_expiry_days: int
     package_low_lessons: int
+    lead_reminder_days: int = Field(
+        description="quiet days after which an open lead shows in the internal reminder list"
+    )
     demo_mode: bool = Field(description="the center is in demo mode (switched through /v1/demo)")
     requisites: str | None = Field(
         description="the center's own requisites, printed on receipts and invoices"
@@ -43,6 +46,7 @@ class SettingsPatch(Model):
     makeup_lapses: bool | None = None
     package_expiry_days: Annotated[int, Field(ge=1, le=730)] | None = None
     package_low_lessons: Annotated[int, Field(ge=0, le=50)] | None = None
+    lead_reminder_days: Annotated[int, Field(ge=1, le=60)] | None = None
     requisites: Annotated[str, StringConstraints(strip_whitespace=True, max_length=1000)] | None = Field(
         default=None, description="empty string clears it"
     )
@@ -58,7 +62,7 @@ async def load_settings(conn: Conn, org_id: int) -> SettingsOut:
     )
     row = await fetch_one(
         conn,
-        "SELECT trial_free_lessons, trial_free_days, excused_mode, makeup_expiry_days, makeup_lapses, package_expiry_days, package_low_lessons, demo_mode, requisites, ai_enabled, ai_sees_names, ai_daily_limit FROM org_settings WHERE org_id = %s",
+        "SELECT trial_free_lessons, trial_free_days, excused_mode, makeup_expiry_days, makeup_lapses, package_expiry_days, package_low_lessons, lead_reminder_days, demo_mode, requisites, ai_enabled, ai_sees_names, ai_daily_limit FROM org_settings WHERE org_id = %s",
         (org_id,),
     )
     assert row is not None

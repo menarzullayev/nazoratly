@@ -280,6 +280,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/accounting/growth-credits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Referral rewards and promo discounts, separate from tuition: granted, applied to charges, still waiting */
+        get: operations["growth_credits_v1_accounting_growth_credits_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/accounting/ledger": {
         parameters: {
             query?: never;
@@ -1622,6 +1639,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/lead-source-costs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Entered source costs, newest month first */
+        get: operations["list_costs_v1_lead_source_costs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/lead-sources": {
         parameters: {
             query?: never;
@@ -1640,6 +1674,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/lead-sources/{source_id}/costs/{month}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set what a source cost in a month (month = first day, e.g. 2026-11-01); repeat to correct */
+        put: operations["put_cost_v1_lead_sources__source_id__costs__month__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/leads": {
         parameters: {
             query?: never;
@@ -1652,6 +1703,23 @@ export interface paths {
         put?: never;
         /** Create Lead */
         post: operations["create_lead_v1_leads_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/leads/reminders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Open leads that need a staff follow-up (internal list: nothing is sent to the lead) */
+        get: operations["lead_reminder_list_v1_leads_reminders_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2248,6 +2316,128 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/promo-campaigns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Promo campaigns with their use and state today */
+        get: operations["list_campaigns_v1_promo_campaigns_get"];
+        put?: never;
+        /** Create a promo code / campaign */
+        post: operations["create_campaign_v1_promo_campaigns_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/promo-campaigns/{campaign_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Rename, switch off or extend a campaign */
+        patch: operations["patch_campaign_v1_promo_campaigns__campaign_id__patch"];
+        trace?: never;
+    };
+    "/v1/promo/redeem": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply a promo code for a student: a credit (at most one month's fee) for the next monthly charge */
+        post: operations["redeem_v1_promo_redeem_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/referral-program": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The center's referral rule (null when not set) */
+        get: operations["get_program_v1_referral_program_get"];
+        /** Set the referral rule (reward type, value, condition) */
+        put: operations["put_program_v1_referral_program_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/referrals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Referrals, newest first */
+        get: operations["list_referrals_v1_referrals_get"];
+        put?: never;
+        /** Record that a student invited another */
+        post: operations["create_referral_v1_referrals_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/referrals/book": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pay the rewards of pending referrals whose condition holds (credits for the referrer; safe to repeat) */
+        post: operations["book_rewards_v1_referrals_book_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/referrals/{referral_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel a referral (its unused credits are cancelled too) */
+        post: operations["cancel_referral_v1_referrals__referral_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/reports/absences": {
         parameters: {
             query?: never;
@@ -2342,6 +2532,23 @@ export interface paths {
         };
         /** Received money by day or month (center time zone) */
         get: operations["revenue_v1_reports_revenue_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/reports/source-roi": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Per lead source: leads created in the range, paying students, their revenue versus the cost entered */
+        get: operations["source_roi_report_v1_reports_source_roi_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3396,6 +3603,29 @@ export interface components {
             /** Source Type */
             source_type: string;
         };
+        /** BookOut */
+        BookOut: {
+            /** Rewarded */
+            rewarded: components["schemas"]["BookedItem"][];
+            /** Skipped */
+            skipped: components["schemas"]["SkippedItem"][];
+            /** Total */
+            total: string;
+        };
+        /** BookedItem */
+        BookedItem: {
+            /** Amount */
+            amount: string;
+            /** Credits */
+            credits: number;
+            /**
+             * Referral Id
+             * Format: uuid
+             */
+            referral_id: string;
+            /** Referrer Name */
+            referrer_name: string;
+        };
         /** BranchIn */
         BranchIn: {
             /** Address */
@@ -3519,6 +3749,85 @@ export interface components {
              * @enum {string}
              */
             view: "week" | "day";
+        };
+        /** CampaignIn */
+        CampaignIn: {
+            /** Code */
+            code: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "percent" | "amount";
+            /** Max Uses */
+            max_uses?: number | null;
+            /** Name */
+            name: string;
+            /**
+             * Valid From
+             * Format: date
+             */
+            valid_from: string;
+            /** Valid To */
+            valid_to?: string | null;
+            /**
+             * Value
+             * @description UZS amount, 2 decimals
+             */
+            value: number | string;
+        };
+        /** CampaignOut */
+        CampaignOut: {
+            /** Active */
+            active: boolean;
+            /** Code */
+            code: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "percent" | "amount";
+            /** Max Uses */
+            max_uses: number | null;
+            /** Name */
+            name: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "ok" | "inactive" | "not_started" | "expired" | "exhausted";
+            /** Used */
+            used: number;
+            /**
+             * Valid From
+             * Format: date
+             */
+            valid_from: string;
+            /** Valid To */
+            valid_to: string | null;
+            /** Value */
+            value: string;
+        };
+        /** CampaignPatch */
+        CampaignPatch: {
+            /** Active */
+            active?: boolean | null;
+            /** Max Uses */
+            max_uses?: number | null;
+            /** Name */
+            name?: string | null;
+            /** Valid To */
+            valid_to?: string | null;
         };
         /** CancelIn */
         CancelIn: {
@@ -3926,6 +4235,35 @@ export interface components {
             /** Revoked At */
             revoked_at: string | null;
         };
+        /** CostIn */
+        CostIn: {
+            /**
+             * Amount
+             * @description UZS amount, 2 decimals
+             */
+            amount: number | string;
+            /** Note */
+            note?: string | null;
+        };
+        /** CostOut */
+        CostOut: {
+            /** Amount */
+            amount: string;
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+            /** Note */
+            note: string | null;
+            /** Source */
+            source: string;
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
+        };
         /** CourseIn */
         CourseIn: {
             /**
@@ -3965,6 +4303,39 @@ export interface components {
             name?: string | null;
             /** Status */
             status?: ("active" | "archived") | null;
+        };
+        /** CreditRow */
+        CreditRow: {
+            /** Applied */
+            applied: string;
+            /** Cancelled */
+            cancelled: string;
+            /** Count */
+            count: number;
+            /** Granted */
+            granted: string;
+            /** Label */
+            label: string;
+            /** Outstanding */
+            outstanding: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "referral" | "promo";
+        };
+        /** CreditTotals */
+        CreditTotals: {
+            /** Applied */
+            applied: string;
+            /** Cancelled */
+            cancelled: string;
+            /** Count */
+            count: number;
+            /** Granted */
+            granted: string;
+            /** Outstanding */
+            outstanding: string;
         };
         /** DashboardOut */
         DashboardOut: {
@@ -4749,6 +5120,12 @@ export interface components {
             status?: ("planned" | "active" | "finished" | "cancelled") | null;
             /** Teacher Id */
             teacher_id?: string | null;
+        };
+        /** GrowthCreditsOut */
+        GrowthCreditsOut: {
+            /** Rows */
+            rows: components["schemas"]["CreditRow"][];
+            totals: components["schemas"]["CreditTotals"];
         };
         /** GuardianIn */
         GuardianIn: {
@@ -6477,6 +6854,55 @@ export interface components {
             rows_truncated: boolean;
             summary: components["schemas"]["nazoratly__routers__imports__SummaryOut"];
         };
+        /** ProgramIn */
+        ProgramIn: {
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /**
+             * Condition
+             * @default paid
+             * @enum {string}
+             */
+            condition: "enrolled" | "paid";
+            /**
+             * Min Paid
+             * @description UZS amount, 2 decimals
+             * @default 0
+             */
+            min_paid: number | string;
+            /**
+             * Reward Type
+             * @enum {string}
+             */
+            reward_type: "amount" | "percent" | "free_lesson";
+            /**
+             * Reward Value
+             * @description UZS amount, 2 decimals
+             */
+            reward_value: number | string;
+        };
+        /** ProgramOut */
+        ProgramOut: {
+            /** Active */
+            active: boolean;
+            /**
+             * Condition
+             * @enum {string}
+             */
+            condition: "enrolled" | "paid";
+            /** Min Paid */
+            min_paid: string;
+            /**
+             * Reward Type
+             * @enum {string}
+             */
+            reward_type: "amount" | "percent" | "free_lesson";
+            /** Reward Value */
+            reward_value: string;
+        };
         /** ProviderIn */
         ProviderIn: {
             /**
@@ -6578,6 +7004,137 @@ export interface components {
             /** Unmatched Statement */
             unmatched_statement: number;
         };
+        /** RedeemIn */
+        RedeemIn: {
+            /** Code */
+            code: string;
+            /**
+             * Enrollment Id
+             * Format: uuid
+             * @description the enrollment (monthly group) the discount is for
+             */
+            enrollment_id: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+        };
+        /** RedemptionOut */
+        RedemptionOut: {
+            /** Amount */
+            amount: string;
+            /**
+             * Applies
+             * @description the credit is taken off the student's next monthly charge
+             * @default next_billing_run
+             * @constant
+             */
+            applies: "next_billing_run";
+            /** Campaign Name */
+            campaign_name: string;
+            /** Code */
+            code: string;
+            /** Fee */
+            fee: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Redeemed On
+             * Format: date
+             */
+            redeemed_on: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+        };
+        /** ReferralIn */
+        ReferralIn: {
+            /**
+             * Invited Student Id
+             * Format: uuid
+             */
+            invited_student_id: string;
+            /** Note */
+            note?: string | null;
+            /**
+             * Referrer Student Id
+             * Format: uuid
+             */
+            referrer_student_id: string;
+        };
+        /** ReferralOut */
+        ReferralOut: {
+            /**
+             * Condition
+             * @enum {string}
+             */
+            condition: "enrolled" | "paid";
+            /**
+             * Condition Met
+             * @description the condition holds right now for the invited student
+             */
+            condition_met: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Credits Total
+             * @description money of the credits this referral produced (cancelled ones excluded)
+             */
+            credits_total: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Invited Name */
+            invited_name: string;
+            /**
+             * Invited On
+             * Format: date
+             */
+            invited_on: string;
+            /**
+             * Invited Student Id
+             * Format: uuid
+             */
+            invited_student_id: string;
+            /** Min Paid */
+            min_paid: string;
+            /** Note */
+            note: string | null;
+            /** Referrer Name */
+            referrer_name: string;
+            /**
+             * Referrer Student Id
+             * Format: uuid
+             */
+            referrer_student_id: string;
+            /** Reward Amount */
+            reward_amount: string | null;
+            /**
+             * Reward Type
+             * @enum {string}
+             */
+            reward_type: "amount" | "percent" | "free_lesson";
+            /** Reward Value */
+            reward_value: string;
+            /** Rewarded On */
+            rewarded_on: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "rewarded" | "cancelled";
+        };
         /** RefreshIn */
         RefreshIn: {
             /** Org Id */
@@ -6597,6 +7154,33 @@ export interface components {
             password: string;
             /** Phone */
             phone?: string | null;
+        };
+        /** ReminderOut */
+        ReminderOut: {
+            /** Days */
+            days: number;
+            /** Full Name */
+            full_name: string;
+            /** Last Contact On */
+            last_contact_on: string | null;
+            /**
+             * Lead Id
+             * Format: uuid
+             */
+            lead_id: string;
+            /** Next Follow Up On */
+            next_follow_up_on: string | null;
+            /** Phone */
+            phone: string | null;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "follow_up_due" | "after_trial" | "silent";
+            /** Source */
+            source: string | null;
+            /** Stage */
+            stage: string;
         };
         /** ReportRequest */
         ReportRequest: {
@@ -6643,6 +7227,34 @@ export interface components {
             id: string;
             /** State */
             state: number;
+        };
+        /** RoiOut */
+        RoiOut: {
+            /** Rows */
+            rows: components["schemas"]["RoiRow"][];
+            total: components["schemas"]["RoiRow"];
+        };
+        /** RoiRow */
+        RoiRow: {
+            /** Cost */
+            cost: string;
+            /** Cost Per Lead */
+            cost_per_lead: string | null;
+            /** Cost Per Paying */
+            cost_per_paying: string | null;
+            /** Leads */
+            leads: number;
+            /** Paying */
+            paying: number;
+            /** Revenue */
+            revenue: string;
+            /**
+             * Roi
+             * @description (revenue - cost) / cost in percent, one decimal; null without a cost
+             */
+            roi: number | null;
+            /** Source */
+            source: string | null;
         };
         /** RoomIn */
         RoomIn: {
@@ -6976,6 +7588,11 @@ export interface components {
              * @enum {string}
              */
             excused_mode: "makeup" | "credit" | "none";
+            /**
+             * Lead Reminder Days
+             * @description quiet days after which an open lead shows in the internal reminder list
+             */
+            lead_reminder_days: number;
             /** Makeup Expiry Days */
             makeup_expiry_days: number;
             /** Makeup Lapses */
@@ -7004,6 +7621,8 @@ export interface components {
             ai_sees_names?: boolean | null;
             /** Excused Mode */
             excused_mode?: ("makeup" | "credit" | "none") | null;
+            /** Lead Reminder Days */
+            lead_reminder_days?: number | null;
             /** Makeup Expiry Days */
             makeup_expiry_days?: number | null;
             /** Makeup Lapses */
@@ -7021,6 +7640,21 @@ export interface components {
             trial_free_days?: number | null;
             /** Trial Free Lessons */
             trial_free_lessons?: number | null;
+        };
+        /** SkippedItem */
+        SkippedItem: {
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "condition_not_met" | "referrer_has_no_active_enrollment" | "reward_is_zero";
+            /**
+             * Referral Id
+             * Format: uuid
+             */
+            referral_id: string;
+            /** Referrer Name */
+            referrer_name: string;
         };
         /** SourceIn */
         SourceIn: {
@@ -8553,6 +9187,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EntryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    growth_credits_v1_accounting_growth_credits_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GrowthCreditsOut"];
                 };
             };
             /** @description Validation Error */
@@ -11792,6 +12458,38 @@ export interface operations {
             };
         };
     };
+    list_costs_v1_lead_source_costs_get: {
+        parameters: {
+            query?: {
+                month_from?: string | null;
+                month_to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CostOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_sources_v1_lead_sources_get: {
         parameters: {
             query?: never;
@@ -11832,6 +12530,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SourceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_cost_v1_lead_sources__source_id__costs__month__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+                month: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CostIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CostOut"];
                 };
             };
             /** @description Validation Error */
@@ -11910,6 +12644,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    lead_reminder_list_v1_leads_reminders_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReminderOut"][];
                 };
             };
         };
@@ -13281,6 +14035,297 @@ export interface operations {
             };
         };
     };
+    list_campaigns_v1_promo_campaigns_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignOut"][];
+                };
+            };
+        };
+    };
+    create_campaign_v1_promo_campaigns_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CampaignIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_campaign_v1_promo_campaigns__campaign_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaign_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CampaignPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    redeem_v1_promo_redeem_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RedeemIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RedemptionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_program_v1_referral_program_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProgramOut"] | null;
+                };
+            };
+        };
+    };
+    put_program_v1_referral_program_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProgramIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProgramOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_referrals_v1_referrals_get: {
+        parameters: {
+            query?: {
+                status?: ("pending" | "rewarded" | "cancelled") | null;
+                student_id?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReferralOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_referral_v1_referrals_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReferralIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReferralOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    book_rewards_v1_referrals_book_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookOut"];
+                };
+            };
+        };
+    };
+    cancel_referral_v1_referrals__referral_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                referral_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReferralOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     absence_report_v1_reports_absences_get: {
         parameters: {
             query: {
@@ -13463,6 +14508,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RevenuePoint"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    source_roi_report_v1_reports_source_roi_get: {
+        parameters: {
+            query: {
+                date_from: string;
+                date_to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoiOut"];
                 };
             };
             /** @description Validation Error */

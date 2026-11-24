@@ -1,0 +1,1201 @@
+{
+  "referral_reward_amount": [
+    {
+      "name": "fixed amount ignores the fee",
+      "in": {
+        "reward_type": "amount",
+        "reward_value": "100000",
+        "monthly_fee": "0",
+        "lessons_in_month": 12
+      },
+      "out": "100000"
+    },
+    {
+      "name": "fixed amount, odd value rounds to whole som",
+      "in": {
+        "reward_type": "amount",
+        "reward_value": "100000.50",
+        "monthly_fee": "300000",
+        "lessons_in_month": 12
+      },
+      "out": "100001"
+    },
+    {
+      "name": "percent of the monthly fee",
+      "in": {
+        "reward_type": "percent",
+        "reward_value": "10",
+        "monthly_fee": "300000",
+        "lessons_in_month": 12
+      },
+      "out": "30000"
+    },
+    {
+      "name": "percent rounds half up",
+      "in": {
+        "reward_type": "percent",
+        "reward_value": "15",
+        "monthly_fee": "333333",
+        "lessons_in_month": 12
+      },
+      "out": "50000"
+    },
+    {
+      "name": "percent over 100 is allowed (more than a month)",
+      "in": {
+        "reward_type": "percent",
+        "reward_value": "150",
+        "monthly_fee": "200000",
+        "lessons_in_month": 12
+      },
+      "out": "300000"
+    },
+    {
+      "name": "two free lessons",
+      "in": {
+        "reward_type": "free_lesson",
+        "reward_value": "2",
+        "monthly_fee": "300000",
+        "lessons_in_month": 12
+      },
+      "out": "50000"
+    },
+    {
+      "name": "free lesson, value is rounded per lesson",
+      "in": {
+        "reward_type": "free_lesson",
+        "reward_value": "1",
+        "monthly_fee": "500000",
+        "lessons_in_month": 7
+      },
+      "out": "71429"
+    },
+    {
+      "name": "free lesson in a month without lessons gives nothing",
+      "in": {
+        "reward_type": "free_lesson",
+        "reward_value": "1",
+        "monthly_fee": "500000",
+        "lessons_in_month": 0
+      },
+      "out": "0"
+    },
+    {
+      "name": "zero value gives nothing",
+      "in": {
+        "reward_type": "percent",
+        "reward_value": "0",
+        "monthly_fee": "300000",
+        "lessons_in_month": 12
+      },
+      "out": "0"
+    },
+    {
+      "name": "percent without a fee gives nothing",
+      "in": {
+        "reward_type": "percent",
+        "reward_value": "20",
+        "monthly_fee": "0",
+        "lessons_in_month": 12
+      },
+      "out": "0"
+    }
+  ],
+  "split_credit": [
+    {
+      "name": "smaller than the fee stays one credit",
+      "in": {
+        "amount": "100000",
+        "monthly_fee": "300000"
+      },
+      "out": [
+        "100000"
+      ]
+    },
+    {
+      "name": "exactly the fee",
+      "in": {
+        "amount": "300000",
+        "monthly_fee": "300000"
+      },
+      "out": [
+        "300000"
+      ]
+    },
+    {
+      "name": "split into whole fees and a rest",
+      "in": {
+        "amount": "700000",
+        "monthly_fee": "300000"
+      },
+      "out": [
+        "300000",
+        "300000",
+        "100000"
+      ]
+    },
+    {
+      "name": "no fee keeps one credit",
+      "in": {
+        "amount": "500000",
+        "monthly_fee": "0"
+      },
+      "out": [
+        "500000"
+      ]
+    },
+    {
+      "name": "zero amount gives no credit",
+      "in": {
+        "amount": "0",
+        "monthly_fee": "300000"
+      },
+      "out": []
+    },
+    {
+      "name": "negative amount gives no credit",
+      "in": {
+        "amount": "-5",
+        "monthly_fee": "300000"
+      },
+      "out": []
+    }
+  ],
+  "referral_condition": [
+    {
+      "name": "enrolled: accepted student",
+      "in": {
+        "condition": "enrolled",
+        "min_paid": "0",
+        "invited_enrolled": true,
+        "invited_paid": "0"
+      },
+      "out": true
+    },
+    {
+      "name": "enrolled: still on trial",
+      "in": {
+        "condition": "enrolled",
+        "min_paid": "0",
+        "invited_enrolled": false,
+        "invited_paid": "0"
+      },
+      "out": false
+    },
+    {
+      "name": "enrolled ignores payments",
+      "in": {
+        "condition": "enrolled",
+        "min_paid": "0",
+        "invited_enrolled": false,
+        "invited_paid": "500000"
+      },
+      "out": false
+    },
+    {
+      "name": "paid: nothing paid yet",
+      "in": {
+        "condition": "paid",
+        "min_paid": "0",
+        "invited_enrolled": true,
+        "invited_paid": "0"
+      },
+      "out": false
+    },
+    {
+      "name": "paid: any payment when no minimum",
+      "in": {
+        "condition": "paid",
+        "min_paid": "0",
+        "invited_enrolled": true,
+        "invited_paid": "1000"
+      },
+      "out": true
+    },
+    {
+      "name": "paid: below the minimum",
+      "in": {
+        "condition": "paid",
+        "min_paid": "300000",
+        "invited_enrolled": true,
+        "invited_paid": "299999"
+      },
+      "out": false
+    },
+    {
+      "name": "paid: exactly the minimum",
+      "in": {
+        "condition": "paid",
+        "min_paid": "300000",
+        "invited_enrolled": true,
+        "invited_paid": "300000"
+      },
+      "out": true
+    },
+    {
+      "name": "paid: does not need the enrollment flag",
+      "in": {
+        "condition": "paid",
+        "min_paid": "300000",
+        "invited_enrolled": false,
+        "invited_paid": "400000"
+      },
+      "out": true
+    }
+  ],
+  "promo_state": [
+    {
+      "name": "ok inside the window",
+      "in": {
+        "active": true,
+        "valid_from": "2026-11-01",
+        "valid_to": "2026-11-30",
+        "max_uses": 10,
+        "used": 3,
+        "today": "2026-11-15"
+      },
+      "out": "ok"
+    },
+    {
+      "name": "ok on the first day",
+      "in": {
+        "active": true,
+        "valid_from": "2026-11-01",
+        "valid_to": "2026-11-30",
+        "max_uses": null,
+        "used": 0,
+        "today": "2026-11-01"
+      },
+      "out": "ok"
+    },
+    {
+      "name": "ok on the last day",
+      "in": {
+        "active": true,
+        "valid_from": "2026-11-01",
+        "valid_to": "2026-11-30",
+        "max_uses": null,
+        "used": 0,
+        "today": "2026-11-30"
+      },
+      "out": "ok"
+    },
+    {
+      "name": "inactive wins over everything",
+      "in": {
+        "active": false,
+        "valid_from": "2026-11-01",
+        "valid_to": "2026-11-30",
+        "max_uses": 1,
+        "used": 5,
+        "today": "2026-12-15"
+      },
+      "out": "inactive"
+    },
+    {
+      "name": "not started",
+      "in": {
+        "active": true,
+        "valid_from": "2026-11-10",
+        "valid_to": "2026-11-30",
+        "max_uses": null,
+        "used": 0,
+        "today": "2026-11-09"
+      },
+      "out": "not_started"
+    },
+    {
+      "name": "expired the day after",
+      "in": {
+        "active": true,
+        "valid_from": "2026-11-01",
+        "valid_to": "2026-11-30",
+        "max_uses": null,
+        "used": 0,
+        "today": "2026-12-01"
+      },
+      "out": "expired"
+    },
+    {
+      "name": "no end date never expires",
+      "in": {
+        "active": true,
+        "valid_from": "2026-01-01",
+        "valid_to": null,
+        "max_uses": null,
+        "used": 0,
+        "today": "2030-01-01"
+      },
+      "out": "ok"
+    },
+    {
+      "name": "exhausted at the limit",
+      "in": {
+        "active": true,
+        "valid_from": "2026-11-01",
+        "valid_to": "2026-11-30",
+        "max_uses": 5,
+        "used": 5,
+        "today": "2026-11-15"
+      },
+      "out": "exhausted"
+    },
+    {
+      "name": "one use left is still ok",
+      "in": {
+        "active": true,
+        "valid_from": "2026-11-01",
+        "valid_to": "2026-11-30",
+        "max_uses": 5,
+        "used": 4,
+        "today": "2026-11-15"
+      },
+      "out": "ok"
+    },
+    {
+      "name": "expired is reported before exhausted",
+      "in": {
+        "active": true,
+        "valid_from": "2026-11-01",
+        "valid_to": "2026-11-30",
+        "max_uses": 5,
+        "used": 5,
+        "today": "2026-12-02"
+      },
+      "out": "expired"
+    }
+  ],
+  "promo_discount": [
+    {
+      "name": "first month minus 50 percent",
+      "in": {
+        "kind": "percent",
+        "value": "50",
+        "fee": "400000"
+      },
+      "out": "200000"
+    },
+    {
+      "name": "percent rounds half up",
+      "in": {
+        "kind": "percent",
+        "value": "33",
+        "fee": "100001"
+      },
+      "out": "33000"
+    },
+    {
+      "name": "percent 100 makes the month free",
+      "in": {
+        "kind": "percent",
+        "value": "100",
+        "fee": "250000"
+      },
+      "out": "250000"
+    },
+    {
+      "name": "fixed amount below the fee",
+      "in": {
+        "kind": "amount",
+        "value": "80000",
+        "fee": "300000"
+      },
+      "out": "80000"
+    },
+    {
+      "name": "fixed amount is capped at the fee",
+      "in": {
+        "kind": "amount",
+        "value": "500000",
+        "fee": "300000"
+      },
+      "out": "300000"
+    },
+    {
+      "name": "no fee gives nothing",
+      "in": {
+        "kind": "percent",
+        "value": "50",
+        "fee": "0"
+      },
+      "out": "0"
+    },
+    {
+      "name": "zero value gives nothing",
+      "in": {
+        "kind": "amount",
+        "value": "0",
+        "fee": "300000"
+      },
+      "out": "0"
+    }
+  ],
+  "growth_credit_summary": [
+    {
+      "name": "empty",
+      "in": {
+        "credits": []
+      },
+      "out": {
+        "rows": [],
+        "totals": {
+          "count": 0,
+          "granted": "0",
+          "applied": "0",
+          "outstanding": "0",
+          "cancelled": "0"
+        }
+      }
+    },
+    {
+      "name": "promo and referral, used / open / cancelled",
+      "in": {
+        "credits": [
+          {
+            "source": "promo",
+            "label": "Kuz -50%",
+            "amount": "150000",
+            "status": "used"
+          },
+          {
+            "source": "promo",
+            "label": "Kuz -50%",
+            "amount": "100000",
+            "status": "open"
+          },
+          {
+            "source": "promo",
+            "label": "Kuz -50%",
+            "amount": "80000",
+            "status": "cancelled"
+          },
+          {
+            "source": "referral",
+            "label": "Referral",
+            "amount": "300000",
+            "status": "used"
+          },
+          {
+            "source": "referral",
+            "label": "Referral",
+            "amount": "200000",
+            "status": "open"
+          },
+          {
+            "source": "promo",
+            "label": "Dost kodi",
+            "amount": "50000",
+            "status": "open"
+          }
+        ]
+      },
+      "out": {
+        "rows": [
+          {
+            "source": "promo",
+            "label": "Dost kodi",
+            "count": 1,
+            "granted": "50000",
+            "applied": "0",
+            "outstanding": "50000",
+            "cancelled": "0"
+          },
+          {
+            "source": "promo",
+            "label": "Kuz -50%",
+            "count": 2,
+            "granted": "250000",
+            "applied": "150000",
+            "outstanding": "100000",
+            "cancelled": "80000"
+          },
+          {
+            "source": "referral",
+            "label": "Referral",
+            "count": 2,
+            "granted": "500000",
+            "applied": "300000",
+            "outstanding": "200000",
+            "cancelled": "0"
+          }
+        ],
+        "totals": {
+          "count": 5,
+          "granted": "800000",
+          "applied": "450000",
+          "outstanding": "350000",
+          "cancelled": "80000"
+        }
+      }
+    },
+    {
+      "name": "only cancelled credits are not granted",
+      "in": {
+        "credits": [
+          {
+            "source": "referral",
+            "label": "Referral",
+            "amount": "10",
+            "status": "cancelled"
+          }
+        ]
+      },
+      "out": {
+        "rows": [
+          {
+            "source": "referral",
+            "label": "Referral",
+            "count": 0,
+            "granted": "0",
+            "applied": "0",
+            "outstanding": "0",
+            "cancelled": "10"
+          }
+        ],
+        "totals": {
+          "count": 0,
+          "granted": "0",
+          "applied": "0",
+          "outstanding": "0",
+          "cancelled": "10"
+        }
+      }
+    }
+  ],
+  "source_roi": [
+    {
+      "name": "two sources, an unsourced lead, costs outside the range ignored",
+      "in": {
+        "range": {
+          "from": "2026-11-01",
+          "to": "2026-11-30"
+        },
+        "leads": [
+          {
+            "source": "Instagram",
+            "created_on": "2026-11-02",
+            "revenue": "600000"
+          },
+          {
+            "source": "Instagram",
+            "created_on": "2026-11-03",
+            "revenue": "0"
+          },
+          {
+            "source": "Instagram",
+            "created_on": "2026-11-20",
+            "revenue": "300000"
+          },
+          {
+            "source": "Tanish",
+            "created_on": "2026-11-05",
+            "revenue": "1000000"
+          },
+          {
+            "source": null,
+            "created_on": "2026-11-10",
+            "revenue": "200000"
+          },
+          {
+            "source": "Instagram",
+            "created_on": "2026-10-31",
+            "revenue": "999999"
+          },
+          {
+            "source": "Instagram",
+            "created_on": "2026-12-01",
+            "revenue": "999999"
+          }
+        ],
+        "costs": [
+          {
+            "source": "Instagram",
+            "month": "2026-11-01",
+            "amount": "400000"
+          },
+          {
+            "source": "Instagram",
+            "month": "2026-10-01",
+            "amount": "777777"
+          },
+          {
+            "source": "Tanish",
+            "month": "2026-11-01",
+            "amount": "0"
+          }
+        ]
+      },
+      "out": {
+        "rows": [
+          {
+            "source": "Tanish",
+            "leads": 1,
+            "paying": 1,
+            "revenue": "1000000",
+            "cost": "0",
+            "roi": null,
+            "cost_per_lead": null,
+            "cost_per_paying": null
+          },
+          {
+            "source": "Instagram",
+            "leads": 3,
+            "paying": 2,
+            "revenue": "900000",
+            "cost": "400000",
+            "roi": 125.0,
+            "cost_per_lead": "133333",
+            "cost_per_paying": "200000"
+          },
+          {
+            "source": null,
+            "leads": 1,
+            "paying": 1,
+            "revenue": "200000",
+            "cost": "0",
+            "roi": null,
+            "cost_per_lead": null,
+            "cost_per_paying": null
+          }
+        ],
+        "total": {
+          "source": "TOTAL",
+          "leads": 5,
+          "paying": 4,
+          "revenue": "2100000",
+          "cost": "400000",
+          "roi": 425.0,
+          "cost_per_lead": "80000",
+          "cost_per_paying": "100000"
+        }
+      }
+    },
+    {
+      "name": "a loss gives a negative ROI",
+      "in": {
+        "range": {
+          "from": "2026-11-01",
+          "to": "2026-11-30"
+        },
+        "leads": [
+          {
+            "source": "OLX",
+            "created_on": "2026-11-02",
+            "revenue": "100000"
+          },
+          {
+            "source": "OLX",
+            "created_on": "2026-11-03",
+            "revenue": "0"
+          },
+          {
+            "source": "OLX",
+            "created_on": "2026-11-04",
+            "revenue": "0"
+          }
+        ],
+        "costs": [
+          {
+            "source": "OLX",
+            "month": "2026-11-01",
+            "amount": "300000"
+          }
+        ]
+      },
+      "out": {
+        "rows": [
+          {
+            "source": "OLX",
+            "leads": 3,
+            "paying": 1,
+            "revenue": "100000",
+            "cost": "300000",
+            "roi": -66.7,
+            "cost_per_lead": "100000",
+            "cost_per_paying": "300000"
+          }
+        ],
+        "total": {
+          "source": "TOTAL",
+          "leads": 3,
+          "paying": 1,
+          "revenue": "100000",
+          "cost": "300000",
+          "roi": -66.7,
+          "cost_per_lead": "100000",
+          "cost_per_paying": "300000"
+        }
+      }
+    },
+    {
+      "name": "ROI tie (-0.05) rounds away from zero to -0.1",
+      "in": {
+        "range": {
+          "from": "2026-11-01",
+          "to": "2026-11-30"
+        },
+        "leads": [
+          {
+            "source": "Reklama",
+            "created_on": "2026-11-02",
+            "revenue": "1999"
+          }
+        ],
+        "costs": [
+          {
+            "source": "Reklama",
+            "month": "2026-11-01",
+            "amount": "2000"
+          }
+        ]
+      },
+      "out": {
+        "rows": [
+          {
+            "source": "Reklama",
+            "leads": 1,
+            "paying": 1,
+            "revenue": "1999",
+            "cost": "2000",
+            "roi": -0.1,
+            "cost_per_lead": "2000",
+            "cost_per_paying": "2000"
+          }
+        ],
+        "total": {
+          "source": "TOTAL",
+          "leads": 1,
+          "paying": 1,
+          "revenue": "1999",
+          "cost": "2000",
+          "roi": -0.1,
+          "cost_per_lead": "2000",
+          "cost_per_paying": "2000"
+        }
+      }
+    },
+    {
+      "name": "a range over two months sums both months of cost",
+      "in": {
+        "range": {
+          "from": "2026-10-10",
+          "to": "2026-11-20"
+        },
+        "leads": [
+          {
+            "source": "Telegram",
+            "created_on": "2026-10-15",
+            "revenue": "500000"
+          },
+          {
+            "source": "Telegram",
+            "created_on": "2026-11-15",
+            "revenue": "500000"
+          },
+          {
+            "source": "Telegram",
+            "created_on": "2026-11-16",
+            "revenue": "0"
+          }
+        ],
+        "costs": [
+          {
+            "source": "Telegram",
+            "month": "2026-10-01",
+            "amount": "100000"
+          },
+          {
+            "source": "Telegram",
+            "month": "2026-11-01",
+            "amount": "200001"
+          },
+          {
+            "source": "Telegram",
+            "month": "2026-12-01",
+            "amount": "999"
+          }
+        ]
+      },
+      "out": {
+        "rows": [
+          {
+            "source": "Telegram",
+            "leads": 3,
+            "paying": 2,
+            "revenue": "1000000",
+            "cost": "300001",
+            "roi": 233.3,
+            "cost_per_lead": "100000",
+            "cost_per_paying": "150001"
+          }
+        ],
+        "total": {
+          "source": "TOTAL",
+          "leads": 3,
+          "paying": 2,
+          "revenue": "1000000",
+          "cost": "300001",
+          "roi": 233.3,
+          "cost_per_lead": "100000",
+          "cost_per_paying": "150001"
+        }
+      }
+    },
+    {
+      "name": "a cost without leads shows a pure loss",
+      "in": {
+        "range": {
+          "from": "2026-11-01",
+          "to": "2026-11-30"
+        },
+        "leads": [],
+        "costs": [
+          {
+            "source": "Reklama",
+            "month": "2026-11-01",
+            "amount": "250000"
+          }
+        ]
+      },
+      "out": {
+        "rows": [
+          {
+            "source": "Reklama",
+            "leads": 0,
+            "paying": 0,
+            "revenue": "0",
+            "cost": "250000",
+            "roi": -100.0,
+            "cost_per_lead": null,
+            "cost_per_paying": null
+          }
+        ],
+        "total": {
+          "source": "TOTAL",
+          "leads": 0,
+          "paying": 0,
+          "revenue": "0",
+          "cost": "250000",
+          "roi": -100.0,
+          "cost_per_lead": null,
+          "cost_per_paying": null
+        }
+      }
+    },
+    {
+      "name": "nothing at all",
+      "in": {
+        "range": {
+          "from": "2026-11-01",
+          "to": "2026-11-30"
+        },
+        "leads": [],
+        "costs": []
+      },
+      "out": {
+        "rows": [],
+        "total": {
+          "source": "TOTAL",
+          "leads": 0,
+          "paying": 0,
+          "revenue": "0",
+          "cost": "0",
+          "roi": null,
+          "cost_per_lead": null,
+          "cost_per_paying": null
+        }
+      }
+    }
+  ],
+  "lead_reminders": [
+    {
+      "name": "nothing to do",
+      "in": {
+        "today": "2026-11-24",
+        "silence_days": 3,
+        "leads": [
+          {
+            "id": "L1",
+            "stage": "new",
+            "created_on": "2026-11-23",
+            "last_contact_on": null,
+            "next_follow_up_on": null
+          },
+          {
+            "id": "L2",
+            "stage": "enrolled",
+            "created_on": "2026-01-01",
+            "last_contact_on": null,
+            "next_follow_up_on": null
+          },
+          {
+            "id": "L3",
+            "stage": "lost",
+            "created_on": "2026-01-01",
+            "last_contact_on": null,
+            "next_follow_up_on": null
+          }
+        ]
+      },
+      "out": []
+    },
+    {
+      "name": "silent for three days",
+      "in": {
+        "today": "2026-11-24",
+        "silence_days": 3,
+        "leads": [
+          {
+            "id": "L1",
+            "stage": "new",
+            "created_on": "2026-11-21",
+            "last_contact_on": null,
+            "next_follow_up_on": null
+          },
+          {
+            "id": "L2",
+            "stage": "contacted",
+            "created_on": "2026-11-10",
+            "last_contact_on": "2026-11-22",
+            "next_follow_up_on": null
+          },
+          {
+            "id": "L3",
+            "stage": "trial_scheduled",
+            "created_on": "2026-11-10",
+            "last_contact_on": "2026-11-23",
+            "next_follow_up_on": null
+          }
+        ]
+      },
+      "out": [
+        {
+          "id": "L1",
+          "reason": "silent",
+          "days": 3
+        }
+      ]
+    },
+    {
+      "name": "follow-up date due or overdue",
+      "in": {
+        "today": "2026-11-24",
+        "silence_days": 3,
+        "leads": [
+          {
+            "id": "L1",
+            "stage": "contacted",
+            "created_on": "2026-11-01",
+            "last_contact_on": null,
+            "next_follow_up_on": "2026-11-24"
+          },
+          {
+            "id": "L2",
+            "stage": "new",
+            "created_on": "2026-11-01",
+            "last_contact_on": null,
+            "next_follow_up_on": "2026-11-20"
+          },
+          {
+            "id": "L3",
+            "stage": "new",
+            "created_on": "2026-11-01",
+            "last_contact_on": null,
+            "next_follow_up_on": "2026-11-25"
+          }
+        ]
+      },
+      "out": [
+        {
+          "id": "L2",
+          "reason": "follow_up_due",
+          "days": 4
+        },
+        {
+          "id": "L1",
+          "reason": "follow_up_due",
+          "days": 0
+        }
+      ]
+    },
+    {
+      "name": "after the trial a day of silence is enough",
+      "in": {
+        "today": "2026-11-24",
+        "silence_days": 3,
+        "leads": [
+          {
+            "id": "L1",
+            "stage": "trial_attended",
+            "created_on": "2026-11-01",
+            "last_contact_on": "2026-11-23",
+            "next_follow_up_on": null
+          },
+          {
+            "id": "L2",
+            "stage": "trial_attended",
+            "created_on": "2026-11-01",
+            "last_contact_on": "2026-11-24",
+            "next_follow_up_on": null
+          },
+          {
+            "id": "L3",
+            "stage": "trial_attended",
+            "created_on": "2026-11-01",
+            "last_contact_on": "2026-11-20",
+            "next_follow_up_on": null
+          }
+        ]
+      },
+      "out": [
+        {
+          "id": "L3",
+          "reason": "after_trial",
+          "days": 4
+        },
+        {
+          "id": "L1",
+          "reason": "after_trial",
+          "days": 1
+        }
+      ]
+    },
+    {
+      "name": "a planned future follow-up silences the lead",
+      "in": {
+        "today": "2026-11-24",
+        "silence_days": 3,
+        "leads": [
+          {
+            "id": "L1",
+            "stage": "new",
+            "created_on": "2026-11-01",
+            "last_contact_on": null,
+            "next_follow_up_on": "2026-11-30"
+          },
+          {
+            "id": "L2",
+            "stage": "trial_attended",
+            "created_on": "2026-11-01",
+            "last_contact_on": null,
+            "next_follow_up_on": "2026-11-30"
+          }
+        ]
+      },
+      "out": []
+    },
+    {
+      "name": "ordering: reason, then days, then id",
+      "in": {
+        "today": "2026-11-24",
+        "silence_days": 3,
+        "leads": [
+          {
+            "id": "L5",
+            "stage": "new",
+            "created_on": "2026-11-01",
+            "last_contact_on": null,
+            "next_follow_up_on": null
+          },
+          {
+            "id": "L4",
+            "stage": "new",
+            "created_on": "2026-11-10",
+            "last_contact_on": null,
+            "next_follow_up_on": null
+          },
+          {
+            "id": "L3",
+            "stage": "trial_attended",
+            "created_on": "2026-11-01",
+            "last_contact_on": "2026-11-22",
+            "next_follow_up_on": null
+          },
+          {
+            "id": "L2",
+            "stage": "contacted",
+            "created_on": "2026-11-01",
+            "last_contact_on": null,
+            "next_follow_up_on": "2026-11-22"
+          },
+          {
+            "id": "L1",
+            "stage": "contacted",
+            "created_on": "2026-11-01",
+            "last_contact_on": null,
+            "next_follow_up_on": "2026-11-23"
+          },
+          {
+            "id": "L6",
+            "stage": "new",
+            "created_on": "2026-11-10",
+            "last_contact_on": null,
+            "next_follow_up_on": null
+          }
+        ]
+      },
+      "out": [
+        {
+          "id": "L2",
+          "reason": "follow_up_due",
+          "days": 2
+        },
+        {
+          "id": "L1",
+          "reason": "follow_up_due",
+          "days": 1
+        },
+        {
+          "id": "L3",
+          "reason": "after_trial",
+          "days": 2
+        },
+        {
+          "id": "L5",
+          "reason": "silent",
+          "days": 23
+        },
+        {
+          "id": "L4",
+          "reason": "silent",
+          "days": 14
+        },
+        {
+          "id": "L6",
+          "reason": "silent",
+          "days": 14
+        }
+      ]
+    },
+    {
+      "name": "a one-day silence setting",
+      "in": {
+        "today": "2026-11-24",
+        "silence_days": 1,
+        "leads": [
+          {
+            "id": "L1",
+            "stage": "new",
+            "created_on": "2026-11-23",
+            "last_contact_on": null,
+            "next_follow_up_on": null
+          },
+          {
+            "id": "L2",
+            "stage": "new",
+            "created_on": "2026-11-24",
+            "last_contact_on": null,
+            "next_follow_up_on": null
+          }
+        ]
+      },
+      "out": [
+        {
+          "id": "L1",
+          "reason": "silent",
+          "days": 1
+        }
+      ]
+    }
+  ]
+}

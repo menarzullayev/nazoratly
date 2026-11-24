@@ -1372,6 +1372,64 @@
         "title": "BlockedOut",
         "type": "object"
       },
+      "BookOut": {
+        "properties": {
+          "rewarded": {
+            "items": {
+              "$ref": "#/components/schemas/BookedItem"
+            },
+            "title": "Rewarded",
+            "type": "array"
+          },
+          "skipped": {
+            "items": {
+              "$ref": "#/components/schemas/SkippedItem"
+            },
+            "title": "Skipped",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rewarded",
+          "skipped",
+          "total"
+        ],
+        "title": "BookOut",
+        "type": "object"
+      },
+      "BookedItem": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "credits": {
+            "title": "Credits",
+            "type": "integer"
+          },
+          "referral_id": {
+            "format": "uuid",
+            "title": "Referral Id",
+            "type": "string"
+          },
+          "referrer_name": {
+            "title": "Referrer Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "referral_id",
+          "referrer_name",
+          "amount",
+          "credits"
+        ],
+        "title": "BookedItem",
+        "type": "object"
+      },
       "BranchIn": {
         "additionalProperties": false,
         "properties": {
@@ -1710,6 +1768,235 @@
           "days"
         ],
         "title": "CalendarOut",
+        "type": "object"
+      },
+      "CampaignIn": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "pattern": "^[A-Za-z0-9_-]{3,32}$",
+            "title": "Code",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "percent",
+              "amount"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "max_uses": {
+            "anyOf": [
+              {
+                "maximum": 100000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Uses"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "valid_from": {
+            "format": "date",
+            "title": "Valid From",
+            "type": "string"
+          },
+          "valid_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid To"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "UZS amount, 2 decimals",
+            "title": "Value"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "kind",
+          "value",
+          "valid_from"
+        ],
+        "title": "CampaignIn",
+        "type": "object"
+      },
+      "CampaignOut": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "percent",
+              "amount"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "max_uses": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Uses"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "ok",
+              "inactive",
+              "not_started",
+              "expired",
+              "exhausted"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "used": {
+            "title": "Used",
+            "type": "integer"
+          },
+          "valid_from": {
+            "format": "date",
+            "title": "Valid From",
+            "type": "string"
+          },
+          "valid_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid To"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "kind",
+          "value",
+          "valid_from",
+          "valid_to",
+          "max_uses",
+          "active",
+          "used",
+          "state",
+          "created_at"
+        ],
+        "title": "CampaignOut",
+        "type": "object"
+      },
+      "CampaignPatch": {
+        "additionalProperties": false,
+        "properties": {
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "max_uses": {
+            "anyOf": [
+              {
+                "maximum": 100000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Uses"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "valid_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid To"
+          }
+        },
+        "title": "CampaignPatch",
         "type": "object"
       },
       "CancelIn": {
@@ -2664,6 +2951,83 @@
         "title": "ConsentOut",
         "type": "object"
       },
+      "CostIn": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "UZS amount, 2 decimals",
+            "title": "Amount"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "required": [
+          "amount"
+        ],
+        "title": "CostIn",
+        "type": "object"
+      },
+      "CostOut": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "month": {
+            "format": "date",
+            "title": "Month",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "source_id": {
+            "format": "uuid",
+            "title": "Source Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_id",
+          "source",
+          "month",
+          "amount",
+          "note"
+        ],
+        "title": "CostOut",
+        "type": "object"
+      },
       "CourseIn": {
         "additionalProperties": false,
         "properties": {
@@ -2812,6 +3176,86 @@
           }
         },
         "title": "CoursePatch",
+        "type": "object"
+      },
+      "CreditRow": {
+        "properties": {
+          "applied": {
+            "title": "Applied",
+            "type": "string"
+          },
+          "cancelled": {
+            "title": "Cancelled",
+            "type": "string"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "granted": {
+            "title": "Granted",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "outstanding": {
+            "title": "Outstanding",
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "referral",
+              "promo"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "label",
+          "count",
+          "granted",
+          "applied",
+          "outstanding",
+          "cancelled"
+        ],
+        "title": "CreditRow",
+        "type": "object"
+      },
+      "CreditTotals": {
+        "properties": {
+          "applied": {
+            "title": "Applied",
+            "type": "string"
+          },
+          "cancelled": {
+            "title": "Cancelled",
+            "type": "string"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "granted": {
+            "title": "Granted",
+            "type": "string"
+          },
+          "outstanding": {
+            "title": "Outstanding",
+            "type": "string"
+          }
+        },
+        "required": [
+          "count",
+          "granted",
+          "applied",
+          "outstanding",
+          "cancelled"
+        ],
+        "title": "CreditTotals",
         "type": "object"
       },
       "DashboardOut": {
@@ -4857,6 +5301,26 @@
           }
         },
         "title": "GroupPatch",
+        "type": "object"
+      },
+      "GrowthCreditsOut": {
+        "properties": {
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/CreditRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/CreditTotals"
+          }
+        },
+        "required": [
+          "rows",
+          "totals"
+        ],
+        "title": "GrowthCreditsOut",
         "type": "object"
       },
       "GuardianIn": {
@@ -9472,6 +9936,109 @@
         "title": "PreviewOut",
         "type": "object"
       },
+      "ProgramIn": {
+        "additionalProperties": false,
+        "properties": {
+          "active": {
+            "default": true,
+            "title": "Active",
+            "type": "boolean"
+          },
+          "condition": {
+            "default": "paid",
+            "enum": [
+              "enrolled",
+              "paid"
+            ],
+            "title": "Condition",
+            "type": "string"
+          },
+          "min_paid": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "description": "UZS amount, 2 decimals",
+            "title": "Min Paid"
+          },
+          "reward_type": {
+            "enum": [
+              "amount",
+              "percent",
+              "free_lesson"
+            ],
+            "title": "Reward Type",
+            "type": "string"
+          },
+          "reward_value": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "UZS amount, 2 decimals",
+            "title": "Reward Value"
+          }
+        },
+        "required": [
+          "reward_type",
+          "reward_value"
+        ],
+        "title": "ProgramIn",
+        "type": "object"
+      },
+      "ProgramOut": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "condition": {
+            "enum": [
+              "enrolled",
+              "paid"
+            ],
+            "title": "Condition",
+            "type": "string"
+          },
+          "min_paid": {
+            "title": "Min Paid",
+            "type": "string"
+          },
+          "reward_type": {
+            "enum": [
+              "amount",
+              "percent",
+              "free_lesson"
+            ],
+            "title": "Reward Type",
+            "type": "string"
+          },
+          "reward_value": {
+            "title": "Reward Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reward_type",
+          "reward_value",
+          "condition",
+          "min_paid",
+          "active"
+        ],
+        "title": "ProgramOut",
+        "type": "object"
+      },
       "ProviderIn": {
         "additionalProperties": false,
         "properties": {
@@ -9671,6 +10238,256 @@
         "title": "ReconciliationOut",
         "type": "object"
       },
+      "RedeemIn": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "pattern": "^[A-Za-z0-9_-]{3,32}$",
+            "title": "Code",
+            "type": "string"
+          },
+          "enrollment_id": {
+            "description": "the enrollment (monthly group) the discount is for",
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "student_id",
+          "enrollment_id"
+        ],
+        "title": "RedeemIn",
+        "type": "object"
+      },
+      "RedemptionOut": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "applies": {
+            "const": "next_billing_run",
+            "default": "next_billing_run",
+            "description": "the credit is taken off the student's next monthly charge",
+            "title": "Applies",
+            "type": "string"
+          },
+          "campaign_name": {
+            "title": "Campaign Name",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "fee": {
+            "title": "Fee",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "redeemed_on": {
+            "format": "date",
+            "title": "Redeemed On",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "campaign_name",
+          "student_id",
+          "fee",
+          "amount",
+          "redeemed_on"
+        ],
+        "title": "RedemptionOut",
+        "type": "object"
+      },
+      "ReferralIn": {
+        "additionalProperties": false,
+        "properties": {
+          "invited_student_id": {
+            "format": "uuid",
+            "title": "Invited Student Id",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "referrer_student_id": {
+            "format": "uuid",
+            "title": "Referrer Student Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "referrer_student_id",
+          "invited_student_id"
+        ],
+        "title": "ReferralIn",
+        "type": "object"
+      },
+      "ReferralOut": {
+        "properties": {
+          "condition": {
+            "enum": [
+              "enrolled",
+              "paid"
+            ],
+            "title": "Condition",
+            "type": "string"
+          },
+          "condition_met": {
+            "description": "the condition holds right now for the invited student",
+            "title": "Condition Met",
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "credits_total": {
+            "description": "money of the credits this referral produced (cancelled ones excluded)",
+            "title": "Credits Total",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "invited_name": {
+            "title": "Invited Name",
+            "type": "string"
+          },
+          "invited_on": {
+            "format": "date",
+            "title": "Invited On",
+            "type": "string"
+          },
+          "invited_student_id": {
+            "format": "uuid",
+            "title": "Invited Student Id",
+            "type": "string"
+          },
+          "min_paid": {
+            "title": "Min Paid",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "referrer_name": {
+            "title": "Referrer Name",
+            "type": "string"
+          },
+          "referrer_student_id": {
+            "format": "uuid",
+            "title": "Referrer Student Id",
+            "type": "string"
+          },
+          "reward_amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reward Amount"
+          },
+          "reward_type": {
+            "enum": [
+              "amount",
+              "percent",
+              "free_lesson"
+            ],
+            "title": "Reward Type",
+            "type": "string"
+          },
+          "reward_value": {
+            "title": "Reward Value",
+            "type": "string"
+          },
+          "rewarded_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rewarded On"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "rewarded",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "referrer_student_id",
+          "referrer_name",
+          "invited_student_id",
+          "invited_name",
+          "status",
+          "reward_type",
+          "reward_value",
+          "condition",
+          "min_paid",
+          "reward_amount",
+          "invited_on",
+          "rewarded_on",
+          "note",
+          "condition_met",
+          "credits_total",
+          "created_at"
+        ],
+        "title": "ReferralOut",
+        "type": "object"
+      },
       "RefreshIn": {
         "additionalProperties": false,
         "properties": {
@@ -9752,6 +10569,95 @@
           "password"
         ],
         "title": "RegisterIn",
+        "type": "object"
+      },
+      "ReminderOut": {
+        "properties": {
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "last_contact_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Contact On"
+          },
+          "lead_id": {
+            "format": "uuid",
+            "title": "Lead Id",
+            "type": "string"
+          },
+          "next_follow_up_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Follow Up On"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "reason": {
+            "enum": [
+              "follow_up_due",
+              "after_trial",
+              "silent"
+            ],
+            "title": "Reason",
+            "type": "string"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "stage": {
+            "title": "Stage",
+            "type": "string"
+          }
+        },
+        "required": [
+          "lead_id",
+          "full_name",
+          "phone",
+          "source",
+          "stage",
+          "reason",
+          "days",
+          "next_follow_up_on",
+          "last_contact_on"
+        ],
+        "title": "ReminderOut",
         "type": "object"
       },
       "ReportRequest": {
@@ -9861,6 +10767,103 @@
           "click_error_note"
         ],
         "title": "ReverseOut",
+        "type": "object"
+      },
+      "RoiOut": {
+        "properties": {
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/RoiRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "total": {
+            "$ref": "#/components/schemas/RoiRow"
+          }
+        },
+        "required": [
+          "rows",
+          "total"
+        ],
+        "title": "RoiOut",
+        "type": "object"
+      },
+      "RoiRow": {
+        "properties": {
+          "cost": {
+            "title": "Cost",
+            "type": "string"
+          },
+          "cost_per_lead": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Per Lead"
+          },
+          "cost_per_paying": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Per Paying"
+          },
+          "leads": {
+            "title": "Leads",
+            "type": "integer"
+          },
+          "paying": {
+            "title": "Paying",
+            "type": "integer"
+          },
+          "revenue": {
+            "title": "Revenue",
+            "type": "string"
+          },
+          "roi": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "(revenue - cost) / cost in percent, one decimal; null without a cost",
+            "title": "Roi"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          }
+        },
+        "required": [
+          "source",
+          "leads",
+          "paying",
+          "revenue",
+          "cost",
+          "roi",
+          "cost_per_lead",
+          "cost_per_paying"
+        ],
+        "title": "RoiRow",
         "type": "object"
       },
       "RoomIn": {
@@ -10606,6 +11609,11 @@
             "title": "Excused Mode",
             "type": "string"
           },
+          "lead_reminder_days": {
+            "description": "quiet days after which an open lead shows in the internal reminder list",
+            "title": "Lead Reminder Days",
+            "type": "integer"
+          },
           "makeup_expiry_days": {
             "title": "Makeup Expiry Days",
             "type": "integer"
@@ -10651,6 +11659,7 @@
           "makeup_lapses",
           "package_expiry_days",
           "package_low_lessons",
+          "lead_reminder_days",
           "demo_mode",
           "requisites",
           "ai_enabled",
@@ -10713,6 +11722,19 @@
               }
             ],
             "title": "Excused Mode"
+          },
+          "lead_reminder_days": {
+            "anyOf": [
+              {
+                "maximum": 60.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lead Reminder Days"
           },
           "makeup_expiry_days": {
             "anyOf": [
@@ -10805,6 +11827,35 @@
           }
         },
         "title": "SettingsPatch",
+        "type": "object"
+      },
+      "SkippedItem": {
+        "properties": {
+          "reason": {
+            "enum": [
+              "condition_not_met",
+              "referrer_has_no_active_enrollment",
+              "reward_is_zero"
+            ],
+            "title": "Reason",
+            "type": "string"
+          },
+          "referral_id": {
+            "format": "uuid",
+            "title": "Referral Id",
+            "type": "string"
+          },
+          "referrer_name": {
+            "title": "Referrer Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "referral_id",
+          "referrer_name",
+          "reason"
+        ],
+        "title": "SkippedItem",
         "type": "object"
       },
       "SourceIn": {
@@ -14258,6 +15309,78 @@
         "summary": "Correct an entry: post its exact reversal (entries are never edited or deleted)",
         "tags": [
           "accounting"
+        ]
+      }
+    },
+    "/v1/accounting/growth-credits": {
+      "get": {
+        "operationId": "growth_credits_v1_accounting_growth_credits_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GrowthCreditsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Referral rewards and promo discounts, separate from tuition: granted, applied to charges, still waiting",
+        "tags": [
+          "growth"
         ]
       }
     },
@@ -20027,6 +21150,82 @@
         ]
       }
     },
+    "/v1/lead-source-costs": {
+      "get": {
+        "operationId": "list_costs_v1_lead_source_costs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "month_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Month From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "month_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Month To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CostOut"
+                  },
+                  "title": "Response List Costs V1 Lead Source Costs Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Entered source costs, newest month first",
+        "tags": [
+          "growth"
+        ]
+      }
+    },
     "/v1/lead-sources": {
       "get": {
         "operationId": "list_sources_v1_lead_sources_get",
@@ -20098,6 +21297,74 @@
         "summary": "Create Source",
         "tags": [
           "leads"
+        ]
+      }
+    },
+    "/v1/lead-sources/{source_id}/costs/{month}": {
+      "put": {
+        "operationId": "put_cost_v1_lead_sources__source_id__costs__month__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "month",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Month",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CostIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CostOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Set what a source cost in a month (month = first day, e.g. 2026-11-01); repeat to correct",
+        "tags": [
+          "growth"
         ]
       }
     },
@@ -20280,6 +21547,36 @@
         "summary": "Create Lead",
         "tags": [
           "leads"
+        ]
+      }
+    },
+    "/v1/leads/reminders": {
+      "get": {
+        "operationId": "lead_reminder_list_v1_leads_reminders_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ReminderOut"
+                  },
+                  "title": "Response Lead Reminder List V1 Leads Reminders Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Open leads that need a staff follow-up (internal list: nothing is sent to the lead)",
+        "tags": [
+          "growth"
         ]
       }
     },
@@ -22797,6 +24094,472 @@
         ]
       }
     },
+    "/v1/promo-campaigns": {
+      "get": {
+        "operationId": "list_campaigns_v1_promo_campaigns_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CampaignOut"
+                  },
+                  "title": "Response List Campaigns V1 Promo Campaigns Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Promo campaigns with their use and state today",
+        "tags": [
+          "growth"
+        ]
+      },
+      "post": {
+        "operationId": "create_campaign_v1_promo_campaigns_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CampaignIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampaignOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create a promo code / campaign",
+        "tags": [
+          "growth"
+        ]
+      }
+    },
+    "/v1/promo-campaigns/{campaign_id}": {
+      "patch": {
+        "operationId": "patch_campaign_v1_promo_campaigns__campaign_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "campaign_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Campaign Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CampaignPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampaignOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Rename, switch off or extend a campaign",
+        "tags": [
+          "growth"
+        ]
+      }
+    },
+    "/v1/promo/redeem": {
+      "post": {
+        "operationId": "redeem_v1_promo_redeem_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RedeemIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedemptionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Apply a promo code for a student: a credit (at most one month's fee) for the next monthly charge",
+        "tags": [
+          "growth"
+        ]
+      }
+    },
+    "/v1/referral-program": {
+      "get": {
+        "operationId": "get_program_v1_referral_program_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ProgramOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Program V1 Referral Program Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "The center's referral rule (null when not set)",
+        "tags": [
+          "growth"
+        ]
+      },
+      "put": {
+        "operationId": "put_program_v1_referral_program_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgramIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgramOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Set the referral rule (reward type, value, condition)",
+        "tags": [
+          "growth"
+        ]
+      }
+    },
+    "/v1/referrals": {
+      "get": {
+        "operationId": "list_referrals_v1_referrals_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "pending",
+                    "rewarded",
+                    "cancelled"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "student_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Student Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ReferralOut"
+                  },
+                  "title": "Response List Referrals V1 Referrals Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Referrals, newest first",
+        "tags": [
+          "growth"
+        ]
+      },
+      "post": {
+        "operationId": "create_referral_v1_referrals_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReferralIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferralOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Record that a student invited another",
+        "tags": [
+          "growth"
+        ]
+      }
+    },
+    "/v1/referrals/book": {
+      "post": {
+        "operationId": "book_rewards_v1_referrals_book_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Pay the rewards of pending referrals whose condition holds (credits for the referrer; safe to repeat)",
+        "tags": [
+          "growth"
+        ]
+      }
+    },
+    "/v1/referrals/{referral_id}/cancel": {
+      "post": {
+        "operationId": "cancel_referral_v1_referrals__referral_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "referral_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Referral Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferralOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cancel a referral (its unused credits are cancelled too)",
+        "tags": [
+          "growth"
+        ]
+      }
+    },
     "/v1/reports/absences": {
       "get": {
         "operationId": "absence_report_v1_reports_absences_get",
@@ -23219,6 +24982,64 @@
         "summary": "Received money by day or month (center time zone)",
         "tags": [
           "finance"
+        ]
+      }
+    },
+    "/v1/reports/source-roi": {
+      "get": {
+        "operationId": "source_roi_report_v1_reports_source_roi_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Date From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Date To",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoiOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Per lead source: leads created in the range, paying students, their revenue versus the cost entered",
+        "tags": [
+          "growth"
         ]
       }
     },

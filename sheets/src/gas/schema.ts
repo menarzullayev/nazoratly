@@ -42,6 +42,11 @@ const L = {
   cashKind: { cash: "Naqd", bank: "Bank" },
   paidFrom: { cash: "Naqd", bank: "Bank" },
   statementStatus: { open: "Ochiq", finalized: "Yopilgan" },
+  entSource: { absence: "Sababli yo'qlik", referral: "Tavsiya", promo: "Promo" },
+  refStatus: { pending: "Kutilmoqda", rewarded: "Mukofotlangan", cancelled: "Bekor" },
+  rewardType: { amount: "Summa", percent: "Foiz", free_lesson: "Bepul dars" },
+  refCondition: { paid: "To'lagandan keyin", enrolled: "Yozilgandan keyin" },
+  promoKind: { percent: "Foiz", amount: "Summa" },
 } as const;
 
 /** Marks sample rows ("Namuna ma'lumot"). "Demo ma'lumotni tozalash" deletes only flagged rows. */
@@ -253,6 +258,8 @@ export const ENTITLEMENTS: TableDef = {
     { key: "usedOn", header: "Ishlatilgan sana", width: 120, kind: "date" },
     { key: "appliedChargeId", header: "Hisob ID", width: 90, kind: "text", help: "Kredit qaysi oylik hisobdan ayirilgani" },
     { key: "lastMakeupOn", header: "Oxirgi qoplash sanasi", width: 130, kind: "date", help: "Oylik hisobida: bu kunda faqat kelgan bo'lsa dars hisoblanadi" },
+    { key: "source", header: "Manba", width: 130, kind: "enum", labels: L.entSource, help: "Kredit qayerdan: sababli yo'qlik, tavsiya mukofoti yoki promo kod (avtomatik)" },
+    { key: "note", header: "Izoh (kredit)", width: 200, kind: "text", plain: true, help: "Tavsiya: taklif qilingan o'quvchi. Promo: kod (avtomatik)" },
   ],
 };
 
@@ -464,8 +471,67 @@ export const SCHEDULE_CHANGES: TableDef = {
   ],
 };
 
+// ---- growth (G3): referrals, promo codes, source costs. Rewards and promo discounts are credits in ENTITLEMENTS. ----
+export const REFERRALS: TableDef = {
+  sheet: "Tavsiyalar",
+  color: "#188038",
+  cols: [
+    { key: "id", header: "ID", width: 80, kind: "text", help: "Avtomatik (F0001...): menyu O'sish > Tavsiya qo'shish" },
+    { key: "referrerId", header: "Taklif qilgan (o'quvchi ID)", width: 150, kind: "text" },
+    { key: "invitedId", header: "Taklif qilingan (o'quvchi ID)", width: 160, kind: "text", help: "Bir o'quvchi faqat bir marta taklif qilinadi" },
+    { key: "status", header: "Holat", width: 130, kind: "enum", labels: L.refStatus },
+    { key: "rewardType", header: "Mukofot turi", width: 110, kind: "enum", labels: L.rewardType, help: "Taklif qilingan paytdagi qoida saqlanadi" },
+    { key: "rewardValue", header: "Mukofot qiymati", width: 120, kind: "int", help: "Summa (so'm), foiz yoki bepul darslar soni" },
+    { key: "condition", header: "Shart", width: 150, kind: "enum", labels: L.refCondition },
+    { key: "minPaid", header: "Kamida to'langan", width: 120, kind: "int" },
+    { key: "rewardAmount", header: "Mukofot (so'm)", width: 120, kind: "int", help: "Mukofot berilganda to'ladi" },
+    { key: "invitedOn", header: "Taklif sanasi", width: 110, kind: "date" },
+    { key: "rewardedOn", header: "Mukofot sanasi", width: 110, kind: "date" },
+    { key: "note", header: "Izoh", width: 220, kind: "text" },
+  ],
+};
+
+export const PROMOS: TableDef = {
+  sheet: "Promo kodlar",
+  color: "#188038",
+  cols: [
+    { key: "code", header: "Kod", width: 110, kind: "text", plain: true, help: "3-32 belgi: harf, raqam, - yoki _. Katta-kichik harf farqlanmaydi" },
+    { key: "name", header: "Nomi", width: 220, kind: "text", help: "Masalan: Kuz aksiyasi, birinchi oy -50%" },
+    { key: "kind", header: "Turi", width: 90, kind: "enum", labels: L.promoKind },
+    { key: "value", header: "Qiymat", width: 100, kind: "int", help: "Foiz (1-100) yoki summa (so'm). Chegirma birinchi oylik hisobdan oshmaydi" },
+    { key: "validFrom", header: "Boshlanishi", width: 110, kind: "date" },
+    { key: "validTo", header: "Tugashi", width: 110, kind: "date", help: "Bo'sh = muddatsiz" },
+    { key: "maxUses", header: "Eng ko'p ishlatish", width: 120, kind: "int", help: "0 = cheklanmagan" },
+    { key: "active", header: "Faol", width: 80, kind: "bool" },
+  ],
+};
+
+export const PROMO_USES: TableDef = {
+  sheet: "Promo ishlatilishi",
+  color: "#188038",
+  cols: [
+    { key: "code", header: "Kod", width: 110, kind: "text", plain: true },
+    { key: "studentId", header: "O'quvchi ID", width: 100, kind: "text" },
+    { key: "enrollmentId", header: "Yozilish ID", width: 100, kind: "text" },
+    { key: "fee", header: "Oylik narx", width: 110, kind: "int" },
+    { key: "amount", header: "Chegirma (kredit)", width: 130, kind: "int", help: "Keyingi oylik hisobdan ayiriladi (Qoplash huquqlari varag'ida kredit sifatida)" },
+    { key: "usedOn", header: "Sana", width: 110, kind: "date" },
+  ],
+};
+
+export const SOURCE_COSTS: TableDef = {
+  sheet: "Manba xarajatlari",
+  color: "#e37400",
+  cols: [
+    { key: "source", header: "Manba", width: 150, kind: "text", options: ["Instagram", "Telegram", "Tanish", "OLX", "Reklama", "Boshqa"], help: "Lead'lar varag'idagi Manba bilan bir xil yozing (katta-kichik harf farqlanmaydi)" },
+    { key: "month", header: "Oy", width: 110, kind: "date", help: "Oyning birinchi kuni" },
+    { key: "amount", header: "Xarajat (so'm)", width: 130, kind: "int" },
+    { key: "note", header: "Izoh", width: 240, kind: "text" },
+  ],
+};
+
 export const LEDGER_TABLES: TableDef[] = [JOURNAL, PERIODS, CHART_ACCOUNTS, CASH_ACCOUNTS];
-export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, PACKAGES, INSTALLMENTS, DOCUMENTS, EXPENSES, WAITLIST, ...LEDGER_TABLES, STATEMENTS, STATEMENT_LINES, SUPPLIERS, SUPPLIER_BILLS, BILL_PAYMENTS, ROOMS, SCHEDULE_CHANGES];
+export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, PACKAGES, INSTALLMENTS, DOCUMENTS, EXPENSES, WAITLIST, ...LEDGER_TABLES, STATEMENTS, STATEMENT_LINES, SUPPLIERS, SUPPLIER_BILLS, BILL_PAYMENTS, ROOMS, SCHEDULE_CHANGES, REFERRALS, PROMOS, PROMO_USES, SOURCE_COSTS];
 
 export const SETTINGS_SHEET = "Sozlamalar";
 export const DEBTORS_SHEET = "Qarzdorlar";
@@ -491,5 +557,11 @@ export const SETTING_DEFAULTS: { key: string; label: string; value: string; help
   { key: "requisites", label: "Markaz rekvizitlari (hujjatlarda)", value: "", help: "Manzil, telefon, hisob raqami... Kvitansiya va to'lov hisobida markaz nomi ostida chiqadi. Hujjat ichki hujjat: fiskal chek emas" },
   { key: "payInfo", label: "To'lov rekvizitlari", value: "", help: "Karta raqami yoki hisob. Xabardagi 'Nusxalash' tugmasi shuni nusxalaydi (bo'sh = tugma yo'q)" },
   { key: "ledgerEditors", label: "Jurnalga yozishi mumkin bo'lgan emaillar", value: "", help: "Vergul bilan. Jurnal, Davrlar, Hisob rejasi va Pul hisoblari varaqlari himoyalangan: faqat egasi (skript) va shu emaillar yoza oladi. Bo'sh = faqat ega. Varaq egasi himoyani olib tashlashi mumkin; hash zanjiri o'zgartirishni aniqlaydi, lekin to'sa olmaydi" },
+  { key: "referralActive", label: "Tavsiya dasturi yoqilgan", value: "Yo'q", help: "Ha / Yo'q. Yoqilmaguncha yangi tavsiya qo'shib bo'lmaydi" },
+  { key: "referralRewardType", label: "Tavsiya mukofoti turi", value: "Summa", help: "Summa = qat'iy so'm, Foiz = taklif qilganning oylik narxidan foiz, Bepul dars = shuncha darsning narxi" },
+  { key: "referralRewardValue", label: "Tavsiya mukofoti qiymati", value: "0", help: "Summa (so'm), foiz (1-1000) yoki bepul darslar soni (1-100). 0 = belgilanmagan" },
+  { key: "referralCondition", label: "Tavsiya sharti", value: "To'lagandan keyin", help: "To'lagandan keyin = taklif qilingan o'quvchi to'lov qilganda, Yozilgandan keyin = faol yozilishga o'tganda" },
+  { key: "referralMinPaid", label: "Tavsiya: kamida to'langan (so'm)", value: "0", help: "Faqat 'To'lagandan keyin' sharti uchun: taklif qilingan o'quvchi jami shuncha to'lashi kerak (0 = istalgan to'lov)" },
+  { key: "leadReminderDays", label: "Lead eslatmasi: jim kunlar", value: "3", help: "Yangi/aloqada/sinovga yozilgan lead bilan shuncha kun aloqa bo'lmasa 'Lead eslatmalari' ro'yxatiga tushadi (1-60). Lead'ga hech narsa yuborilmaydi: bu faqat xodim uchun ro'yxat" },
   { key: "ownerChatId", label: "Egasining Telegram chat ID si", value: "", help: "Vasiy 'To'lov qildim' bossa shu yerga xabar keladi (botga /start yozib, @userinfobot dan ID ni oling)" },
 ];
