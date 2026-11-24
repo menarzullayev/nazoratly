@@ -1002,6 +1002,96 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/certificates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Certificates, newest first */
+        get: operations["list_certificates_v1_certificates_get"];
+        put?: never;
+        /** Issue the certificate of a finished course (the live one is returned on a repeat) */
+        post: operations["issue_certificate_v1_certificates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/certificates/{certificate_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Certificate */
+        get: operations["get_certificate_v1_certificates__certificate_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/certificates/{certificate_id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The certificate PDF */
+        get: operations["certificate_pdf_v1_certificates__certificate_id__pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/certificates/{certificate_id}/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve and queue the certificate for a guardian's Telegram (message plus the PDF)
+         * @description This call IS the approval. Same rules as every message: linked guardian with reminders and a Telegram chat, and an
+         *     active notifications consent of the student.
+         */
+        post: operations["send_certificate_v1_certificates__certificate_id__send_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/certificates/{certificate_id}/void": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Void a certificate (with a reason) */
+        post: operations["void_certificate_v1_certificates__certificate_id__void_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/charges": {
         parameters: {
             query?: never;
@@ -1474,6 +1564,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/exams/{exam_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** An exam with every student's score */
+        get: operations["get_exam_v1_exams__exam_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete an exam with its results */
+        delete: operations["delete_exam_v1_exams__exam_id__delete"];
+        options?: never;
+        head?: never;
+        /** Patch Exam */
+        patch: operations["patch_exam_v1_exams__exam_id__patch"];
+        trace?: never;
+    };
+    "/v1/exams/{exam_id}/results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save scores (upsert, one per student) */
+        put: operations["put_results_v1_exams__exam_id__results_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/exams/{exam_id}/results/{student_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove one student's score */
+        delete: operations["delete_result_v1_exams__exam_id__results__student_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/expenses": {
         parameters: {
             query?: never;
@@ -1575,6 +1718,24 @@ export interface paths {
         put?: never;
         /** Enroll */
         post: operations["enroll_v1_groups__group_id__enrollments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/groups/{group_id}/exams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Exams of a group, newest first */
+        get: operations["list_exams_v1_groups__group_id__exams_get"];
+        put?: never;
+        /** Add an exam/test to a group */
+        post: operations["create_exam_v1_groups__group_id__exams_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1999,6 +2160,41 @@ export interface paths {
         /** Set (or clear) the substitute teacher of a lesson; payroll follows the substitute */
         post: operations["substitute_lesson_v1_lessons__lesson_id__substitute_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/marks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Notes and grades, newest first */
+        get: operations["list_marks_v1_marks_get"];
+        /** Write or replace the note/grade of a student for one lesson or one month (upsert) */
+        put: operations["put_mark_v1_marks_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/marks/{mark_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a note/grade */
+        delete: operations["delete_mark_v1_marks__mark_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2679,6 +2875,98 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/reports/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Progress reports, newest month first */
+        get: operations["list_reports_v1_reports_progress_get"];
+        put?: never;
+        /** Create (or regenerate, while it is still a draft) a student's monthly progress report */
+        post: operations["make_report_v1_reports_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/reports/progress/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create draft reports for every active student of a group for a month (nothing is sent) */
+        post: operations["generate_reports_v1_reports_progress_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/reports/progress/{report_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Report */
+        get: operations["get_report_v1_reports_progress__report_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete a draft report */
+        delete: operations["delete_report_v1_reports_progress__report_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/reports/progress/{report_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve the report and queue it for a guardian's Telegram (message plus the PDF)
+         * @description This call IS the approval by a signed-in person. The database applies the standard rules for every message: the
+         *     guardian must be linked to the student, receive reminders and have a Telegram chat, and the student needs an active
+         *     notifications consent. The report is frozen by the first approval; the same PDF can go to another guardian.
+         */
+        post: operations["approve_report_v1_reports_progress__report_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/reports/progress/{report_id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The PDF of a progress report */
+        get: operations["report_pdf_v1_reports_progress__report_id__pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/reports/revenue": {
         parameters: {
             query?: never;
@@ -3100,6 +3388,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/students/{student_id}/results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Everything a student has: notes and grades, exam scores, progress reports, certificates */
+        get: operations["student_results_v1_students__student_id__results_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/teachers": {
         parameters: {
             query?: never;
@@ -3146,6 +3451,23 @@ export interface paths {
         };
         /** Trials waiting for the owner's decision */
         get: operations["pending_trials_v1_trials_pending_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/verify/certificate/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Public: check a certificate by its verification code (the holder's name is masked) */
+        get: operations["verify_certificate_v1_verify_certificate__code__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3534,23 +3856,35 @@ export interface components {
              */
             period_month: string;
         };
-        /** ApproveIn */
-        ApproveIn: {
-            /**
-             * Channel
-             * @description defaults to telegram when the guardian has a chat, else sms
-             */
-            channel?: ("telegram" | "sms") | null;
-        };
         /** ApproveNoticeIn */
         ApproveNoticeIn: {
             /** Channel */
             channel?: ("telegram" | "sms") | null;
         };
+        /** ApproveOut */
+        ApproveOut: {
+            /**
+             * Guardian Id
+             * Format: uuid
+             */
+            guardian_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+            /**
+             * Report Id
+             * Format: uuid
+             */
+            report_id: string;
+            /** Status */
+            status: string;
+        };
         /** AttendanceIn */
         AttendanceIn: {
             /** Records */
-            records: components["schemas"]["MarkIn"][];
+            records: components["schemas"]["nazoratly__routers__lessons__MarkIn"][];
         };
         /** AuditOut */
         AuditOut: {
@@ -3811,6 +4145,27 @@ export interface components {
             name?: string | null;
             /** Status */
             status?: ("active" | "closed") | null;
+        };
+        /** BulkIn */
+        BulkIn: {
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Month */
+            month: string;
+        };
+        /** BulkOut */
+        BulkOut: {
+            /** Created */
+            created: number;
+            /** Regenerated */
+            regenerated: number;
+            /** Reports */
+            reports: components["schemas"]["ReportOut"][];
+            /** Skipped Approved */
+            skipped_approved: number;
         };
         /** CalendarDay */
         CalendarDay: {
@@ -4142,6 +4497,90 @@ export interface components {
             journal_seq: number;
             /** Next Shift No */
             next_shift_no: number;
+        };
+        /** CertificateBrief */
+        CertificateBrief: {
+            /** Course Name */
+            course_name: string;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Issued On
+             * Format: date
+             */
+            issued_on: string;
+            /** Number */
+            number: string;
+        };
+        /** CertificateIn */
+        CertificateIn: {
+            /**
+             * Completed On
+             * @description default: the enrollment's end date, else the group's end date, else today
+             */
+            completed_on?: string | null;
+            /**
+             * Enrollment Id
+             * Format: uuid
+             */
+            enrollment_id: string;
+        };
+        /** CertificateOut */
+        CertificateOut: {
+            /** Code */
+            code: string;
+            /**
+             * Completed On
+             * Format: date
+             */
+            completed_on: string;
+            /** Course Name */
+            course_name: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Enrollment Id
+             * Format: uuid
+             */
+            enrollment_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Issued On
+             * Format: date
+             */
+            issued_on: string;
+            /** Number */
+            number: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+            /** Void Reason */
+            void_reason: string | null;
+            /** Voided At */
+            voided_at: string | null;
         };
         /** ChangeOut */
         ChangeOut: {
@@ -5171,6 +5610,97 @@ export interface components {
              */
             first_due: string;
         };
+        /** ExamDetail */
+        ExamDetail: {
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Held On
+             * Format: date
+             */
+            held_on: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Max Score */
+            max_score: string;
+            /** Results */
+            results: components["schemas"]["ExamResultOut"][];
+            /** Results Count */
+            results_count: number;
+            /** Title */
+            title: string;
+        };
+        /** ExamIn */
+        ExamIn: {
+            /**
+             * Held On
+             * Format: date
+             */
+            held_on: string;
+            /** Max Score */
+            max_score: number | string;
+            /** Title */
+            title: string;
+        };
+        /** ExamOut */
+        ExamOut: {
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Held On
+             * Format: date
+             */
+            held_on: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Max Score */
+            max_score: string;
+            /** Results Count */
+            results_count: number;
+            /** Title */
+            title: string;
+        };
+        /** ExamPatch */
+        ExamPatch: {
+            /** Held On */
+            held_on?: string | null;
+            /** Max Score */
+            max_score?: number | string | null;
+            /** Title */
+            title?: string | null;
+        };
+        /** ExamResultOut */
+        ExamResultOut: {
+            /** Note */
+            note: string | null;
+            /** Percent */
+            percent: number | null;
+            /** Score */
+            score: string | null;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+        };
         /** ExpenseIn */
         ExpenseIn: {
             /**
@@ -6072,23 +6602,51 @@ export interface components {
             /** Refresh Token */
             refresh_token: string;
         };
-        /** MarkIn */
-        MarkIn: {
+        /** MarkOut */
+        MarkOut: {
             /**
-             * Minutes Late
-             * @default 0
+             * Created At
+             * Format: date-time
              */
-            minutes_late: number;
+            created_at: string;
+            /** Grade */
+            grade: number | null;
             /**
-             * Status
-             * @enum {string}
+             * Group Id
+             * Format: uuid
              */
-            status: "present" | "absent" | "late" | "excused";
+            group_id: string;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Lesson Date */
+            lesson_date: string | null;
+            /** Lesson Id */
+            lesson_id: string | null;
+            /** Month */
+            month: string | null;
+            /** Note */
+            note: string | null;
+            /** Scope */
+            scope: string;
             /**
              * Student Id
              * Format: uuid
              */
             student_id: string;
+            /** Student Name */
+            student_name: string;
+            /** Teacher Name */
+            teacher_name: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** MatchIn */
         MatchIn: {
@@ -6629,6 +7187,17 @@ export interface components {
             /** Offset */
             offset: number;
         };
+        /** Page[CertificateOut] */
+        Page_CertificateOut_: {
+            /** Has More */
+            has_more: boolean;
+            /** Items */
+            items: components["schemas"]["CertificateOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
         /** Page[ChargeOut] */
         Page_ChargeOut_: {
             /** Has More */
@@ -6717,6 +7286,17 @@ export interface components {
             /** Offset */
             offset: number;
         };
+        /** Page[ExamOut] */
+        Page_ExamOut_: {
+            /** Has More */
+            has_more: boolean;
+            /** Items */
+            items: components["schemas"]["ExamOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
         /** Page[ExpenseOut] */
         Page_ExpenseOut_: {
             /** Has More */
@@ -6767,6 +7347,17 @@ export interface components {
             has_more: boolean;
             /** Items */
             items: components["schemas"]["LessonOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
+        /** Page[MarkOut] */
+        Page_MarkOut_: {
+            /** Has More */
+            has_more: boolean;
+            /** Items */
+            items: components["schemas"]["MarkOut"][];
             /** Limit */
             limit: number;
             /** Offset */
@@ -6855,6 +7446,17 @@ export interface components {
             has_more: boolean;
             /** Items */
             items: components["schemas"]["RefundOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
+        /** Page[ReportOut] */
+        Page_ReportOut_: {
+            /** Has More */
+            has_more: boolean;
+            /** Items */
+            items: components["schemas"]["ReportOut"][];
             /** Limit */
             limit: number;
             /** Offset */
@@ -7744,6 +8346,118 @@ export interface components {
             /** Stage */
             stage: string;
         };
+        /** ReportBrief */
+        ReportBrief: {
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Month */
+            month: string;
+            /** Status */
+            status: string;
+        };
+        /** ReportDetail */
+        ReportDetail: {
+            /** Approved At */
+            approved_at: string | null;
+            /** Attendance Percent */
+            attendance_percent: number | null;
+            /** Average Grade */
+            average_grade: string | null;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Month */
+            month: string;
+            /** Snapshot */
+            snapshot: {
+                [key: string]: unknown;
+            };
+            /** Status */
+            status: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+        };
+        /** ReportIn */
+        ReportIn: {
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Month */
+            month: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+        };
+        /** ReportOut */
+        ReportOut: {
+            /** Approved At */
+            approved_at: string | null;
+            /** Attendance Percent */
+            attendance_percent: number | null;
+            /** Average Grade */
+            average_grade: string | null;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Month */
+            month: string;
+            /** Status */
+            status: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+        };
         /** ReportRequest */
         ReportRequest: {
             /**
@@ -7751,6 +8465,23 @@ export interface components {
              * @enum {string}
              */
             kind: "weekly_summary" | "debt_followup" | "churn_risk";
+        };
+        /** ResultRecord */
+        ResultRecord: {
+            /** Note */
+            note?: string | null;
+            /** Score */
+            score: number | string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+        };
+        /** ResultsIn */
+        ResultsIn: {
+            /** Records */
+            records: components["schemas"]["ResultRecord"][];
         };
         /** RevenuePoint */
         RevenuePoint: {
@@ -8102,26 +8833,6 @@ export interface components {
              * Format: uuid
              */
             guardian_id: string;
-        };
-        /** SendOut */
-        SendOut: {
-            /**
-             * Document Id
-             * Format: uuid
-             */
-            document_id: string;
-            /**
-             * Guardian Id
-             * Format: uuid
-             */
-            guardian_id: string;
-            /**
-             * Message Id
-             * Format: uuid
-             */
-            message_id: string;
-            /** Status */
-            status: string;
         };
         /** SettingsOut */
         SettingsOut: {
@@ -8498,6 +9209,36 @@ export interface components {
             /** Status */
             status: string;
         };
+        /** StudentExam */
+        StudentExam: {
+            /**
+             * Exam Id
+             * Format: uuid
+             */
+            exam_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Held On
+             * Format: date
+             */
+            held_on: string;
+            /** Max Score */
+            max_score: string;
+            /** Note */
+            note: string | null;
+            /** Percent */
+            percent: number;
+            /** Score */
+            score: string;
+            /** Title */
+            title: string;
+        };
         /** StudentIn */
         StudentIn: {
             /** Birth Date */
@@ -8566,6 +9307,22 @@ export interface components {
             id: string;
             /** Name */
             name: string;
+        };
+        /** StudentResults */
+        StudentResults: {
+            /** Certificates */
+            certificates: components["schemas"]["CertificateBrief"][];
+            /** Exams */
+            exams: components["schemas"]["StudentExam"][];
+            /** Marks */
+            marks: components["schemas"]["MarkOut"][];
+            /** Reports */
+            reports: components["schemas"]["ReportBrief"][];
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
         };
         /** SubstituteIn */
         SubstituteIn: {
@@ -8829,24 +9586,6 @@ export interface components {
             /** Error Type */
             type: string;
         };
-        /** VerifyOut */
-        VerifyOut: {
-            /**
-             * Broken Seq
-             * @description the first broken journal line
-             */
-            broken_seq: number | null;
-            /** Lines */
-            lines: number;
-            /** Ok */
-            ok: boolean;
-            /** Period Issues */
-            period_issues: {
-                [key: string]: unknown;
-            }[];
-            /** Reason */
-            reason: string | null;
-        };
         /** WaitingBlock */
         WaitingBlock: {
             /** Packages */
@@ -9018,6 +9757,102 @@ export interface components {
             /** Student Name */
             student_name: string;
         };
+        /** VerifyOut */
+        nazoratly__routers__accounting__VerifyOut: {
+            /**
+             * Broken Seq
+             * @description the first broken journal line
+             */
+            broken_seq: number | null;
+            /** Lines */
+            lines: number;
+            /** Ok */
+            ok: boolean;
+            /** Period Issues */
+            period_issues: {
+                [key: string]: unknown;
+            }[];
+            /** Reason */
+            reason: string | null;
+        };
+        /** ApproveIn */
+        nazoratly__routers__agents__ApproveIn: {
+            /**
+             * Channel
+             * @description defaults to telegram when the guardian has a chat, else sms
+             */
+            channel?: ("telegram" | "sms") | null;
+        };
+        /** SendOut */
+        nazoratly__routers__certificates__SendOut: {
+            /**
+             * Certificate Id
+             * Format: uuid
+             */
+            certificate_id: string;
+            /**
+             * Guardian Id
+             * Format: uuid
+             */
+            guardian_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+            /** Status */
+            status: string;
+        };
+        /** VerifyOut */
+        nazoratly__routers__certificates__VerifyOut: {
+            /** Center */
+            center: string;
+            /**
+             * Completed On
+             * Format: date
+             */
+            completed_on: string;
+            /** Course */
+            course: string;
+            /** Holder */
+            holder: string;
+            /**
+             * Issued On
+             * Format: date
+             */
+            issued_on: string;
+            /** Number */
+            number: string;
+            /** Status */
+            status: string;
+            /** Valid */
+            valid: boolean;
+        };
+        /** VoidIn */
+        nazoratly__routers__certificates__VoidIn: {
+            /** Reason */
+            reason: string;
+        };
+        /** SendOut */
+        nazoratly__routers__documents__SendOut: {
+            /**
+             * Document Id
+             * Format: uuid
+             */
+            document_id: string;
+            /**
+             * Guardian Id
+             * Format: uuid
+             */
+            guardian_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+            /** Status */
+            status: string;
+        };
         /** SummaryOut */
         nazoratly__routers__finance__SummaryOut: {
             /**
@@ -9080,6 +9915,24 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** MarkIn */
+        nazoratly__routers__lessons__MarkIn: {
+            /**
+             * Minutes Late
+             * @default 0
+             */
+            minutes_late: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "present" | "absent" | "late" | "excused";
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+        };
         /** BalanceOut */
         nazoratly__routers__packages__BalanceOut: {
             /**
@@ -9135,6 +9988,46 @@ export interface components {
         nazoratly__routers__payables__VoidIn: {
             /** Reason */
             reason: string;
+        };
+        /** ApproveIn */
+        nazoratly__routers__progress__ApproveIn: {
+            /**
+             * Guardian Id
+             * Format: uuid
+             */
+            guardian_id: string;
+        };
+        /** MarkIn */
+        nazoratly__routers__results__MarkIn: {
+            /** Grade */
+            grade?: number | null;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Lesson Id
+             * @description scope=lesson: the lesson of this group
+             */
+            lesson_id?: string | null;
+            /**
+             * Month
+             * @description scope=month: yyyy-mm
+             */
+            month?: string | null;
+            /** Note */
+            note?: string | null;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "lesson" | "month";
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
         };
         /** BalanceOut */
         nazoratly__routers__students__BalanceOut: {
@@ -10428,7 +11321,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["VerifyOut"];
+                    "application/json": components["schemas"]["nazoratly__routers__accounting__VerifyOut"];
                 };
             };
         };
@@ -10477,7 +11370,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ApproveIn"];
+                "application/json": components["schemas"]["nazoratly__routers__agents__ApproveIn"];
             };
         };
         responses: {
@@ -11329,6 +12222,206 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CashCloseOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_certificates_v1_certificates_get: {
+        parameters: {
+            query?: {
+                student_id?: string | null;
+                group_id?: string | null;
+                include_voided?: boolean;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_CertificateOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    issue_certificate_v1_certificates_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CertificateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CertificateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_certificate_v1_certificates__certificate_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                certificate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CertificateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    certificate_pdf_v1_certificates__certificate_id__pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                certificate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_certificate_v1_certificates__certificate_id__send_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                certificate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["nazoratly__routers__certificates__SendOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    void_certificate_v1_certificates__certificate_id__void_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                certificate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["nazoratly__routers__certificates__VoidIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CertificateOut"];
                 };
             };
             /** @description Validation Error */
@@ -12235,7 +13328,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SendOut"];
+                    "application/json": components["schemas"]["nazoratly__routers__documents__SendOut"];
                 };
             };
             /** @description Validation Error */
@@ -12473,6 +13566,166 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["EntitlementOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_exam_v1_exams__exam_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                exam_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExamDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_exam_v1_exams__exam_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                exam_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_exam_v1_exams__exam_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                exam_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExamPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExamDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_results_v1_exams__exam_id__results_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                exam_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResultsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExamDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_result_v1_exams__exam_id__results__student_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                exam_id: string;
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -12846,6 +14099,75 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EnrollmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_exams_v1_groups__group_id__exams_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                group_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_ExamOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_exam_v1_groups__group_id__exams_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExamIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExamDetail"];
                 };
             };
             /** @description Validation Error */
@@ -13977,6 +15299,104 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ChangeResult"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_marks_v1_marks_get: {
+        parameters: {
+            query?: {
+                student_id?: string | null;
+                group_id?: string | null;
+                lesson_id?: string | null;
+                month?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_MarkOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_mark_v1_marks_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["nazoratly__routers__results__MarkIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarkOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_mark_v1_marks__mark_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mark_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -15462,6 +16882,234 @@ export interface operations {
             };
         };
     };
+    list_reports_v1_reports_progress_get: {
+        parameters: {
+            query?: {
+                group_id?: string | null;
+                student_id?: string | null;
+                month?: string | null;
+                status?: ("draft" | "approved") | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_ReportOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    make_report_v1_reports_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_reports_v1_reports_progress_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_report_v1_reports_progress__report_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_report_v1_reports_progress__report_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_report_v1_reports_progress__report_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["nazoratly__routers__progress__ApproveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApproveOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    report_pdf_v1_reports_progress__report_id__pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     revenue_v1_reports_revenue_get: {
         parameters: {
             query: {
@@ -16532,6 +18180,37 @@ export interface operations {
             };
         };
     };
+    student_results_v1_students__student_id__results_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentResults"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_teachers_v1_teachers_get: {
         parameters: {
             query?: {
@@ -16714,6 +18393,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Page_PendingTrial_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_certificate_v1_verify_certificate__code__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["nazoratly__routers__certificates__VerifyOut"];
                 };
             };
             /** @description Validation Error */
