@@ -1,0 +1,790 @@
+{
+ "invite_normalize": [
+  {
+   "name": "canonical",
+   "in": "T-ABCDEFGH",
+   "out": "T-ABCDEFGH"
+  },
+  {
+   "name": "lowercase",
+   "in": "t-abcdefgh",
+   "out": "T-ABCDEFGH"
+  },
+  {
+   "name": "no dash, outer spaces",
+   "in": " tabcdefgh ",
+   "out": "T-ABCDEFGH"
+  },
+  {
+   "name": "spaces inside",
+   "in": "T ABCD EFGH",
+   "out": "T-ABCDEFGH"
+  },
+  {
+   "name": "digits are allowed",
+   "in": "T-A2B3C4D5",
+   "out": "T-A2B3C4D5"
+  },
+  {
+   "name": "too short",
+   "in": "T-ABCDEFG",
+   "out": null
+  },
+  {
+   "name": "too long",
+   "in": "T-ABCDEFGHJ",
+   "out": null
+  },
+  {
+   "name": "zero is not in the alphabet",
+   "in": "T-ABCDEF0H",
+   "out": null
+  },
+  {
+   "name": "letter I is not in the alphabet",
+   "in": "T-ABCDEFIH",
+   "out": null
+  },
+  {
+   "name": "wrong prefix",
+   "in": "X-ABCDEFGH",
+   "out": null
+  },
+  {
+   "name": "guardian-style code",
+   "in": "ABCDEFGH",
+   "out": null
+  },
+  {
+   "name": "empty",
+   "in": "",
+   "out": null
+  }
+ ],
+ "invite_state": [
+  {
+   "name": "pending and in time",
+   "status": "pending",
+   "expires_at": "2026-12-01T10:00",
+   "now": "2026-11-24T10:00",
+   "out": "valid"
+  },
+  {
+   "name": "pending, the last minute",
+   "status": "pending",
+   "expires_at": "2026-12-01T10:00",
+   "now": "2026-12-01T09:59",
+   "out": "valid"
+  },
+  {
+   "name": "pending, exactly at expiry",
+   "status": "pending",
+   "expires_at": "2026-12-01T10:00",
+   "now": "2026-12-01T10:00",
+   "out": "expired"
+  },
+  {
+   "name": "pending, long past",
+   "status": "pending",
+   "expires_at": "2026-12-01T10:00",
+   "now": "2027-01-01T00:00",
+   "out": "expired"
+  },
+  {
+   "name": "used stays used",
+   "status": "used",
+   "expires_at": "2026-12-01T10:00",
+   "now": "2026-11-24T10:00",
+   "out": "used"
+  },
+  {
+   "name": "used and expired is still used",
+   "status": "used",
+   "expires_at": "2026-12-01T10:00",
+   "now": "2027-01-01T00:00",
+   "out": "used"
+  },
+  {
+   "name": "revoked",
+   "status": "revoked",
+   "expires_at": "2026-12-01T10:00",
+   "now": "2026-11-24T10:00",
+   "out": "revoked"
+  }
+ ],
+ "invite_expires": [
+  {
+   "name": "seven days",
+   "now": "2026-11-24T10:00",
+   "out": "2026-12-01T10:00"
+  },
+  {
+   "name": "over a year end",
+   "now": "2026-12-28T23:30",
+   "out": "2027-01-04T23:30"
+  }
+ ],
+ "unmarked": [
+  {
+   "name": "mixed day",
+   "now": "2026-11-24T17:30",
+   "after_hours": 2,
+   "lessons": [
+    {
+     "id": "a",
+     "date": "2026-11-24",
+     "end_time": "15:00",
+     "status": "planned",
+     "marked": 0,
+     "reminded": false
+    },
+    {
+     "id": "b",
+     "date": "2026-11-24",
+     "end_time": "16:00",
+     "status": "planned",
+     "marked": 0,
+     "reminded": false
+    },
+    {
+     "id": "c",
+     "date": "2026-11-24",
+     "end_time": "18:00",
+     "status": "planned",
+     "marked": 0,
+     "reminded": false
+    },
+    {
+     "id": "d",
+     "date": "2026-11-24",
+     "end_time": "15:00",
+     "status": "cancelled",
+     "marked": 0,
+     "reminded": false
+    },
+    {
+     "id": "e",
+     "date": "2026-11-24",
+     "end_time": "15:00",
+     "status": "held",
+     "marked": 3,
+     "reminded": false
+    },
+    {
+     "id": "f",
+     "date": "2026-11-23",
+     "end_time": "20:00",
+     "status": "planned",
+     "marked": 0,
+     "reminded": true
+    },
+    {
+     "id": "g",
+     "date": "2026-11-24",
+     "end_time": "15:00",
+     "status": "held",
+     "marked": 0,
+     "reminded": false
+    }
+   ],
+   "out": [
+    {
+     "id": "f",
+     "ended_at": "2026-11-23T20:00",
+     "reminder_at": "2026-11-23T22:00",
+     "state": "reminded"
+    },
+    {
+     "id": "a",
+     "ended_at": "2026-11-24T15:00",
+     "reminder_at": "2026-11-24T17:00",
+     "state": "reminder_due"
+    },
+    {
+     "id": "g",
+     "ended_at": "2026-11-24T15:00",
+     "reminder_at": "2026-11-24T17:00",
+     "state": "reminder_due"
+    },
+    {
+     "id": "b",
+     "ended_at": "2026-11-24T16:00",
+     "reminder_at": "2026-11-24T18:00",
+     "state": "waiting"
+    }
+   ]
+  },
+  {
+   "name": "a lesson that ends exactly now is listed and still waiting",
+   "now": "2026-11-24T17:30",
+   "after_hours": 2,
+   "lessons": [
+    {
+     "id": "a",
+     "date": "2026-11-24",
+     "end_time": "17:30",
+     "status": "planned",
+     "marked": 0,
+     "reminded": false
+    }
+   ],
+   "out": [
+    {
+     "id": "a",
+     "ended_at": "2026-11-24T17:30",
+     "reminder_at": "2026-11-24T19:30",
+     "state": "waiting"
+    }
+   ]
+  },
+  {
+   "name": "the reminder is due exactly when the wait ends",
+   "now": "2026-11-24T17:30",
+   "after_hours": 2,
+   "lessons": [
+    {
+     "id": "a",
+     "date": "2026-11-24",
+     "end_time": "15:30",
+     "status": "planned",
+     "marked": 0,
+     "reminded": false
+    }
+   ],
+   "out": [
+    {
+     "id": "a",
+     "ended_at": "2026-11-24T15:30",
+     "reminder_at": "2026-11-24T17:30",
+     "state": "reminder_due"
+    }
+   ]
+  },
+  {
+   "name": "zero wait reminds at once",
+   "now": "2026-11-24T15:00",
+   "after_hours": 0,
+   "lessons": [
+    {
+     "id": "a",
+     "date": "2026-11-24",
+     "end_time": "15:00",
+     "status": "planned",
+     "marked": 0,
+     "reminded": false
+    }
+   ],
+   "out": [
+    {
+     "id": "a",
+     "ended_at": "2026-11-24T15:00",
+     "reminder_at": "2026-11-24T15:00",
+     "state": "reminder_due"
+    }
+   ]
+  },
+  {
+   "name": "a lesson still running is not listed",
+   "now": "2026-11-24T14:59",
+   "after_hours": 2,
+   "lessons": [
+    {
+     "id": "a",
+     "date": "2026-11-24",
+     "end_time": "15:00",
+     "status": "planned",
+     "marked": 0,
+     "reminded": false
+    }
+   ],
+   "out": []
+  },
+  {
+   "name": "a lesson of tomorrow is not listed",
+   "now": "2026-11-24T23:00",
+   "after_hours": 2,
+   "lessons": [
+    {
+     "id": "a",
+     "date": "2026-11-25",
+     "end_time": "10:00",
+     "status": "planned",
+     "marked": 0,
+     "reminded": false
+    }
+   ],
+   "out": []
+  },
+  {
+   "name": "nothing",
+   "now": "2026-11-24T23:00",
+   "after_hours": 2,
+   "lessons": [],
+   "out": []
+  }
+ ],
+ "reminder_text": [
+  {
+   "name": "text",
+   "group": "Ingliz A1",
+   "day": "2026-11-24",
+   "start": "14:00",
+   "end": "15:30",
+   "out": "Eslatma: Ingliz A1 guruhining 2026-11-24 14:00-15:30 darsi uchun davomat belgilanmagan. Iltimos, belgilang."
+  }
+ ],
+ "digest_due": [
+  {
+   "name": "at the time",
+   "now": "2026-11-24T20:00",
+   "digest_after": "20:00",
+   "today_count": 2,
+   "already_sent": false,
+   "out": true
+  },
+  {
+   "name": "a minute early",
+   "now": "2026-11-24T19:59",
+   "digest_after": "20:00",
+   "today_count": 2,
+   "already_sent": false,
+   "out": false
+  },
+  {
+   "name": "late evening",
+   "now": "2026-11-24T23:30",
+   "digest_after": "20:00",
+   "today_count": 1,
+   "already_sent": false,
+   "out": true
+  },
+  {
+   "name": "nothing unmarked",
+   "now": "2026-11-24T21:00",
+   "digest_after": "20:00",
+   "today_count": 0,
+   "already_sent": false,
+   "out": false
+  },
+  {
+   "name": "already sent today",
+   "now": "2026-11-24T21:00",
+   "digest_after": "20:00",
+   "today_count": 3,
+   "already_sent": true,
+   "out": false
+  },
+  {
+   "name": "another hour",
+   "now": "2026-11-24T18:30",
+   "digest_after": "18:30",
+   "today_count": 1,
+   "already_sent": false,
+   "out": true
+  }
+ ],
+ "digest_text": [
+  {
+   "name": "two lessons",
+   "day": "2026-11-24",
+   "items": [
+    {
+     "start": "14:00",
+     "end": "15:30",
+     "group": "Ingliz A1",
+     "teacher": "Aliyev Botir"
+    },
+    {
+     "start": "16:00",
+     "end": "17:00",
+     "group": "Rus tili B2",
+     "teacher": ""
+    }
+   ],
+   "out": "2026-11-24: davomat belgilanmagan darslar (2):\n1. 14:00-15:30 Ingliz A1 (Aliyev Botir)\n2. 16:00-17:00 Rus tili B2"
+  }
+ ],
+ "template": [
+  {
+   "name": "absent",
+   "code": "absent",
+   "student": "Ali Valiyev",
+   "group": "Ingliz A1",
+   "day": "2026-11-24",
+   "out": "Ali Valiyev bugun (2026-11-24) Ingliz A1 darsiga kelmadi. Sababini bilsak bo'ladimi?"
+  },
+  {
+   "name": "late",
+   "code": "late",
+   "student": "Ali Valiyev",
+   "group": "Ingliz A1",
+   "day": "2026-11-24",
+   "out": "Ali Valiyev bugun (2026-11-24) Ingliz A1 darsiga kechikib keldi."
+  },
+  {
+   "name": "homework",
+   "code": "homework",
+   "student": "Ali Valiyev",
+   "group": "Ingliz A1",
+   "day": "2026-11-24",
+   "out": "Ali Valiyev Ingliz A1 bo'yicha uy vazifasini bajarmadi. Iltimos, e'tibor bering."
+  },
+  {
+   "name": "praise",
+   "code": "praise",
+   "student": "Ali Valiyev",
+   "group": "Ingliz A1",
+   "day": "2026-11-24",
+   "out": "Ali Valiyev bugun (2026-11-24) Ingliz A1 darsida a'lo qatnashdi. Rahmat!"
+  },
+  {
+   "name": "meeting",
+   "code": "meeting",
+   "student": "Ali Valiyev",
+   "group": "Ingliz A1",
+   "day": "2026-11-24",
+   "out": "Ali Valiyev haqida suhbatlashish uchun markazga tashrif buyurishingizni so'raymiz (Ingliz A1)."
+  },
+  {
+   "name": "unknown template",
+   "code": "nope",
+   "student": "Ali Valiyev",
+   "group": "Ingliz A1",
+   "day": "2026-11-24",
+   "out": null
+  }
+ ],
+ "signed": [
+  {
+   "name": "trimmed and signed",
+   "text": "  Salom  ",
+   "teacher": "Botir Aliyev",
+   "center": "Bilim Plus",
+   "out": "Salom\n\n— Botir Aliyev, Bilim Plus"
+  }
+ ],
+ "message_check": [
+  {
+   "name": "ok",
+   "in": {
+    "enabled": true,
+    "own_student": true,
+    "text": "Salom",
+    "recipients": 1,
+    "sent_today": 0,
+    "limit": 20
+   },
+   "out": {
+    "ok": true
+   }
+  },
+  {
+   "name": "right switched off",
+   "in": {
+    "enabled": false,
+    "own_student": true,
+    "text": "Salom",
+    "recipients": 1,
+    "sent_today": 0,
+    "limit": 20
+   },
+   "out": {
+    "ok": false,
+    "error": "right_off"
+   }
+  },
+  {
+   "name": "right off wins over everything",
+   "in": {
+    "enabled": false,
+    "own_student": false,
+    "text": "",
+    "recipients": 1,
+    "sent_today": 0,
+    "limit": 20
+   },
+   "out": {
+    "ok": false,
+    "error": "right_off"
+   }
+  },
+  {
+   "name": "not an own student",
+   "in": {
+    "enabled": true,
+    "own_student": false,
+    "text": "Salom",
+    "recipients": 1,
+    "sent_today": 0,
+    "limit": 20
+   },
+   "out": {
+    "ok": false,
+    "error": "not_own_student"
+   }
+  },
+  {
+   "name": "empty text",
+   "in": {
+    "enabled": true,
+    "own_student": true,
+    "text": "   ",
+    "recipients": 1,
+    "sent_today": 0,
+    "limit": 20
+   },
+   "out": {
+    "ok": false,
+    "error": "empty_text"
+   }
+  },
+  {
+   "name": "text of exactly 1000 characters",
+   "in": {
+    "enabled": true,
+    "own_student": true,
+    "text": "Salom",
+    "recipients": 1,
+    "sent_today": 0,
+    "limit": 20,
+    "text_repeat": {
+     "char": "x",
+     "count": 1000
+    }
+   },
+   "out": {
+    "ok": true
+   }
+  },
+  {
+   "name": "text of 1001 characters",
+   "in": {
+    "enabled": true,
+    "own_student": true,
+    "text": "Salom",
+    "recipients": 1,
+    "sent_today": 0,
+    "limit": 20,
+    "text_repeat": {
+     "char": "x",
+     "count": 1001
+    }
+   },
+   "out": {
+    "ok": false,
+    "error": "text_too_long"
+   }
+  },
+  {
+   "name": "nobody can receive it",
+   "in": {
+    "enabled": true,
+    "own_student": true,
+    "text": "Salom",
+    "recipients": 0,
+    "sent_today": 0,
+    "limit": 20
+   },
+   "out": {
+    "ok": false,
+    "error": "no_recipient"
+   }
+  },
+  {
+   "name": "no recipient wins over the limit",
+   "in": {
+    "enabled": true,
+    "own_student": true,
+    "text": "Salom",
+    "recipients": 0,
+    "sent_today": 25,
+    "limit": 20
+   },
+   "out": {
+    "ok": false,
+    "error": "no_recipient"
+   }
+  },
+  {
+   "name": "limit reached exactly is allowed",
+   "in": {
+    "enabled": true,
+    "own_student": true,
+    "text": "Salom",
+    "recipients": 2,
+    "sent_today": 18,
+    "limit": 20
+   },
+   "out": {
+    "ok": true
+   }
+  },
+  {
+   "name": "one over the limit",
+   "in": {
+    "enabled": true,
+    "own_student": true,
+    "text": "Salom",
+    "recipients": 2,
+    "sent_today": 19,
+    "limit": 20
+   },
+   "out": {
+    "ok": false,
+    "error": "daily_limit"
+   }
+  },
+  {
+   "name": "already at the limit",
+   "in": {
+    "enabled": true,
+    "own_student": true,
+    "text": "Salom",
+    "recipients": 1,
+    "sent_today": 20,
+    "limit": 20
+   },
+   "out": {
+    "ok": false,
+    "error": "daily_limit"
+   }
+  },
+  {
+   "name": "limit zero blocks",
+   "in": {
+    "enabled": true,
+    "own_student": true,
+    "text": "Salom",
+    "recipients": 1,
+    "sent_today": 0,
+    "limit": 0
+   },
+   "out": {
+    "ok": false,
+    "error": "daily_limit"
+   }
+  }
+ ],
+ "month_summary": [
+  {
+   "name": "per lesson",
+   "minutes": [
+    90,
+    90,
+    60
+   ],
+   "pay_model": "per_lesson",
+   "pay_rate": "100000",
+   "collected": "0",
+   "out": {
+    "lessons": 3,
+    "minutes": 240,
+    "hours": "4.0",
+    "estimate": 300000
+   }
+  },
+  {
+   "name": "fixed salary",
+   "minutes": [
+    90
+   ],
+   "pay_model": "fixed",
+   "pay_rate": "3000000.00",
+   "collected": "0",
+   "out": {
+    "lessons": 1,
+    "minutes": 90,
+    "hours": "1.5",
+    "estimate": 3000000
+   }
+  },
+  {
+   "name": "percent of collected, hours half up",
+   "minutes": [
+    45,
+    45,
+    45
+   ],
+   "pay_model": "percent",
+   "pay_rate": "30",
+   "collected": "4000000",
+   "out": {
+    "lessons": 3,
+    "minutes": 135,
+    "hours": "2.3",
+    "estimate": 1200000
+   }
+  },
+  {
+   "name": "percent rounds half up",
+   "minutes": [
+    60
+   ],
+   "pay_model": "percent",
+   "pay_rate": "12.5",
+   "collected": "100",
+   "out": {
+    "lessons": 1,
+    "minutes": 60,
+    "hours": "1.0",
+    "estimate": 13
+   }
+  },
+  {
+   "name": "percent with a fraction",
+   "minutes": [
+    60
+   ],
+   "pay_model": "percent",
+   "pay_rate": "33.33",
+   "collected": "1000001",
+   "out": {
+    "lessons": 1,
+    "minutes": 60,
+    "hours": "1.0",
+    "estimate": 333300
+   }
+  },
+  {
+   "name": "no lessons, per lesson",
+   "minutes": [],
+   "pay_model": "per_lesson",
+   "pay_rate": "100000",
+   "collected": "0",
+   "out": {
+    "lessons": 0,
+    "minutes": 0,
+    "hours": "0.0",
+    "estimate": 0
+   }
+  },
+  {
+   "name": "no lessons, fixed still pays",
+   "minutes": [],
+   "pay_model": "fixed",
+   "pay_rate": "2000000",
+   "collected": "0",
+   "out": {
+    "lessons": 0,
+    "minutes": 0,
+    "hours": "0.0",
+    "estimate": 2000000
+   }
+  },
+  {
+   "name": "twenty minutes",
+   "minutes": [
+    20
+   ],
+   "pay_model": "per_lesson",
+   "pay_rate": "50000",
+   "collected": "0",
+   "out": {
+    "lessons": 1,
+    "minutes": 20,
+    "hours": "0.3",
+    "estimate": 50000
+   }
+  }
+ ]
+}
