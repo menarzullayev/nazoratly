@@ -26,6 +26,15 @@ export interface Run { alerts: { title: string; message: string }[]; last: strin
  * answered through h.answers (default YES). Returns the dialogs that appeared. Errors are shown as dialogs by guard().
  */
 export function drive(h: Harness, fn: string, ...answers: string[]): Run {
+  return run(h, fn, answers, true);
+}
+
+/** Like drive(), for actions that may be refused before they ask everything (unused answers are fine). */
+export function driveLoose(h: Harness, fn: string, ...answers: string[]): Run {
+  return run(h, fn, answers, false);
+}
+
+function run(h: Harness, fn: string, answers: string[], strict: boolean): Run {
   const handler = handlers[fn];
   if (typeof handler !== "function") throw new Error(`no menu handler ${fn}`);
   const before = h.alerts.length;
@@ -33,7 +42,7 @@ export function drive(h: Harness, fn: string, ...answers: string[]): Run {
   handler();
   const left = h.prompts.length;
   h.prompts.length = 0;
-  if (left) throw new Error(`${fn}: ${left} prepared answer(s) were never asked for (prompt order changed?)`);
+  if (left && strict) throw new Error(`${fn}: ${left} prepared answer(s) were never asked for (prompt order changed?)`);
   const alerts = h.alerts.slice(before);
   return { alerts, last: alerts.at(-1)?.message ?? "", all: alerts.map((a) => a.message).join("\n") };
 }
