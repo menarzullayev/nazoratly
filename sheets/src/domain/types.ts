@@ -326,3 +326,44 @@ export interface CashClose {
   journalSeq: number; // last journal line number when the close was made
   entryNo: number; // the journal entry that booked the difference (0 = none)
 }
+
+
+/** A guardian's request that waits for the center (G7). In the Sheets edition staff record it (the guardian-facing bot,
+ * Mini App and portal are API-only); approving applies the effect: absence -> attendance `excused`, make-up -> the right
+ * is scheduled, promise -> recorded. */
+export interface GuardianRequest {
+  /** branch mark (Filial ID); empty = the default branch. Set by the adapter, never by domain code */
+  branchId?: string;
+  id: string;
+  kind: "absence_reason" | "payment_promise" | "makeup_choice";
+  studentId: string;
+  /** absence: the group of the lesson; make-up: the group whose lesson the student joins */
+  groupId: string;
+  /** absence: the lesson date; make-up: the chosen date */
+  date: ISODate | "";
+  entitlementId: string;
+  reason: string;
+  promiseDate: ISODate | "";
+  amount: number;
+  status: "pending" | "approved" | "rejected" | "cancelled";
+  createdOn: ISODate;
+  decidedOn: ISODate | "";
+  note: string;
+  /** who asked: "Telegram", "Telefon", "Markazda" ... free text */
+  via: string;
+}
+
+/** A guardian's link to a student that needed or recorded a decision (G7): a student's QR card used in the bot (pending),
+ * or a link made by hand (approved at once). */
+export interface GuardianLink {
+  /** branch mark (Filial ID); empty = the default branch. Set by the adapter, never by domain code */
+  branchId?: string;
+  id: string;
+  studentId: string;
+  chatId: string;
+  name: string;
+  method: "qr" | "manual";
+  status: "pending" | "approved" | "rejected";
+  createdOn: ISODate;
+  decidedOn: ISODate | "";
+}

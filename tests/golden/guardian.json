@@ -1,0 +1,127 @@
+{
+  "normalize_code": [
+    {"name": "lower case with dash and spaces", "in": {"text": " ab3k-9xzm "}, "out": "AB3K9XZM"},
+    {"name": "already clean", "in": {"text": "AB3K9XZM"}, "out": "AB3K9XZM"},
+    {"name": "underscores and tabs are dropped", "in": {"text": "ab3k_9x\tzm"}, "out": "AB3K9XZM"},
+    {"name": "empty", "in": {"text": ""}, "out": ""}
+  ],
+  "code_format_valid": [
+    {"name": "good code", "in": {"code": "AB3K9XZM"}, "out": true},
+    {"name": "too short", "in": {"code": "AB3K9XZ"}, "out": false},
+    {"name": "too long", "in": {"code": "AB3K9XZMA"}, "out": false},
+    {"name": "zero is not in the alphabet", "in": {"code": "AB3K0XZM"}, "out": false},
+    {"name": "letter O is not in the alphabet", "in": {"code": "AB3KOXZM"}, "out": false},
+    {"name": "one and letter I are not in the alphabet", "in": {"code": "AB3K1XIM"}, "out": false},
+    {"name": "lower case is not normalised here", "in": {"code": "ab3k9xzm"}, "out": false}
+  ],
+  "code_state": [
+    {"name": "fresh", "in": {"expires_at": "2026-11-27T10:00:00", "now": "2026-11-24T10:00:00", "used": false, "revoked": false}, "out": "ok"},
+    {"name": "expires exactly now", "in": {"expires_at": "2026-11-24T10:00:00", "now": "2026-11-24T10:00:00", "used": false, "revoked": false}, "out": "expired"},
+    {"name": "one second before expiry", "in": {"expires_at": "2026-11-24T10:00:01", "now": "2026-11-24T10:00:00", "used": false, "revoked": false}, "out": "ok"},
+    {"name": "used wins over expired", "in": {"expires_at": "2026-11-01T10:00:00", "now": "2026-11-24T10:00:00", "used": true, "revoked": false}, "out": "used"},
+    {"name": "revoked wins over used", "in": {"expires_at": "2026-11-27T10:00:00", "now": "2026-11-24T10:00:00", "used": true, "revoked": true}, "out": "revoked"},
+    {"name": "expired", "in": {"expires_at": "2026-11-23T10:00:00", "now": "2026-11-24T10:00:00", "used": false, "revoked": false}, "out": "expired"}
+  ],
+  "link_decision": [
+    {"name": "one-time code links at once", "in": {"method": "code", "phone_verified": false, "phone_matches": false}, "out": "active"},
+    {"name": "manual link by staff", "in": {"method": "manual", "phone_verified": false, "phone_matches": false}, "out": "active"},
+    {"name": "qr card waits for the center", "in": {"method": "qr", "phone_verified": false, "phone_matches": false}, "out": "pending"},
+    {"name": "phone verified and known", "in": {"method": "phone", "phone_verified": true, "phone_matches": true}, "out": "active"},
+    {"name": "phone not his own number", "in": {"method": "phone", "phone_verified": false, "phone_matches": true}, "out": "denied"},
+    {"name": "phone verified but unknown to the center", "in": {"method": "phone", "phone_verified": true, "phone_matches": false}, "out": "denied"},
+    {"name": "unknown method", "in": {"method": "email", "phone_verified": true, "phone_matches": true}, "out": "denied"}
+  ],
+  "phone_key": [
+    {"name": "international with spaces", "in": {"phone": "+998 90 123-45-67"}, "out": "901234567"},
+    {"name": "national nine digits", "in": {"phone": "901234567"}, "out": "901234567"},
+    {"name": "with country code no plus", "in": {"phone": "998901234567"}, "out": "901234567"},
+    {"name": "too short", "in": {"phone": "12345"}, "out": ""},
+    {"name": "empty", "in": {"phone": ""}, "out": ""},
+    {"name": "letters only", "in": {"phone": "abc"}, "out": ""}
+  ],
+  "login_code_state": [
+    {"name": "fresh", "in": {"expires_at": "2026-11-24T10:10:00", "now": "2026-11-24T10:00:00", "attempts": 0, "max_attempts": 5, "used": false}, "out": "ok"},
+    {"name": "four failed attempts still ok", "in": {"expires_at": "2026-11-24T10:10:00", "now": "2026-11-24T10:00:00", "attempts": 4, "max_attempts": 5, "used": false}, "out": "ok"},
+    {"name": "fifth failed attempt locks", "in": {"expires_at": "2026-11-24T10:10:00", "now": "2026-11-24T10:00:00", "attempts": 5, "max_attempts": 5, "used": false}, "out": "locked"},
+    {"name": "expired", "in": {"expires_at": "2026-11-24T09:59:59", "now": "2026-11-24T10:00:00", "attempts": 0, "max_attempts": 5, "used": false}, "out": "expired"},
+    {"name": "used", "in": {"expires_at": "2026-11-24T10:10:00", "now": "2026-11-24T10:00:00", "attempts": 0, "max_attempts": 5, "used": true}, "out": "used"},
+    {"name": "locked wins over expired", "in": {"expires_at": "2026-11-24T09:00:00", "now": "2026-11-24T10:00:00", "attempts": 9, "max_attempts": 5, "used": false}, "out": "locked"}
+  ],
+  "absence_check": [
+    {"name": "good", "in": {"reason": "Kasal bo'ldi", "lesson_start": "2026-11-25T16:00:00", "now": "2026-11-24T10:00:00", "lesson_status": "planned", "in_group": true, "existing_mark": null}, "out": "ok"},
+    {"name": "blank reason", "in": {"reason": "   ", "lesson_start": "2026-11-25T16:00:00", "now": "2026-11-24T10:00:00", "lesson_status": "planned", "in_group": true, "existing_mark": null}, "out": "reason_required"},
+    {"name": "reason of 300 characters is fine", "in": {"reason": "x300", "lesson_start": "2026-11-25T16:00:00", "now": "2026-11-24T10:00:00", "lesson_status": "planned", "in_group": true, "existing_mark": null}, "out": "ok"},
+    {"name": "reason of 301 characters", "in": {"reason": "x301", "lesson_start": "2026-11-25T16:00:00", "now": "2026-11-24T10:00:00", "lesson_status": "planned", "in_group": true, "existing_mark": null}, "out": "reason_too_long"},
+    {"name": "student not in the lesson's group", "in": {"reason": "Kasal", "lesson_start": "2026-11-25T16:00:00", "now": "2026-11-24T10:00:00", "lesson_status": "planned", "in_group": false, "existing_mark": null}, "out": "not_in_group"},
+    {"name": "lesson cancelled", "in": {"reason": "Kasal", "lesson_start": "2026-11-25T16:00:00", "now": "2026-11-24T10:00:00", "lesson_status": "cancelled", "in_group": true, "existing_mark": null}, "out": "lesson_cancelled"},
+    {"name": "lesson already started", "in": {"reason": "Kasal", "lesson_start": "2026-11-24T10:00:00", "now": "2026-11-24T10:00:00", "lesson_status": "planned", "in_group": true, "existing_mark": null}, "out": "lesson_started"},
+    {"name": "lesson one minute away is still allowed", "in": {"reason": "Kasal", "lesson_start": "2026-11-24T10:01:00", "now": "2026-11-24T10:00:00", "lesson_status": "planned", "in_group": true, "existing_mark": null}, "out": "ok"},
+    {"name": "already marked present", "in": {"reason": "Kasal", "lesson_start": "2026-11-25T16:00:00", "now": "2026-11-24T10:00:00", "lesson_status": "planned", "in_group": true, "existing_mark": "present"}, "out": "already_marked"},
+    {"name": "already excused", "in": {"reason": "Kasal", "lesson_start": "2026-11-25T16:00:00", "now": "2026-11-24T10:00:00", "lesson_status": "planned", "in_group": true, "existing_mark": "excused"}, "out": "already_marked"}
+  ],
+  "promise_check": [
+    {"name": "good", "in": {"today": "2026-11-24", "promise_date": "2026-11-28", "outstanding": "600000", "amount": "600000", "max_days": 14, "has_active": false}, "out": "ok"},
+    {"name": "amount is optional", "in": {"today": "2026-11-24", "promise_date": "2026-11-28", "outstanding": "600000", "amount": null, "max_days": 14, "has_active": false}, "out": "ok"},
+    {"name": "no debt", "in": {"today": "2026-11-24", "promise_date": "2026-11-28", "outstanding": "0", "amount": null, "max_days": 14, "has_active": false}, "out": "no_debt"},
+    {"name": "a promise is already waiting", "in": {"today": "2026-11-24", "promise_date": "2026-11-28", "outstanding": "600000", "amount": null, "max_days": 14, "has_active": true}, "out": "duplicate"},
+    {"name": "date in the past", "in": {"today": "2026-11-24", "promise_date": "2026-11-23", "outstanding": "600000", "amount": null, "max_days": 14, "has_active": false}, "out": "date_past"},
+    {"name": "today is allowed", "in": {"today": "2026-11-24", "promise_date": "2026-11-24", "outstanding": "600000", "amount": null, "max_days": 14, "has_active": false}, "out": "ok"},
+    {"name": "last allowed day", "in": {"today": "2026-11-24", "promise_date": "2026-12-08", "outstanding": "600000", "amount": null, "max_days": 14, "has_active": false}, "out": "ok"},
+    {"name": "one day too far", "in": {"today": "2026-11-24", "promise_date": "2026-12-09", "outstanding": "600000", "amount": null, "max_days": 14, "has_active": false}, "out": "date_too_far"},
+    {"name": "amount over the debt", "in": {"today": "2026-11-24", "promise_date": "2026-11-28", "outstanding": "600000", "amount": "600001", "max_days": 14, "has_active": false}, "out": "amount_invalid"},
+    {"name": "zero amount", "in": {"today": "2026-11-24", "promise_date": "2026-11-28", "outstanding": "600000", "amount": "0", "max_days": 14, "has_active": false}, "out": "amount_invalid"},
+    {"name": "part of the debt", "in": {"today": "2026-11-24", "promise_date": "2026-11-28", "outstanding": "600000", "amount": "250000", "max_days": 14, "has_active": false}, "out": "ok"}
+  ],
+  "promise_state": [
+    {"name": "waiting for the center", "in": {"status": "pending", "promise_date": "2026-11-28", "today": "2026-11-24", "outstanding": "600000"}, "out": "pending"},
+    {"name": "approved and in time", "in": {"status": "approved", "promise_date": "2026-11-28", "today": "2026-11-24", "outstanding": "600000"}, "out": "active"},
+    {"name": "approved, due today", "in": {"status": "approved", "promise_date": "2026-11-24", "today": "2026-11-24", "outstanding": "600000"}, "out": "active"},
+    {"name": "approved, paid", "in": {"status": "approved", "promise_date": "2026-11-28", "today": "2026-11-24", "outstanding": "0"}, "out": "kept"},
+    {"name": "approved, date passed and still owing", "in": {"status": "approved", "promise_date": "2026-11-23", "today": "2026-11-24", "outstanding": "100"}, "out": "broken"},
+    {"name": "rejected", "in": {"status": "rejected", "promise_date": "2026-11-28", "today": "2026-11-24", "outstanding": "600000"}, "out": "rejected"},
+    {"name": "cancelled by the guardian", "in": {"status": "cancelled", "promise_date": "2026-11-28", "today": "2026-11-24", "outstanding": "600000"}, "out": "cancelled"}
+  ],
+  "makeup_options": [
+    {"name": "sorted by date and time, full groups dropped", "in": {"today": "2026-11-24", "expires_on": "2026-12-10", "limit": 6, "candidates": [
+      {"id": "L3", "date": "2026-11-27", "start": "10:00", "seats_left": 2},
+      {"id": "L1", "date": "2026-11-25", "start": "18:00", "seats_left": 1},
+      {"id": "L2", "date": "2026-11-25", "start": "09:00", "seats_left": 0},
+      {"id": "L4", "date": "2026-11-25", "start": "09:30", "seats_left": 5}]}, "out": ["L4", "L1", "L3"]},
+    {"name": "past lessons and today's lessons are not offered", "in": {"today": "2026-11-24", "expires_on": "2026-12-10", "limit": 6, "candidates": [
+      {"id": "A", "date": "2026-11-23", "start": "10:00", "seats_left": 3},
+      {"id": "B", "date": "2026-11-24", "start": "17:00", "seats_left": 3},
+      {"id": "C", "date": "2026-11-25", "start": "10:00", "seats_left": 3}]}, "out": ["C"]},
+    {"name": "lessons after the last day of the right are not offered", "in": {"today": "2026-11-24", "expires_on": "2026-11-26", "limit": 6, "candidates": [
+      {"id": "A", "date": "2026-11-26", "start": "10:00", "seats_left": 3},
+      {"id": "B", "date": "2026-11-27", "start": "10:00", "seats_left": 3}]}, "out": ["A"]},
+    {"name": "limit", "in": {"today": "2026-11-24", "expires_on": "2026-12-31", "limit": 2, "candidates": [
+      {"id": "A", "date": "2026-11-25", "start": "10:00", "seats_left": 3},
+      {"id": "B", "date": "2026-11-26", "start": "10:00", "seats_left": 3},
+      {"id": "C", "date": "2026-11-27", "start": "10:00", "seats_left": 3}]}, "out": ["A", "B"]},
+    {"name": "no candidates", "in": {"today": "2026-11-24", "expires_on": "2026-12-31", "limit": 6, "candidates": []}, "out": []}
+  ],
+  "makeup_check": [
+    {"name": "good", "in": {"kind": "makeup", "status": "open", "expires_on": "2026-12-10", "today": "2026-11-24", "slot": "L1", "options": ["L1", "L2"]}, "out": "ok"},
+    {"name": "a credit has no slot", "in": {"kind": "credit", "status": "open", "expires_on": "2026-12-10", "today": "2026-11-24", "slot": "L1", "options": ["L1"]}, "out": "not_makeup"},
+    {"name": "already scheduled", "in": {"kind": "makeup", "status": "scheduled", "expires_on": "2026-12-10", "today": "2026-11-24", "slot": "L1", "options": ["L1"]}, "out": "not_open"},
+    {"name": "expired right", "in": {"kind": "makeup", "status": "open", "expires_on": "2026-11-23", "today": "2026-11-24", "slot": "L1", "options": ["L1"]}, "out": "expired"},
+    {"name": "last valid day", "in": {"kind": "makeup", "status": "open", "expires_on": "2026-11-24", "today": "2026-11-24", "slot": "L1", "options": ["L1"]}, "out": "ok"},
+    {"name": "slot was not offered", "in": {"kind": "makeup", "status": "open", "expires_on": "2026-12-10", "today": "2026-11-24", "slot": "L9", "options": ["L1", "L2"]}, "out": "slot_unavailable"}
+  ],
+  "request_transition": [
+    {"name": "approve a pending request", "in": {"status": "pending", "action": "approve"}, "out": "approved"},
+    {"name": "reject a pending request", "in": {"status": "pending", "action": "reject"}, "out": "rejected"},
+    {"name": "guardian cancels his pending request", "in": {"status": "pending", "action": "cancel"}, "out": "cancelled"},
+    {"name": "cannot approve twice", "in": {"status": "approved", "action": "approve"}, "out": "invalid"},
+    {"name": "cannot cancel an approved request", "in": {"status": "approved", "action": "cancel"}, "out": "invalid"},
+    {"name": "cannot approve a rejected request", "in": {"status": "rejected", "action": "approve"}, "out": "invalid"},
+    {"name": "cannot approve a cancelled request", "in": {"status": "cancelled", "action": "approve"}, "out": "invalid"},
+    {"name": "unknown action", "in": {"status": "pending", "action": "delete"}, "out": "invalid"}
+  ],
+  "request_effect": [
+    {"name": "absence reason", "in": {"kind": "absence_reason"}, "out": "mark_excused"},
+    {"name": "payment promise", "in": {"kind": "payment_promise"}, "out": "record_promise"},
+    {"name": "make-up choice", "in": {"kind": "makeup_choice"}, "out": "schedule_makeup"},
+    {"name": "unknown kind", "in": {"kind": "refund"}, "out": null}
+  ]
+}

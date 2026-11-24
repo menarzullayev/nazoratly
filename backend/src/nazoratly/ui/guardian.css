@@ -1,0 +1,11 @@
+/* guardian cabinet: small additions to ui.css (Mini App and portal share the page) */
+.tabs { margin-bottom: 12px; }
+.tabs button { padding: 7px 12px; }
+.tabs button[aria-current="true"] { background: var(--brand); color: #fff; }
+.tabs button:not([aria-current="true"]) { background: transparent; color: var(--brand); }
+.kid { background: transparent; color: var(--brand); }
+.kid[aria-pressed="true"] { background: var(--brand); color: #fff; }
+.inst { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px dashed var(--line); }
+.big { font-size: 1.5rem; font-weight: 700; }
+.note { padding: 10px 12px; border-radius: 8px; background: var(--warnbg); color: var(--warn); }
+form.stack label { margin-top: 6px; }

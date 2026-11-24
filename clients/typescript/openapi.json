@@ -1,6 +1,81 @@
 {
   "components": {
     "schemas": {
+      "AbsenceIn": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "absence_reason",
+            "title": "Kind",
+            "type": "string"
+          },
+          "lesson_id": {
+            "format": "uuid",
+            "title": "Lesson Id",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 2000,
+            "title": "Reason",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "student_id",
+          "lesson_id",
+          "reason"
+        ],
+        "title": "AbsenceIn",
+        "type": "object"
+      },
+      "AbsenceLesson": {
+        "properties": {
+          "end_time": {
+            "format": "time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "lesson_date": {
+            "format": "date",
+            "title": "Lesson Date",
+            "type": "string"
+          },
+          "start_time": {
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "lesson_date",
+          "start_time",
+          "end_time",
+          "group_name",
+          "kind"
+        ],
+        "title": "AbsenceLesson",
+        "type": "object"
+      },
       "AbsenceRow": {
         "properties": {
           "absences": {
@@ -940,6 +1015,48 @@
         "title": "AppSettingsPatch",
         "type": "object"
       },
+      "ApproveLinkIn": {
+        "additionalProperties": false,
+        "properties": {
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "guardian_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guardian Id"
+          },
+          "relation": {
+            "default": "guardian",
+            "enum": [
+              "mother",
+              "father",
+              "guardian",
+              "self",
+              "other"
+            ],
+            "title": "Relation",
+            "type": "string"
+          }
+        },
+        "title": "ApproveLinkIn",
+        "type": "object"
+      },
       "ApproveNoticeIn": {
         "additionalProperties": false,
         "properties": {
@@ -1010,6 +1127,82 @@
           "records"
         ],
         "title": "AttendanceIn",
+        "type": "object"
+      },
+      "AttendanceOut": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "records": {
+            "items": {
+              "$ref": "#/components/schemas/AttendanceRecord"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "since": {
+            "format": "date",
+            "title": "Since",
+            "type": "string"
+          }
+        },
+        "required": [
+          "since",
+          "counts",
+          "records"
+        ],
+        "title": "AttendanceOut",
+        "type": "object"
+      },
+      "AttendanceRecord": {
+        "properties": {
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "lesson_date": {
+            "format": "date",
+            "title": "Lesson Date",
+            "type": "string"
+          },
+          "minutes_late": {
+            "title": "Minutes Late",
+            "type": "integer"
+          },
+          "start_time": {
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "present",
+              "absent",
+              "late",
+              "excused"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "lesson_date",
+          "start_time",
+          "group_name",
+          "status",
+          "minutes_late",
+          "kind"
+        ],
+        "title": "AttendanceRecord",
         "type": "object"
       },
       "AuditOut": {
@@ -2854,41 +3047,6 @@
         "title": "CashPreview",
         "type": "object"
       },
-      "CertificateBrief": {
-        "properties": {
-          "course_name": {
-            "title": "Course Name",
-            "type": "string"
-          },
-          "group_name": {
-            "title": "Group Name",
-            "type": "string"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "issued_on": {
-            "format": "date",
-            "title": "Issued On",
-            "type": "string"
-          },
-          "number": {
-            "title": "Number",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "number",
-          "group_name",
-          "course_name",
-          "issued_on"
-        ],
-        "title": "CertificateBrief",
-        "type": "object"
-      },
       "CertificateIn": {
         "additionalProperties": false,
         "properties": {
@@ -3154,7 +3312,7 @@
             "type": "string"
           },
           "lesson": {
-            "$ref": "#/components/schemas/LessonOut"
+            "$ref": "#/components/schemas/nazoratly__routers__lessons__LessonOut"
           },
           "notices_created": {
             "title": "Notices Created",
@@ -3614,6 +3772,203 @@
         "title": "ClearOut",
         "type": "object"
       },
+      "CodeIn": {
+        "additionalProperties": false,
+        "properties": {
+          "guardian_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guardian Id"
+          },
+          "relation": {
+            "default": "guardian",
+            "enum": [
+              "mother",
+              "father",
+              "guardian",
+              "self",
+              "other"
+            ],
+            "title": "Relation",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "student_id"
+        ],
+        "title": "CodeIn",
+        "type": "object"
+      },
+      "CodeIssued": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "deep_link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deep Link"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "guardian_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guardian Id"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "student_id",
+          "guardian_id",
+          "code",
+          "expires_at",
+          "deep_link"
+        ],
+        "title": "CodeIssued",
+        "type": "object"
+      },
+      "CodeLoginIn": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "maxLength": 12,
+            "minLength": 4,
+            "title": "Code",
+            "type": "string"
+          },
+          "phone": {
+            "maxLength": 30,
+            "minLength": 5,
+            "title": "Phone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "phone",
+          "code"
+        ],
+        "title": "CodeLoginIn",
+        "type": "object"
+      },
+      "CodeRow": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "guardian_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guardian Id"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "relation": {
+            "title": "Relation",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "ok",
+              "used",
+              "expired",
+              "revoked"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          },
+          "used_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Used At"
+          }
+        },
+        "required": [
+          "id",
+          "student_id",
+          "student_name",
+          "guardian_id",
+          "relation",
+          "state",
+          "expires_at",
+          "used_at",
+          "created_at"
+        ],
+        "title": "CodeRow",
+        "type": "object"
+      },
       "CommitIn": {
         "additionalProperties": false,
         "properties": {
@@ -3775,79 +4130,6 @@
           "policy_version"
         ],
         "title": "ConsentIn",
-        "type": "object"
-      },
-      "ConsentOut": {
-        "properties": {
-          "evidence": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Evidence"
-          },
-          "given_by_guardian_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Given By Guardian Id"
-          },
-          "given_by_self": {
-            "title": "Given By Self",
-            "type": "boolean"
-          },
-          "granted_at": {
-            "format": "date-time",
-            "title": "Granted At",
-            "type": "string"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "policy_version": {
-            "title": "Policy Version",
-            "type": "string"
-          },
-          "purpose": {
-            "title": "Purpose",
-            "type": "string"
-          },
-          "revoked_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Revoked At"
-          }
-        },
-        "required": [
-          "id",
-          "purpose",
-          "policy_version",
-          "given_by_guardian_id",
-          "given_by_self",
-          "evidence",
-          "granted_at",
-          "revoked_at"
-        ],
-        "title": "ConsentOut",
         "type": "object"
       },
       "CostIn": {
@@ -4264,6 +4546,24 @@
         "title": "DebtorRow",
         "type": "object"
       },
+      "DecideIn": {
+        "additionalProperties": false,
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "title": "DecideIn",
+        "type": "object"
+      },
       "DemoOut": {
         "properties": {
           "counts": {
@@ -4614,6 +4914,45 @@
           "other_total"
         ],
         "title": "DiscountReport",
+        "type": "object"
+      },
+      "DocumentBrief": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "issued_on": {
+            "format": "date",
+            "title": "Issued On",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "receipt",
+              "invoice"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "number": {
+            "title": "Number",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "number",
+          "issued_on",
+          "total"
+        ],
+        "title": "DocumentBrief",
         "type": "object"
       },
       "DocumentDetail": {
@@ -5537,6 +5876,58 @@
           "first_due"
         ],
         "title": "EqualSplitIn",
+        "type": "object"
+      },
+      "ExamBrief": {
+        "properties": {
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "held_on": {
+            "format": "date",
+            "title": "Held On",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "max_score": {
+            "title": "Max Score",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "score": {
+            "title": "Score",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "group_name",
+          "title",
+          "held_on",
+          "score",
+          "max_score",
+          "note"
+        ],
+        "title": "ExamBrief",
         "type": "object"
       },
       "ExamDetail": {
@@ -8260,209 +8651,6 @@
         "title": "LessonIn",
         "type": "object"
       },
-      "LessonOut": {
-        "properties": {
-          "cancel_reason": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cancel Reason"
-          },
-          "effective_teacher_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Effective Teacher Id"
-          },
-          "effective_teacher_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Effective Teacher Name"
-          },
-          "end_time": {
-            "format": "time",
-            "title": "End Time",
-            "type": "string"
-          },
-          "group_id": {
-            "format": "uuid",
-            "title": "Group Id",
-            "type": "string"
-          },
-          "group_name": {
-            "title": "Group Name",
-            "type": "string"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "kind": {
-            "title": "Kind",
-            "type": "string"
-          },
-          "lesson_date": {
-            "format": "date",
-            "title": "Lesson Date",
-            "type": "string"
-          },
-          "original_date": {
-            "anyOf": [
-              {
-                "format": "date",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Original Date"
-          },
-          "original_start_time": {
-            "anyOf": [
-              {
-                "format": "time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Original Start Time"
-          },
-          "room_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Room Id"
-          },
-          "room_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Room Name"
-          },
-          "start_time": {
-            "format": "time",
-            "title": "Start Time",
-            "type": "string"
-          },
-          "status": {
-            "title": "Status",
-            "type": "string"
-          },
-          "substitute_teacher_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Substitute Teacher Id"
-          },
-          "substitute_teacher_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Substitute Teacher Name"
-          },
-          "teacher_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Teacher Id"
-          },
-          "teacher_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Teacher Name"
-          },
-          "topic": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Topic"
-          }
-        },
-        "required": [
-          "id",
-          "group_id",
-          "group_name",
-          "teacher_id",
-          "teacher_name",
-          "substitute_teacher_id",
-          "substitute_teacher_name",
-          "effective_teacher_id",
-          "effective_teacher_name",
-          "room_id",
-          "room_name",
-          "lesson_date",
-          "start_time",
-          "end_time",
-          "status",
-          "topic",
-          "kind",
-          "cancel_reason",
-          "original_date",
-          "original_start_time"
-        ],
-        "title": "LessonOut",
-        "type": "object"
-      },
       "LessonPatch": {
         "additionalProperties": false,
         "properties": {
@@ -8663,6 +8851,141 @@
         "title": "LinkPatch",
         "type": "object"
       },
+      "LinkRequestRow": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          },
+          "telegram_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telegram Name"
+          },
+          "telegram_user_id": {
+            "title": "Telegram User Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "student_id",
+          "student_name",
+          "telegram_user_id",
+          "telegram_name",
+          "status",
+          "created_at",
+          "decided_at"
+        ],
+        "title": "LinkRequestRow",
+        "type": "object"
+      },
+      "LinkRow": {
+        "properties": {
+          "guardian_id": {
+            "format": "uuid",
+            "title": "Guardian Id",
+            "type": "string"
+          },
+          "guardian_name": {
+            "title": "Guardian Name",
+            "type": "string"
+          },
+          "linked_via": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linked Via"
+          },
+          "relation": {
+            "title": "Relation",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          },
+          "telegram_linked": {
+            "title": "Telegram Linked",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "student_id",
+          "student_name",
+          "guardian_id",
+          "guardian_name",
+          "relation",
+          "linked_via",
+          "telegram_linked"
+        ],
+        "title": "LinkRow",
+        "type": "object"
+      },
+      "LoginCodeAccepted": {
+        "properties": {
+          "status": {
+            "const": "sent",
+            "default": "sent",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "title": "LoginCodeAccepted",
+        "type": "object"
+      },
       "LoginIn": {
         "additionalProperties": false,
         "properties": {
@@ -8714,6 +9037,193 @@
           "refresh_token"
         ],
         "title": "LogoutIn",
+        "type": "object"
+      },
+      "MakeupIn": {
+        "additionalProperties": false,
+        "properties": {
+          "entitlement_id": {
+            "format": "uuid",
+            "title": "Entitlement Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "makeup_choice",
+            "title": "Kind",
+            "type": "string"
+          },
+          "slot_lesson_id": {
+            "format": "uuid",
+            "title": "Slot Lesson Id",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "student_id",
+          "entitlement_id",
+          "slot_lesson_id"
+        ],
+        "title": "MakeupIn",
+        "type": "object"
+      },
+      "MakeupRight": {
+        "properties": {
+          "expires_on": {
+            "format": "date",
+            "title": "Expires On",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "missed_on": {
+            "format": "date",
+            "title": "Missed On",
+            "type": "string"
+          },
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/SlotOut"
+            },
+            "title": "Slots",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "group_name",
+          "missed_on",
+          "expires_on",
+          "slots"
+        ],
+        "title": "MakeupRight",
+        "type": "object"
+      },
+      "ManualLinkIn": {
+        "additionalProperties": false,
+        "properties": {
+          "guardian_id": {
+            "format": "uuid",
+            "title": "Guardian Id",
+            "type": "string"
+          },
+          "relation": {
+            "default": "guardian",
+            "enum": [
+              "mother",
+              "father",
+              "guardian",
+              "self",
+              "other"
+            ],
+            "title": "Relation",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "telegram_chat_id": {
+            "title": "Telegram Chat Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "student_id",
+          "guardian_id",
+          "telegram_chat_id"
+        ],
+        "title": "ManualLinkIn",
+        "type": "object"
+      },
+      "MarkBrief": {
+        "properties": {
+          "grade": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "lesson_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lesson Date"
+          },
+          "month": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Month"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "scope": {
+            "enum": [
+              "lesson",
+              "month"
+            ],
+            "title": "Scope",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "group_name",
+          "scope",
+          "lesson_date",
+          "month",
+          "grade",
+          "note"
+        ],
+        "title": "MarkBrief",
         "type": "object"
       },
       "MarkOut": {
@@ -9013,7 +9523,7 @@
           },
           "lessons": {
             "items": {
-              "$ref": "#/components/schemas/LessonOut"
+              "$ref": "#/components/schemas/nazoratly__routers__lessons__LessonOut"
             },
             "title": "Lessons",
             "type": "array"
@@ -9264,6 +9774,146 @@
           "conversion"
         ],
         "title": "MovementBlock",
+        "type": "object"
+      },
+      "MyRequest": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "decision_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Note"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "absence_reason",
+              "payment_promise",
+              "makeup_choice"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "lesson_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lesson Date"
+          },
+          "promise_amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Promise Amount"
+          },
+          "promise_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Promise Date"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "slot_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Date"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "approved",
+              "rejected",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "student_id",
+          "student_name",
+          "reason",
+          "lesson_date",
+          "promise_date",
+          "promise_amount",
+          "slot_date",
+          "created_at",
+          "decided_at",
+          "decision_note"
+        ],
+        "title": "MyRequest",
         "type": "object"
       },
       "NamedAmount": {
@@ -9661,6 +10311,88 @@
           "next_due"
         ],
         "title": "OpenCharge",
+        "type": "object"
+      },
+      "OpenChargeOut": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "due_date": {
+            "format": "date",
+            "title": "Due Date",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "next_due": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Due"
+          },
+          "outstanding": {
+            "title": "Outstanding",
+            "type": "string"
+          },
+          "overdue": {
+            "title": "Overdue",
+            "type": "boolean"
+          },
+          "overdue_amount": {
+            "title": "Overdue Amount",
+            "type": "string"
+          },
+          "paid": {
+            "title": "Paid",
+            "type": "string"
+          },
+          "period_month": {
+            "format": "date",
+            "title": "Period Month",
+            "type": "string"
+          },
+          "plan": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "period_month",
+          "due_date",
+          "amount",
+          "paid",
+          "outstanding",
+          "overdue",
+          "overdue_amount",
+          "next_due",
+          "plan"
+        ],
+        "title": "OpenChargeOut",
         "type": "object"
       },
       "OrgRef": {
@@ -10855,7 +11587,7 @@
           },
           "items": {
             "items": {
-              "$ref": "#/components/schemas/LessonOut"
+              "$ref": "#/components/schemas/nazoratly__routers__lessons__LessonOut"
             },
             "title": "Items",
             "type": "array"
@@ -11665,6 +12397,36 @@
         "title": "PayOut",
         "type": "object"
       },
+      "PaymentBrief": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "paid_at": {
+            "format": "date-time",
+            "title": "Paid At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "amount",
+          "method",
+          "paid_at"
+        ],
+        "title": "PaymentBrief",
+        "type": "object"
+      },
       "PaymentIn": {
         "additionalProperties": false,
         "properties": {
@@ -12336,6 +13098,22 @@
         "title": "PeriodOut",
         "type": "object"
       },
+      "PhoneIn": {
+        "additionalProperties": false,
+        "properties": {
+          "phone": {
+            "maxLength": 30,
+            "minLength": 1,
+            "title": "Phone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "phone"
+        ],
+        "title": "PhoneIn",
+        "type": "object"
+      },
       "PlanIn": {
         "additionalProperties": false,
         "properties": {
@@ -12655,6 +13433,107 @@
           "active"
         ],
         "title": "ProgramOut",
+        "type": "object"
+      },
+      "PromiseIn": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "kind": {
+            "const": "payment_promise",
+            "title": "Kind",
+            "type": "string"
+          },
+          "promise_date": {
+            "format": "date",
+            "title": "Promise Date",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "student_id",
+          "promise_date"
+        ],
+        "title": "PromiseIn",
+        "type": "object"
+      },
+      "PromiseOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decision_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Note"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "promise_amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Promise Amount"
+          },
+          "promise_date": {
+            "format": "date",
+            "title": "Promise Date",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "state",
+          "promise_date",
+          "promise_amount",
+          "created_at",
+          "decision_note"
+        ],
+        "title": "PromiseOut",
         "type": "object"
       },
       "ProviderIn": {
@@ -13574,41 +14453,6 @@
         "title": "ReminderOut",
         "type": "object"
       },
-      "ReportBrief": {
-        "properties": {
-          "group_id": {
-            "format": "uuid",
-            "title": "Group Id",
-            "type": "string"
-          },
-          "group_name": {
-            "title": "Group Name",
-            "type": "string"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "month": {
-            "title": "Month",
-            "type": "string"
-          },
-          "status": {
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "group_id",
-          "group_name",
-          "month",
-          "status"
-        ],
-        "title": "ReportBrief",
-        "type": "object"
-      },
       "ReportDetail": {
         "properties": {
           "approved_at": {
@@ -13839,6 +14683,157 @@
         "title": "ReportRequest",
         "type": "object"
       },
+      "RequestRow": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "decision_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Note"
+          },
+          "guardian_id": {
+            "format": "uuid",
+            "title": "Guardian Id",
+            "type": "string"
+          },
+          "guardian_name": {
+            "title": "Guardian Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "absence_reason",
+              "payment_promise",
+              "makeup_choice"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "lesson_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lesson Date"
+          },
+          "promise_amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Promise Amount"
+          },
+          "promise_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Promise Date"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "slot_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Date"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "approved",
+              "rejected",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "student_id",
+          "student_name",
+          "guardian_id",
+          "guardian_name",
+          "reason",
+          "lesson_date",
+          "promise_date",
+          "promise_amount",
+          "slot_date",
+          "created_at",
+          "decided_at",
+          "decision_note"
+        ],
+        "title": "RequestRow",
+        "type": "object"
+      },
       "ResultRecord": {
         "additionalProperties": false,
         "properties": {
@@ -13897,6 +14892,46 @@
           "records"
         ],
         "title": "ResultsIn",
+        "type": "object"
+      },
+      "ResultsOut": {
+        "properties": {
+          "certificates": {
+            "items": {
+              "$ref": "#/components/schemas/nazoratly__routers__cabinet__CertificateBrief"
+            },
+            "title": "Certificates",
+            "type": "array"
+          },
+          "exams": {
+            "items": {
+              "$ref": "#/components/schemas/ExamBrief"
+            },
+            "title": "Exams",
+            "type": "array"
+          },
+          "marks": {
+            "items": {
+              "$ref": "#/components/schemas/MarkBrief"
+            },
+            "title": "Marks",
+            "type": "array"
+          },
+          "reports": {
+            "items": {
+              "$ref": "#/components/schemas/nazoratly__routers__cabinet__ReportBrief"
+            },
+            "title": "Reports",
+            "type": "array"
+          }
+        },
+        "required": [
+          "marks",
+          "exams",
+          "reports",
+          "certificates"
+        ],
+        "title": "ResultsOut",
         "type": "object"
       },
       "RevenuePoint": {
@@ -14452,6 +15487,42 @@
           "end_time"
         ],
         "title": "ScheduleIn",
+        "type": "object"
+      },
+      "ScheduleOut": {
+        "properties": {
+          "from": {
+            "format": "date",
+            "title": "From",
+            "type": "string"
+          },
+          "lessons": {
+            "items": {
+              "$ref": "#/components/schemas/nazoratly__routers__cabinet__LessonOut"
+            },
+            "title": "Lessons",
+            "type": "array"
+          },
+          "to": {
+            "format": "date",
+            "title": "To",
+            "type": "string"
+          },
+          "weekly": {
+            "items": {
+              "$ref": "#/components/schemas/WeeklySlot"
+            },
+            "title": "Weekly",
+            "type": "array"
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "lessons",
+          "weekly"
+        ],
+        "title": "ScheduleOut",
         "type": "object"
       },
       "ScheduleSaved": {
@@ -15171,6 +16242,43 @@
         "title": "SkippedItem",
         "type": "object"
       },
+      "SlotOut": {
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "end_time": {
+            "format": "time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "lesson_id": {
+            "format": "uuid",
+            "title": "Lesson Id",
+            "type": "string"
+          },
+          "start_time": {
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "lesson_id",
+          "group_name",
+          "date",
+          "start_time",
+          "end_time"
+        ],
+        "title": "SlotOut",
+        "type": "object"
+      },
       "SourceIn": {
         "additionalProperties": false,
         "properties": {
@@ -15778,6 +16886,35 @@
         "title": "StudentBalanceOut",
         "type": "object"
       },
+      "StudentBrief": {
+        "properties": {
+          "consent": {
+            "title": "Consent",
+            "type": "boolean"
+          },
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "relation": {
+            "title": "Relation",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "full_name",
+          "relation",
+          "consent"
+        ],
+        "title": "StudentBrief",
+        "type": "object"
+      },
       "StudentDetail": {
         "properties": {
           "balance": {
@@ -15817,7 +16954,7 @@
           },
           "consents": {
             "items": {
-              "$ref": "#/components/schemas/ConsentOut"
+              "$ref": "#/components/schemas/nazoratly__routers__students__ConsentOut"
             },
             "title": "Consents",
             "type": "array"
@@ -16161,7 +17298,7 @@
         "properties": {
           "certificates": {
             "items": {
-              "$ref": "#/components/schemas/CertificateBrief"
+              "$ref": "#/components/schemas/nazoratly__routers__results__CertificateBrief"
             },
             "title": "Certificates",
             "type": "array"
@@ -16182,7 +17319,7 @@
           },
           "reports": {
             "items": {
-              "$ref": "#/components/schemas/ReportBrief"
+              "$ref": "#/components/schemas/nazoratly__routers__results__ReportBrief"
             },
             "title": "Reports",
             "type": "array"
@@ -16802,6 +17939,35 @@
         "title": "TeacherPatch",
         "type": "object"
       },
+      "TelegramLoginIn": {
+        "additionalProperties": false,
+        "properties": {
+          "choice": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "which center, when the Telegram account is linked in several",
+            "title": "Choice"
+          },
+          "init_data": {
+            "maxLength": 4096,
+            "minLength": 10,
+            "title": "Init Data",
+            "type": "string"
+          }
+        },
+        "required": [
+          "init_data"
+        ],
+        "title": "TelegramLoginIn",
+        "type": "object"
+      },
       "TemplateOut": {
         "properties": {
           "code": {
@@ -16819,54 +17985,6 @@
           "text"
         ],
         "title": "TemplateOut",
-        "type": "object"
-      },
-      "TokenOut": {
-        "properties": {
-          "access_token": {
-            "title": "Access Token",
-            "type": "string"
-          },
-          "expires_in": {
-            "title": "Expires In",
-            "type": "integer"
-          },
-          "org": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/OrgRef"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "selected center; null when the user belongs to several and none was chosen"
-          },
-          "organizations": {
-            "items": {
-              "$ref": "#/components/schemas/OrgRef"
-            },
-            "title": "Organizations",
-            "type": "array"
-          },
-          "refresh_token": {
-            "title": "Refresh Token",
-            "type": "string"
-          },
-          "token_type": {
-            "default": "bearer",
-            "title": "Token Type",
-            "type": "string"
-          }
-        },
-        "required": [
-          "access_token",
-          "expires_in",
-          "refresh_token",
-          "org",
-          "organizations"
-        ],
-        "title": "TokenOut",
         "type": "object"
       },
       "ToolCallOut": {
@@ -17648,6 +18766,36 @@
         "title": "WaitlistOut",
         "type": "object"
       },
+      "WeeklySlot": {
+        "properties": {
+          "end_time": {
+            "format": "time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "start_time": {
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "weekday": {
+            "title": "Weekday",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "group_name",
+          "weekday",
+          "start_time",
+          "end_time"
+        ],
+        "title": "WeeklySlot",
+        "type": "object"
+      },
       "nazoratly__routers__accounting__VerifyOut": {
         "properties": {
           "broken_seq": {
@@ -17783,6 +18931,291 @@
           "organizations"
         ],
         "title": "MeOut",
+        "type": "object"
+      },
+      "nazoratly__routers__auth__TokenOut": {
+        "properties": {
+          "access_token": {
+            "title": "Access Token",
+            "type": "string"
+          },
+          "expires_in": {
+            "title": "Expires In",
+            "type": "integer"
+          },
+          "org": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OrgRef"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "selected center; null when the user belongs to several and none was chosen"
+          },
+          "organizations": {
+            "items": {
+              "$ref": "#/components/schemas/OrgRef"
+            },
+            "title": "Organizations",
+            "type": "array"
+          },
+          "refresh_token": {
+            "title": "Refresh Token",
+            "type": "string"
+          },
+          "token_type": {
+            "default": "bearer",
+            "title": "Token Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "access_token",
+          "expires_in",
+          "refresh_token",
+          "org",
+          "organizations"
+        ],
+        "title": "TokenOut",
+        "type": "object"
+      },
+      "nazoratly__routers__cabinet__BalanceOut": {
+        "properties": {
+          "credit": {
+            "title": "Credit",
+            "type": "string"
+          },
+          "open_charges": {
+            "items": {
+              "$ref": "#/components/schemas/OpenChargeOut"
+            },
+            "title": "Open Charges",
+            "type": "array"
+          },
+          "outstanding_total": {
+            "title": "Outstanding Total",
+            "type": "string"
+          },
+          "overdue_total": {
+            "title": "Overdue Total",
+            "type": "string"
+          },
+          "promises": {
+            "items": {
+              "$ref": "#/components/schemas/PromiseOut"
+            },
+            "title": "Promises",
+            "type": "array"
+          },
+          "recent_payments": {
+            "items": {
+              "$ref": "#/components/schemas/PaymentBrief"
+            },
+            "title": "Recent Payments",
+            "type": "array"
+          }
+        },
+        "required": [
+          "outstanding_total",
+          "overdue_total",
+          "credit",
+          "open_charges",
+          "recent_payments",
+          "promises"
+        ],
+        "title": "BalanceOut",
+        "type": "object"
+      },
+      "nazoratly__routers__cabinet__CertificateBrief": {
+        "properties": {
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "issued_on": {
+            "format": "date",
+            "title": "Issued On",
+            "type": "string"
+          },
+          "number": {
+            "title": "Number",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "group_name",
+          "issued_on"
+        ],
+        "title": "CertificateBrief",
+        "type": "object"
+      },
+      "nazoratly__routers__cabinet__ConsentOut": {
+        "properties": {
+          "consent": {
+            "title": "Consent",
+            "type": "boolean"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "student_id",
+          "consent"
+        ],
+        "title": "ConsentOut",
+        "type": "object"
+      },
+      "nazoratly__routers__cabinet__LessonOut": {
+        "properties": {
+          "end_time": {
+            "format": "time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "lesson_date": {
+            "format": "date",
+            "title": "Lesson Date",
+            "type": "string"
+          },
+          "start_time": {
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "planned",
+              "held",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "lesson_date",
+          "start_time",
+          "end_time",
+          "status",
+          "kind",
+          "group_name"
+        ],
+        "title": "LessonOut",
+        "type": "object"
+      },
+      "nazoratly__routers__cabinet__MeOut": {
+        "properties": {
+          "center": {
+            "title": "Center",
+            "type": "string"
+          },
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "guardian_id": {
+            "format": "uuid",
+            "title": "Guardian Id",
+            "type": "string"
+          },
+          "promise_max_days": {
+            "title": "Promise Max Days",
+            "type": "integer"
+          },
+          "students": {
+            "items": {
+              "$ref": "#/components/schemas/StudentBrief"
+            },
+            "title": "Students",
+            "type": "array"
+          }
+        },
+        "required": [
+          "guardian_id",
+          "full_name",
+          "center",
+          "promise_max_days",
+          "students"
+        ],
+        "title": "MeOut",
+        "type": "object"
+      },
+      "nazoratly__routers__cabinet__ReportBrief": {
+        "properties": {
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "month": {
+            "title": "Month",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "group_name",
+          "month"
+        ],
+        "title": "ReportBrief",
+        "type": "object"
+      },
+      "nazoratly__routers__cabinet__TokenOut": {
+        "properties": {
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "miniapp",
+              "portal"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "expires_at",
+          "kind"
+        ],
+        "title": "TokenOut",
         "type": "object"
       },
       "nazoratly__routers__certificates__SendOut": {
@@ -18018,6 +19451,209 @@
         "title": "SummaryOut",
         "type": "object"
       },
+      "nazoratly__routers__lessons__LessonOut": {
+        "properties": {
+          "cancel_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancel Reason"
+          },
+          "effective_teacher_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Teacher Id"
+          },
+          "effective_teacher_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Teacher Name"
+          },
+          "end_time": {
+            "format": "time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "group_id": {
+            "format": "uuid",
+            "title": "Group Id",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "lesson_date": {
+            "format": "date",
+            "title": "Lesson Date",
+            "type": "string"
+          },
+          "original_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Date"
+          },
+          "original_start_time": {
+            "anyOf": [
+              {
+                "format": "time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Start Time"
+          },
+          "room_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Room Id"
+          },
+          "room_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Room Name"
+          },
+          "start_time": {
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "substitute_teacher_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Substitute Teacher Id"
+          },
+          "substitute_teacher_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Substitute Teacher Name"
+          },
+          "teacher_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Teacher Id"
+          },
+          "teacher_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Teacher Name"
+          },
+          "topic": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Topic"
+          }
+        },
+        "required": [
+          "id",
+          "group_id",
+          "group_name",
+          "teacher_id",
+          "teacher_name",
+          "substitute_teacher_id",
+          "substitute_teacher_name",
+          "effective_teacher_id",
+          "effective_teacher_name",
+          "room_id",
+          "room_name",
+          "lesson_date",
+          "start_time",
+          "end_time",
+          "status",
+          "topic",
+          "kind",
+          "cancel_reason",
+          "original_date",
+          "original_start_time"
+        ],
+        "title": "LessonOut",
+        "type": "object"
+      },
       "nazoratly__routers__lessons__MarkIn": {
         "additionalProperties": false,
         "properties": {
@@ -18171,6 +19807,41 @@
         "title": "ApproveIn",
         "type": "object"
       },
+      "nazoratly__routers__results__CertificateBrief": {
+        "properties": {
+          "course_name": {
+            "title": "Course Name",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "issued_on": {
+            "format": "date",
+            "title": "Issued On",
+            "type": "string"
+          },
+          "number": {
+            "title": "Number",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "group_name",
+          "course_name",
+          "issued_on"
+        ],
+        "title": "CertificateBrief",
+        "type": "object"
+      },
       "nazoratly__routers__results__MarkIn": {
         "additionalProperties": false,
         "properties": {
@@ -18254,6 +19925,41 @@
         "title": "MarkIn",
         "type": "object"
       },
+      "nazoratly__routers__results__ReportBrief": {
+        "properties": {
+          "group_id": {
+            "format": "uuid",
+            "title": "Group Id",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "month": {
+            "title": "Month",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "group_id",
+          "group_name",
+          "month",
+          "status"
+        ],
+        "title": "ReportBrief",
+        "type": "object"
+      },
       "nazoratly__routers__students__BalanceOut": {
         "properties": {
           "credit": {
@@ -18275,6 +19981,79 @@
           "credit"
         ],
         "title": "BalanceOut",
+        "type": "object"
+      },
+      "nazoratly__routers__students__ConsentOut": {
+        "properties": {
+          "evidence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence"
+          },
+          "given_by_guardian_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Given By Guardian Id"
+          },
+          "given_by_self": {
+            "title": "Given By Self",
+            "type": "boolean"
+          },
+          "granted_at": {
+            "format": "date-time",
+            "title": "Granted At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "policy_version": {
+            "title": "Policy Version",
+            "type": "string"
+          },
+          "purpose": {
+            "title": "Purpose",
+            "type": "string"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          }
+        },
+        "required": [
+          "id",
+          "purpose",
+          "policy_version",
+          "given_by_guardian_id",
+          "given_by_self",
+          "evidence",
+          "granted_at",
+          "revoked_at"
+        ],
+        "title": "ConsentOut",
         "type": "object"
       },
       "nazoratly__routers__students__StudentOut": {
@@ -21415,7 +23194,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TokenOut"
+                  "$ref": "#/components/schemas/nazoratly__routers__auth__TokenOut"
                 }
               }
             },
@@ -21456,7 +23235,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TokenOut"
+                  "$ref": "#/components/schemas/nazoratly__routers__auth__TokenOut"
                 }
               }
             },
@@ -21584,7 +23363,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TokenOut"
+                  "$ref": "#/components/schemas/nazoratly__routers__auth__TokenOut"
                 }
               }
             },
@@ -21625,7 +23404,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TokenOut"
+                  "$ref": "#/components/schemas/nazoratly__routers__auth__TokenOut"
                 }
               }
             },
@@ -21712,7 +23491,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TokenOut"
+                  "$ref": "#/components/schemas/nazoratly__routers__auth__TokenOut"
                 }
               }
             },
@@ -22399,6 +24178,855 @@
         "summary": "Change the branch's own settings (null = inherit the center's value again)",
         "tags": [
           "branches"
+        ]
+      }
+    },
+    "/v1/cabinet/auth/code/request": {
+      "post": {
+        "operationId": "auth_code_request_v1_cabinet_auth_code_request_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PhoneIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginCodeAccepted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Portal sign-in, step 1: a 6-digit code is sent to the guardian's own Telegram chat (always 202: no enumeration)",
+        "tags": [
+          "guardian cabinet"
+        ]
+      }
+    },
+    "/v1/cabinet/auth/code/verify": {
+      "post": {
+        "operationId": "auth_code_verify_v1_cabinet_auth_code_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CodeLoginIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/nazoratly__routers__cabinet__TokenOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Portal sign-in, step 2: the code from Telegram (5 attempts per code, 10 minutes)",
+        "tags": [
+          "guardian cabinet"
+        ]
+      }
+    },
+    "/v1/cabinet/auth/logout": {
+      "post": {
+        "operationId": "logout_v1_cabinet_auth_logout_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "End this session",
+        "tags": [
+          "guardian cabinet"
+        ]
+      }
+    },
+    "/v1/cabinet/auth/telegram": {
+      "post": {
+        "operationId": "auth_telegram_v1_cabinet_auth_telegram_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TelegramLoginIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/nazoratly__routers__cabinet__TokenOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Mini App sign-in: send Telegram's `initData`; the signature and its age are checked",
+        "tags": [
+          "guardian cabinet"
+        ]
+      }
+    },
+    "/v1/cabinet/certificates/{certificate_id}/pdf": {
+      "get": {
+        "operationId": "certificate_pdf_v1_cabinet_certificates__certificate_id__pdf_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "certificate_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Certificate Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "PDF of a certificate",
+        "tags": [
+          "guardian cabinet"
+        ]
+      }
+    },
+    "/v1/cabinet/documents/{document_id}/pdf": {
+      "get": {
+        "operationId": "document_pdf_v1_cabinet_documents__document_id__pdf_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "PDF of a receipt or invoice",
+        "tags": [
+          "guardian cabinet"
+        ]
+      }
+    },
+    "/v1/cabinet/me": {
+      "get": {
+        "operationId": "me_v1_cabinet_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/nazoratly__routers__cabinet__MeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "The guardian, his center and the students linked to him",
+        "tags": [
+          "guardian cabinet"
+        ]
+      }
+    },
+    "/v1/cabinet/reports/{report_id}/pdf": {
+      "get": {
+        "operationId": "report_pdf_v1_cabinet_reports__report_id__pdf_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "report_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Report Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "PDF of an approved progress report",
+        "tags": [
+          "guardian cabinet"
+        ]
+      }
+    },
+    "/v1/cabinet/requests": {
+      "get": {
+        "operationId": "my_requests_v1_cabinet_requests_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MyRequest"
+                  },
+                  "title": "Response My Requests V1 Cabinet Requests Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "My requests and what the center decided",
+        "tags": [
+          "guardian cabinet"
+        ]
+      },
+      "post": {
+        "operationId": "create_request_v1_cabinet_requests_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "discriminator": {
+                  "mapping": {
+                    "absence_reason": "#/components/schemas/AbsenceIn",
+                    "makeup_choice": "#/components/schemas/MakeupIn",
+                    "payment_promise": "#/components/schemas/PromiseIn"
+                  },
+                  "propertyName": "kind"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/AbsenceIn"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PromiseIn"
+                  },
+                  {
+                    "$ref": "#/components/schemas/MakeupIn"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyRequest"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ask the center for something (absence reason, payment promise, make-up slot). Nothing changes until it approves.",
+        "tags": [
+          "guardian cabinet"
+        ]
+      }
+    },
+    "/v1/cabinet/requests/{request_id}/cancel": {
+      "post": {
+        "operationId": "cancel_v1_cabinet_requests__request_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyRequest"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Withdraw a request that is still waiting",
+        "tags": [
+          "guardian cabinet"
+        ]
+      }
+    },
+    "/v1/cabinet/students/{student_id}/absence-lessons": {
+      "get": {
+        "operationId": "absence_lessons_v1_cabinet_students__student_id__absence_lessons_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "student_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Student Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AbsenceLesson"
+                  },
+                  "title": "Response Absence Lessons V1 Cabinet Students  Student Id  Absence Lessons Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Upcoming lessons a guardian can still announce an absence for",
+        "tags": [
+          "guardian cabinet"
+        ]
+      }
+    },
+    "/v1/cabinet/students/{student_id}/attendance": {
+      "get": {
+        "operationId": "attendance_v1_cabinet_students__student_id__attendance_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "student_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Student Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 90,
+              "maximum": 365,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Attendance of the last 90 days",
+        "tags": [
+          "guardian cabinet"
+        ]
+      }
+    },
+    "/v1/cabinet/students/{student_id}/balance": {
+      "get": {
+        "operationId": "balance_v1_cabinet_students__student_id__balance_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "student_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Student Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/nazoratly__routers__cabinet__BalanceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Debt, payment plan, recent payments, promises",
+        "tags": [
+          "guardian cabinet"
+        ]
+      }
+    },
+    "/v1/cabinet/students/{student_id}/consent": {
+      "post": {
+        "operationId": "accept_consent_v1_cabinet_students__student_id__consent_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "student_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Student Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/nazoratly__routers__cabinet__ConsentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "The guardian accepts the privacy terms for this student (needed before anything is shown)",
+        "tags": [
+          "guardian cabinet"
+        ]
+      }
+    },
+    "/v1/cabinet/students/{student_id}/documents": {
+      "get": {
+        "operationId": "documents_v1_cabinet_students__student_id__documents_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "student_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Student Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentBrief"
+                  },
+                  "title": "Response Documents V1 Cabinet Students  Student Id  Documents Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Receipts and invoices",
+        "tags": [
+          "guardian cabinet"
+        ]
+      }
+    },
+    "/v1/cabinet/students/{student_id}/makeup": {
+      "get": {
+        "operationId": "makeup_v1_cabinet_students__student_id__makeup_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "student_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Student Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MakeupRight"
+                  },
+                  "title": "Response Makeup V1 Cabinet Students  Student Id  Makeup Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Open make-up rights with the slots that can be chosen",
+        "tags": [
+          "guardian cabinet"
+        ]
+      }
+    },
+    "/v1/cabinet/students/{student_id}/results": {
+      "get": {
+        "operationId": "results_v1_cabinet_students__student_id__results_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "student_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Student Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Notes, grades, exams, approved progress reports, certificates",
+        "tags": [
+          "guardian cabinet"
+        ]
+      }
+    },
+    "/v1/cabinet/students/{student_id}/schedule": {
+      "get": {
+        "operationId": "schedule_v1_cabinet_students__student_id__schedule_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "student_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Student Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Lessons of the next 30 days and the weekly timetable",
+        "tags": [
+          "guardian cabinet"
         ]
       }
     },
@@ -23668,7 +26296,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ConsentOut"
+                  "$ref": "#/components/schemas/nazoratly__routers__students__ConsentOut"
                 }
               }
             },
@@ -26631,6 +29259,674 @@
         ]
       }
     },
+    "/v1/guardian/codes": {
+      "get": {
+        "operationId": "list_codes_v1_guardian_codes_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "student_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Student Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CodeRow"
+                  },
+                  "title": "Response List Codes V1 Guardian Codes Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Codes of a center (never the code itself)",
+        "tags": [
+          "guardian cabinet (staff)"
+        ]
+      },
+      "post": {
+        "operationId": "issue_code_v1_guardian_codes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CodeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CodeIssued"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Issue a one-time link code for a student (shown once; only its hash is stored; valid 72 hours)",
+        "tags": [
+          "guardian cabinet (staff)"
+        ]
+      }
+    },
+    "/v1/guardian/codes/{code_id}/revoke": {
+      "post": {
+        "operationId": "revoke_code_v1_guardian_codes__code_id__revoke_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "code_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Code Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Revoke an unused code",
+        "tags": [
+          "guardian cabinet (staff)"
+        ]
+      }
+    },
+    "/v1/guardian/link-requests": {
+      "get": {
+        "operationId": "list_link_requests_v1_guardian_link_requests_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "pending",
+                    "approved",
+                    "rejected"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "pending",
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LinkRequestRow"
+                  },
+                  "title": "Response List Link Requests V1 Guardian Link Requests Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Link requests made with a student's QR card",
+        "tags": [
+          "guardian cabinet (staff)"
+        ]
+      }
+    },
+    "/v1/guardian/link-requests/{request_id}/approve": {
+      "post": {
+        "operationId": "approve_link_request_v1_guardian_link_requests__request_id__approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveLinkIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkRequestRow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Approve a QR-card link request",
+        "tags": [
+          "guardian cabinet (staff)"
+        ]
+      }
+    },
+    "/v1/guardian/link-requests/{request_id}/reject": {
+      "post": {
+        "operationId": "reject_link_request_v1_guardian_link_requests__request_id__reject_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkRequestRow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Reject a QR-card link request",
+        "tags": [
+          "guardian cabinet (staff)"
+        ]
+      }
+    },
+    "/v1/guardian/links": {
+      "delete": {
+        "operationId": "remove_link_v1_guardian_links_delete",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "student_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Student Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "guardian_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Guardian Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Remove a guardian from a student (his sessions end when no student is left)",
+        "tags": [
+          "guardian cabinet (staff)"
+        ]
+      },
+      "get": {
+        "operationId": "list_links_v1_guardian_links_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "student_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Student Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LinkRow"
+                  },
+                  "title": "Response List Links V1 Guardian Links Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Who is linked to whom, and how",
+        "tags": [
+          "guardian cabinet (staff)"
+        ]
+      },
+      "post": {
+        "operationId": "manual_link_v1_guardian_links_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualLinkIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkRow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Link a guardian's Telegram account to a student by hand",
+        "tags": [
+          "guardian cabinet (staff)"
+        ]
+      }
+    },
+    "/v1/guardian/requests": {
+      "get": {
+        "operationId": "requests_list_v1_guardian_requests_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "pending",
+                    "approved",
+                    "rejected",
+                    "cancelled"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "pending",
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "absence_reason",
+                    "payment_promise",
+                    "makeup_choice"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RequestRow"
+                  },
+                  "title": "Response Requests List V1 Guardian Requests Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "What guardians asked for (default: waiting for a decision)",
+        "tags": [
+          "guardian cabinet (staff)"
+        ]
+      }
+    },
+    "/v1/guardian/requests/{request_id}/approve": {
+      "post": {
+        "operationId": "approve_request_v1_guardian_requests__request_id__approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecideIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestRow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Approve a request and apply it: absence -> attendance `excused`, make-up -> lesson scheduled, promise -> recorded",
+        "tags": [
+          "guardian cabinet (staff)"
+        ]
+      }
+    },
+    "/v1/guardian/requests/{request_id}/reject": {
+      "post": {
+        "operationId": "reject_request_v1_guardian_requests__request_id__reject_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecideIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestRow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Reject a request (nothing changes)",
+        "tags": [
+          "guardian cabinet (staff)"
+        ]
+      }
+    },
     "/v1/guardians": {
       "get": {
         "operationId": "list_guardians_v1_guardians_get",
@@ -27865,7 +31161,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LessonOut"
+                  "$ref": "#/components/schemas/nazoratly__routers__lessons__LessonOut"
                 }
               }
             },
@@ -27943,7 +31239,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LessonOut"
+                  "$ref": "#/components/schemas/nazoratly__routers__lessons__LessonOut"
                 }
               }
             },
@@ -28011,7 +31307,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LessonOut"
+                  "$ref": "#/components/schemas/nazoratly__routers__lessons__LessonOut"
                 }
               }
             },
@@ -33300,7 +36596,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/ConsentOut"
+                    "$ref": "#/components/schemas/nazoratly__routers__students__ConsentOut"
                   },
                   "title": "Response List Consents V1 Students  Student Id  Consents Get",
                   "type": "array"
@@ -33359,7 +36655,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ConsentOut"
+                  "$ref": "#/components/schemas/nazoratly__routers__students__ConsentOut"
                 }
               }
             },

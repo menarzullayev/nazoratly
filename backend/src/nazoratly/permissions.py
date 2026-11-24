@@ -18,6 +18,7 @@ ALL: Final = frozenset(
         "agent:manage",
         "results:read", "results:write", "results:approve",
         "branches:manage",
+        "guardians:manage",
     }
 )  # fmt: skip
 
@@ -25,7 +26,7 @@ _MANAGER: Final = frozenset(
     {
         "org:read", "students:read", "students:write", "consents:write", "academics:read", "academics:write",
         "attendance:read", "attendance:write", "finance:read", "finance:write", "reports:read", "staff:read",
-        "accounting:read", "results:read", "results:write", "results:approve",
+        "accounting:read", "results:read", "results:write", "results:approve", "guardians:manage",
     }
 )  # fmt: skip
 

@@ -11,6 +11,7 @@ from nazoratly.routers import (
     ai,
     auth,
     branches,
+    cabinet,
     cashclose,
     certificates,
     dashboard,
@@ -20,6 +21,7 @@ from nazoratly.routers import (
     entitlements,
     finance,
     growth,
+    guardian_staff,
     imports,
     leads,
     lessons,
@@ -83,4 +85,6 @@ router.include_router(agents.router)
 router.include_router(ai.router)
 router.include_router(teacher_auth.router)
 router.include_router(teacher_me.router)
+router.include_router(guardian_staff.router)
+router.include_router(cabinet.router)
 router.include_router(pay.settings_router)

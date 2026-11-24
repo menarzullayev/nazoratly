@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <meta name="color-scheme" content="light dark">
+  <title>Vasiy kabineti | nazoratly</title>
+  <link rel="stylesheet" href="/ui/static/ui.css">
+  <link rel="stylesheet" href="/ui/static/guardian.css">
+</head>
+<body>
+  <header class="top">
+    <strong id="title">Vasiy kabineti</strong>
+    <span class="row"><span id="who" class="muted"></span><button id="signout" class="secondary" type="button" hidden>Chiqish</button></span>
+  </header>
+  <main>
+    <section id="login" class="card stack" aria-live="polite"></section>
+    <div id="app" hidden>
+      <section class="card stack"><div id="kids" class="row"></div></section>
+      <section id="consent" class="card stack" hidden></section>
+      <div id="content" hidden>
+        <nav id="tabs" class="row tabs" aria-label="Bo'limlar"></nav>
+        <section id="view" class="card stack" aria-live="polite"></section>
+      </div>
+    </div>
+  </main>
+  <script src="/ui/static/guardian.js"></script>
+</body>
+</html>

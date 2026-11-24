@@ -1746,6 +1746,129 @@ BEGIN
   PERFORM staff_notice_complete(nid, false, 'late', NULL, true);          -- no effect once sent
   ASSERT (SELECT delivery FROM staff_notifications WHERE id = nid) = 'sent', 'a finished delivery stays finished';
 END $$;
+-- ---------------------------------------------------------------- G7 guardian cabinet (0060-0064)
+-- catalog, policies, constraints, stamping
+DO $$
+BEGIN
+  ASSERT (SELECT count(*) FROM branch_catalog WHERE table_name IN ('guardian_link_codes','guardian_link_requests','guardian_requests') AND kind = 'strict') = 3, 'student-bound guardian tables are strict';
+  ASSERT (SELECT count(*) FROM branch_catalog WHERE table_name IN ('guardian_login_codes','guardian_sessions') AND kind = 'shared') = 2, 'guardian-level tables are shared';
+  ASSERT (SELECT count(*) FROM pg_policies WHERE policyname = 'guardian_fence' AND permissive = 'RESTRICTIVE'
+            AND tablename IN ('students','student_guardians','guardians','enrollments','attendance','charges','payments','absence_entitlements',
+                              'documents','document_files','exam_results','progress_reports','certificates','learning_marks','data_consents',
+                              'study_groups','lessons','group_schedules','exams','charge_installments','payment_allocations',
+                              'guardian_requests','guardian_sessions','guardian_login_codes','guardian_link_codes','guardian_link_requests',
+                              'progress_report_files','certificate_files','teachers','outbox_messages','journal_lines','memberships')) = 32, 'the fence covers every guardian-readable table and the closed ones';
+  ASSERT NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'guardian_fence' AND tablename IN ('org_settings','courses','branches','organizations')), 'whitelisted tables stay open';
+END $$;
+
+BEGIN;
+INSERT INTO study_groups (org_id, course_id, teacher_id, name, monthly_fee, start_date, status) VALUES (1,1,1,'G7 other group',500000,'2026-09-01','active');
+INSERT INTO enrollments (org_id, student_id, group_id, started_on)
+  VALUES (1, 4, (SELECT id FROM study_groups WHERE name = 'G7 other group'), '2026-09-01');
+INSERT INTO lessons (org_id, group_id, teacher_id, lesson_date, start_time, end_time, status)
+  VALUES (1, (SELECT id FROM study_groups WHERE name = 'G7 other group'), 1, '2099-01-05', '09:00', '10:00', 'planned');
+INSERT INTO charges (org_id, student_id, kind, period_month, amount, due_date) VALUES (1,4,'other','2026-11-01',1000,'2026-12-01');
+
+-- stamping + constraints (superuser)
+INSERT INTO guardian_link_codes (org_id, student_id, code_hash, expires_at) VALUES (1, 1, repeat('a', 64), now() + interval '72 hours');
+INSERT INTO guardian_link_requests (org_id, student_id, telegram_user_id, telegram_name) VALUES (1, 1, 5550001, 'Someone');
+INSERT INTO guardian_requests (org_id, guardian_id, student_id, kind, lesson_id, reason) VALUES (1, 1, 1, 'absence_reason', 1, 'Kasal');
+DO $$
+BEGIN
+  ASSERT (SELECT branch_id FROM guardian_link_codes WHERE code_hash = repeat('a', 64)) = (SELECT branch_id FROM students WHERE id = 1), 'code follows the student branch';
+  ASSERT (SELECT branch_id FROM guardian_requests WHERE reason = 'Kasal') = (SELECT branch_id FROM students WHERE id = 1), 'request follows the student branch';
+  PERFORM public.t_expect('23514', $q$INSERT INTO guardian_link_codes (org_id, student_id, code_hash, expires_at) VALUES (1, 1, 'not-a-hash', now())$q$);
+  PERFORM public.t_expect('23505', $q$INSERT INTO guardian_link_codes (org_id, student_id, code_hash, expires_at) VALUES (1, 2, repeat('a', 64), now())$q$);
+  PERFORM public.t_expect('23505', $q$INSERT INTO guardian_link_requests (org_id, student_id, telegram_user_id) VALUES (1, 1, 5550001)$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO guardian_link_requests (org_id, student_id, telegram_user_id, method) VALUES (1, 2, 5550002, 'phone')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO guardian_requests (org_id, guardian_id, student_id, kind, lesson_id) VALUES (1, 1, 2, 'absence_reason', 1)$q$); -- no reason
+  PERFORM public.t_expect('23514', $q$INSERT INTO guardian_requests (org_id, guardian_id, student_id, kind, promise_date, lesson_id, reason) VALUES (1, 1, 2, 'payment_promise', '2026-12-01', 1, 'x')$q$); -- wrong columns
+  PERFORM public.t_expect('23505', $q$INSERT INTO guardian_requests (org_id, guardian_id, student_id, kind, lesson_id, reason) VALUES (1, 1, 1, 'absence_reason', 1, 'again')$q$); -- one open per lesson
+  INSERT INTO guardian_requests (org_id, guardian_id, student_id, kind, promise_date, promise_amount) VALUES (1, 1, 1, 'payment_promise', '2026-12-01', 1000);
+  PERFORM public.t_expect('23505', $q$INSERT INTO guardian_requests (org_id, guardian_id, student_id, kind, promise_date) VALUES (1, 1, 1, 'payment_promise', '2026-12-02')$q$); -- one open promise
+  PERFORM public.t_expect('23514', $q$INSERT INTO guardian_requests (org_id, guardian_id, student_id, kind, promise_date, promise_amount) VALUES (1, 1, 2, 'payment_promise', '2026-12-02', 0)$q$);
+  PERFORM public.t_expect('23514', $q$UPDATE guardian_requests SET status = 'approved' WHERE reason = 'Kasal'$q$); -- decided_at required
+  UPDATE guardian_requests SET status = 'approved', decided_at = now() WHERE reason = 'Kasal';
+  PERFORM public.t_expect('23514', $q$INSERT INTO org_settings (org_id, guardian_promise_max_days) VALUES (1, 0)$q$);
+END $$;
+
+-- lookup functions (cross-center, no session)
+DO $$
+BEGIN
+  ASSERT (SELECT count(*) FROM guardian_find_code(repeat('a', 64))) = 1, 'code found by hash';
+  ASSERT (SELECT count(*) FROM guardian_find_code(repeat('b', 64))) = 0, 'unknown hash';
+  ASSERT (SELECT count(*) FROM guardian_find_by_phone('901234567')) = 1, 'phone key finds the guardian';
+  ASSERT (SELECT count(*) FROM guardian_find_by_phone('12345')) = 0, 'short key finds nothing';
+  UPDATE guardians SET telegram_chat_id = 7770001 WHERE id = 1;
+  ASSERT (SELECT guardian_id FROM guardian_find_by_telegram(7770001)) = 1, 'telegram id finds the linked guardian';
+  ASSERT (SELECT count(*) FROM guardian_find_by_telegram(7770002)) = 0, 'unknown telegram id';
+END $$;
+
+-- the fence: a guardian session of guardian 1 (student 1 only) cannot read anything of other families
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '1'; SET LOCAL app.guardian_id = '1';
+DO $$
+BEGIN
+  ASSERT (SELECT count(*) FROM students) = 1, 'guardian sees only his student';
+  ASSERT (SELECT count(*) FROM student_guardians) = 1, 'only his own link';
+  ASSERT (SELECT count(*) FROM guardians) = 1, 'only himself';
+  ASSERT (SELECT count(*) FROM enrollments) = 1, 'enrollments of his student only';
+  ASSERT (SELECT count(*) FROM attendance) = 1, 'attendance of his student only (student 2 was absent in the same lesson)';
+  ASSERT (SELECT count(*) FROM charges) = 2, 'his student''s charges only';
+  ASSERT (SELECT count(*) FROM payments) = 1, 'his student''s payments only';
+  ASSERT (SELECT count(*) FROM study_groups) = 1, 'the group of his student only';
+  ASSERT (SELECT count(*) FROM lessons) = 2, 'lessons of that group only (not the other group''s)';
+  ASSERT (SELECT count(*) FROM teachers) = 0 AND (SELECT count(*) FROM outbox_messages) = 0 AND (SELECT count(*) FROM memberships) = 0, 'closed tables are empty';
+  ASSERT (SELECT count(*) FROM guardian_requests) = 2, 'his own requests';
+  ASSERT (SELECT count(*) FROM courses) = 1, 'whitelisted catalog stays readable';
+  PERFORM public.t_expect('42501', $q$INSERT INTO guardian_requests (org_id, guardian_id, student_id, kind, promise_date) VALUES (1, 2, 2, 'payment_promise', '2026-12-05')$q$);
+  PERFORM public.t_expect('42501', $q$UPDATE students SET notes = 'x' WHERE id = 1$q$);
+  PERFORM public.t_expect('42501', $q$INSERT INTO teachers (org_id, full_name, pay_model, pay_rate) VALUES (1, 'Intruder', 'per_lesson', 1)$q$);
+END $$;
+RESET ROLE;
+-- a staff session of the same center is not fenced
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '1'; SET LOCAL app.user_id = '1'; SET LOCAL app.guardian_id = '';
+DO $$
+BEGIN
+  ASSERT (SELECT count(*) FROM students) >= 3 AND (SELECT count(*) FROM teachers) >= 1, 'staff is not fenced';
+END $$;
+RESET ROLE;
+-- another center's guardian session sees nothing of center 1
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '2'; SET LOCAL app.guardian_id = '1';
+DO $$
+BEGIN
+  ASSERT (SELECT count(*) FROM students) = 0 AND (SELECT count(*) FROM guardian_requests) = 0, 'a guardian id of another center matches nothing here';
+END $$;
+RESET ROLE;
+ROLLBACK;
+
+-- make-up slots: a right of student 1 in group 1 (course 1); the other active group of the course has a planned lesson
+BEGIN;
+INSERT INTO study_groups (org_id, course_id, teacher_id, name, monthly_fee, start_date, status, capacity)
+  VALUES (1,1,1,'G7 slot group',500000,'2026-09-01','active', 2);
+INSERT INTO lessons (org_id, group_id, teacher_id, lesson_date, start_time, end_time, status)
+  VALUES (1, (SELECT id FROM study_groups WHERE name = 'G7 slot group'), 1, '2099-01-05', '09:00', '10:00', 'planned');
+INSERT INTO enrollments (org_id, student_id, group_id, started_on) VALUES (1, 4, (SELECT id FROM study_groups WHERE name = 'G7 slot group'), '2026-09-01');
+INSERT INTO absence_entitlements (org_id, student_id, enrollment_id, group_id, missed_lesson_id, kind, expires_on)
+  VALUES (1, 1, 1, 1, 1, 'makeup', '2099-12-31');
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '1'; SET LOCAL app.guardian_id = '1';
+DO $$
+DECLARE eid bigint;
+BEGIN
+  SELECT id INTO eid FROM absence_entitlements WHERE kind = 'makeup' ORDER BY id DESC LIMIT 1;
+  ASSERT (SELECT count(*) FROM guardian_makeup_slots(eid)) = 1, 'one slot offered';
+  ASSERT (SELECT seats_left FROM guardian_makeup_slots(eid)) = 1, 'capacity 2, one seat taken';
+  ASSERT (SELECT group_name FROM guardian_makeup_slots(eid)) = 'G7 slot group', 'the other group of the course';
+END $$;
+RESET ROLE;
+-- a guardian that is not linked to the student gets nothing
+INSERT INTO guardians (org_id, full_name, phone) VALUES (1, 'G7 stranger', '+998905550000');
+SELECT set_config('app.guardian_id', (SELECT id::text FROM guardians WHERE full_name = 'G7 stranger'), true);
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '1';
+DO $$
+BEGIN
+  ASSERT (SELECT count(*) FROM guardian_makeup_slots((SELECT id FROM absence_entitlements WHERE kind = 'makeup' ORDER BY id DESC LIMIT 1))) = 0, 'an unlinked guardian gets no slots';
+END $$;
+RESET ROLE;
 ROLLBACK;
 
 -- clean up so the down-migration test starts from the original state (the journal is immutable: only the

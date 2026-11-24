@@ -118,6 +118,11 @@ function debtState(): { students: StudentRow[]; debts: StudentDebt[]; balances: 
   return { students: read<StudentRow>(STUDENTS), debts: r.students, balances: r.balances };
 }
 
+/** What a student owes now (open charges); the guardian cabinet's promise check needs it. */
+export function outstandingOf(studentId: string): number {
+  return debtState().debts.find((d) => d.studentId === studentId)?.outstanding ?? 0;
+}
+
 /** Open (unpaid) charges of one student, oldest first, for message tables. */
 export function openChargesOf(studentId: string, balances: ReturnType<typeof computeDebts>["balances"]): OpenCharge[] {
   return balances.filter((b) => b.studentId === studentId && b.outstanding > 0).sort((a, b) => (a.dueDate < b.dueDate ? -1 : 1)).map((b) => ({ month: b.month, dueDate: b.dueDate, outstanding: b.outstanding }));
@@ -263,7 +268,21 @@ export function getRoster(groupId: string, date: string): RosterRow[] {
   return rosterFor(groupId, date).map((r) => ({ ...r, status: marks.get(r.studentId)?.status ?? "", minutesLate: marks.get(r.studentId)?.minutesLate ?? 0 }));
 }
 
-export function saveAttendance(input: { date: string; groupId: string; marks: { studentId: string; status: AttendanceRow["status"]; minutesLate: number }[] }): { saved: number } {
+type AttendanceInput = { date: string; groupId: string; marks: { studentId: string; status: AttendanceRow["status"]; minutesLate: number }[] };
+
+export function saveAttendance(input: AttendanceInput): { saved: number } {
+  checkAttendance(input);
+  return withLock(() => writeAttendance(input));
+}
+
+/** Writes a checked roll call; the caller holds the script lock (the guardian cabinet applies an approval inside its own). */
+export function writeAttendance(input: AttendanceInput): { saved: number } {
+  replaceWhere<AttendanceRow>(ATTENDANCE, (a) => a.date === input.date && a.groupId === input.groupId, input.marks.map((m) => ({ date: input.date, groupId: input.groupId, ...m })));
+  syncAttendance(input.date, input.groupId, input.marks);
+  return { saved: input.marks.length };
+}
+
+export function checkAttendance(input: AttendanceInput): void {
   if (!isIsoDate(input.date)) throw new Error("Sana noto'g'ri");
   if (!getAttendanceGroups().some((g) => g.id === input.groupId)) throw new Error("Guruh topilmadi yoki faol emas");
   const allowed = new Set(rosterFor(input.groupId, input.date).map((r) => r.studentId));
@@ -276,11 +295,6 @@ export function saveAttendance(input: { date: string; groupId: string; marks: { 
     if (m.status !== "late" && m.minutesLate) throw new Error("Kechikish daqiqasi faqat 'Kechikdi' bilan");
     if (!Number.isInteger(m.minutesLate) || m.minutesLate < 0 || m.minutesLate > 600) throw new Error("Kechikish daqiqasi 0-600");
   }
-  return withLock(() => {
-    replaceWhere<AttendanceRow>(ATTENDANCE, (a) => a.date === input.date && a.groupId === input.groupId, input.marks.map((m) => ({ date: input.date, groupId: input.groupId, ...m })));
-    syncAttendance(input.date, input.groupId, input.marks);
-    return { saved: input.marks.length };
-  });
 }
 
 // ------------------------------------------------------------------ payment dialog

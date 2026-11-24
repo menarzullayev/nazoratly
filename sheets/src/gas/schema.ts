@@ -48,6 +48,10 @@ const L = {
   rewardType: { amount: "Summa", percent: "Foiz", free_lesson: "Bepul dars" },
   refCondition: { paid: "To'lagandan keyin", enrolled: "Yozilgandan keyin" },
   promoKind: { percent: "Foiz", amount: "Summa" },
+  reqKind: { absence_reason: "Darsga kela olmaslik", payment_promise: "To'lov va'dasi", makeup_choice: "Qoplash darsi" },
+  reqStatus: { pending: "Kutilmoqda", approved: "Tasdiqlangan", rejected: "Rad etilgan", cancelled: "Bekor" },
+  linkMethod: { qr: "O'quvchi kartasi (QR)", manual: "Qo'lda" },
+  linkStatus: { pending: "Kutilmoqda", approved: "Tasdiqlangan", rejected: "Rad etilgan" },
 
   discountKind: { individual: "Individual", scholarship: "Stipendiya", early_pay: "Erta to'lov" },
   discountLineKind: { family: "Oilaviy", individual: "Individual", scholarship: "Stipendiya", early_pay: "Erta to'lov" },
@@ -800,12 +804,49 @@ export const BRANCH_COL: ColDef = {
   help: "Qator qaysi filialga tegishli (avtomatik). Bo'sh = asosiy filial. Qo'lda o'zgartirmang: o'quvchini nazoratly > Filiallar > Filialga ko'chirish bilan o'tkazing",
 };
 
+// ---- guardian cabinet (G7): what a guardian asked for, and links that wait for the center ----
+export const GUARDIAN_REQUESTS: TableDef = {
+  sheet: "Vasiy so'rovlari",
+  color: "#1a73e8",
+  cols: [
+    { key: "id", header: "ID", width: 70, kind: "text", help: "Avtomatik (Q0001...): menyu Vasiy kabineti > So'rov kiritish" },
+    { key: "kind", header: "Turi", width: 150, kind: "enum", labels: L.reqKind },
+    { key: "studentId", header: "O'quvchi ID", width: 100, kind: "text" },
+    { key: "groupId", header: "Guruh ID", width: 90, kind: "text" },
+    { key: "date", header: "Sana", width: 110, kind: "date", help: "Darsga kela olmaslik: dars sanasi. Qoplash: tanlangan sana" },
+    { key: "entitlementId", header: "Qoplash huquqi ID", width: 120, kind: "text" },
+    { key: "reason", header: "Sabab", width: 220, kind: "text" },
+    { key: "promiseDate", header: "To'lash sanasi", width: 110, kind: "date" },
+    { key: "amount", header: "Va'da summasi", width: 110, kind: "int", help: "Ixtiyoriy: 0 = butun qarz" },
+    { key: "status", header: "Holat", width: 120, kind: "enum", labels: L.reqStatus, help: "Faqat menyu orqali o'zgartiring: Tasdiqlash / Rad etish" },
+    { key: "createdOn", header: "Kiritilgan", width: 110, kind: "date" },
+    { key: "decidedOn", header: "Qaror sanasi", width: 110, kind: "date" },
+    { key: "note", header: "Izoh", width: 220, kind: "text" },
+    { key: "via", header: "Qayerdan", width: 110, kind: "text", help: "Vasiy so'rovni qanday yetkazdi: Telegram, Telefon, Markazda" },
+  ],
+};
+
+export const GUARDIAN_LINKS: TableDef = {
+  sheet: "Vasiy ulanishlari",
+  color: "#1a73e8",
+  cols: [
+    { key: "id", header: "ID", width: 70, kind: "text", help: "Avtomatik (V0001...)" },
+    { key: "studentId", header: "O'quvchi ID", width: 100, kind: "text" },
+    { key: "chatId", header: "Telegram chat ID", width: 130, kind: "text", plain: true },
+    { key: "name", header: "Telegram ismi", width: 170, kind: "text" },
+    { key: "method", header: "Usul", width: 160, kind: "enum", labels: L.linkMethod, help: "QR: vasiy o'quvchi kartasidagi kodni botga yubordi, markaz tasdiqlaydi" },
+    { key: "status", header: "Holat", width: 120, kind: "enum", labels: L.linkStatus },
+    { key: "createdOn", header: "Sana", width: 110, kind: "date" },
+    { key: "decidedOn", header: "Qaror sanasi", width: 110, kind: "date" },
+  ],
+};
+
 /** Tables whose rows carry a branch mark: the same decisions as the strict tables of db/migrations/0050 (the catalog). */
-export const BRANCH_MARKED: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, INSTALLMENTS, PACKAGES, DOCUMENTS, JOURNAL, SUPPLIER_BILLS, BILL_PAYMENTS, WAITLIST, ROOMS, SCHEDULE_CHANGES, REFERRALS, PROMO_USES, SOURCE_COSTS, DISCOUNTS, DISCOUNT_LINES, REFUNDS, CASH_CLOSES, MARKS, EXAMS, EXAM_RESULTS, REPORTS, CERTIFICATES, EXPENSES];
+export const BRANCH_MARKED: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, INSTALLMENTS, PACKAGES, DOCUMENTS, JOURNAL, SUPPLIER_BILLS, BILL_PAYMENTS, WAITLIST, ROOMS, SCHEDULE_CHANGES, REFERRALS, PROMO_USES, SOURCE_COSTS, DISCOUNTS, DISCOUNT_LINES, REFUNDS, CASH_CLOSES, MARKS, EXAMS, EXAM_RESULTS, REPORTS, CERTIFICATES, EXPENSES, GUARDIAN_REQUESTS, GUARDIAN_LINKS];
 for (const t of BRANCH_MARKED) if (!t.cols.some((c) => c.key === "branchId")) t.cols.push(BRANCH_COL);
 export const BRANCH_TABLES: TableDef[] = [BRANCHES, STAFF, BRANCH_PRICES, BRANCH_SETTINGS, BRANCH_MOVES];
 
-export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, PACKAGES, INSTALLMENTS, DOCUMENTS, EXPENSES, WAITLIST, ...LEDGER_TABLES, STATEMENTS, STATEMENT_LINES, SUPPLIERS, SUPPLIER_BILLS, BILL_PAYMENTS, DISCOUNTS, DISCOUNT_LINES, ROOMS, SCHEDULE_CHANGES, REFERRALS, PROMOS, PROMO_USES, SOURCE_COSTS, MARKS, EXAMS, EXAM_RESULTS, REPORTS, CERTIFICATES, ...BRANCH_TABLES, TEACHER_INVITES, TEACHER_MESSAGES, TEACHER_NOTICES];
+export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, PACKAGES, INSTALLMENTS, DOCUMENTS, EXPENSES, WAITLIST, ...LEDGER_TABLES, STATEMENTS, STATEMENT_LINES, SUPPLIERS, SUPPLIER_BILLS, BILL_PAYMENTS, DISCOUNTS, DISCOUNT_LINES, ROOMS, SCHEDULE_CHANGES, REFERRALS, PROMOS, PROMO_USES, SOURCE_COSTS, MARKS, EXAMS, EXAM_RESULTS, REPORTS, CERTIFICATES, GUARDIAN_REQUESTS, GUARDIAN_LINKS, ...BRANCH_TABLES, TEACHER_INVITES, TEACHER_MESSAGES, TEACHER_NOTICES];
 
 export const SETTINGS_SHEET = "Sozlamalar";
 export const DEBTORS_SHEET = "Qarzdorlar";
@@ -838,6 +879,7 @@ export const SETTING_DEFAULTS: { key: string; label: string; value: string; help
   { key: "referralMinPaid", label: "Tavsiya: kamida to'langan (so'm)", value: "0", help: "Faqat 'To'lagandan keyin' sharti uchun: taklif qilingan o'quvchi jami shuncha to'lashi kerak (0 = istalgan to'lov)" },
   { key: "leadReminderDays", label: "Lead eslatmasi: jim kunlar", value: "3", help: "Yangi/aloqada/sinovga yozilgan lead bilan shuncha kun aloqa bo'lmasa 'Lead eslatmalari' ro'yxatiga tushadi (1-60). Lead'ga hech narsa yuborilmaydi: bu faqat xodim uchun ro'yxat" },
 
+  { key: "guardianPromiseDays", label: "Vasiy to'lov va'dasi: eng uzoq kun", value: "14", help: "Vasiy to'lov va'dasi uchun bugundan boshlab eng ko'pi bilan shuncha kun keyingi sana ko'rsatishi mumkin (1-90). Har bir va'da markaz tasdig'ini kutadi" },
   { key: "familySecond", label: "Oilaviy chegirma: 2-farzand (%)", value: "0", help: "Bir vasiyning (Vasiy ismi bir xil) ikkinchi farzandi uchun foiz. 0 = o'chirilgan" },
   { key: "familyThird", label: "Oilaviy chegirma: 3-farzand va keyingilar (%)", value: "0", help: "Uchinchi va undan keyingi farzandlar uchun foiz. 0 = o'chirilgan. Birinchi farzand to'liq narxda to'laydi" },
   { key: "teacherReminderHours", label: "Ustoz eslatmasi: davomat belgilanmasa (soat)", value: "2", help: "Dars tugaganidan shuncha soat o'tib davomat belgilanmagan bo'lsa ustozga ichki eslatma boradi (0-48). Vasiylarga hech narsa yuborilmaydi" },
