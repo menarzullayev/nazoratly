@@ -7,7 +7,7 @@ import { teacherResolver, type ScheduleChange } from "../domain/calendar";
 import { collectedTuition, computePayroll, heldLessonsFor } from "../domain/payroll";
 import { formatSom, INSTALLMENT_TEMPLATE, planReminders, planUpcomingReminders, UPCOMING_TEMPLATE, type SkipReason } from "../domain/reminders";
 import type { AttendanceRow, Charge, Enrollment, Group, DiscountLineRow, Installment, Payment, ReminderDraft, Refund, Student, StudentDiscount, Teacher } from "../domain/types";
-import { append, read, readIfPresent, replaceWhere, today, updateById } from "./repo";
+import { append, read, readIfPresent, replaceWhere, today, updateMany } from "./repo";
 import {
   ATTENDANCE, CHARGES, DEBTORS_SHEET, DISCOUNT_LINES, DISCOUNTS, DRAFTS, ENROLLMENTS, GROUPS, INSTALLMENTS, PAYMENTS, PAYROLL, REFUNDS, STUDENTS, TEACHERS, SCHEDULE_CHANGES,
 } from "./schema";
@@ -203,15 +203,17 @@ export function getPendingDrafts(): DraftView[] {
 export function decideDrafts(input: { approve: string[]; reject: string[]; edits: Record<string, string> }): { approved: number; rejected: number } {
   return withLock(() => {
     const pending = new Set(read<ReminderDraft>(DRAFTS).filter((d) => d.status === "pending").map((d) => d.id));
-    let approved = 0, rejected = 0;
+    const patches = new Map<string, Record<string, unknown>>();
     for (const id of input.approve) {
       if (!pending.has(id)) continue;
       const text = (input.edits[id] ?? "").trim();
       if (text.length > 4000) throw new Error("Xabar 4000 belgidan oshmasligi kerak");
-      updateById(DRAFTS, "id", id, { status: "approved", ...(text ? { text } : {}) });
-      approved++;
+      patches.set(id, { status: "approved", ...(text ? { text } : {}) });
     }
-    for (const id of input.reject) if (pending.has(id) && updateById(DRAFTS, "id", id, { status: "rejected" })) rejected++;
+    const approved = patches.size;
+    let rejected = 0;
+    for (const id of input.reject) if (pending.has(id) && !patches.has(id)) { patches.set(id, { status: "rejected" }); rejected++; }
+    updateMany(DRAFTS, "id", patches); // one pass for any number of drafts
     return { approved, rejected };
   });
 }
@@ -225,19 +227,31 @@ export function sendApprovedReminders(): void {
     const payInfo = readSettings().payInfo;
     const started = Date.now();
     let sent = 0, failed = 0;
-    for (const d of queue) {
-      if (Date.now() - started > 4.5 * 60_000) break; // Apps Script limit is 6 min: continue on the next run
-      const s = students.get(d.studentId);
-      let error = "";
-      if (!s || !s.consentNotify || !s.guardianChatId) error = "Rozilik yoki Telegram chat yo'q (yuborish paytida tekshirildi)";
-      else {
-        // the human-approved text + a live table of what is owed + one-tap buttons (Bot API 10.x rich message)
-        const r = sendRich(s.guardianChatId, reminderRich({ text: d.text, studentId: s.id, charges: openChargesOf(s.id, balances), payInfo }));
-        if (!r.ok) error = r.description ?? "Noma'lum xato";
+    // statuses are written in batches (one pass over the tab per batch, not one per draft); a batch is flushed even when the
+    // run is cut short, so a sent message is never sent again
+    let results = new Map<string, Record<string, unknown>>();
+    const flush = (): void => {
+      updateMany(DRAFTS, "id", results);
+      results = new Map();
+    };
+    try {
+      for (const d of queue) {
+        if (Date.now() - started > 4.5 * 60_000) break; // Apps Script limit is 6 min: continue on the next run
+        const s = students.get(d.studentId);
+        let error = "";
+        if (!s || !s.consentNotify || !s.guardianChatId) error = "Rozilik yoki Telegram chat yo'q (yuborish paytida tekshirildi)";
+        else {
+          // the human-approved text + a live table of what is owed + one-tap buttons (Bot API 10.x rich message)
+          const r = sendRich(s.guardianChatId, reminderRich({ text: d.text, studentId: s.id, charges: openChargesOf(s.id, balances), payInfo }));
+          if (!r.ok) error = r.description ?? "Noma'lum xato";
+        }
+        results.set(d.id, error ? { status: "failed", error } : { status: "sent", error: "" });
+        if (error) failed++; else sent++;
+        if (results.size >= 25) flush();
+        Utilities.sleep(60);
       }
-      updateById(DRAFTS, "id", d.id, error ? { status: "failed", error } : { status: "sent", error: "" });
-      if (error) failed++; else sent++;
-      Utilities.sleep(60);
+    } finally {
+      flush();
     }
     const left = read<ReminderDraft>(DRAFTS).filter((d) => d.status === "approved").length;
     return `Yuborildi: ${sent}\nXato: ${failed}${failed ? " (Eslatmalar varag'ida sababi ko'rsatilgan)" : ""}\nNavbatda qoldi: ${left}`;
@@ -437,10 +451,12 @@ export function generateLinkCodes(): void {
   const username = props().getProperty("BOT_USERNAME");
   if (!username) throw new Error("Avval Telegram botni sozlang.");
   const students = read<StudentRow>(STUDENTS).filter((s) => s.status === "active" && !s.guardianChatId && !s.linkCode);
+  const patches = new Map<string, Record<string, unknown>>();
   for (const s of students) {
     const code = Utilities.getUuid().replace(/-/g, "").slice(0, 10).toUpperCase();
-    updateById(STUDENTS, "id", s.id, { linkCode: code, linkUrl: `https://t.me/${username}?start=${code}` });
+    patches.set(s.id, { linkCode: code, linkUrl: `https://t.me/${username}?start=${code}` });
   }
+  updateMany(STUDENTS, "id", patches);
   toast(`${students.length} ta o'quvchi uchun ulash havolasi yaratildi (O'quvchilar varag'ida).`);
 }
 

@@ -121,6 +121,39 @@ export function updateById(def: TableDef, keyCol: string, id: string, patch: Rec
   return false;
 }
 
+/**
+ * Updates many rows in one pass: ONE read of the tab and one write per touched column, whatever the number of rows
+ * (updateById per row costs two sheet calls and a full-tab read EACH: 2000 students would be 6000 calls and hit Apps Script's
+ * 6-minute limit). `patches` maps the key value to the fields to change. Only the touched columns are rewritten, with the
+ * values read from the tab, so those columns must hold plain values (not formulas). Returns how many rows matched.
+ */
+export function updateMany(def: TableDef, keyCol: string, patches: ReadonlyMap<string, Record<string, unknown>>): number {
+  if (patches.size === 0) return 0;
+  const sh = sheetOf(def);
+  const head = header(sh);
+  const keyIdx = head.findIndex((h) => String(h).trim() === def.cols.find((c) => c.key === keyCol)!.header);
+  const data = sh.getDataRange().getValues();
+  const columns = new Map<number, Cell[]>(); // column index -> new values of rows 2..n
+  let matched = 0;
+  for (let r = 1; r < data.length; r++) {
+    const patch = patches.get(String(data[r]![keyIdx]).trim());
+    if (!patch) continue;
+    matched++;
+    for (const [key, value] of Object.entries(patch)) {
+      const col = def.cols.find((c) => c.key === key)!;
+      const ci = head.findIndex((h) => String(h).trim() === col.header);
+      if (ci < 0) {
+        if (col.optional) continue; // a workbook set up before this column existed
+        throw new Error(`"${def.sheet}" varag'ida "${col.header}" ustuni yo'q. Menyudan: nazoratly > Boshlang'ich sozlash.`);
+      }
+      if (!columns.has(ci)) columns.set(ci, data.slice(1).map((row) => row[ci] as Cell));
+      columns.get(ci)![r - 1] = encodeRow({ ...def, cols: [col] }, [col.header], { [key]: value }, toDate)[0] as Cell;
+    }
+  }
+  for (const [ci, values] of columns) sh.getRange(2, ci + 1, values.length, 1).setValues(values.map((v) => [v]) as unknown as unknown[][]);
+  return matched;
+}
+
 /** Replaces every row matching `predicate` (compared on decoded rows) with `rows`; used for idempotent regeneration. */
 export function replaceWhere<T>(def: TableDef, predicate: (row: T) => boolean, rows: readonly object[]): void {
   const sh = sheetOf(def);

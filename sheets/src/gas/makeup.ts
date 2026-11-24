@@ -8,7 +8,7 @@ import { effectiveFee } from "../domain/billing";
 import type { AttendanceRow, Enrollment, Entitlement, Group, Student } from "../domain/types";
 import { guard, withLock } from "./actions";
 import { pickId } from "./pick";
-import { append, read, today, updateById } from "./repo";
+import { append, read, today, updateById, updateMany } from "./repo";
 import { ATTENDANCE, ENROLLMENTS, ENTITLEMENTS, GROUPS, STUDENTS } from "./schema";
 import { readSettings } from "./settings";
 
@@ -83,7 +83,7 @@ export function reduceByCredits(planned: { studentId: string; amount: number }[]
 }
 
 export function markCreditsUsed(consumed: { entitlementId: string; chargeId: string }[]): void {
-  for (const c of consumed) updateById(ENTITLEMENTS, "id", c.entitlementId, { status: "used", appliedChargeId: c.chargeId });
+  updateMany(ENTITLEMENTS, "id", new Map(consumed.map((c) => [c.entitlementId, { status: "used", appliedChargeId: c.chargeId }])));
 }
 
 /** Dates on which a group had a make-up lesson: payroll counts such a day only when someone attended. */

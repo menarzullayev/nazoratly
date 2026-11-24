@@ -20,6 +20,7 @@ import {
 
 const HEADER_BG = "#202124";
 const FONT = "Google Sans";
+const HEADER_PROTECTION = "nazoratly: sarlavha qatori";
 
 function ensureSheet(name: string): GoogleAppsScript.Spreadsheet.Sheet {
   const ss = SpreadsheetApp.getActive();
@@ -68,7 +69,9 @@ export function setupTable(def: TableDef): void {
   });
   sh.getRange(2, 1, Math.max(sh.getMaxRows() - 1, 1), n).setFontFamily(FONT).setVerticalAlignment("middle");
   // Warning-only protection: structure rows are hard to break by accident, the owner can still edit.
-  const prot = sh.getRange(1, 1, 1, n).protect().setDescription("nazoratly: sarlavha qatori");
+  // range.protect() adds a NEW protection on every call, so the previous one is removed first (setup is re-runnable).
+  for (const old of sh.getProtections(SpreadsheetApp.ProtectionType.RANGE)) if (old.getDescription() === HEADER_PROTECTION) old.remove();
+  const prot = sh.getRange(1, 1, 1, n).protect().setDescription(HEADER_PROTECTION);
   prot.setWarningOnly(true);
   // Colour the status column so problems are visible at a glance.
   const statusIdx = def.cols.findIndex((c) => c.key === "status");

@@ -21,6 +21,9 @@ function chain<T extends object>(target: T): T {
   });
 }
 
+/** Call counters of the sheet boundary (quota guard): reset by installHarness(). */
+export const stats = { reads: 0, writes: 0, rangeCalls: 0, fetches: 0, driveFiles: 0, cellsRead: 0, cellsWritten: 0 };
+
 const OWNER = "owner@example.com";
 type Who = string | { getEmail(): string };
 const emailOf = (w: Who): string => (typeof w === "string" ? w : w.getEmail());
@@ -44,8 +47,10 @@ class FakeProtection {
 class FakeSheet {
   data: Cell[][] = [];
   protections: FakeProtection[] = [];
+  /** descriptions of range protections (the header row of every table is protected warning-only) */
+  rangeProtections: { description: string; warningOnly: boolean; remove(): void; getDescription(): string }[] = [];
   protect() { const p = new FakeProtection(this); this.protections.push(p); return p; }
-  getProtections(_type: unknown) { return [...this.protections]; }
+  getProtections(type: unknown) { return type === "RANGE" ? [...this.rangeProtections] : [...this.protections]; }
   maxRows = 1000;
   constructor(public name: string) {}
   private ensure(r: number, c: number) {
@@ -78,18 +83,26 @@ class FakeSheet {
       c = cc;
     }
     if (r < 1 || c < 1 || nr < 1 || nc < 1) throw new Error(`bad range ${r},${c},${nr},${nc}`);
+    stats.rangeCalls++;
     const range: object = chain({
-      getValues: () => { sheet.ensure(r + nr - 1, c + nc - 1); return Array.from({ length: nr }, (_, i) => sheet.data[r - 1 + i]!.slice(c - 1, c - 1 + nc)); },
-      getValue: () => { sheet.ensure(r, c); return sheet.data[r - 1]![c - 1]; },
+      getValues: () => { stats.reads++; stats.cellsRead += nr * nc; sheet.ensure(r + nr - 1, c + nc - 1); return Array.from({ length: nr }, (_, i) => sheet.data[r - 1 + i]!.slice(c - 1, c - 1 + nc)); },
+      getValue: () => { stats.reads++; sheet.ensure(r, c); return sheet.data[r - 1]![c - 1]; },
       setValues: (v: Cell[][]) => {
+        stats.writes++;
+        stats.cellsWritten += nr * nc;
         if (v.length !== nr || v.some((row) => row.length !== nc)) throw new Error(`setValues shape ${v.length}x${v[0]?.length} != ${nr}x${nc}`);
         sheet.ensure(r + nr - 1, c + nc - 1);
         v.forEach((row, i) => row.forEach((x, j) => { sheet.data[r - 1 + i]![c - 1 + j] = x; }));
         return range;
       },
-      setValue: (x: Cell) => { sheet.ensure(r, c); sheet.data[r - 1]![c - 1] = x; return range; },
-      clearContent: () => { sheet.ensure(r + nr - 1, c + nc - 1); for (let i = 0; i < nr; i++) for (let j = 0; j < nc; j++) sheet.data[r - 1 + i]![c - 1 + j] = ""; return range; },
-      protect: () => chain({ setDescription: () => chain({}), setWarningOnly: () => undefined }),
+      setValue: (x: Cell) => { stats.writes++; sheet.ensure(r, c); sheet.data[r - 1]![c - 1] = x; return range; },
+      clearContent: () => { stats.writes++; sheet.ensure(r + nr - 1, c + nc - 1); for (let i = 0; i < nr; i++) for (let j = 0; j < nc; j++) sheet.data[r - 1 + i]![c - 1 + j] = ""; return range; },
+      protect: () => {
+        const rec = { description: "", warningOnly: false, getDescription: () => rec.description, remove: () => { sheet.rangeProtections = sheet.rangeProtections.filter((x) => x !== rec); } };
+        sheet.rangeProtections.push(rec);
+        const p: object = chain({ setDescription: (d: string) => { rec.description = d; return p; }, setWarningOnly: (v: boolean) => { rec.warningOnly = v; return p; } });
+        return p;
+      },
     });
     return range as { getValue(): unknown; setValue(x: unknown): unknown; getValues(): unknown[][] };
   }
@@ -137,9 +150,12 @@ export interface Harness {
   userProps: Map<string, string>;
   /** protections of a sheet: description and the editors that may write */
   protections(ref: SheetRef): { description: string; editors: string[] }[];
+  /** warning-only range protections of a sheet (the header row) */
+  rangeProtections(ref: SheetRef): { description: string; warningOnly: boolean }[];
 }
 
 export function installHarness(): Harness {
+  stats.reads = stats.writes = stats.rangeCalls = stats.fetches = stats.driveFiles = stats.cellsRead = stats.cellsWritten = 0;
   resetScope(); // module state of the script (branch scope, reserved ids) must not leak between tests
   clearReservedIds();
   const sheets = new Map<string, FakeSheet>();
@@ -158,6 +174,7 @@ export function installHarness(): Harness {
     drive: new Map(),
     sheet: (ref) => sheets.get(nameOf(ref))!,
     rows: (ref) => sheets.get(nameOf(ref))!.data.slice(0, sheets.get(nameOf(ref))!.getLastRow()),
+    rangeProtections: (ref) => sheets.get(nameOf(ref))!.rangeProtections.map((p) => ({ description: p.description, warningOnly: p.warningOnly })),
     protections: (ref) => sheets.get(nameOf(ref))!.protections.map((p) => ({ description: p.description, editors: [...p.editors] })),
   };
   const ss = {
@@ -211,6 +228,7 @@ export function installHarness(): Harness {
   };
   g.UrlFetchApp = {
     fetch: (url: string, opts: { payload?: string | Record<string, unknown> }) => {
+      stats.fetches++;
       const method = url.split("/").pop()!;
       const raw = opts.payload ?? "{}";
       // an object payload is a multipart upload: blobs are reported by name and size
@@ -226,6 +244,7 @@ export function installHarness(): Harness {
   g.DriveApp = {
     getFoldersByName: (n: string) => { const f = folders.get(n); const items = f ? [f] : []; return { hasNext: () => items.length > 0, next: () => items.shift() }; },
     createFolder: (n: string) => { const f = { name: n, createFile: (b: Blob) => {
+      stats.driveFiles++;
       const id = `FILE${h.drive.size + 1}`;
       h.drive.set(id, { name: b.getName(), folder: n, content: b.content });
       return { getUrl: () => `https://drive.google.com/file/d/${id}/view?usp=drivesdk` };
