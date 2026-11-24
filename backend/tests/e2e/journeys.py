@@ -96,3 +96,14 @@ def outbox_rows(super_dsn: str, org_public: str) -> list[tuple[Any, ...]]:
             "SELECT o.channel, o.status FROM outbox_messages o JOIN organizations g ON g.id = o.org_id WHERE g.public_id::text = %s ORDER BY o.id",
             (org_public,),
         ).fetchall()
+
+
+def api_routes(app: Any) -> list[tuple[str, str]]:
+    """(METHOD, path) of every documented route (FastAPI includes routers lazily, so `app.routes` is not enough)."""
+    spec = app.openapi()
+    return sorted(
+        (m.upper(), p)
+        for p, ops in spec["paths"].items()
+        for m in ops
+        if m.upper() in {"GET", "POST", "PUT", "PATCH", "DELETE"}
+    )
