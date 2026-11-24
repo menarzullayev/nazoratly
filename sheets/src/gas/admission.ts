@@ -26,7 +26,7 @@ function sheetOf(name: string): GoogleAppsScript.Spreadsheet.Sheet {
   return sh;
 }
 
-function writeTable(name: string, head: string[], rows: (string | number)[][], color: string): void {
+export function writeTable(name: string, head: string[], rows: (string | number)[][], color: string): void {
   const sh = sheetOf(name);
   sh.getRange(1, 1, 1, head.length).setValues([head]).setBackground("#202124").setFontColor("#fff").setFontWeight("bold").setWrap(true);
   if (rows.length) sh.getRange(2, 1, rows.length, head.length).setValues(rows);
@@ -133,7 +133,7 @@ export function dropTrial(enrollmentId?: string): void {
 }
 
 // ------------------------------------------------------------------ leads
-function fillLeadIds(): Lead[] {
+export function fillLeadIds(): Lead[] {
   const leads = read<Lead>(LEADS);
   const sh = SpreadsheetApp.getActive().getSheetByName(LEADS.sheet);
   if (!sh) return leads;

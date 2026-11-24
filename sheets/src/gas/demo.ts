@@ -4,7 +4,7 @@
 import { demoBlockers, type Blocker, type DemoRow, type DemoTable } from "../domain/demo";
 import { guard, withLock } from "./actions";
 import { readIfPresent, replaceWhere } from "./repo";
-import { ATTENDANCE, CHARGES, DOCUMENTS, DRAFTS, ENROLLMENTS, ENTITLEMENTS, EXPENSES, GROUPS, INSTALLMENTS, LEADS, LEAD_LOG, PACKAGES, PAYMENTS, SCHEDULE_CHANGES, STUDENTS, TEACHERS, WAITLIST, type TableDef } from "./schema";
+import { ATTENDANCE, CHARGES, DOCUMENTS, DRAFTS, ENROLLMENTS, ENTITLEMENTS, EXPENSES, GROUPS, INSTALLMENTS, LEADS, LEAD_LOG, PACKAGES, PAYMENTS, PROMO_USES, REFERRALS, SCHEDULE_CHANGES, STUDENTS, TEACHERS, WAITLIST, type TableDef } from "./schema";
 
 type Row = Record<string, unknown>;
 const flagged = (r: Row): boolean => r.demo === true;
@@ -37,6 +37,8 @@ const REAL_ONLY: Spec[] = [
   { key: "installments", def: INSTALLMENTS, label: "To'lov rejalari", id: (r) => `${s(r.chargeId)}#${s(r.seq)}`, refs: (r) => [["charges", s(r.chargeId)]] },
   { key: "documents", def: DOCUMENTS, label: "Hujjatlar", id: (r) => s(r.number), refs: (r) => [["students", s(r.studentId)], ["payments", s(r.paymentId)]] },
   { key: "scheduleChanges", def: SCHEDULE_CHANGES, label: "Dars o'zgarishlari", id: (r) => s(r.id), refs: (r) => [["groups", s(r.groupId)], ["teachers", s(r.substituteId)]] },
+  { key: "referrals", def: REFERRALS, label: "Tavsiyalar", id: (r) => s(r.id), refs: (r) => [["students", s(r.referrerId)], ["students", s(r.invitedId)]] },
+  { key: "promoUses", def: PROMO_USES, label: "Promo ishlatilishi", id: (r) => `${s(r.code)}|${s(r.studentId)}`, refs: (r) => [["students", s(r.studentId)], ["enrollments", s(r.enrollmentId)]] },
   { key: "leadLog", def: LEAD_LOG, label: "Lead aloqalari", id: (r) => `${s(r.leadId)}|${s(r.date)}|${s(r.summary)}`, refs: (r) => [["leads", s(r.leadId)]] },
 ];
 

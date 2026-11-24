@@ -19,4 +19,8 @@ their own way.
 
 `capacity.json` (seats left, waiting-list order and position, who may join the queue or enroll directly, "next in line" offers, the guardian offer text), `qr.json` (student code format, scanner-output parsing, what a scan does, and reference QR matrices from reportlab that the TypeScript side decodes with an independent decoder; the two encoders need not produce identical pixels, both must decode to the same text) and `import.json` (delimited-text parsing, column auto-mapping, phone/date/number parsing, per-row validation, duplicate keys and detection). Outputs for these three were generated once from the Python rules and reviewed by hand; the QR matrices are reportlab's own output.
 
+<<<<<<< HEAD
 `insights.json` (owner insights, G5: money formatting `fmt_money`, attendance rates, the debt follow-up order/tone/score and draft texts, the churn-risk score, level and reasons, report lines and the weekly summary with its percentage and line texts). Whole so'm as integers. Outputs were generated once from the Python rules and reviewed by hand; the AI layer only rewrites these facts into prose, and the Sheets edition (no AI) shows the rule text itself.
+=======
+`growth.json` (G3 growth: referral reward amount and the split into credits that billing consumes whole, the referral condition, promo state and discount, the marketing-credit summary for accounting, lead source ROI with half-away-from-zero rounding, and the internal lead reminders with their ordering). Outputs were generated once from the Python rules and reviewed by hand. Money is a string; ROI is a number with one decimal or null.
+>>>>>>> f3c2172 (feat(sheets,docs): growth in the Sheets edition, regenerated client, handoff)

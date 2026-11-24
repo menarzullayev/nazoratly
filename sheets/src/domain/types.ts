@@ -129,6 +129,52 @@ export interface Entitlement {
   usedOn: ISODate | "";
   appliedChargeId: string;
   lastMakeupOn: ISODate | "";
+  /** where a credit comes from: an excused lesson (default), a referral reward or a promo code */
+  source?: "absence" | "referral" | "promo";
+  note?: string;
+}
+
+/** One invitation of a student by another; keeps the rule it was made under. */
+export interface Referral {
+  id: string;
+  referrerId: string;
+  invitedId: string;
+  status: "pending" | "rewarded" | "cancelled";
+  rewardType: "amount" | "percent" | "free_lesson";
+  rewardValue: number;
+  condition: "enrolled" | "paid";
+  minPaid: number;
+  rewardAmount: number;
+  invitedOn: ISODate;
+  rewardedOn: ISODate | "";
+  note: string;
+}
+
+export interface Promo {
+  code: string;
+  name: string;
+  kind: "percent" | "amount";
+  value: number;
+  validFrom: ISODate;
+  validTo: ISODate | "";
+  maxUses: number; // 0 = unlimited
+  active: boolean;
+}
+
+export interface PromoUse {
+  code: string;
+  studentId: string;
+  enrollmentId: string;
+  fee: number;
+  amount: number;
+  usedOn: ISODate;
+}
+
+export interface SourceCostRow {
+  source: string;
+  month: ISODate;
+  amount: number;
+  note: string;
 }
 
 /** One dated part of a payment plan: a charge split into installments (sheet "To'lov rejalari"). */

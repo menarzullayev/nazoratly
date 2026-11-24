@@ -22,6 +22,12 @@ export interface Settings {
   packageLowLessons: number;
   requisites: string;
   ledgerEditors: string;
+  referralActive: boolean;
+  referralRewardType: "amount" | "percent" | "free_lesson";
+  referralRewardValue: number;
+  referralCondition: "enrolled" | "paid";
+  referralMinPaid: number;
+  leadReminderDays: number;
 }
 
 export function readSettings(): Settings {
@@ -58,6 +64,12 @@ export function readSettings(): Settings {
     requisites: map.get("requisites") ?? "",
     payInfo: map.get("payInfo") ?? "",
     ledgerEditors: map.get("ledgerEditors") ?? "",
+    referralActive: ["ha", "yes", "true"].includes((map.get("referralActive") ?? "").toLowerCase()),
+    referralRewardType: ((v) => (v.startsWith("foiz") ? "percent" : v.startsWith("bepul") ? "free_lesson" : "amount"))((map.get("referralRewardType") ?? "").toLowerCase()),
+    referralRewardValue: num("referralRewardValue", 0, 0, 1_000_000_000),
+    referralCondition: (map.get("referralCondition") ?? "").toLowerCase().startsWith("yozil") ? "enrolled" : "paid",
+    referralMinPaid: num("referralMinPaid", 0, 0, 1_000_000_000),
+    leadReminderDays: num("leadReminderDays", 3, 1, 60),
     ownerChatId: /^-?\d{5,}$/.test(map.get("ownerChatId") ?? "") ? (map.get("ownerChatId") as string) : "",
   };
 }
