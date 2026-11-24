@@ -163,7 +163,7 @@
 
   var base = function () { return "/v1/cabinet/students/" + kid.id; };
   function table(head, rows) {
-    return h("div", { class: "scroll" }, [h("table", {}, [
+    return h("div", { class: "scroll", tabindex: "0" }, [h("table", {}, [
       h("thead", {}, [h("tr", {}, head.map(function (c) { return h("th", { scope: "col", text: c }); }))]),
       h("tbody", {}, rows.map(function (r) { return h("tr", {}, r.map(function (c) { return h("td", { text: String(c) }); })); })),
     ])]);
@@ -239,7 +239,7 @@
       return h("tr", {}, [h("td", { text: x.number }), h("td", { text: x.kind === "receipt" ? "Kvitansiya" : "Hisob-faktura" }), h("td", { text: x.issued_on }), h("td", { text: som(x.total) }),
         h("td", {}, [h("button", { type: "button", class: "secondary", text: "PDF", onclick: function () { download("/v1/cabinet/documents/" + x.id + "/pdf", x.number + ".pdf").catch(alertErr); } })])]);
     }));
-    return h("div", { class: "scroll" }, [h("table", {}, [h("thead", {}, [h("tr", {}, ["Raqam", "Turi", "Sana", "Summa", ""].map(function (c) { return h("th", { scope: "col", text: c }); }))]), tb])]);
+    return h("div", { class: "scroll", tabindex: "0" }, [h("table", {}, [h("thead", {}, [h("tr", {}, ["Raqam", "Turi", "Sana", "Summa", ""].map(function (c) { return h("th", { scope: "col", text: c }); }))]), tb])]);
   }
   function alertErr(e) { $("view").appendChild(h("p", { class: "err", role: "alert", text: e.message })); }
 
@@ -281,7 +281,7 @@
         h("td", {}, [h("span", { class: "pill " + (r.status === "approved" ? "ok" : (r.status === "pending" ? "warn" : "bad")), text: ST[r.status] }), r.decision_note ? h("div", { class: "muted", text: r.decision_note }) : ""]),
         h("td", {}, [r.status === "pending" ? h("button", { type: "button", class: "secondary", text: "Qaytarib olish", onclick: async function () { await call("POST", "/v1/cabinet/requests/" + r.id + "/cancel"); render(); } }) : ""])]);
     }));
-    return h("div", { class: "scroll" }, [h("table", {}, [h("thead", {}, [h("tr", {}, ["So'rov", "O'quvchi", "Holat", ""].map(function (c) { return h("th", { scope: "col", text: c }); }))]), tb])]);
+    return h("div", { class: "scroll", tabindex: "0" }, [h("table", {}, [h("thead", {}, [h("tr", {}, ["So'rov", "O'quvchi", "Holat", ""].map(function (c) { return h("th", { scope: "col", text: c }); }))]), tb])]);
   }
 
   function absenceForm(lessons) {

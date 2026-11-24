@@ -1,6 +1,8 @@
 import Link from "next/link";
 import "./globals.css";
 
+export const metadata = { title: "404 | nazoratly", robots: { index: false } };
+
 export default function GlobalNotFound() {
   return (
     <html lang="uz-Latn">

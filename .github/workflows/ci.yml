@@ -81,6 +81,25 @@ jobs:
           B=http://127.0.0.1:4173
           node scripts/lighthouse.mjs --runs 3 --preset both --min 95 $B/ $B/uz-cyrl/ $B/uz-new/ $B/ru/ $B/en/
 
+  web-ui:
+    # Browser tests of the pages the API itself serves (/ui/*: guardian portal, teacher Mini App, calendar, QR scan, import).
+    # The test run starts its own stack: Postgres in Docker on a random port, the real app, a fake Telegram. Runs in
+    # parallel with `web` so the landing job stays short.
+    runs-on: ubuntu-latest
+    defaults: {run: {working-directory: web}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: "24"}
+      - uses: astral-sh/setup-uv@v5
+        with: {version: "0.11.3", enable-cache: true, cache-dependency-glob: backend/uv.lock}
+      - run: npm ci --no-audit --no-fund
+      - run: uv sync --frozen
+        working-directory: backend
+      - run: npx playwright install --with-deps chromium
+      - name: Browser tests against the test stack (guardian, teacher, scan, calendar, import, axe)
+        run: npm run e2e:api
+
   secrets:
     runs-on: ubuntu-latest
     steps:

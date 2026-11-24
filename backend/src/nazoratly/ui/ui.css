@@ -1,4 +1,4 @@
-:root { --bg: #f6f7f9; --fg: #1b1f24; --muted: #5b6573; --card: #fff; --line: #d9dee5; --brand: #1a56db; --ok: #137333; --okbg: #e6f4ea; --warn: #b06000; --warnbg: #fef7e0; --bad: #b3261e; --badbg: #fce8e6; }
+:root { --bg: #f6f7f9; --fg: #1b1f24; --muted: #5b6573; --card: #fff; --line: #d9dee5; --brand: #1a56db; --ok: #137333; --okbg: #e6f4ea; --warn: #944f00; --warnbg: #fef7e0; --bad: #b3261e; --badbg: #fce8e6; }
 @media (prefers-color-scheme: dark) { :root { --bg: #14171b; --fg: #e8eaed; --muted: #9aa4b2; --card: #1e2227; --line: #343b44; --brand: #8ab4f8; --ok: #81c995; --okbg: #1e3a2a; --warn: #fdd663; --warnbg: #3b3320; --bad: #f28b82; --badbg: #4a2623; } }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
@@ -46,7 +46,8 @@ th { color: var(--muted); font-weight: 600; }
 .cal-day h3 { margin: 0 0 8px; font-size: .95rem; }
 .cal-entry { border: 1px solid var(--line); border-left: 4px solid var(--brand); border-radius: 6px; padding: 6px 8px; background: var(--card); font-size: .9rem; }
 .cal-entry.clash { border-left-color: var(--bad); }
-.cal-entry.cancelled { opacity: .65; text-decoration: line-through; }
+.cal-entry.cancelled { border-left-color: var(--muted); }
+.cal-entry.cancelled > strong { text-decoration: line-through; } /* no opacity: it would drop the pills and muted text below WCAG AA contrast */
 .cal-entry .row { gap: 4px; margin-top: 4px; }
 .pre { white-space: pre-line; }
 label.inline { display: inline; font-weight: 400; }
