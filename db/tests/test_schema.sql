@@ -906,7 +906,7 @@ BEGIN
   PERFORM public.t_expect('23514', $q$INSERT INTO ai_reports (org_id, kind, period_end, source, model, content, data) VALUES (1, 'bogus', '2026-11-24', 'ai', 'haiku', 'text', '{}')$q$);
   PERFORM public.t_expect('23514', $q$INSERT INTO ai_reports (org_id, kind, period_end, source, model, content, data) VALUES (1, 'churn_risk', '2026-11-24', 'ai', 'haiku', '   ', '{}')$q$);
   PERFORM public.t_expect('23514', $q$INSERT INTO ai_reports (org_id, kind, period_end, source, fallback_reason, content, data) VALUES (1, 'churn_risk', '2026-11-24', 'rules', 'because', 'text', '{}')$q$);
-  PERFORM public.t_expect('23503', $q$INSERT INTO ai_reports (org_id, kind, period_end, source, model, content, data) VALUES (999, 'churn_risk', '2026-11-24', 'ai', 'haiku', 'text', '{}')$q$);  -- no such center
+  PERFORM public.t_expect('23502', $q$INSERT INTO ai_reports (org_id, kind, period_end, source, model, content, data) VALUES (999, 'churn_risk', '2026-11-24', 'ai', 'haiku', 'text', '{}')$q$);  -- no such center
   -- a report is a record: it cannot be changed or deleted
   PERFORM public.t_expect('23001', format($q$UPDATE ai_reports SET content = 'edited' WHERE id = %s$q$, r));
   PERFORM public.t_expect('23001', format($q$DELETE FROM ai_reports WHERE id = %s$q$, r));
@@ -1302,9 +1302,246 @@ SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '2';
 DO $$ BEGIN ASSERT (SELECT count(*) FROM certificates) = 0, 'center 2 sees no certificate of center 1'; END $$;
 ROLLBACK;
 
+-- ---------------------------------------------------------------- G6 multi-branch (0050-0055)
+-- helper: like t_post, but the chain head comes from ledger_head() so it also works inside a branch session
+CREATE FUNCTION public.t_post_branch(p_org bigint, p_date date, p_memo text, p_sk text, p_lines jsonb) RETURNS bigint
+LANGUAGE plpgsql AS $$
+DECLARE hd record; eid bigint; l jsonb; prev text; sq bigint; eno bigint; acct accounts%ROWTYPE; h text;
+BEGIN
+  PERFORM ledger_lock(p_org);
+  SELECT * INTO hd FROM ledger_head(p_org);
+  eno := COALESCE(hd.entry_no, 0) + 1;
+  INSERT INTO journal_entries (org_id, entry_no, entry_date, memo, source_type, source_key, line_count)
+  VALUES (p_org, eno, p_date, p_memo, 'manual', p_sk, jsonb_array_length(p_lines)) RETURNING id INTO eid;
+  prev := COALESCE(hd.hash, repeat('0', 64));
+  sq := COALESCE(hd.seq, 0);
+  FOR l IN SELECT * FROM jsonb_array_elements(p_lines) LOOP
+    sq := sq + 1;
+    SELECT * INTO acct FROM accounts WHERE org_id = p_org AND code = l->>0;
+    h := journal_line_hash(prev, sq, eno, p_date, acct.code, (l->>1)::numeric, (l->>2)::numeric, 'manual', p_sk, p_memo);
+    INSERT INTO journal_lines (org_id, seq, entry_id, account_id, debit, credit, prev_hash, hash)
+    VALUES (p_org, sq, eid, acct.id, (l->>1)::numeric, (l->>2)::numeric, prev, h);
+    prev := h;
+  END LOOP;
+  SET CONSTRAINTS ALL IMMEDIATE;
+  SET CONSTRAINTS ALL DEFERRED;
+  RETURN eid;
+END $$;
+GRANT EXECUTE ON FUNCTION public.t_post_branch(bigint, date, text, text, jsonb) TO PUBLIC;
+
+-- the catalog: every table of a center has a branch decision, every strict table is marked, forced and scoped
+DO $$
+DECLARE missing text;
+BEGIN
+  SELECT string_agg(c.table_name, ', ') INTO missing
+    FROM information_schema.columns c JOIN information_schema.tables t
+      ON t.table_schema = c.table_schema AND t.table_name = c.table_name AND t.table_type = 'BASE TABLE'
+   WHERE c.table_schema = 'public' AND c.column_name = 'org_id'
+     AND c.table_name NOT IN (SELECT table_name FROM branch_catalog)
+     AND c.table_name NOT IN ('branches','branch_settings','branch_course_prices','student_branch_moves','branch_migration_log');
+  ASSERT missing IS NULL, 'tables without a branch decision: ' || COALESCE(missing, '');
+  ASSERT (SELECT count(*) FROM branch_catalog c WHERE c.kind IN ('strict','nullable') AND NOT EXISTS (
+            SELECT 1 FROM information_schema.columns k WHERE k.table_schema = 'public' AND k.table_name = c.table_name AND k.column_name = 'branch_id')) = 0,
+         'every marked table has branch_id';
+  ASSERT (SELECT count(*) FROM branch_catalog c WHERE c.kind = 'strict' AND NOT (SELECT attnotnull FROM pg_attribute WHERE attrelid = c.table_name::regclass AND attname = 'branch_id')) = 0,
+         'every strict table has branch_id NOT NULL';
+  ASSERT (SELECT count(*) FROM branch_catalog c WHERE c.kind IN ('strict','nullable') AND c.table_name <> 'audit_log'
+            AND NOT EXISTS (SELECT 1 FROM pg_policies p WHERE p.tablename = c.table_name AND p.policyname = 'branch_scope' AND p.permissive = 'RESTRICTIVE')) = 0,
+         'every marked table has a restrictive branch_scope policy';
+  ASSERT (SELECT count(*) FROM organizations o WHERE (SELECT count(*) FROM branches b WHERE b.org_id = o.id AND b.is_default AND b.deleted_at IS NULL) <> 1) = 0,
+         'every center has exactly one default branch';
+END $$;
+
+-- default branch: new centers get one, only one per center, it cannot be lost, it can be swapped inside a transaction
+BEGIN;
+DO $$
+DECLARE o bigint; d bigint;
+BEGIN
+  INSERT INTO organizations (name) VALUES ('Gamma markaz') RETURNING id INTO o;
+  SELECT id INTO d FROM branches WHERE org_id = o AND is_default;
+  ASSERT d IS NOT NULL AND default_branch_id(o) = d, 'a new center gets its default branch';
+  PERFORM public.t_expect('23505', format($q$INSERT INTO branches (org_id, name, is_default) VALUES (%s, 'Ikkinchi asosiy', true)$q$, o));
+  PERFORM public.t_expect('23514', format($q$UPDATE branches SET status = 'closed' WHERE id = %s; SET CONSTRAINTS ALL IMMEDIATE$q$, d));
+END $$;
+ROLLBACK;
+BEGIN;
+DO $$
+BEGIN
+  UPDATE branches SET is_default = false WHERE org_id = 1 AND is_default;
+  UPDATE branches SET is_default = true WHERE id = 3;
+  SET CONSTRAINTS ALL IMMEDIATE;
+  ASSERT default_branch_id(1) = 3, 'the default can be swapped in one transaction';
+END $$;
+ROLLBACK;
+
+-- stamping and the same-branch enrollment rule (branch 1 = default of center 1, branch 3 = its second branch)
+BEGIN;
+DO $$
+DECLARE s_def bigint; s_b bigint; g_b bigint; e_b bigint; c_b bigint; p_b bigint; a_b bigint;
+BEGIN
+  INSERT INTO students (org_id, full_name) VALUES (1, 'BR default student') RETURNING id INTO s_def;
+  ASSERT (SELECT branch_id FROM students WHERE id = s_def) = 1, 'no scope: the default branch';
+  PERFORM set_config('app.branch_id', '3', true);
+  INSERT INTO students (org_id, full_name) VALUES (1, 'BR scoped student') RETURNING id INTO s_b;
+  INSERT INTO study_groups (org_id, course_id, teacher_id, name, monthly_fee, start_date, status)
+    VALUES (1, 1, 1, 'BR guruh', 100000, '2026-09-01', 'active') RETURNING id INTO g_b;
+  ASSERT (SELECT branch_id FROM students WHERE id = s_b) = 3 AND (SELECT branch_id FROM study_groups WHERE id = g_b) = 3, 'scope 3 stamps branch 3';
+  PERFORM set_config('app.branch_id', '', true);
+  -- a student of another branch cannot join the group
+  PERFORM public.t_expect('23514', format($q$INSERT INTO enrollments (org_id, student_id, group_id, started_on) VALUES (1, %s, %s, '2026-09-01')$q$, s_def, g_b));
+  INSERT INTO enrollments (org_id, student_id, group_id, started_on) VALUES (1, s_b, g_b, '2026-09-01') RETURNING id INTO e_b;
+  INSERT INTO charges (org_id, student_id, enrollment_id, kind, period_month, amount, due_date)
+    VALUES (1, s_b, e_b, 'tuition', '2026-11-01', 100000, '2026-11-10') RETURNING id INTO c_b;
+  INSERT INTO payments (org_id, student_id, amount, method) VALUES (1, s_b, 50000, 'cash') RETURNING id INTO p_b;
+  INSERT INTO lessons (org_id, group_id, teacher_id, lesson_date, start_time, end_time, status)
+    VALUES (1, g_b, 1, '2026-11-09', '10:00', '11:00', 'held');
+  INSERT INTO attendance (org_id, lesson_id, student_id, status)
+    VALUES (1, (SELECT id FROM lessons WHERE group_id = g_b), s_b, 'present') RETURNING id INTO a_b;
+  ASSERT (SELECT branch_id FROM enrollments WHERE id = e_b) = 3, 'enrollment follows its group';
+  ASSERT (SELECT branch_id FROM charges WHERE id = c_b) = 3, 'charge follows its enrollment';
+  ASSERT (SELECT branch_id FROM payments WHERE id = p_b) = 3, 'no scope: a payment follows its student';
+  ASSERT (SELECT branch_id FROM lessons WHERE group_id = g_b) = 3 AND (SELECT branch_id FROM attendance WHERE id = a_b) = 3, 'lesson and attendance follow the group';
+  -- the desk wins for money: a payment taken in branch 1 for a student of branch 3
+  PERFORM set_config('app.branch_id', '1', true);
+  INSERT INTO payments (org_id, student_id, amount, method) VALUES (1, s_b, 1000, 'cash') RETURNING id INTO p_b;
+  ASSERT (SELECT branch_id FROM payments WHERE id = p_b) = 1, 'context first: the desk that took the money';
+  PERFORM set_config('app.branch_id', '', true);
+  -- money rows never change branch; a student changes branch only through the transfer; a used group cannot move
+  PERFORM public.t_expect('23514', format('UPDATE payments SET branch_id = 3 WHERE id = %s', p_b));
+  PERFORM public.t_expect('23514', format('UPDATE charges SET branch_id = 1 WHERE id = %s', c_b));
+  PERFORM public.t_expect('23514', format('UPDATE students SET branch_id = 1 WHERE id = %s', s_b));
+  PERFORM public.t_expect('23514', format('UPDATE study_groups SET branch_id = 1 WHERE id = %s', g_b));
+  PERFORM set_config('app.branch_move', 'on', true);
+  UPDATE students SET branch_id = 1 WHERE id = s_b;
+  ASSERT (SELECT branch_id FROM students WHERE id = s_b) = 1, 'the transfer may change the student branch';
+  PERFORM set_config('app.branch_move', '', true);
+  -- the live enrollment of the moved student is now in another branch: it cannot be re-activated
+  UPDATE enrollments SET status = 'finished', ended_on = '2026-11-10' WHERE id = e_b;
+  PERFORM public.t_expect('23514', format($q$UPDATE enrollments SET status = 'active', ended_on = NULL WHERE id = %s$q$, e_b));
+END $$;
+ROLLBACK;
+
+-- a branch session sees and writes only its branch
+BEGIN;
+DO $$
+DECLARE s_b bigint; l_b bigint;
+BEGIN
+  INSERT INTO students (org_id, full_name, branch_id) VALUES (1, 'BR third student', 3) RETURNING id INTO s_b;
+  INSERT INTO guardians (org_id, full_name, phone, branch_id) VALUES (1, 'BR mother', '+998900000001', 3);
+  INSERT INTO guardians (org_id, full_name, phone, branch_id) VALUES (1, 'BR father', '+998900000004', 1);
+  INSERT INTO student_guardians (org_id, student_id, guardian_id, relation, is_primary) VALUES (1, s_b, (SELECT id FROM guardians WHERE full_name = 'Mother A'), 'mother', true);
+  INSERT INTO leads (org_id, full_name, phone, branch_id) VALUES (1, 'BR lead', '+998900000002', 3) RETURNING id INTO l_b;
+  INSERT INTO leads (org_id, full_name, phone, branch_id) VALUES (1, 'BR lead 1', '+998900000003', 1);
+  INSERT INTO accounts (org_id, code, name, type) VALUES (1, '1005', 'BR kassa hisobi', 'asset');
+  INSERT INTO cash_accounts (org_id, account_id, name, kind) VALUES (1, (SELECT id FROM accounts WHERE org_id = 1 AND code = '1005'), 'BR kassa', 'cash');
+END $$;
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '1'; SET LOCAL app.user_id = '1'; SET LOCAL app.branch_id = '3';
+DO $$
+DECLARE n bigint;
+BEGIN
+  ASSERT (SELECT count(*) FROM students) = 1, 'a branch session sees only the students of its branch';
+  ASSERT (SELECT count(*) FROM leads) = 1, 'and its leads';
+  ASSERT (SELECT count(*) FROM guardians WHERE full_name = 'BR mother') = 1, 'its guardians';
+  ASSERT (SELECT count(*) FROM guardians WHERE full_name = 'Mother A') = 1, 'a guardian of another branch is visible through a linked student of this branch';
+  ASSERT (SELECT count(*) FROM guardians WHERE full_name = 'BR father') = 0, 'a guardian with no link to this branch is not';
+  ASSERT (SELECT count(*) FROM branches) = 1 AND (SELECT id FROM branches) = 3, 'it sees only its own branch';
+  ASSERT (SELECT count(*) FROM cash_accounts WHERE name = 'BR kassa') = 1, 'a shared (unmarked) cash account stays visible';
+  ASSERT (SELECT count(*) FROM memberships) = 1, 'staff of a branch see their own membership only';
+  INSERT INTO students (org_id, full_name) VALUES (1, 'BR made in branch');
+  ASSERT (SELECT branch_id FROM students WHERE full_name = 'BR made in branch') = 3, 'new rows are stamped with the session branch';
+  PERFORM public.t_expect('42501', $q$INSERT INTO students (org_id, full_name, branch_id) VALUES (1, 'BR smuggled', 1)$q$);
+  PERFORM public.t_expect('42501', $q$INSERT INTO branches (org_id, name) VALUES (1, 'BR new branch')$q$);
+  PERFORM public.t_expect('42501', $q$UPDATE leads SET branch_id = 1 WHERE full_name = 'BR lead'$q$);
+  UPDATE students SET full_name = 'X' WHERE branch_id = 1;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 0, 'a row of another branch cannot be updated';
+  ASSERT (SELECT count(*) FROM audit_log WHERE branch_id IS DISTINCT FROM 3) = 0, 'a branch session reads only the audit trail of its branch';
+  ASSERT (SELECT count(*) FROM audit_log WHERE branch_id = 3) >= 1, 'its own writes were audited with the branch';
+END $$;
+-- the ledger: a branch session writes one entry; the chain still continues across branches
+DO $$
+DECLARE e bigint; h1 record; h2 record;
+BEGIN
+  SELECT * INTO h1 FROM ledger_head(1);
+  e := public.t_post_branch(1, '2026-11-20', 'BR 3 entry', 'BR-3', '[["1000","1000.00","0.00"],["4000","0.00","1000.00"]]');
+  SELECT * INTO h2 FROM ledger_head(1);
+  ASSERT h2.seq = h1.seq + 2 AND h2.entry_no = h1.entry_no + 1, 'the entry continues the whole-center chain';
+  ASSERT (SELECT branch_id FROM journal_entries WHERE id = e) = 3 AND (SELECT count(*) FROM journal_lines WHERE entry_id = e AND branch_id = 3) = 2, 'entry and lines carry the branch';
+  ASSERT (SELECT count(*) FROM journal_entries) = 1, 'the branch session reads only its own entries';
+  ASSERT (SELECT count(*) FROM ledger_head(2)) = 0, 'the ledger head of another center is not readable';
+END $$;
+RESET ROLE;
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '1'; SET LOCAL app.user_id = '1'; SET LOCAL app.branch_id = '1';
+DO $$
+DECLARE e bigint;
+BEGIN
+  ASSERT (SELECT count(*) FROM students WHERE full_name IN ('BR third student', 'BR made in branch')) = 0, 'branch 1 sees none of the branch 3 students';
+  ASSERT (SELECT count(*) FROM journal_entries WHERE memo = 'BR 3 entry') = 0, 'nor the branch 3 ledger entry';
+  e := public.t_post_branch(1, '2026-11-21', 'BR 1 entry', 'BR-1', '[["1000","500.00","0.00"],["4000","0.00","500.00"]]');
+  ASSERT (SELECT branch_id FROM journal_entries WHERE id = e) = 1, 'entry of branch 1';
+  ASSERT (SELECT COALESCE(sum(l.debit - l.credit), 0) FROM journal_lines l JOIN accounts a ON a.id = l.account_id
+           WHERE a.code = '1000' AND l.entry_id = e) = 500, 'cash of the branch';
+END $$;
+RESET ROLE;
+-- center-wide staff with no scope sees everything; narrowed to a branch it behaves like that branch
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '1'; SET LOCAL app.user_id = '1'; SET LOCAL app.branch_id = '';
+DO $$
+BEGIN
+  ASSERT (SELECT count(*) FROM students WHERE full_name IN ('BR third student', 'BR made in branch')) = 2, 'no scope: all branches';
+  ASSERT (SELECT count(*) FROM journal_entries WHERE memo LIKE 'BR %') = 2, 'no scope: the whole ledger';
+  PERFORM set_config('app.branch_id', '3', true);
+  ASSERT (SELECT count(*) FROM journal_entries WHERE memo LIKE 'BR %') = 1, 'narrowed to branch 3: its entries only';
+  PERFORM set_config('app.branch_id', '', true);
+END $$;
+RESET ROLE;
+ROLLBACK;
+
+-- per-branch uniqueness: both branches close the same day; one branch cannot close the same shift twice
+BEGIN;
+DO $$
+BEGIN
+  INSERT INTO cash_closes (org_id, branch_id, close_date, shift_no, counted, book_balance, difference) VALUES (1, 1, '2026-11-20', 1, 100, 100, 0);
+  INSERT INTO cash_closes (org_id, branch_id, close_date, shift_no, counted, book_balance, difference) VALUES (1, 3, '2026-11-20', 1, 50, 50, 0);
+  PERFORM public.t_expect('23505', $q$INSERT INTO cash_closes (org_id, branch_id, close_date, shift_no, counted, book_balance, difference) VALUES (1, 3, '2026-11-20', 1, 1, 1, 0)$q$);
+  INSERT INTO lead_sources (org_id, name) VALUES (1, 'BR manba');
+  INSERT INTO lead_source_costs (org_id, branch_id, source_id, month, amount) VALUES (1, 1, (SELECT id FROM lead_sources WHERE name = 'BR manba'), '2026-11-01', 10);
+  INSERT INTO lead_source_costs (org_id, branch_id, source_id, month, amount) VALUES (1, 3, (SELECT id FROM lead_sources WHERE name = 'BR manba'), '2026-11-01', 20);
+  PERFORM public.t_expect('23505', $q$INSERT INTO lead_source_costs (org_id, branch_id, source_id, month, amount) VALUES (1, 3, (SELECT id FROM lead_sources WHERE name = 'BR manba'), '2026-11-01', 30)$q$);
+END $$;
+ROLLBACK;
+
+-- settings, prices and the move history are per branch and tenant-isolated
+BEGIN;
+DO $$
+BEGIN
+  INSERT INTO branch_settings (org_id, branch_id, trial_free_days, excused_mode) VALUES (1, 3, 14, 'credit');
+  PERFORM public.t_expect('23514', $q$INSERT INTO branch_settings (org_id, branch_id, trial_free_days) VALUES (1, 1, 999)$q$);
+  PERFORM public.t_expect('23503', $q$INSERT INTO branch_settings (org_id, branch_id, trial_free_days) VALUES (1, 4, 5)$q$);   -- branch of another center
+  INSERT INTO branch_course_prices (org_id, branch_id, course_id, monthly_fee) VALUES (1, 3, 1, 450000);
+  PERFORM public.t_expect('23514', $q$INSERT INTO branch_course_prices (org_id, branch_id, course_id, monthly_fee) VALUES (1, 1, 1, -1)$q$);
+  PERFORM public.t_expect('23503', $q$INSERT INTO branch_course_prices (org_id, branch_id, course_id, monthly_fee) VALUES (1, 3, 2, 1)$q$);  -- course of another center
+  INSERT INTO student_branch_moves (org_id, student_id, from_branch_id, branch_id, moved_on) VALUES (1, 1, 1, 3, '2026-11-24');
+  PERFORM public.t_expect('23514', $q$INSERT INTO student_branch_moves (org_id, student_id, from_branch_id, branch_id, moved_on) VALUES (1, 1, 3, 3, '2026-11-24')$q$);
+END $$;
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '2'; SET LOCAL app.user_id = '2';
+DO $$
+BEGIN
+  ASSERT (SELECT count(*) FROM branch_settings) = 0 AND (SELECT count(*) FROM branch_course_prices) = 0 AND (SELECT count(*) FROM student_branch_moves) = 0, 'other centers see none of it';
+END $$;
+RESET ROLE;
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '1'; SET LOCAL app.user_id = '1'; SET LOCAL app.branch_id = '1';
+DO $$
+BEGIN
+  ASSERT (SELECT count(*) FROM branch_settings) = 0, 'branch 1 does not see the settings of branch 3';
+  ASSERT (SELECT count(*) FROM student_branch_moves) = 1, 'the branch left sees the move';
+  PERFORM public.t_expect('42501', $q$INSERT INTO student_branch_moves (org_id, student_id, from_branch_id, branch_id, moved_on) VALUES (1, 1, 1, 3, '2026-11-25')$q$);
+END $$;
+ROLLBACK;
+
 -- clean up so the down-migration test starts from the original state (the journal is immutable: only the
 -- superuser of the test database may switch its guards off)
 DROP FUNCTION public.t_post(bigint, date, text, text, text, jsonb, text, int, bigint);
+DROP FUNCTION public.t_post_branch(bigint, date, text, text, jsonb);
 ALTER TABLE statement_lines DISABLE TRIGGER USER;
 ALTER TABLE bank_statements DISABLE TRIGGER USER;
 ALTER TABLE journal_lines DISABLE TRIGGER USER;

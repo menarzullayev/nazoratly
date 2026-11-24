@@ -44,4 +44,17 @@ up
 psql_file /tmp/tests/test_schema.sql | tail -3
 echo "== index/constraint inventory"
 psql_sql "SELECT count(*) || ' tables, ' || (SELECT count(*) FROM pg_indexes WHERE schemaname='public') || ' indexes, ' || (SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal) || ' triggers, ' || (SELECT count(*) FROM pg_policies) || ' policies' FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'"
+echo "== backfill: legacy data (state before the branch migrations) through up, backfill checks, down of 0055..0050"
+psql_sql "DROP FUNCTION IF EXISTS public.t_expect(text, text)" >/dev/null
+down
+up_until() { for f in $(docker exec "$NAME" sh -c "ls /tmp/migrations/*.up.sql | sort"); do case "$(basename "$f")" in 005[0-9]_*) ;; *) echo "UP   $(basename "$f")"; psql_file "$f";; esac; done; }
+up_from()  { for f in $(docker exec "$NAME" sh -c "ls /tmp/migrations/005*.up.sql | sort"); do echo "UP   $(basename "$f")"; psql_file "$f"; done; }
+down_from() { for f in $(docker exec "$NAME" sh -c "ls /tmp/migrations/005*.down.sql | sort -r"); do echo "DOWN $(basename "$f")"; psql_file "$f"; done; }
+up_until
+psql_file /tmp/tests/legacy_seed.sql >/dev/null
+up_from
+psql_file /tmp/tests/test_backfill.sql
+down_from
+psql_file /tmp/tests/test_after_down.sql
+echo "== legacy backfill cycle passed"
 echo "MIGRATION TESTS PASSED"
