@@ -29,13 +29,22 @@ async def test_ai_reports_anonymized_with_fallbacks_and_nothing_sent(
     grp = await mk_group(t, monthly_fee="900000")
     ali = await debtor(t, "Ali Valiyev", "1250000", -40, grp)
     bobur = await debtor(t, "Bobur Karimov", "300000", -3, grp)
-    phone_guardian = await ok(await t.post("/v1/guardians", {"full_name": "Karimov Ota", "phone": "+998909998877"}), 201)
+    phone_guardian = await ok(
+        await t.post("/v1/guardians", {"full_name": "Karimov Ota", "phone": "+998909998877"}), 201
+    )
 
     # --- 1. no AI worker at all: every report is the rule-based text and says why
     app.state.ai_transport = None
     rules = await generate(t, "debt_followup")
-    assert (rules["source"], rules["fallback_reason"], rules["anonymized"]) == ("rules", "ai_not_configured", True)
-    assert [i["name"] for i in rules["data"]["items"]] == ["Ali Valiyev", "Bobur Karimov"]  # the oldest debt first
+    assert (rules["source"], rules["fallback_reason"], rules["anonymized"]) == (
+        "rules",
+        "ai_not_configured",
+        True,
+    )
+    assert [i["name"] for i in rules["data"]["items"]] == [
+        "Ali Valiyev",
+        "Bobur Karimov",
+    ]  # the oldest debt first
 
     # --- 2. the AI is on: the prompt carries codes, never names/phones/ids; the answer is restored locally
     fake = fake_ai(good_reply)
@@ -47,7 +56,16 @@ async def test_ai_reports_anonymized_with_fallbacks_and_nothing_sent(
     for kind in ("weekly_summary", "churn_risk"):
         await generate(t, kind)
     for prompt in fake.prompts:
-        for secret in ("Valiyev", "Karimov", "+998", ali["id"], bobur["id"], t.org_id, grp["name"], phone_guardian["id"]):
+        for secret in (
+            "Valiyev",
+            "Karimov",
+            "+998",
+            ali["id"],
+            bobur["id"],
+            t.org_id,
+            grp["name"],
+            phone_guardian["id"],
+        ):
             assert secret not in prompt, secret
     assert "S001: owes 1 250 000 so'm" in fake.prompts[0]
 

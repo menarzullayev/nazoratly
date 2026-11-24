@@ -40,14 +40,26 @@ async def test_week_with_conflicts_substitute_move_cancel_and_payroll(
     first = await mk_lesson(t, g1["id"], room_id=room["id"])
     clash = await t.post(
         "/v1/lessons",
-        {"group_id": g2["id"], "lesson_date": MON, "start_time": "10:30", "end_time": "11:30", "room_id": room["id"]},
+        {
+            "group_id": g2["id"],
+            "lesson_date": MON,
+            "start_time": "10:30",
+            "end_time": "11:30",
+            "room_id": room["id"],
+        },
     )
     assert clash.status_code == 409 and clash.json()["error"]["code"] == "schedule_conflict"
     assert {c["kind"] for c in clash.json()["error"]["details"]["conflicts"]} == {"room", "teacher"}
 
     # --- roles that may write the schedule can override (API.md says "egasi"; the code allows academics:write); a teacher cannot
     teacher_login, _ = await staff(client, t, "teacher")
-    body = {"group_id": g2["id"], "lesson_date": MON, "start_time": "10:30", "end_time": "11:30", "room_id": room["id"]}
+    body = {
+        "group_id": g2["id"],
+        "lesson_date": MON,
+        "start_time": "10:30",
+        "end_time": "11:30",
+        "room_id": room["id"],
+    }
     assert (await teacher_login.post("/v1/lessons", body)).status_code == 403
     manager, _ = await staff(client, t, "manager")
     assert (await manager.post("/v1/lessons", body)).status_code == 409
@@ -59,7 +71,14 @@ async def test_week_with_conflicts_substitute_move_cancel_and_payroll(
     moved = await ok(
         await t.post(
             f"/v1/lessons/{overridden['id']}/move",
-            {"lesson_date": "2026-12-08", "start_time": "10:30", "end_time": "11:30", "room_id": room["id"], "reason": "room clash", "notify": False},
+            {
+                "lesson_date": "2026-12-08",
+                "start_time": "10:30",
+                "end_time": "11:30",
+                "room_id": room["id"],
+                "reason": "room clash",
+                "notify": False,
+            },
         )
     )
     assert moved["lesson"]["lesson_date"] == "2026-12-08"
@@ -74,7 +93,11 @@ async def test_week_with_conflicts_substitute_move_cancel_and_payroll(
     second = await mk_lesson(t, g1["id"], day="2026-12-14", room_id=room["id"])
     await ok(await t.patch(f"/v1/lessons/{second['id']}", {"status": "held"}))
     assert lesson_items(await payroll(t, ali["id"])) == ["100000.00", "100000.00"]
-    sub = await ok(await t.post(f"/v1/lessons/{second['id']}/substitute", {"teacher_id": vali["id"], "reason": "Ali is ill"}))
+    sub = await ok(
+        await t.post(
+            f"/v1/lessons/{second['id']}/substitute", {"teacher_id": vali["id"], "reason": "Ali is ill"}
+        )
+    )
     effect = {e["teacher_id"]: e for e in sub["payroll_effect"]}
     assert effect[ali["id"]]["delta"] == "-100000.00" and effect[vali["id"]]["delta"] == "80000.00"
     assert lesson_items(await payroll(t, ali["id"])) == ["100000.00"]
@@ -86,7 +109,13 @@ async def test_week_with_conflicts_substitute_move_cancel_and_payroll(
     mv = await ok(
         await t.post(
             f"/v1/lessons/{third['id']}/move",
-            {"lesson_date": "2026-12-23", "start_time": "12:00", "end_time": "13:00", "room_id": room["id"], "reason": "New Year concert"},
+            {
+                "lesson_date": "2026-12-23",
+                "start_time": "12:00",
+                "end_time": "13:00",
+                "room_id": room["id"],
+                "reason": "New Year concert",
+            },
         )
     )
     assert mv["notices_created"] == 2
@@ -112,7 +141,9 @@ async def test_week_with_conflicts_substitute_move_cancel_and_payroll(
     pr = await payroll(t, vali["id"])
     approved = await ok(await t.post(f"/v1/payrolls/{pr['id']}/approve"))
     assert money(approved["total"]) == 80000
-    frozen = await t.post(f"/v1/lessons/{second['id']}/substitute", {"teacher_id": ali["id"], "reason": "back"})
+    frozen = await t.post(
+        f"/v1/lessons/{second['id']}/substitute", {"teacher_id": ali["id"], "reason": "back"}
+    )
     assert frozen.status_code == 409
     await ok(await t.post(f"/v1/payrolls/{pr['id']}/pay"))
     tb = await assert_books_sound(t)

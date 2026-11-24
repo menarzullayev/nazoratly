@@ -33,12 +33,16 @@ async def test_source_to_referral_and_promo_credits(tenant: Tenant) -> None:
 
     # --- marketing: Instagram brought a lead; it costs 150000 this month; the lead becomes a trial and pays
     insta = await ok(await t.post("/v1/lead-sources", {"name": "Instagram"}), 201)
-    await ok(await t.put(f"/v1/lead-sources/{insta['id']}/costs/{first}", {"amount": "150000", "note": "ads"}))
+    await ok(
+        await t.put(f"/v1/lead-sources/{insta['id']}/costs/{first}", {"amount": "150000", "note": "ads"})
+    )
     grp = await mk_group(t, monthly_fee="300000")
     lead = await ok(await t.post("/v1/leads", {"full_name": "Newcomer Sami", "source_id": insta["id"]}), 201)
     conv = await ok(await t.post(f"/v1/leads/{lead['id']}/enroll-trial", {"group_id": grp["id"]}))
     invited_id = conv["student_id"]
-    await ok(await t.post(f"/v1/enrollments/{conv['enrollment']['id']}/accept", {"mode": "full"}))  # a trial is never billed
+    await ok(
+        await t.post(f"/v1/enrollments/{conv['enrollment']['id']}/accept", {"mode": "full"})
+    )  # a trial is never billed
     invited = {"id": invited_id}
 
     # --- the referral is recorded under the rule of the day; it does not pay until the invited student pays enough
@@ -68,8 +72,12 @@ async def test_source_to_referral_and_promo_credits(tenant: Tenant) -> None:
     assert money((await month_charge(t, invited_id, NEXT_MONTH))["amount"]) == 300000
     rep = await credits_report(t)
     assert rep["totals"]["applied"] == "260000.00" and rep["totals"]["outstanding"] == "0.00"
-    assert (await ok(await t.post("/v1/charges/generate", {"month": NEXT_MONTH, "due_day": 10})))["created"] == 0
-    assert (await ok(await t.get("/v1/referrals", params={"status": "rewarded"})))[0]["reward_amount"] == "60000.00"
+    assert (await ok(await t.post("/v1/charges/generate", {"month": NEXT_MONTH, "due_day": 10})))[
+        "created"
+    ] == 0
+    assert (await ok(await t.get("/v1/referrals", params={"status": "rewarded"})))[0][
+        "reward_amount"
+    ] == "60000.00"
 
     # --- credits are not cash: the journal holds only the one real payment, and the books are sound
     assert [e["source_type"] for e in await entries(t)] == ["payment"]

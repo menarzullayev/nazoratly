@@ -31,7 +31,12 @@ async def test_marks_exam_progress_report_and_certificate(
         await enroll(t, grp["id"], st["id"], "2026-11-01")
 
     # --- a month of lessons: present, late, absent, excused
-    for day, status in (("2026-11-02", "present"), ("2026-11-09", "late"), ("2026-11-16", "absent"), ("2026-11-23", "excused")):
+    for day, status in (
+        ("2026-11-02", "present"),
+        ("2026-11-09", "late"),
+        ("2026-11-16", "absent"),
+        ("2026-11-23", "excused"),
+    ):
         await attend(t, grp["id"], kid["id"], day, status)
         await attend(t, grp["id"], other["id"], day, "present")
 
@@ -40,8 +45,23 @@ async def test_marks_exam_progress_report_and_certificate(
         les = await lesson_on(t, grp["id"], day)
         await ok(await t.put("/v1/marks", lesson_mark(grp, kid, les, grade=grade, note="good work")), 201)
     await ok(await t.put("/v1/marks", month_mark(grp, kid, grade=3, note="homework needs attention")), 201)
-    exam = await ok(await t.post(f"/v1/groups/{grp['id']}/exams", {"title": "Mid-term", "held_on": "2026-11-12", "max_score": "40"}), 201)
-    await ok(await t.put(f"/v1/exams/{exam['id']}/results", {"records": [{"student_id": kid["id"], "score": "30"}, {"student_id": other["id"], "score": "40"}]}))
+    exam = await ok(
+        await t.post(
+            f"/v1/groups/{grp['id']}/exams", {"title": "Mid-term", "held_on": "2026-11-12", "max_score": "40"}
+        ),
+        201,
+    )
+    await ok(
+        await t.put(
+            f"/v1/exams/{exam['id']}/results",
+            {
+                "records": [
+                    {"student_id": kid["id"], "score": "30"},
+                    {"student_id": other["id"], "score": "40"},
+                ]
+            },
+        )
+    )
     assert money((await ok(await t.get(f"/v1/exams/{exam['id']}")))["results_count"]) == 2
 
     # --- a teacher of ANOTHER group cannot grade this group's students
@@ -50,7 +70,12 @@ async def test_marks_exam_progress_report_and_certificate(
     assert (await stranger.put("/v1/marks", lesson_mark(grp, kid, les, grade=5))).status_code in (403, 404)
 
     # --- the progress report: draft, numbers from the data, PDF with the facts
-    rep = await ok(await t.post("/v1/reports/progress", {"student_id": kid["id"], "group_id": grp["id"], "month": MONTH}), 201)
+    rep = await ok(
+        await t.post(
+            "/v1/reports/progress", {"student_id": kid["id"], "group_id": grp["id"], "month": MONTH}
+        ),
+        201,
+    )
     snap = rep["snapshot"]
     assert (snap["present"], snap["late"], snap["absent"], snap["excused"]) == (1, 1, 1, 1)
     assert snap["attendance_percent"] == 67 and snap["average_grade"] == "4.0"
@@ -65,11 +90,15 @@ async def test_marks_exam_progress_report_and_certificate(
     fake = FakeTelegram(chat)
     await _run(pg_server, fake)
     assert fake.calls == []
-    sent = await ok(await t.post(f"/v1/reports/progress/{rep['id']}/approve", {"guardian_id": mom["id"]}), 201)
+    sent = await ok(
+        await t.post(f"/v1/reports/progress/{rep['id']}/approve", {"guardian_id": mom["id"]}), 201
+    )
     await _run(pg_server, fake)
     await _run(pg_server, fake)  # a second worker pass must not resend
     assert [c["method"] for c in fake.calls] == ["sendMessage", "sendDocument"]
-    assert (await t.post(f"/v1/reports/progress/{rep['id']}/approve", {"guardian_id": mom["id"]})).json()["message_id"] == sent["message_id"]
+    assert (await t.post(f"/v1/reports/progress/{rep['id']}/approve", {"guardian_id": mom["id"]})).json()[
+        "message_id"
+    ] == sent["message_id"]
     assert (await t.get(f"/v1/reports/progress/{rep['id']}/pdf")).content in fake.calls[1]["file"]
     # an approved report is final: it cannot be regenerated
     assert (
@@ -82,7 +111,11 @@ async def test_marks_exam_progress_report_and_certificate(
     done = await ok(await t.patch(f"/v1/enrollments/{mine['id']}", {"status": "finished"}))
     cert = await ok(await t.post("/v1/certificates", {"enrollment_id": done["id"]}), 201)
     anon = await ok(await client.get(f"/v1/verify/certificate/{cert['code']}"))
-    assert anon["valid"] is True and kid["full_name"] not in str(anon) and anon["holder"].startswith(kid["full_name"][0])
+    assert (
+        anon["valid"] is True
+        and kid["full_name"] not in str(anon)
+        and anon["holder"].startswith(kid["full_name"][0])
+    )
     await _run(pg_server, fake)
     assert [c["method"] for c in fake.calls] == ["sendMessage", "sendDocument"]  # issuing sent nothing
     await ok(await t.post(f"/v1/certificates/{cert['id']}/send", {"guardian_id": mom["id"]}), 201)
