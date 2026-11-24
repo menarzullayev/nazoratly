@@ -924,6 +924,8 @@ BEGIN
   PERFORM public.t_expect('42501', $q$INSERT INTO ai_reports (org_id, kind, period_end, source, model, content, data) VALUES (1, 'weekly_summary', '2026-11-24', 'ai', 'haiku', 'x', '{}')$q$);
   PERFORM public.t_expect('42501', $q$UPDATE ai_reports SET content = 'x'$q$);
   PERFORM public.t_expect('42501', $q$DELETE FROM ai_reports$q$);
+END $$;
+ROLLBACK;
 
 -- ---------------------------------------------------------------- 0025: substitute teacher, lesson changes, notices
 BEGIN;
