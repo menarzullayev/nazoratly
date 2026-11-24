@@ -189,7 +189,8 @@ describe("journey: demo data (sample, clear, refresh)", () => {
     // refresh: loads again (ids continue after the real ones) and the real student is untouched
     expect(drive(h, "menuSampleReset").last).toContain("8 o'quvchi");
     expect(read<Student>(STUDENTS).find((s) => s.id === "S0100")!.fullName).toBe("Haqiqiy O'quvchi");
-    expect(read<Student>(STUDENTS)).toHaveLength(12);
+    // 8 core + 3 waiting + 2 Chilonzor branch students (sampleData.ts) + the 1 real student
+    expect(read<Student>(STUDENTS)).toHaveLength(14);
     expect(() => loadSampleData()).toThrow(/allaqachon yuklangan/);
     void [ATTENDANCE, teacher];
   });
