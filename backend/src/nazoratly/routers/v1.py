@@ -15,6 +15,7 @@ from nazoratly.routers import (
     documents,
     entitlements,
     finance,
+    growth,
     imports,
     leads,
     lessons,
@@ -44,6 +45,7 @@ router.include_router(waitlist.router)
 router.include_router(qr.router)
 router.include_router(imports.router)
 router.include_router(demo.router)
+router.include_router(growth.router)  # before leads: /leads/reminders must not match /leads/{lead_id}
 router.include_router(leads.router)
 router.include_router(settings.router)
 router.include_router(lessons.router)

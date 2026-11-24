@@ -54,7 +54,9 @@ def test_referral_reward_amount(case: dict[str, Any]) -> None:
 @pytest.mark.parametrize("case", GOLDEN["split_credit"], ids=lambda c: c["name"])
 def test_split_credit(case: dict[str, Any]) -> None:
     i = case["in"]
-    assert [str(x) for x in split_credit(amount=D(i["amount"]), monthly_fee=D(i["monthly_fee"]))] == case["out"]
+    assert [str(x) for x in split_credit(amount=D(i["amount"]), monthly_fee=D(i["monthly_fee"]))] == case[
+        "out"
+    ]
 
 
 @pytest.mark.parametrize("case", GOLDEN["referral_condition"], ids=lambda c: c["name"])
@@ -131,7 +133,11 @@ def test_lead_reminders(case: dict[str, Any]) -> None:
     got = lead_reminders(
         [
             LeadFact(
-                x["id"], x["stage"], date.fromisoformat(x["created_on"]), _d(x["last_contact_on"]), _d(x["next_follow_up_on"])
+                x["id"],
+                x["stage"],
+                date.fromisoformat(x["created_on"]),
+                _d(x["last_contact_on"]),
+                _d(x["next_follow_up_on"]),
             )
             for x in i["leads"]
         ],

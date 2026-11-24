@@ -35,6 +35,8 @@ _RESOLVABLE = {
     "leads": True,
     "lead_sources": False,
     "absence_entitlements": False,
+    "referrals": False,
+    "promo_campaigns": False,
     "lesson_packages": False,
     "waitlist_entries": False,
     "schedule_notices": False,

@@ -111,7 +111,13 @@ def growth_credit_summary(credits: list[CreditFact]) -> dict[str, Any]:
     for c in credits:
         g = groups.setdefault(
             (c.source, c.label),
-            {"count": 0, "granted": Decimal(0), "applied": Decimal(0), "outstanding": Decimal(0), "cancelled": Decimal(0)},
+            {
+                "count": 0,
+                "granted": Decimal(0),
+                "applied": Decimal(0),
+                "outstanding": Decimal(0),
+                "cancelled": Decimal(0),
+            },
         )
         if c.status == "cancelled":
             g["cancelled"] += c.amount
@@ -122,8 +128,14 @@ def growth_credit_summary(credits: list[CreditFact]) -> dict[str, Any]:
             g["applied"] += c.amount
         else:
             g["outstanding"] += c.amount
-    rows = [{"source": s, "label": lab, **v} for (s, lab), v in sorted(groups.items())]
-    totals: dict[str, Decimal | int] = {"count": 0, "granted": Decimal(0), "applied": Decimal(0), "outstanding": Decimal(0), "cancelled": Decimal(0)}
+    rows: list[dict[str, Any]] = [{"source": s, "label": lab, **v} for (s, lab), v in sorted(groups.items())]
+    totals: dict[str, Any] = {
+        "count": 0,
+        "granted": Decimal(0),
+        "applied": Decimal(0),
+        "outstanding": Decimal(0),
+        "cancelled": Decimal(0),
+    }
     for r in rows:
         for k in totals:
             totals[k] += r[k]
@@ -182,8 +194,12 @@ def source_roi(
             "revenue": revenue,
             "cost": cost,
             "roi": _div_round((revenue - cost) * 100, cost, _ONE_DECIMAL) if cost > 0 else None,
-            "cost_per_lead": _div_round(cost, Decimal(r["leads"]), _WHOLE) if r["leads"] and cost > 0 else None,
-            "cost_per_paying": _div_round(cost, Decimal(r["paying"]), _WHOLE) if r["paying"] and cost > 0 else None,
+            "cost_per_lead": _div_round(cost, Decimal(r["leads"]), _WHOLE)
+            if r["leads"] and cost > 0
+            else None,
+            "cost_per_paying": _div_round(cost, Decimal(r["paying"]), _WHOLE)
+            if r["paying"] and cost > 0
+            else None,
         }
 
     ordered = sorted(per.items(), key=lambda kv: (kv[0] is None, -kv[1]["revenue"], kv[0] or ""))
