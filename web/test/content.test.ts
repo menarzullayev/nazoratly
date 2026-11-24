@@ -17,9 +17,10 @@ describe("section copy", () => {
     expect(keys(en)).toEqual(keys(uz));
     expect(getDict("uz").how.steps).toHaveLength(4);
     expect(getDict("uz").pricing.tiers).toHaveLength(3);
-    expect(getDict("uz").faq.items).toHaveLength(8);
+    expect(getDict("uz").faq.items).toHaveLength(10);
     expect(getDict("uz").tech.items).toHaveLength(4);
     expect(getDict("uz").features.items).toHaveLength(10);
+    expect(getDict("uz").features.more).toHaveLength(8);
   });
 
   it("keeps arrays as arrays after script conversion", () => {
@@ -62,10 +63,33 @@ describe("section copy", () => {
         expect(it.title.trim()).not.toBe("");
         expect(it.text.trim().length).toBeGreaterThan(40);
       }
+      expect(d.features.more).toHaveLength(8);
+      for (const it of d.features.more) {
+        expect(it.tag.trim()).not.toBe("");
+        expect(it.title.trim()).not.toBe("");
+        expect(it.text.trim().length).toBeGreaterThan(80);
+      }
       for (const k of ["owner", "teacher", "guardian", "label", "teacherHint", "guardianHint", "child", "empty"] as const) {
         expect(d.demo.roles[k].trim(), `${l} ${k}`).not.toBe("");
       }
       expect(d.demo.roles.command).toBe("/qarz");
+    }
+  });
+
+  it("marks API-only and owner-setup items honestly, in every locale", () => {
+    for (const l of LOCALES) {
+      const more = getDict(l).features.more;
+      const api = /API/;
+      // AI, guardian cabinet and teacher app: tagged as API product (Sheets has no AI text / no guardian cabinet)
+      expect(more[4]!.tag, `${l} ai tag`).toMatch(api);
+      expect(more[6]!.tag, `${l} guardian tag`).toMatch(api);
+      expect(more[7]!.tag, `${l} teacher tag`).toMatch(api);
+      // nothing is sent without a person, and setup is named
+      expect(more[4]!.text).toMatch(/Claude/);
+      expect(getDict(l).features.moreNote).toMatch(/BotFather/);
+      expect(more[6]!.text).toMatch(/Mini App/);
+      // no invented numbers beyond the counted rule kinds (four discounts, four refunds, four ways to link)
+      for (const it of more) expect(it.text, `${l} ${it.title}`).not.toMatch(/\d+\s?%|\d+\s?(so'm|сум|сўм|UZS)/i);
     }
   });
 

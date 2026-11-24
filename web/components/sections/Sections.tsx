@@ -30,6 +30,18 @@ export function Features({ d }: { d: Dict }) {
         ))}
       </ul>
       <p className="mt-5 text-sm text-mute">{d.features.note}</p>
+      <h3 className="mt-12 font-display text-xl font-semibold sm:text-2xl">{d.features.moreTitle}</h3>
+      <p className="mt-3 max-w-2xl text-mute">{d.features.moreLead}</p>
+      <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {d.features.more.map((it, i) => (
+          <li key={i} className="rounded-2xl border border-line bg-bg2 p-5">
+            <p className="text-xs font-medium text-accent">{it.tag}</p>
+            <h4 className="mt-1 font-semibold">{it.title}</h4>
+            <p className="mt-2 text-sm text-mute">{it.text}</p>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-5 text-sm text-mute">{d.features.moreNote}</p>
     </Section>
   );
 }
