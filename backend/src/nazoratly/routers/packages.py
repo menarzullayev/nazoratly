@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, Query
 from pydantic import Field
 
 from nazoratly.accounting import org_today, post_payment
+from nazoratly.branches import branch_of
 from nazoratly.db import Conn, execute, fetch_all, fetch_one, resolve
 from nazoratly.deps import DB, Paging, Principal, require
 from nazoratly.errors import Conflict, Unprocessable
@@ -122,7 +123,7 @@ async def sell_package(
             raise Conflict("This enrollment's group is billed monthly, not by package")
         if e["status"] != "active":
             raise Conflict("Packages are sold only to active enrollments (accept a trial first)")
-        cfg = await load_settings(conn, p.org_id)
+        cfg = await load_settings(conn, p.org_id, await branch_of(conn, "enrollments", eid))
         purchased = body.purchased_on or await org_today(conn)
         lessons: int = e["package_lessons"]
         price: Decimal = e["package_price"]
@@ -283,7 +284,7 @@ async def lesson_balance(
 ) -> list[BalanceOut]:
     async with db.tx(p.session()) as conn:
         sid = await resolve(conn, "students", student_id, what="student")
-        cfg = await load_settings(conn, p.org_id)
+        cfg = await load_settings(conn, p.org_id, await branch_of(conn, "students", sid))
         today = await _today(conn)
         rows = await load_balances(
             conn,

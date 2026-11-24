@@ -1,6 +1,7 @@
 /** Apps Script entry point: every function Google calls (menu, web app, sidebars) is exposed on globalThis. */
 import * as actions from "./gas/actions";
 import * as admission from "./gas/admission";
+import * as branches from "./gas/branches";
 import * as demo from "./gas/demo";
 import * as documents from "./gas/documents";
 import * as growth from "./gas/growth";
@@ -118,6 +119,24 @@ g.onOpen = (): void => {
         .addItem("Darsni ko'chirish", "menuLessonMove")
         .addItem("Darsni bekor qilish", "menuLessonCancel")
         .addItem("O'rinbosar o'qituvchi", "menuLessonSubstitute"),
+    )
+    .addSubMenu(
+      SpreadsheetApp.getUi()
+        .createMenu("Filiallar")
+        .addItem("Filiallar ro'yxati", "menuBranchList")
+        .addItem("Filial hisoboti (har bir filial va jami)", "menuBranchReport")
+        .addItem("Filialni tanlash (ko'rinish)", "menuBranchChoose")
+        .addSeparator()
+        .addItem("O'quvchini filialga ko'chirish", "menuBranchTransfer")
+        .addItem("Filial qo'shish", "menuBranchAdd")
+        .addItem("Filialni yopish", "menuBranchClose")
+        .addItem("Filialni qayta ochish", "menuBranchReopen")
+        .addItem("Asosiy filialni almashtirish", "menuBranchDefault")
+        .addSeparator()
+        .addItem("Xodimni filialga biriktirish", "menuBranchStaff")
+        .addItem("Filial narxi (kurs)", "menuBranchPrice")
+        .addItem("Guruh narxini filial narxidan olish", "menuBranchApplyPrice")
+        .addItem("Filial sozlamasi", "menuBranchSetting"),
     )
     .addSubMenu(
       SpreadsheetApp.getUi()
@@ -250,6 +269,18 @@ g.menuDiscountAdd = money.menu.addDiscount;
 g.menuDiscountEnd = money.menu.endDiscount;
 g.menuDiscountReport = money.menu.discountReport;
 g.menuRefund = money.menu.refund;
+g.menuBranchList = branches.menu.list;
+g.menuBranchReport = branches.menu.report;
+g.menuBranchChoose = branches.menu.choose;
+g.menuBranchTransfer = branches.menu.transfer;
+g.menuBranchAdd = branches.menu.add;
+g.menuBranchClose = branches.menu.close;
+g.menuBranchReopen = branches.menu.reopen;
+g.menuBranchDefault = branches.menu.makeDefault;
+g.menuBranchStaff = branches.menu.staff;
+g.menuBranchPrice = branches.menu.price;
+g.menuBranchApplyPrice = branches.menu.applyPrice;
+g.menuBranchSetting = branches.menu.setting;
 g.menuCashClose = money.menu.cashClose;
 g.menuCashStatus = money.menu.cashStatus;
 g.menuWaitAdd = waitlist.menu.add;

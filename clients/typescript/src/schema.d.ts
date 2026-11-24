@@ -896,6 +896,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/branch-report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Per-branch figures of a month next to the center total (staff of a branch see only their own row) */
+        get: operations["branch_report_v1_branch_report_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/branch-scope": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Which branch do my requests work in? (send X-Branch to narrow a center-wide view to one branch) */
+        get: operations["my_scope_v1_branch_scope_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/branches": {
         parameters: {
             query?: never;
@@ -931,6 +965,76 @@ export interface paths {
         head?: never;
         /** Patch Branch */
         patch: operations["patch_branch_v1_branches__branch_id__patch"];
+        trace?: never;
+    };
+    "/v1/branches/{branch_id}/default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Make this branch the center's default (where rows land when no branch is chosen) */
+        post: operations["make_default_v1_branches__branch_id__default_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/branches/{branch_id}/prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Course prices in a branch (course default unless the branch has its own) */
+        get: operations["list_prices_v1_branches__branch_id__prices_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/branches/{branch_id}/prices/{course_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set the price of a course in a branch */
+        put: operations["put_price_v1_branches__branch_id__prices__course_id__put"];
+        post?: never;
+        /** Remove the branch price (the course fee applies again) */
+        delete: operations["delete_price_v1_branches__branch_id__prices__course_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/branches/{branch_id}/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Settings of a branch: effective values and the branch's own overrides */
+        get: operations["get_branch_settings_v1_branches__branch_id__settings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change the branch's own settings (null = inherit the center's value again) */
+        patch: operations["patch_branch_settings_v1_branches__branch_id__settings_patch"];
         trace?: never;
     };
     "/v1/calendar": {
@@ -3136,7 +3240,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Patch Settings */
+        /** Change settings (a staff member working in a branch changes that branch's own values) */
         patch: operations["patch_settings_v1_settings_patch"];
         trace?: never;
     };
@@ -3238,6 +3342,23 @@ export interface paths {
         };
         /** Student Balance */
         get: operations["student_balance_v1_students__student_id__balance_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/students/{student_id}/branch-moves": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Where this student has been (newest first) */
+        get: operations["student_moves_v1_students__student_id__branch_moves_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3399,6 +3520,23 @@ export interface paths {
         get: operations["student_results_v1_students__student_id__results_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/students/{student_id}/transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Move a student to another branch (center-wide staff). History and money stay in the branch where they arose */
+        post: operations["transfer_student_v1_students__student_id__transfer_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4132,6 +4270,11 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /**
+             * Is Default
+             * @description the center's default branch: where rows land when no branch is chosen
+             */
+            is_default: boolean;
             /** Name */
             name: string;
             /** Status */
@@ -4145,6 +4288,104 @@ export interface components {
             name?: string | null;
             /** Status */
             status?: ("active" | "closed") | null;
+        };
+        /** BranchReportOut */
+        BranchReportOut: {
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+            /** Rows */
+            rows: components["schemas"]["BranchReportRow"][];
+            /** @description always the sum of the rows */
+            total: components["schemas"]["BranchReportRow"];
+        };
+        /** BranchReportRow */
+        BranchReportRow: {
+            /**
+             * Branch Id
+             * @description None on the total row
+             */
+            branch_id: string | null;
+            /**
+             * Cash Balance
+             * @description what the books say the branch's cash desk holds at the end of the month
+             */
+            cash_balance: string;
+            /**
+             * Charges
+             * @description tuition and other charges of the month (after discounts), so'm
+             */
+            charges: string;
+            /**
+             * Debt
+             * @description unpaid charges of the branch, today
+             */
+            debt: string;
+            /** Enrollments Active */
+            enrollments_active: number;
+            /**
+             * Expenses
+             * @description expenses of the month, so'm
+             */
+            expenses: string;
+            /** Groups Active */
+            groups_active: number;
+            /** Name */
+            name: string;
+            /**
+             * Net
+             * @description revenue minus expenses
+             */
+            net: string;
+            /**
+             * Revenue
+             * @description payments received in the month minus the part given back, so'm
+             */
+            revenue: string;
+            /** Students Active */
+            students_active: number;
+        };
+        /** BranchSettingsOut */
+        BranchSettingsOut: {
+            /** @description what applies in this branch (its own values over the center's) */
+            effective: components["schemas"]["SettingsOut"];
+            /**
+             * Overrides
+             * @description the branch's own values; a missing or null key = inherited
+             */
+            overrides: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * BranchSettingsPatch
+         * @description Send only what changes; `null` makes the branch inherit the center's value again.
+         */
+        BranchSettingsPatch: {
+            /** Excused Mode */
+            excused_mode?: ("makeup" | "credit" | "none") | null;
+            /** Family Discount 2Nd Percent */
+            family_discount_2nd_percent?: number | string | null;
+            /** Family Discount 3Rd Percent */
+            family_discount_3rd_percent?: number | string | null;
+            /** Lead Reminder Days */
+            lead_reminder_days?: number | null;
+            /** Makeup Expiry Days */
+            makeup_expiry_days?: number | null;
+            /** Makeup Lapses */
+            makeup_lapses?: boolean | null;
+            /** Package Expiry Days */
+            package_expiry_days?: number | null;
+            /** Package Low Lessons */
+            package_low_lessons?: number | null;
+            /** Requisites */
+            requisites?: string | null;
+            /** Trial Free Days */
+            trial_free_days?: number | null;
+            /** Trial Free Lessons */
+            trial_free_lessons?: number | null;
         };
         /** BulkIn */
         BulkIn: {
@@ -4412,6 +4653,11 @@ export interface components {
         /** CashCloseIn */
         CashCloseIn: {
             /**
+             * Branch Id
+             * @description the branch of the cash desk: required for center-wide staff when the center has several active branches (or send the X-Branch header); staff of a branch always close their own
+             */
+            branch_id?: string | null;
+            /**
              * Close Date
              * @description defaults to today (the center's date); not in the future
              */
@@ -4442,6 +4688,11 @@ export interface components {
             adjustment_entry_no: number | null;
             /** Book Balance */
             book_balance: string;
+            /**
+             * Branch Id
+             * Format: uuid
+             */
+            branch_id: string;
             /**
              * Close Date
              * Format: date
@@ -4478,6 +4729,12 @@ export interface components {
              * @description what the books say the cash desk holds through the date
              */
             book_balance: string;
+            /**
+             * Branch Id
+             * Format: uuid
+             * @description the branch whose cash desk this is
+             */
+            branch_id: string;
             /**
              * Cash In
              * @description cash received on the date (journal debits of the cash accounts)
@@ -4952,6 +5209,12 @@ export interface components {
         CostOut: {
             /** Amount */
             amount: string;
+            /**
+             * Branch Id
+             * Format: uuid
+             * @description the branch this cost belongs to
+             */
+            branch_id: string;
             /**
              * Month
              * Format: date
@@ -6784,6 +7047,30 @@ export interface components {
              */
             start_time: string;
         };
+        /** MoveOut */
+        MoveOut: {
+            /** Ended Enrollments */
+            ended_enrollments: number;
+            /**
+             * From Branch Id
+             * @description None when the branch left is not visible to you
+             */
+            from_branch_id: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Moved On
+             * Format: date
+             */
+            moved_on: string;
+            /** Reason */
+            reason: string | null;
+            /** To Branch Id */
+            to_branch_id: string | null;
+        };
         /** MovementBlock */
         MovementBlock: {
             /** Accepted */
@@ -7895,6 +8182,39 @@ export interface components {
             rows_truncated: boolean;
             summary: components["schemas"]["nazoratly__routers__imports__SummaryOut"];
         };
+        /** PriceIn */
+        PriceIn: {
+            /**
+             * Monthly Fee
+             * @description UZS amount, 2 decimals
+             */
+            monthly_fee: number | string;
+        };
+        /** PriceOut */
+        PriceOut: {
+            /**
+             * Branch Fee
+             * @description the price in this branch (None = the course fee applies)
+             */
+            branch_fee: string | null;
+            /**
+             * Course Fee
+             * @description the course's own default fee
+             */
+            course_fee: string;
+            /**
+             * Course Id
+             * Format: uuid
+             */
+            course_id: string;
+            /** Course Name */
+            course_name: string;
+            /**
+             * Effective Fee
+             * @description the default monthly fee of a new group of this branch
+             */
+            effective_fee: string;
+        };
         /** ProgramIn */
         ProgramIn: {
             /**
@@ -8798,6 +9118,26 @@ export interface components {
             /** Weekday */
             weekday: number;
         };
+        /** ScopeOut */
+        ScopeOut: {
+            /**
+             * Center Wide
+             * @description false = the staff member belongs to one branch and sees only it
+             */
+            center_wide: boolean;
+            /**
+             * Member Branch Id
+             * @description the branch of the staff member (None = center-wide)
+             */
+            member_branch_id: string | null;
+            /**
+             * View Branch Id
+             * @description the branch this request works in (X-Branch, or the member's own); None = the whole center
+             */
+            view_branch_id: string | null;
+            /** View Branch Name */
+            view_branch_name: string | null;
+        };
         /** SendCardIn */
         SendCardIn: {
             /**
@@ -9184,6 +9524,11 @@ export interface components {
             balance?: components["schemas"]["nazoratly__routers__students__BalanceOut"] | null;
             /** Birth Date */
             birth_date: string | null;
+            /**
+             * Branch Id
+             * @description the branch the student belongs to (move him with POST /students/{id}/transfer); None when he moved to a branch you cannot see
+             */
+            branch_id: string | null;
             /** Consents */
             consents: components["schemas"]["ConsentOut"][];
             /**
@@ -9243,6 +9588,11 @@ export interface components {
         StudentIn: {
             /** Birth Date */
             birth_date?: string | null;
+            /**
+             * Branch Id
+             * @description the branch of the new student; default: the branch you work in (X-Branch / your own), else the center's default
+             */
+            branch_id?: string | null;
             /** Full Name */
             full_name: string;
             /** Joined On */
@@ -9262,6 +9612,11 @@ export interface components {
         StudentOut: {
             /** Birth Date */
             birth_date: string | null;
+            /**
+             * Branch Id
+             * @description the branch the student belongs to (move him with POST /students/{id}/transfer); None when he moved to a branch you cannot see
+             */
+            branch_id: string | null;
             /**
              * Created At
              * Format: date-time
@@ -9399,6 +9754,11 @@ export interface components {
         };
         /** TeacherIn */
         TeacherIn: {
+            /**
+             * Branch Id
+             * @description the teacher's home branch; default: the branch you work in, else the default branch
+             */
+            branch_id?: string | null;
             /** Full Name */
             full_name: string;
             /** Hired On */
@@ -9425,6 +9785,12 @@ export interface components {
         };
         /** TeacherOut */
         TeacherOut: {
+            /**
+             * Branch Id
+             * Format: uuid
+             * @description the teacher's home branch
+             */
+            branch_id: string;
             /** Full Name */
             full_name: string;
             /** Has Login */
@@ -9503,6 +9869,53 @@ export interface components {
             tier: string;
             /** Tool Name */
             tool_name: string;
+        };
+        /** TransferIn */
+        TransferIn: {
+            /**
+             * Branch Id
+             * Format: uuid
+             * @description the branch the student moves to
+             */
+            branch_id: string;
+            /**
+             * End Enrollments
+             * @description end his live enrollments in groups of other branches (otherwise the move is refused while he has any)
+             * @default false
+             */
+            end_enrollments: boolean;
+            /**
+             * Moved On
+             * @description defaults to today (the center's date)
+             */
+            moved_on?: string | null;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** TransferOut */
+        TransferOut: {
+            /** Ended Enrollments */
+            ended_enrollments: number;
+            /**
+             * From Branch Id
+             * Format: uuid
+             */
+            from_branch_id: string;
+            /**
+             * Moved On
+             * Format: date
+             */
+            moved_on: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /**
+             * To Branch Id
+             * Format: uuid
+             */
+            to_branch_id: string;
         };
         /** TrialBalanceOut */
         TrialBalanceOut: {
@@ -11907,6 +12320,58 @@ export interface operations {
             };
         };
     };
+    branch_report_v1_branch_report_get: {
+        parameters: {
+            query?: {
+                /** @description first day of the month; default: this month */
+                month?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BranchReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_scope_v1_branch_scope_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScopeOut"];
+                };
+            };
+        };
+    };
     list_branches_v1_branches_get: {
         parameters: {
             query?: {
@@ -12069,6 +12534,202 @@ export interface operations {
             };
         };
     };
+    make_default_v1_branches__branch_id__default_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                branch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_prices_v1_branches__branch_id__prices_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                branch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_price_v1_branches__branch_id__prices__course_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                branch_id: string;
+                course_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PriceIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_price_v1_branches__branch_id__prices__course_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                branch_id: string;
+                course_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_branch_settings_v1_branches__branch_id__settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                branch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BranchSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_branch_settings_v1_branches__branch_id__settings_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                branch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BranchSettingsPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BranchSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     calendar_v1_calendar_get: {
         parameters: {
             query: {
@@ -12177,6 +12838,8 @@ export interface operations {
             query?: {
                 /** @description defaults to today */
                 close_date?: string | null;
+                /** @description the branch of the cash desk */
+                branch_id?: string | null;
             };
             header?: never;
             path?: never;
@@ -17848,6 +18511,37 @@ export interface operations {
             };
         };
     };
+    student_moves_v1_students__student_id__branch_moves_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoveOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_consents_v1_students__student_id__consents_get: {
         parameters: {
             query?: never;
@@ -18198,6 +18892,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StudentResults"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transfer_student_v1_students__student_id__transfer_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransferIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferOut"];
                 };
             };
             /** @description Validation Error */

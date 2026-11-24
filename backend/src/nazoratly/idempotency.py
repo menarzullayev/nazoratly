@@ -58,7 +58,8 @@ class IdempotentRoute(APIRoute):
                 return await original(request)  # the endpoint's own dependencies answer 401/403
             raw = await request.body()
             digest = hashlib.sha256(
-                f"{request.method}\n{request.url.path}\n{request.url.query}\n".encode() + raw
+                f"{request.method}\n{request.url.path}\n{request.url.query}\n{request.headers.get('X-Branch', '')}\n".encode()
+                + raw
             ).digest()
 
             async with db.tx(session) as conn:

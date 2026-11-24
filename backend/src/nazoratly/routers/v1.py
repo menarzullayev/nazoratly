@@ -10,6 +10,7 @@ from nazoratly.routers import (
     agents,
     ai,
     auth,
+    branches,
     cashclose,
     certificates,
     dashboard,
@@ -43,6 +44,7 @@ from nazoratly.routers import (
 router = APIRouter()
 router.include_router(auth.router)
 router.include_router(org.router)
+router.include_router(branches.router)
 router.include_router(students.router)
 router.include_router(academics.router)
 router.include_router(lifecycle.router)

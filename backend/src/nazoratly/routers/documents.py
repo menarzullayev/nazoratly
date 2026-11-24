@@ -15,6 +15,7 @@ from typing import Annotated, Any, Literal
 from fastapi import APIRouter, Depends, Response
 from pydantic import Field
 
+from nazoratly.branches import branch_of
 from nazoratly.db import Conn, fetch_all, fetch_one, resolve, resolve_opt
 from nazoratly.deps import DB, Paging, Principal, require
 from nazoratly.documents import KIND_LABEL, METHOD_LABEL, Line, Snapshot, delivery_text, render_pdf
@@ -69,15 +70,15 @@ async def _document(conn: Conn, doc_id: int) -> DocumentDetail:
     return DocumentDetail.model_validate(row)
 
 
-async def _header(conn: Conn, org_id: int) -> tuple[str, str | None, date]:
-    """Center name, its requisites and today's date in the center's time zone."""
+async def _header(conn: Conn, org_id: int, branch_id: int | None = None) -> tuple[str, str | None, date]:
+    """Center name, the requisites of the branch (else the center's) and today's date in the center's time zone."""
     row = await fetch_one(
         conn,
         "SELECT o.name, (now() AT TIME ZONE o.timezone)::date AS today FROM organizations o WHERE o.id = %s",
         (org_id,),
     )
     assert row is not None
-    settings = await load_settings(conn, org_id)
+    settings = await load_settings(conn, org_id, branch_id)
     return row["name"], settings.requisites, row["today"]
 
 
@@ -152,7 +153,7 @@ async def issue_receipt(
         if prev is not None:
             response.status_code = 200
             return await _document(conn, prev["id"])
-        center, requisites, today = await _header(conn, p.org_id)
+        center, requisites, today = await _header(conn, p.org_id, await branch_of(conn, "payments", pid))
         student = await fetch_one(conn, "SELECT full_name FROM students WHERE id = %s", (pay["student_id"],))
         assert student is not None
         allocs = await fetch_all(
@@ -206,7 +207,7 @@ async def issue_invoice(
     async with db.tx(p.session()) as conn:
         sid = await resolve(conn, "students", body.student_id, what="student")
         cid = await resolve_opt(conn, "charges", body.charge_id, what="charge")
-        center, requisites, today = await _header(conn, p.org_id)
+        center, requisites, today = await _header(conn, p.org_id, await branch_of(conn, "students", sid))
         student = await fetch_one(conn, "SELECT full_name FROM students WHERE id = %s", (sid,))
         assert student is not None
         charges = await fetch_all(

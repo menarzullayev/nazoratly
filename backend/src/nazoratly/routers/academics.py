@@ -11,10 +11,12 @@ from fastapi import APIRouter, Depends, Query
 from pydantic import Field, model_validator
 
 from nazoratly.accounting import org_today
+from nazoratly.branches import default_branch
 from nazoratly.db import Conn, execute, fetch_all, fetch_one, patch_row, resolve, resolve_opt
 from nazoratly.deps import DB, Paging, Principal, require
 from nazoratly.errors import Conflict, Forbidden, GroupFull, NotFound, Unprocessable
 from nazoratly.idempotency import IdempotentRoute
+from nazoratly.routers.branches import price_for_new_group
 from nazoratly.routers.students import like_pattern
 from nazoratly.rules import capacity as seats
 from nazoratly.scheduling import ScheduleConflict, weekly_check
@@ -168,6 +170,10 @@ class TeacherIn(Model):
     staff_id: uuid.UUID | None = Field(
         default=None, description="membership id of the teacher's login, if any"
     )
+    branch_id: uuid.UUID | None = Field(
+        default=None,
+        description="the teacher's home branch; default: the branch you work in, else the default branch",
+    )
 
     @model_validator(mode="after")
     def _percent(self) -> TeacherIn:
@@ -188,6 +194,7 @@ class TeacherPatch(Model):
 
 class TeacherOut(Out):
     id: uuid.UUID
+    branch_id: uuid.UUID = Field(description="the teacher's home branch")
     full_name: str
     phone: str | None
     pay_model: str
@@ -197,7 +204,7 @@ class TeacherOut(Out):
     has_login: bool
 
 
-_TEACHER = "t.public_id AS id, t.full_name, t.phone, t.pay_model, t.pay_rate, t.status, t.hired_on, (t.user_id IS NOT NULL) AS has_login"
+_TEACHER = "t.public_id AS id, (SELECT b.public_id FROM branches b WHERE b.org_id = t.org_id AND b.id = t.branch_id) AS branch_id, t.full_name, t.phone, t.pay_model, t.pay_rate, t.status, t.hired_on, (t.user_id IS NOT NULL) AS has_login"
 
 
 async def _user_of_staff(conn: Conn, staff_id: uuid.UUID | None) -> int | None:
@@ -215,11 +222,12 @@ async def create_teacher(
 ) -> TeacherOut:
     async with db.tx(p.session()) as conn:
         uid = await _user_of_staff(conn, body.staff_id)
+        bid = await resolve_opt(conn, "branches", body.branch_id, what="branch")
         row = await fetch_one(
             conn,
-            "INSERT INTO teachers (org_id, user_id, full_name, phone, pay_model, pay_rate, hired_on) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id",
-            (p.org_id, uid, body.full_name, body.phone, body.pay_model, body.pay_rate, body.hired_on),
+            "INSERT INTO teachers (org_id, branch_id, user_id, full_name, phone, pay_model, pay_rate, hired_on) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+            (p.org_id, bid, uid, body.full_name, body.phone, body.pay_model, body.pay_rate, body.hired_on),
         )
         assert row is not None
         out = await fetch_one(conn, f"SELECT {_TEACHER} FROM teachers t WHERE t.id = %s", (row["id"],))
@@ -518,11 +526,11 @@ async def create_group(
         cid = await resolve(conn, "courses", body.course_id, what="course")
         tid = await resolve_opt(conn, "teachers", body.teacher_id, what="teacher")
         bid = await resolve_opt(conn, "branches", body.branch_id, what="branch")
+        if bid is None:  # the branch the staff member works in, else the center's default branch
+            bid = p.scope_branch_id if p.scope_branch_id is not None else await default_branch(conn, p.org_id)
         fee = body.monthly_fee
-        if fee is None:
-            c = await fetch_one(conn, "SELECT default_monthly_fee FROM courses WHERE id = %s", (cid,))
-            assert c is not None
-            fee = c["default_monthly_fee"]
+        if fee is None:  # the branch's own price of the course, else the course's default fee
+            fee = await price_for_new_group(conn, bid, cid)
         row = await fetch_one(
             conn,
             "INSERT INTO study_groups (org_id, branch_id, course_id, teacher_id, name, monthly_fee, capacity, start_date, end_date, status, "

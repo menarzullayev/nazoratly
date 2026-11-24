@@ -5,6 +5,7 @@ import { prevMonthStart, monthStart } from "../domain/dates";
 import { nextIds } from "../domain/ids";
 import type { AttendanceRow, Charge, Enrollment, Group, Student, Teacher } from "../domain/types";
 import { append, read, readIfPresent, toDate, today, updateById } from "./repo";
+import { ensureDefaultBranch } from "./branches";
 import { clearDemoData, hasDemoRows } from "./demo";
 import { ensureChart, protectLedgerSheets } from "./ledger";
 import {
@@ -125,6 +126,7 @@ export function setupSettings(): void {
 export function setupWorkbook(): void {
   for (const def of ALL_TABLES) setupTable(def);
   setupSettings();
+  ensureDefaultBranch(); // every center has a default branch ("Asosiy filial"); rows without a branch mark belong to it
   ensureChart(); // chart of accounts and the two default cash accounts (first time only)
   protectLedgerSheets(); // the ledger sheets are written by the script only
   const ss = SpreadsheetApp.getActive();

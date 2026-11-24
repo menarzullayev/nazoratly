@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends, Query
 from pydantic import Field, StringConstraints
 
 from nazoratly.accounting import cash_book_balance, lock_ledger, org_today, post_cash_difference
+from nazoratly.branches import branch_for_cash
 from nazoratly.db import Conn, fetch_all, fetch_one, resolve
 from nazoratly.deps import DB, Paging, Principal, require
 from nazoratly.errors import Forbidden, Unprocessable
@@ -38,9 +39,15 @@ class CashCloseIn(Model):
         default=False,
         description="also book the difference in the journal (needs the accounting:write right)",
     )
+    branch_id: uuid.UUID | None = Field(
+        default=None,
+        description="the branch of the cash desk: required for center-wide staff when the center has several active "
+        "branches (or send the X-Branch header); staff of a branch always close their own",
+    )
 
 
 class CashPreview(Out):
+    branch_id: uuid.UUID = Field(description="the branch whose cash desk this is")
     close_date: date
     book_balance: Dec2 = Field(description="what the books say the cash desk holds through the date")
     cash_in: Dec2 = Field(description="cash received on the date (journal debits of the cash accounts)")
@@ -51,6 +58,7 @@ class CashPreview(Out):
 
 class CashCloseOut(Out):
     id: uuid.UUID
+    branch_id: uuid.UUID
     close_date: date
     shift_no: int
     counted: Dec2
@@ -63,9 +71,10 @@ class CashCloseOut(Out):
 
 
 _SQL = (
-    "SELECT c.public_id AS id, c.close_date, c.shift_no, c.counted, c.book_balance, c.difference,"
+    "SELECT c.public_id AS id, b.public_id AS branch_id, c.close_date, c.shift_no, c.counted, c.book_balance, c.difference,"
     " CASE WHEN c.difference = 0 THEN 'ok' WHEN c.difference > 0 THEN 'over' ELSE 'short' END AS status,"
     " c.note, c.journal_seq, e.entry_no AS adjustment_entry_no FROM cash_closes c"
+    " JOIN branches b ON b.org_id = c.org_id AND b.id = c.branch_id"
     " LEFT JOIN journal_entries e ON e.org_id = c.org_id AND e.id = c.adjustment_entry_id"
 )
 
@@ -81,6 +90,13 @@ async def _movements(conn: Conn, org_id: int, day: date) -> tuple[Decimal, Decim
     )
     assert row is not None
     return Decimal(row["din"]), Decimal(row["dout"])
+
+
+async def _scope_public(conn: Conn) -> uuid.UUID:
+    """Public id of the branch this transaction is narrowed to (set by branch_for_cash)."""
+    row = await fetch_one(conn, "SELECT public_id FROM branches WHERE id = app_branch_id()")
+    assert row is not None
+    return uuid.UUID(str(row["public_id"]))
 
 
 async def _next_shift(conn: Conn, day: date) -> int:
@@ -100,12 +116,15 @@ async def preview(
     p: Annotated[Principal, Depends(require("finance:read"))],
     db: DB,
     close_date: Annotated[date | None, Query(description="defaults to today")] = None,
+    branch_id: Annotated[uuid.UUID | None, Query(description="the branch of the cash desk")] = None,
 ) -> CashPreview:
     async with db.tx(p.session()) as conn:
+        await branch_for_cash(conn, p, branch_id)
         day = close_date or await org_today(conn)
         book, seq = await cash_book_balance(conn, p.org_id, day)
         din, dout = await _movements(conn, p.org_id, day)
         return CashPreview(
+            branch_id=await _scope_public(conn),
             close_date=day,
             book_balance=book,
             cash_in=din,
@@ -127,6 +146,7 @@ async def close_cash(
     if body.post_difference and not p.can("accounting:write"):
         raise Forbidden("Booking the difference in the journal needs the accounting:write right")
     async with db.tx(p.session()) as conn:
+        branch = await branch_for_cash(conn, p, body.branch_id)
         today = await org_today(conn)
         day = body.close_date or today
         if day > today:
@@ -145,10 +165,11 @@ async def close_cash(
             )
         row = await fetch_one(
             conn,
-            "INSERT INTO cash_closes (org_id, close_date, shift_no, counted, book_balance, difference, note, journal_seq, closed_by_user_id) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+            "INSERT INTO cash_closes (org_id, branch_id, close_date, shift_no, counted, book_balance, difference, note, journal_seq, closed_by_user_id) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
             (
                 p.org_id,
+                branch,
                 day,
                 await _next_shift(conn, day),
                 body.counted,

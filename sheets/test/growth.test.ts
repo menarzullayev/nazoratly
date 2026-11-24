@@ -230,7 +230,7 @@ describe("lead source ROI", () => {
     pay("S0002", 100_000);
     growth.setSourceCost("instagram", "2026-11", "150 000");
     growth.setSourceCost("Instagram", "2026-11", "150000"); // repeating corrects, never duplicates
-    expect(read<SourceCostRow>(SOURCE_COSTS)).toEqual([{ source: "instagram", month: "2026-11-01", amount: 150_000, note: "" }]);
+    expect(read<SourceCostRow>(SOURCE_COSTS)).toEqual([{ source: "instagram", month: "2026-11-01", amount: 150_000, note: "", branchId: "F0001" }]);
     growth.setSourceCost("Instagram", "2026-11", "160000");
     expect(read<SourceCostRow>(SOURCE_COSTS)).toMatchObject([{ amount: 160_000 }]);
     growth.setSourceCost("Instagram", "2026-11", "150000");

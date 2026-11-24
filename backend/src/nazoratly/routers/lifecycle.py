@@ -17,7 +17,7 @@ from nazoratly.errors import AlreadyAccepted, EnrollmentNotTrial, Unprocessable
 from nazoratly.idempotency import IdempotentRoute
 from nazoratly.routers.academics import _ENR_SQL, EnrollmentOut
 from nazoratly.routers.finance import month_start, next_month
-from nazoratly.routers.settings import load_settings
+from nazoratly.routers.settings import load_settings_by_branch
 from nazoratly.rules.lifecycle import FirstMonth, FirstMonthMode, first_month_charge, trial_status
 from nazoratly.schemas import Dec2, LongText, Model, Out, Page, make_page
 
@@ -79,10 +79,10 @@ async def pending_trials(
 ) -> Page[PendingTrial]:
     async with db.tx(p.session()) as conn:
         today = await org_today(conn)
-        cfg = await load_settings(conn, p.org_id)
+        by_branch = await load_settings_by_branch(conn, p.org_id)
         rows = await fetch_all(
             conn,
-            "SELECT e.public_id AS enrollment_id, s.public_id AS student_id, s.full_name AS student_name, "
+            "SELECT e.branch_id, e.public_id AS enrollment_id, s.public_id AS student_id, s.full_name AS student_name, "
             "g.public_id AS group_id, g.name AS group_name, e.started_on, "
             "(SELECT count(*) FROM attendance a JOIN lessons l ON l.org_id = a.org_id AND l.id = a.lesson_id "
             "  WHERE a.student_id = e.student_id AND l.group_id = e.group_id AND l.lesson_date >= e.started_on "
@@ -94,6 +94,7 @@ async def pending_trials(
     due: list[dict[str, object]] = []
     for r in rows:
         attended = int(r["lessons_attended"])
+        cfg = by_branch.get(int(r["branch_id"]), by_branch[None])
         state = trial_status(
             started_on=r["started_on"],
             today=today,

@@ -15,12 +15,13 @@ from fastapi import APIRouter, Depends, Query
 from pydantic import Field, StringConstraints, model_validator
 
 from nazoratly.accounting import org_today
+from nazoratly.branches import default_branch
 from nazoratly.db import Conn, execute, fetch_all, fetch_one, resolve
 from nazoratly.deps import DB, Principal, require
 from nazoratly.errors import Conflict, NotFound, Unprocessable
 from nazoratly.idempotency import IdempotentRoute
 from nazoratly.routers.finance import month_start
-from nazoratly.routers.settings import load_settings
+from nazoratly.routers.settings import load_settings_by_branch
 from nazoratly.rules.growth import (
     CreditFact,
     LeadFact,
@@ -702,6 +703,7 @@ class CostIn(Model):
 
 class CostOut(Out):
     source_id: uuid.UUID
+    branch_id: uuid.UUID = Field(description="the branch this cost belongs to")
     source: str
     month: date
     amount: Dec2
@@ -724,17 +726,21 @@ async def put_cost(
         raise Unprocessable("month must be the first day of a month, e.g. 2026-11-01")
     async with db.tx(p.session()) as conn:
         sid = await resolve(conn, "lead_sources", source_id, what="lead source")
+        # the cost belongs to a branch: the one the staff member works in (X-Branch), else the center's default branch
+        branch = p.scope_branch_id if p.scope_branch_id is not None else await default_branch(conn, p.org_id)
         await execute(
             conn,
-            "INSERT INTO lead_source_costs (org_id, source_id, month, amount, note, created_by_user_id) VALUES (%s, %s, %s, %s, %s, %s) "
-            "ON CONFLICT (org_id, source_id, month) DO UPDATE SET amount = EXCLUDED.amount, note = EXCLUDED.note",
-            (p.org_id, sid, month, body.amount, body.note, p.user_id),
+            "INSERT INTO lead_source_costs (org_id, branch_id, source_id, month, amount, note, created_by_user_id) VALUES (%s, %s, %s, %s, %s, %s, %s) "
+            "ON CONFLICT (org_id, source_id, month, branch_id) DO UPDATE SET amount = EXCLUDED.amount, note = EXCLUDED.note",
+            (p.org_id, branch, sid, month, body.amount, body.note, p.user_id),
         )
         row = await fetch_one(
             conn,
-            "SELECT s.public_id AS source_id, s.name AS source, c.month, c.amount, c.note FROM lead_source_costs c "
-            "JOIN lead_sources s ON s.org_id = c.org_id AND s.id = c.source_id WHERE c.source_id = %s AND c.month = %s",
-            (sid, month),
+            "SELECT s.public_id AS source_id, b.public_id AS branch_id, s.name AS source, c.month, c.amount, c.note FROM lead_source_costs c "
+            "JOIN lead_sources s ON s.org_id = c.org_id AND s.id = c.source_id "
+            "JOIN branches b ON b.org_id = c.org_id AND b.id = c.branch_id "
+            "WHERE c.source_id = %s AND c.month = %s AND c.branch_id = %s",
+            (sid, month, branch),
         )
     assert row is not None
     return CostOut.model_validate(row)
@@ -752,8 +758,9 @@ async def list_costs(
     async with db.tx(p.session()) as conn:
         rows = await fetch_all(
             conn,
-            "SELECT s.public_id AS source_id, s.name AS source, c.month, c.amount, c.note FROM lead_source_costs c "
+            "SELECT s.public_id AS source_id, b.public_id AS branch_id, s.name AS source, c.month, c.amount, c.note FROM lead_source_costs c "
             "JOIN lead_sources s ON s.org_id = c.org_id AND s.id = c.source_id "
+            "JOIN branches b ON b.org_id = c.org_id AND b.id = c.branch_id "
             "WHERE (%(f)s::date IS NULL OR c.month >= %(f)s) AND (%(t)s::date IS NULL OR c.month <= %(t)s) "
             "ORDER BY c.month DESC, lower(s.name) LIMIT 1000",
             {"f": month_from, "t": month_to},
@@ -838,11 +845,11 @@ async def lead_reminder_list(
 ) -> list[ReminderOut]:
     async with db.tx(p.session()) as conn:
         today = await org_today(conn)
-        cfg = await load_settings(conn, p.org_id)
+        by_branch = await load_settings_by_branch(conn, p.org_id)
         tz = await _org_tz(conn, p.org_id)
         rows = await fetch_all(
             conn,
-            "SELECT l.id AS iid, l.public_id, l.full_name, l.phone, src.name AS source, l.stage, l.next_follow_up_on, "
+            "SELECT l.id AS iid, l.branch_id, l.public_id, l.full_name, l.phone, src.name AS source, l.stage, l.next_follow_up_on, "
             "(l.created_at AT TIME ZONE %s)::date AS created_on, "
             "(SELECT max(i.happened_on) FROM lead_interactions i WHERE i.lead_id = l.id) AS last_contact_on "
             "FROM leads l LEFT JOIN lead_sources src ON src.org_id = l.org_id AND src.id = l.source_id "
@@ -850,14 +857,20 @@ async def lead_reminder_list(
             (tz,),
         )
     by_id = {str(r["iid"]): r for r in rows}
-    due = lead_reminders(
-        [
-            LeadFact(str(r["iid"]), r["stage"], r["created_on"], r["last_contact_on"], r["next_follow_up_on"])
-            for r in rows
-        ],
-        today=today,
-        silence_days=cfg.lead_reminder_days,
-    )
+    due: list[dict[str, Any]] = []
+    for branch in sorted({int(r["branch_id"]) for r in rows}):  # each branch has its own "quiet days" rule
+        cfg = by_branch.get(branch, by_branch[None])
+        due += lead_reminders(
+            [
+                LeadFact(
+                    str(r["iid"]), r["stage"], r["created_on"], r["last_contact_on"], r["next_follow_up_on"]
+                )
+                for r in rows
+                if int(r["branch_id"]) == branch
+            ],
+            today=today,
+            silence_days=cfg.lead_reminder_days,
+        )
     out: list[ReminderOut] = []
     for d in due:
         r = by_id[d["id"]]

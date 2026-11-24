@@ -1,0 +1,141 @@
+{
+  "stamp_branch": [
+    {"name": "explicit value always wins", "in": {"explicit": 5, "scope": 2, "parent": 3, "default": 1, "mode": "context"}, "out": 5},
+    {"name": "explicit wins in parent mode too", "in": {"explicit": 5, "scope": 2, "parent": 3, "default": 1, "mode": "parent"}, "out": 5},
+    {"name": "context mode: the session scope beats the parent", "in": {"explicit": null, "scope": 2, "parent": 3, "default": 1, "mode": "context"}, "out": 2},
+    {"name": "context mode without scope falls to the parent", "in": {"explicit": null, "scope": null, "parent": 3, "default": 1, "mode": "context"}, "out": 3},
+    {"name": "context mode with nothing else uses the default branch", "in": {"explicit": null, "scope": null, "parent": null, "default": 1, "mode": "context"}, "out": 1},
+    {"name": "parent mode: the parent beats the scope", "in": {"explicit": null, "scope": 2, "parent": 3, "default": 1, "mode": "parent"}, "out": 3},
+    {"name": "parent mode without a parent uses the scope", "in": {"explicit": null, "scope": 2, "parent": null, "default": 1, "mode": "parent"}, "out": 2},
+    {"name": "parent mode with nothing else uses the default branch", "in": {"explicit": null, "scope": null, "parent": null, "default": 7, "mode": "parent"}, "out": 7}
+  ],
+  "row_visible": [
+    {"name": "center-wide staff sees every branch", "in": {"scope": null, "branch": 3, "shared": false}, "out": true},
+    {"name": "center-wide staff sees unmarked rows", "in": {"scope": null, "branch": null, "shared": false}, "out": true},
+    {"name": "restricted staff sees its own branch", "in": {"scope": 2, "branch": 2, "shared": false}, "out": true},
+    {"name": "restricted staff does not see another branch", "in": {"scope": 2, "branch": 3, "shared": false}, "out": false},
+    {"name": "a shared row (no branch) is visible to everybody", "in": {"scope": 2, "branch": null, "shared": true}, "out": true},
+    {"name": "an unmarked row that is not shared is hidden from restricted staff", "in": {"scope": 2, "branch": null, "shared": false}, "out": false},
+    {"name": "a shared row with a branch follows the branch", "in": {"scope": 2, "branch": 3, "shared": true}, "out": false}
+  ],
+  "branch_totals": [
+    {
+      "name": "two branches, one empty",
+      "in": {
+        "branches": [{"id": 1, "name": "Asosiy"}, {"id": 2, "name": "Chilonzor"}, {"id": 3, "name": "Yunusobod"}],
+        "facts": [
+          {"branch": 1, "kind": "payment", "amount": "500000", "voided": false},
+          {"branch": 1, "kind": "payment", "amount": "300000", "voided": false},
+          {"branch": 1, "kind": "charge", "amount": "1000000", "voided": false},
+          {"branch": 1, "kind": "expense", "amount": "200000", "voided": false},
+          {"branch": 2, "kind": "payment", "amount": "150000", "voided": false},
+          {"branch": 2, "kind": "charge", "amount": "400000", "voided": false}
+        ]
+      },
+      "out": {
+        "rows": [
+          {"branch": 1, "revenue": "800000", "charges": "1000000", "expenses": "200000", "net": "600000"},
+          {"branch": 2, "revenue": "150000", "charges": "400000", "expenses": "0", "net": "150000"},
+          {"branch": 3, "revenue": "0", "charges": "0", "expenses": "0", "net": "0"}
+        ],
+        "unassigned": null,
+        "total": {"revenue": "950000", "charges": "1400000", "expenses": "200000", "net": "750000"}
+      }
+    },
+    {
+      "name": "voided facts are ignored",
+      "in": {
+        "branches": [{"id": 1, "name": "Asosiy"}],
+        "facts": [
+          {"branch": 1, "kind": "payment", "amount": "100000", "voided": false},
+          {"branch": 1, "kind": "payment", "amount": "999999", "voided": true},
+          {"branch": 1, "kind": "expense", "amount": "5000", "voided": true}
+        ]
+      },
+      "out": {
+        "rows": [{"branch": 1, "revenue": "100000", "charges": "0", "expenses": "0", "net": "100000"}],
+        "unassigned": null,
+        "total": {"revenue": "100000", "charges": "0", "expenses": "0", "net": "100000"}
+      }
+    },
+    {
+      "name": "a fact of an unknown or missing branch is shown as unassigned and still counted in the total",
+      "in": {
+        "branches": [{"id": 1, "name": "Asosiy"}],
+        "facts": [
+          {"branch": 1, "kind": "payment", "amount": "100000", "voided": false},
+          {"branch": null, "kind": "payment", "amount": "40000", "voided": false},
+          {"branch": 9, "kind": "expense", "amount": "10000", "voided": false}
+        ]
+      },
+      "out": {
+        "rows": [{"branch": 1, "revenue": "100000", "charges": "0", "expenses": "0", "net": "100000"}],
+        "unassigned": {"revenue": "40000", "charges": "0", "expenses": "10000", "net": "30000"},
+        "total": {"revenue": "140000", "charges": "0", "expenses": "10000", "net": "130000"}
+      }
+    },
+    {
+      "name": "expenses above revenue give a negative net",
+      "in": {
+        "branches": [{"id": 4, "name": "Sergeli"}],
+        "facts": [
+          {"branch": 4, "kind": "payment", "amount": "100000", "voided": false},
+          {"branch": 4, "kind": "expense", "amount": "350000", "voided": false}
+        ]
+      },
+      "out": {
+        "rows": [{"branch": 4, "revenue": "100000", "charges": "0", "expenses": "350000", "net": "-250000"}],
+        "unassigned": null,
+        "total": {"revenue": "100000", "charges": "0", "expenses": "350000", "net": "-250000"}
+      }
+    },
+    {
+      "name": "no facts at all",
+      "in": {"branches": [{"id": 1, "name": "Asosiy"}, {"id": 2, "name": "Chilonzor"}], "facts": []},
+      "out": {
+        "rows": [
+          {"branch": 1, "revenue": "0", "charges": "0", "expenses": "0", "net": "0"},
+          {"branch": 2, "revenue": "0", "charges": "0", "expenses": "0", "net": "0"}
+        ],
+        "unassigned": null,
+        "total": {"revenue": "0", "charges": "0", "expenses": "0", "net": "0"}
+      }
+    }
+  ],
+  "transfer_check": [
+    {"name": "plain move", "in": {"from": 1, "to": 2, "to_status": "active", "enrollment_branches": [], "end_enrollments": false}, "out": {"ok": true, "error": null, "end_count": 0}},
+    {"name": "moving to the same branch is refused", "in": {"from": 1, "to": 1, "to_status": "active", "enrollment_branches": [], "end_enrollments": false}, "out": {"ok": false, "error": "same_branch", "end_count": 0}},
+    {"name": "a closed target branch is refused", "in": {"from": 1, "to": 2, "to_status": "closed", "enrollment_branches": [], "end_enrollments": false}, "out": {"ok": false, "error": "target_closed", "end_count": 0}},
+    {"name": "same branch is reported before a closed target", "in": {"from": 2, "to": 2, "to_status": "closed", "enrollment_branches": [], "end_enrollments": false}, "out": {"ok": false, "error": "same_branch", "end_count": 0}},
+    {"name": "active enrollments in the old branch block the move", "in": {"from": 1, "to": 2, "to_status": "active", "enrollment_branches": [1, 1], "end_enrollments": false}, "out": {"ok": false, "error": "enrollments_in_old_branch", "end_count": 2}},
+    {"name": "they are ended when the caller asks for it", "in": {"from": 1, "to": 2, "to_status": "active", "enrollment_branches": [1, 1], "end_enrollments": true}, "out": {"ok": true, "error": null, "end_count": 2}},
+    {"name": "enrollments already in the target branch stay", "in": {"from": 1, "to": 2, "to_status": "active", "enrollment_branches": [2, 1], "end_enrollments": true}, "out": {"ok": true, "error": null, "end_count": 1}},
+    {"name": "only target-branch enrollments: nothing to end, nothing blocks", "in": {"from": 1, "to": 2, "to_status": "active", "enrollment_branches": [2], "end_enrollments": false}, "out": {"ok": true, "error": null, "end_count": 0}}
+  ],
+  "effective_value": [
+    {"name": "a branch price replaces the course default", "in": {"override": "250000", "base": "300000"}, "out": "250000"},
+    {"name": "no branch value inherits the base", "in": {"override": null, "base": "300000"}, "out": "300000"},
+    {"name": "zero is a real override", "in": {"override": "0", "base": "300000"}, "out": "0"},
+    {"name": "nothing at all stays empty", "in": {"override": null, "base": null}, "out": null},
+    {"name": "a branch value without a base", "in": {"override": "12", "base": null}, "out": "12"}
+  ],
+  "cash_close_branch": [
+    {"name": "restricted staff closes its own branch", "in": {"scope": 2, "requested": null, "active": [1, 2]}, "out": {"branch": 2, "error": null}},
+    {"name": "restricted staff naming its own branch is fine", "in": {"scope": 2, "requested": 2, "active": [1, 2]}, "out": {"branch": 2, "error": null}},
+    {"name": "restricted staff naming another branch is refused", "in": {"scope": 2, "requested": 1, "active": [1, 2]}, "out": {"branch": null, "error": "forbidden_branch"}},
+    {"name": "center-wide staff chooses a branch", "in": {"scope": null, "requested": 2, "active": [1, 2]}, "out": {"branch": 2, "error": null}},
+    {"name": "an unknown or closed branch is refused", "in": {"scope": null, "requested": 9, "active": [1, 2]}, "out": {"branch": null, "error": "unknown_branch"}},
+    {"name": "one active branch is chosen automatically", "in": {"scope": null, "requested": null, "active": [1]}, "out": {"branch": 1, "error": null}},
+    {"name": "several branches and no choice: the branch is required", "in": {"scope": null, "requested": null, "active": [1, 2]}, "out": {"branch": null, "error": "branch_required"}},
+    {"name": "no active branch at all", "in": {"scope": null, "requested": null, "active": []}, "out": {"branch": null, "error": "branch_required"}}
+  ],
+  "resolve_scope": [
+    {"name": "center-wide staff without a choice sees the total", "in": {"member_branch": null, "requested": null, "known": [1, 2]}, "out": {"scope": null, "error": null}},
+    {"name": "center-wide staff may narrow to a known branch", "in": {"member_branch": null, "requested": 2, "known": [1, 2]}, "out": {"scope": 2, "error": null}},
+    {"name": "an unknown branch is refused", "in": {"member_branch": null, "requested": 9, "known": [1, 2]}, "out": {"scope": null, "error": "unknown_branch"}},
+    {"name": "restricted staff is always scoped to its branch", "in": {"member_branch": 2, "requested": null, "known": [1, 2]}, "out": {"scope": 2, "error": null}},
+    {"name": "restricted staff naming its own branch", "in": {"member_branch": 2, "requested": 2, "known": [1, 2]}, "out": {"scope": 2, "error": null}},
+    {"name": "restricted staff cannot look at another branch", "in": {"member_branch": 2, "requested": 1, "known": [1, 2]}, "out": {"scope": null, "error": "forbidden_branch"}},
+    {"name": "restricted staff gets forbidden, not unknown, for a branch that does not exist", "in": {"member_branch": 2, "requested": 9, "known": [1, 2]}, "out": {"scope": null, "error": "forbidden_branch"}}
+  ]
+}

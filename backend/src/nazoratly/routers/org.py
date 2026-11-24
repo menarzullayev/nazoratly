@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import APIRouter, Depends
 from psycopg.errors import UniqueViolation
-from pydantic import EmailStr, StringConstraints, field_validator, model_validator
+from pydantic import EmailStr, Field, StringConstraints, field_validator, model_validator
 
 from nazoratly.db import execute, fetch_all, fetch_one, resolve, resolve_opt
 from nazoratly.deps import DB, Paging, Principal, require
@@ -96,9 +96,12 @@ class BranchOut(Out):
     name: str
     address: str | None
     status: str
+    is_default: bool = Field(
+        description="the center's default branch: where rows land when no branch is chosen"
+    )
 
 
-_BRANCH = "public_id AS id, name, address, status"
+_BRANCH = "public_id AS id, name, address, status, is_default"
 
 
 @router.get("/branches", response_model=Page[BranchOut])
@@ -116,9 +119,9 @@ async def list_branches(
 
 @router.post("/branches", response_model=BranchOut, status_code=201)
 async def create_branch(
-    body: BranchIn, p: Annotated[Principal, Depends(require("academics:write"))], db: DB
+    body: BranchIn, p: Annotated[Principal, Depends(require("branches:manage"))], db: DB
 ) -> BranchOut:
-    async with db.tx(p.session()) as conn:
+    async with db.tx(p.session(unscoped=True)) as conn:  # center-wide staff only
         row = await fetch_one(
             conn,
             f"INSERT INTO branches (org_id, name, address) VALUES (%s, %s, %s) RETURNING {_BRANCH}",
@@ -143,12 +146,16 @@ async def get_branch(
 async def patch_branch(
     branch_id: uuid.UUID,
     body: BranchPatch,
-    p: Annotated[Principal, Depends(require("academics:write"))],
+    p: Annotated[Principal, Depends(require("branches:manage"))],
     db: DB,
 ) -> BranchOut:
     changes = body.model_dump(exclude_unset=True)
-    async with db.tx(p.session()) as conn:
+    async with db.tx(p.session(unscoped=True)) as conn:
         bid = await resolve(conn, "branches", branch_id, what="branch")
+        if changes.get("status") == "closed":
+            cur = await fetch_one(conn, "SELECT is_default FROM branches WHERE id = %s", (bid,))
+            if cur is not None and cur["is_default"]:
+                raise Conflict("The default branch cannot be closed: make another branch the default first")
         if changes:
             sets = ", ".join(f"{k} = %({k})s" for k in changes)
             await execute(conn, f"UPDATE branches SET {sets} WHERE id = %(_id)s", {**changes, "_id": bid})
@@ -159,19 +166,24 @@ async def patch_branch(
 
 @router.delete("/branches/{branch_id}", response_model=Message, summary="Soft-delete a branch")
 async def delete_branch(
-    branch_id: uuid.UUID, p: Annotated[Principal, Depends(require("academics:write"))], db: DB
+    branch_id: uuid.UUID, p: Annotated[Principal, Depends(require("branches:manage"))], db: DB
 ) -> Message:
-    async with db.tx(p.session()) as conn:
+    async with db.tx(p.session(unscoped=True)) as conn:
         bid = await resolve(conn, "branches", branch_id, what="branch")
         in_use = await fetch_one(
             conn,
             "SELECT (SELECT count(*) FROM study_groups WHERE branch_id = %(b)s AND deleted_at IS NULL) AS groups,"
-            " (SELECT count(*) FROM rooms WHERE branch_id = %(b)s) AS rooms",
+            " (SELECT count(*) FROM rooms WHERE branch_id = %(b)s) AS rooms,"
+            " (SELECT count(*) FROM students WHERE branch_id = %(b)s AND deleted_at IS NULL) AS students,"
+            " (SELECT count(*) FROM memberships WHERE branch_id = %(b)s) AS staff,"
+            " (SELECT is_default FROM branches WHERE id = %(b)s) AS is_default",
             {"b": bid},
         )
         assert in_use is not None
-        if in_use["groups"] or in_use["rooms"]:
-            raise Conflict("Branch still has groups or rooms", details=dict(in_use))
+        if in_use["is_default"]:
+            raise Conflict("The default branch cannot be deleted: make another branch the default first")
+        if in_use["groups"] or in_use["rooms"] or in_use["students"] or in_use["staff"]:
+            raise Conflict("Branch still has groups, rooms, students or staff", details=dict(in_use))
         await execute(conn, "UPDATE branches SET deleted_at = now(), status = 'closed' WHERE id = %s", (bid,))
     return Message(message="branch deleted")
 
@@ -264,6 +276,10 @@ async def add_staff(
     email = str(body.email).lower() if body.email else None
     async with db.tx(p.session()) as conn:
         branch_internal = await resolve_opt(conn, "branches", body.branch_id, what="branch")
+    if p.branch_id is not None and branch_internal not in (None, p.branch_id):
+        raise Forbidden("You can add staff only to your own branch")
+    if p.branch_id is not None:
+        branch_internal = p.branch_id  # staff of a branch can never create center-wide staff
     # Users are global; creating one and attaching it to this center is done by the auth identity in one transaction.
     async with db.auth_tx(p.session()) as conn:
         existing = await fetch_one(
@@ -326,6 +342,10 @@ async def patch_staff(
             _may_assign(p.role, changes["role"])
         if "branch_id" in changes:
             changes["branch_id"] = await resolve_opt(conn, "branches", changes["branch_id"], what="branch")
+            if p.branch_id is not None and changes["branch_id"] != p.branch_id:
+                raise Forbidden(
+                    "Staff of a branch cannot move people to another branch or make them center-wide"
+                )
         leaves_owner = cur["role"] == "owner" and (
             changes.get("role", "owner") != "owner" or changes.get("status", cur["status"]) != "active"
         )

@@ -13,7 +13,9 @@ import { guard, withLock } from "./actions";
 import { cashBookBalance, ledgerReady, postCashDifference, tryPostRefunds, writeReport } from "./ledger";
 import { loadBalances } from "./packages";
 import { pickId } from "./pick";
+import { cashCloseBranch } from "../domain/branches";
 import { append, read, readIfPresent, today, updateById } from "./repo";
+import { currentScope } from "./scope";
 import { CASH_CLOSES, CHARGES, DISCOUNT_LINES, DISCOUNTS, ENROLLMENTS, INSTALLMENTS, PACKAGES, PAYMENTS, PERIODS, REFUNDS, STUDENTS } from "./schema";
 
 const ui = (): GoogleAppsScript.Base.Ui => SpreadsheetApp.getUi();
@@ -282,17 +284,28 @@ function promptRefund(): RefundInput {
 }
 
 // ---- daily cash close -------------------------------------------------------------------------------------------------------
-export interface CashPreview { date: string; bookBalance: number; cashIn: number; cashOut: number; journalSeq: number; nextShift: number }
-
-export function cashClosePreview(date?: string): CashPreview {
-  const day = date ?? today();
-  if (!isIsoDate(day)) throw new Error("Sana noto'g'ri (yyyy-mm-dd).");
-  const b = cashBookBalance(day);
-  const shifts = readIfPresent<CashClose>(CASH_CLOSES).filter((c) => c.date === day).map((c) => c.shiftNo);
-  return { date: day, bookBalance: b.balance, cashIn: b.cashIn, cashOut: b.cashOut, journalSeq: b.seq, nextShift: Math.max(0, ...shifts) + 1 };
+/** The branch of a cash desk: staff of a branch = their own; center-wide staff name it, or the only active branch implies it. */
+export function cashBranch(requested?: string | null): string {
+  const info = currentScope();
+  const r = cashCloseBranch({ scope: info.scope, requested: requested || null, active: info.active });
+  if (r.error === "forbidden_branch") throw new Error("Bu filial sizga ochiq emas.");
+  if (r.error === "unknown_branch") throw new Error(`Filial topilmadi yoki yopilgan: ${requested}.`);
+  if (r.error === "branch_required") throw new Error("Markazda bir nechta filial bor: kassa filialini ko'rsating (menyu so'raydi yoki Filiallar > Filialni tanlash).");
+  return r.branch!;
 }
 
-export interface CloseInput { date?: string; counted: number; note?: string; postDifference?: boolean }
+export interface CashPreview { branchId: string; date: string; bookBalance: number; cashIn: number; cashOut: number; journalSeq: number; nextShift: number }
+
+export function cashClosePreview(date?: string, branchId?: string | null): CashPreview {
+  const day = date ?? today();
+  if (!isIsoDate(day)) throw new Error("Sana noto'g'ri (yyyy-mm-dd).");
+  const branch = cashBranch(branchId);
+  const b = cashBookBalance(day, branch);
+  const shifts = readIfPresent<CashClose>(CASH_CLOSES).filter((c) => c.date === day && c.branchId === branch).map((c) => c.shiftNo); // shifts count per branch
+  return { branchId: branch, date: day, bookBalance: b.balance, cashIn: b.cashIn, cashOut: b.cashOut, journalSeq: b.seq, nextShift: Math.max(0, ...shifts) + 1 };
+}
+
+export interface CloseInput { date?: string; counted: number; note?: string; postDifference?: boolean; branchId?: string }
 
 /** Closes the cash desk of a day: the counted cash is compared with the books, a difference needs a note, the close keeps the
  * journal head of that moment and, when asked, the difference is booked in the journal. Closes are append-only. */
@@ -303,14 +316,14 @@ export function closeCash(input?: CloseInput): { id: string; shiftNo: number; di
   if (day > today()) throw new Error("Kassa kelajak sanasi bilan yopilmaydi.");
   if (!Number.isInteger(i.counted) || i.counted < 0 || i.counted > 1_000_000_000_000) throw new Error("Sanalgan summa 0 yoki musbat butun son bo'lishi kerak.");
   return withLock(() => {
-    const p = cashClosePreview(day);
+    const p = cashClosePreview(day, i.branchId);
     const d = cashDifference({ book: p.bookBalance, counted: i.counted });
     const errors = cashCloseErrors({ counted: i.counted, difference: d.difference, note: i.note ?? "" });
     if (i.postDifference && d.difference === 0) errors.push("nothing_to_post");
     if (errors.length) throw new Error(`Smenani yopib bo'lmaydi: ${errors.map((e) => CLOSE_TEXT[e] ?? e).join("; ")}.`);
     const id = nextId("M", readIfPresent<CashClose>(CASH_CLOSES).map((c) => c.id));
-    const entryNo = i.postDifference ? postCashDifference(day, id, d.difference) : 0; // a failed posting saves nothing
-    append(CASH_CLOSES, [{ id, date: day, shiftNo: p.nextShift, counted: i.counted, bookBalance: p.bookBalance, difference: d.difference, note: (i.note ?? "").trim(), journalSeq: p.journalSeq, entryNo }]);
+    const entryNo = i.postDifference ? postCashDifference(day, id, d.difference, p.branchId) : 0; // a failed posting saves nothing
+    append(CASH_CLOSES, [{ id, branchId: p.branchId, date: day, shiftNo: p.nextShift, counted: i.counted, bookBalance: p.bookBalance, difference: d.difference, note: (i.note ?? "").trim(), journalSeq: p.journalSeq, entryNo }]);
     return { id, shiftNo: p.nextShift, difference: d.difference, status: d.status, entryNo };
   });
 }
@@ -323,12 +336,14 @@ const CLOSE_TEXT: Record<string, string> = {
 
 function promptClose(): CloseInput {
   const t = "Kassani yopish (smena)";
-  const p = cashClosePreview();
+  const info = currentScope();
+  const branchId = info.scope === null && info.active.length > 1 ? askText(t, `Qaysi filial kassasi? Filial ID (${info.active.join(", ")}):`) : undefined;
+  const p = cashClosePreview(undefined, branchId);
   const counted = num(askText(t, `Jurnal bo'yicha kassada ${formatSom(p.bookBalance)} so'm bo'lishi kerak (bugun kirim ${formatSom(p.cashIn)}, chiqim ${formatSom(p.cashOut)}).\nHaqiqiy sanalgan naqd pul (so'm):`), "Summa");
   const diff = counted - p.bookBalance;
   const note = diff === 0 ? "" : askText(t, `Farq: ${formatSom(diff)} so'm. Izoh (majburiy):`);
   const post = diff !== 0 && ui().alert(t, "Farqni jurnalga yozamizmi? (Ortiqcha = boshqa daromad, kam = kassa kamomadi)", ui().ButtonSet.YES_NO) === ui().Button.YES;
-  return { counted, note, postDifference: post };
+  return { counted, note, postDifference: post, branchId };
 }
 
 // ---- menus ------------------------------------------------------------------------------------------------------------------------
@@ -359,8 +374,9 @@ export const menu = {
     }),
   cashStatus: (): void =>
     guard("Kassa holati", () => {
-      const p = cashClosePreview();
-      ui().alert("Kassa holati", `Jurnal bo'yicha kassa (${p.date}): ${formatSom(p.bookBalance)} so'm.\nBugun kirim: ${formatSom(p.cashIn)}, chiqim: ${formatSom(p.cashOut)}.\nKeyingi smena: ${p.nextShift}.`, ui().ButtonSet.OK);
+      const info = currentScope();
+      const p = cashClosePreview(undefined, info.scope === null && info.active.length > 1 ? askText("Kassa holati", `Qaysi filial? Filial ID (${info.active.join(", ")}):`) : undefined);
+      ui().alert("Kassa holati", `Jurnal bo'yicha kassa (${p.branchId}, ${p.date}): ${formatSom(p.bookBalance)} so'm.\nBugun kirim: ${formatSom(p.cashIn)}, chiqim: ${formatSom(p.cashOut)}.\nKeyingi smena: ${p.nextShift}.`, ui().ButtonSet.OK);
     }),
 };
 

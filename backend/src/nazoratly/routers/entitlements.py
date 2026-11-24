@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends
 from pydantic import model_validator
 
 from nazoratly.accounting import org_today
+from nazoratly.branches import branch_of
 from nazoratly.db import Conn, execute, fetch_all, fetch_one, resolve, resolve_opt
 from nazoratly.deps import DB, Paging, Principal, require
 from nazoratly.errors import Conflict, NotOpen, Unprocessable
@@ -58,7 +59,7 @@ async def sync_entitlement(
         )
         return
 
-    cfg = await load_settings(conn, org_id)
+    cfg = await load_settings(conn, org_id, await branch_of(conn, "lessons", lesson["id"]))
     if cfg.excused_mode == "none":
         return
     enr = await fetch_one(

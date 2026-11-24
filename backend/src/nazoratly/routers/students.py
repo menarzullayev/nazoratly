@@ -7,9 +7,9 @@ from datetime import date, datetime
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, Query
-from pydantic import StringConstraints, model_validator
+from pydantic import Field, StringConstraints, model_validator
 
-from nazoratly.db import Conn, execute, fetch_all, fetch_one, patch_row, resolve
+from nazoratly.db import Conn, execute, fetch_all, fetch_one, patch_row, resolve, resolve_opt
 from nazoratly.deps import DB, Paging, Principal, require
 from nazoratly.errors import Conflict, NotFound
 from nazoratly.idempotency import IdempotentRoute
@@ -35,6 +35,10 @@ class StudentIn(Model):
     status: StudentStatus = "active"
     joined_on: date | None = None
     notes: LongText | None = None
+    branch_id: uuid.UUID | None = Field(
+        default=None,
+        description="the branch of the new student; default: the branch you work in (X-Branch / your own), else the center's default",
+    )
 
 
 class StudentPatch(Model):
@@ -48,6 +52,10 @@ class StudentPatch(Model):
 
 class StudentOut(Out):
     id: uuid.UUID
+    branch_id: uuid.UUID | None = Field(
+        description="the branch the student belongs to (move him with POST /students/{id}/transfer); "
+        "None when he moved to a branch you cannot see"
+    )
     full_name: str
     birth_date: date | None
     phone: str | None
@@ -89,7 +97,7 @@ class StudentDetail(StudentOut):
     balance: BalanceOut | None = None
 
 
-_STUDENT = "public_id AS id, full_name, birth_date, phone, status, joined_on, notes, created_at"
+_STUDENT = "public_id AS id, (SELECT b.public_id FROM branches b WHERE b.org_id = students.org_id AND b.id = students.branch_id) AS branch_id, full_name, birth_date, phone, status, joined_on, notes, created_at"
 
 
 @router.post("/students", response_model=StudentOut, status_code=201)
@@ -97,11 +105,21 @@ async def create_student(
     body: StudentIn, p: Annotated[Principal, Depends(require("students:write"))], db: DB
 ) -> StudentOut:
     async with db.tx(p.session()) as conn:
+        bid = await resolve_opt(conn, "branches", body.branch_id, what="branch")
         row = await fetch_one(
             conn,
-            f"INSERT INTO students (org_id, full_name, birth_date, phone, status, joined_on, notes) "
-            f"VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING {_STUDENT}",
-            (p.org_id, body.full_name, body.birth_date, body.phone, body.status, body.joined_on, body.notes),
+            f"INSERT INTO students (org_id, branch_id, full_name, birth_date, phone, status, joined_on, notes) "
+            f"VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING {_STUDENT}",
+            (
+                p.org_id,
+                bid,
+                body.full_name,
+                body.birth_date,
+                body.phone,
+                body.status,
+                body.joined_on,
+                body.notes,
+            ),
         )
     assert row is not None
     return StudentOut.model_validate(row)

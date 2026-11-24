@@ -13,7 +13,8 @@ import { nextId } from "../domain/ids";
 import { EMPTY_HEAD, makePeriod, nextHead, parseMoney, reverseLines, sealEntry, validateEntry, verifyChain, type Head, type Line, type LineSpec, type Period, type Verdict } from "../domain/ledger";
 import type { Expense, Payment, Refund, Student } from "../domain/types";
 import { guard, withLock } from "./actions";
-import { append, read, readIfPresent, today, updateById } from "./repo";
+import { append, read, readIfPresent, readRaw, today, updateById } from "./repo";
+import { requireCenterWide } from "./scope";
 import { BILL_PAYMENTS, CASH_ACCOUNTS, CHART_ACCOUNTS, EXPENSES, JOURNAL, LEDGER_TABLES, PAYMENTS, PAYROLL, PERIODS, REFUNDS, STUDENTS, type TableDef } from "./schema";
 import { readSettings } from "./settings";
 
@@ -23,10 +24,10 @@ const SOM = 100; // the journal sheet holds whole so'm; the rules count tiyin
 const ui = (): GoogleAppsScript.Base.Ui => SpreadsheetApp.getUi();
 
 export interface ChartRow { code: string; name: string; type: string; active: boolean }
-export interface JournalRow { seq: number; entryNo: number; date: string; account: string; debit: number; credit: number; sourceType: string; sourceKey: string; memo: string; prevHash: string; hash: string }
+export interface JournalRow { branchId?: string; seq: number; entryNo: number; date: string; account: string; debit: number; credit: number; sourceType: string; sourceKey: string; memo: string; prevHash: string; hash: string }
 interface PeriodRow { month: string; lastSeq: number; headHash: string; totalDebit: number; totalCredit: number; periodHash: string; closedOn: string }
 interface CashRow { code: string; name: string; kind: string }
-export interface EntrySpec { date: string; memo: string; sourceType: string; sourceKey: string; lines: LineSpec[] }
+export interface EntrySpec { date: string; memo: string; sourceType: string; sourceKey: string; lines: LineSpec[]; branchId?: string }
 
 const ERROR_TEXT: Record<string, string> = {
   too_few_lines: "yozuvda kamida ikkita qator bo'lishi kerak",
@@ -63,10 +64,13 @@ export const ledgerReady = (): boolean => hasSheet(JOURNAL);
 export function readChart(): ChartRow[] {
   return hasSheet(CHART_ACCOUNTS) ? read<ChartRow>(CHART_ACCOUNTS) : CHART.map((a) => ({ code: a.code, name: a.name, type: a.type, active: true }));
 }
-export const toLine = (r: JournalRow): Line => ({ seq: r.seq, entryNo: r.entryNo, date: r.date, account: r.account, debit: r.debit * SOM, credit: r.credit * SOM, sourceType: r.sourceType, sourceKey: r.sourceKey, memo: r.memo, prevHash: r.prevHash, hash: r.hash });
+export type BranchLine = Line & { branchId?: string };
+export const toLine = (r: JournalRow): BranchLine => ({ branchId: r.branchId, seq: r.seq, entryNo: r.entryNo, date: r.date, account: r.account, debit: r.debit * SOM, credit: r.credit * SOM, sourceType: r.sourceType, sourceKey: r.sourceKey, memo: r.memo, prevHash: r.prevHash, hash: r.hash });
 const toRow = (l: Line): JournalRow => ({ seq: l.seq, entryNo: l.entryNo, date: l.date, account: l.account, debit: l.debit / SOM, credit: l.credit / SOM, sourceType: l.sourceType, sourceKey: l.sourceKey, memo: l.memo, prevHash: l.prevHash, hash: l.hash });
 /** The journal in sheet order (a swapped or deleted row must show up as a broken chain, so it is never re-sorted). */
-export const journalLines = (): Line[] => readIfPresent<JournalRow>(JOURNAL).map(toLine);
+export const journalLines = (): BranchLine[] => readIfPresent<JournalRow>(JOURNAL).map(toLine);
+/** The whole center's journal, whatever the branch: the hash chain is one per center (head, verification, closing). */
+export const journalLinesAll = (): BranchLine[] => (hasSheet(JOURNAL) ? readRaw<JournalRow>(JOURNAL).map(toLine) : []);
 export function periods(): Period[] {
   return readIfPresent<PeriodRow>(PERIODS).map((p) => ({ month: p.month, lastSeq: p.lastSeq, headHash: p.headHash, totalDebit: p.totalDebit * SOM, totalCredit: p.totalCredit * SOM, periodHash: p.periodHash }));
 }
@@ -97,8 +101,8 @@ export function postEntries(entries: EntrySpec[]): number[] {
   ensureChart();
   const accounts: Record<string, boolean> = Object.fromEntries(readChart().map((a) => [a.code, a.active]));
   const closed = closedMonths();
-  let head = headOf(journalLines());
-  const out: Line[] = [];
+  let head = headOf(journalLinesAll());
+  const out: JournalRow[] = [];
   const numbers: number[] = [];
   for (const e of entries) {
     const memo = e.memo.trim().slice(0, 500);
@@ -108,10 +112,10 @@ export function postEntries(entries: EntrySpec[]): number[] {
     if (e.lines.some(([, d, c]) => d % SOM !== 0 || c % SOM !== 0)) throw new Error("Jurnalga faqat butun so'm yoziladi.");
     const sealed = sealEntry(head, { date: e.date, memo, sourceType: e.sourceType, sourceKey: e.sourceKey, lines: e.lines });
     head = nextHead(sealed);
-    out.push(...sealed);
+    out.push(...sealed.map((l) => ({ ...toRow(l), branchId: e.branchId ?? "" })));
     numbers.push(head.entryNo);
   }
-  append(JOURNAL, out.map(toRow));
+  append(JOURNAL, out);
   return numbers;
 }
 
@@ -138,44 +142,46 @@ const paymentMethod = (m: string): string => (["naqd", "cash"].includes(m.trim()
 const tiyin = (som: number): number => Math.round(som) * SOM;
 const sourceId = (type: string, key: string): string => postedKey(type, key);
 
-interface PayRowLite { month: string; teacherId: string; teacherName: string; total: number; status: string }
-interface BillPayRowLite { id: string; billId: string; date: string; amount: number; paidFrom: string; voided: boolean }
+interface PayRowLite { branchId?: string; month: string; teacherId: string; teacherName: string; total: number; status: string }
+interface BillPayRowLite { branchId?: string; id: string; billId: string; date: string; amount: number; paidFrom: string; voided: boolean }
 
-export function collectSources(): { sources: Source[]; memos: Map<string, string> } {
+export function collectSources(): { sources: Source[]; memos: Map<string, string>; branches: Map<string, string> } {
   const sources: Source[] = [];
   const memos = new Map<string, string>();
+  const branches = new Map<string, string>(); // source -> the branch of the source row (its journal entry follows it)
   const names = new Map(read<Student>(STUDENTS).map((s) => [s.id, s.fullName]));
-  const add = (s: Source, memo: string): void => {
+  const add = (s: Source, memo: string, branch = ""): void => {
     sources.push(s);
     memos.set(sourceId(s.type, s.key), memo);
+    if (branch) branches.set(sourceId(s.type, s.key), branch);
   };
   for (const p of read<Payment>(PAYMENTS)) {
     if (p.demo === true) continue; // demo money never enters the books (the journal is immutable)
     if (!p.id || !isIsoDate(p.paidOn) || !(p.amount > 0)) continue; // hand-edited junk is ignored, never posted
-    add({ type: "payment", key: p.id, date: p.paidOn, amount: tiyin(p.amount), voided: p.voided, method: paymentMethod(p.method) }, `To'lov ${p.id}: ${names.get(p.studentId) ?? p.studentId} (${p.method || "Naqd"})`);
+    add({ type: "payment", key: p.id, date: p.paidOn, amount: tiyin(p.amount), voided: p.voided, method: paymentMethod(p.method) }, `To'lov ${p.id}: ${names.get(p.studentId) ?? p.studentId} (${p.method || "Naqd"})`, p.branchId);
   }
   for (const x of readIfPresent<Expense>(EXPENSES)) {
     if (x.demo === true) continue;
     if (!x.id || !isIsoDate(x.date) || !(x.amount > 0)) continue;
-    add({ type: "expense", key: x.id, date: x.date, amount: tiyin(x.amount), voided: x.voided, category: x.category, paidFrom: x.paidFrom || "cash", bill: Boolean(x.billId) }, `Xarajat ${x.id}: ${x.category}${x.note ? ` (${x.note})` : ""}`);
+    add({ type: "expense", key: x.id, date: x.date, amount: tiyin(x.amount), voided: x.voided, category: x.category, paidFrom: x.paidFrom || "cash", bill: Boolean(x.billId) }, `Xarajat ${x.id}: ${x.category}${x.note ? ` (${x.note})` : ""}`, x.branchId);
   }
   for (const b of readIfPresent<BillPayRowLite>(BILL_PAYMENTS)) {
     if (!b.id || !isIsoDate(b.date) || !(b.amount > 0)) continue;
-    add({ type: "bill_payment", key: b.id, date: b.date, amount: tiyin(b.amount), voided: b.voided, paidFrom: b.paidFrom || "cash" }, `Ta'minotchiga to'lov ${b.id} (hisob ${b.billId})`);
+    add({ type: "bill_payment", key: b.id, date: b.date, amount: tiyin(b.amount), voided: b.voided, paidFrom: b.paidFrom || "cash" }, `Ta'minotchiga to'lov ${b.id} (hisob ${b.billId})`, b.branchId);
   }
   for (const r of readIfPresent<Refund & { demo?: boolean }>(REFUNDS)) {
     if (r.demo === true) continue; // demo money never enters the books
     if (!r.id || !isIsoDate(r.date) || !(r.amount > 0) || r.payout === "credit") continue; // a refund kept as credit moves no money
-    add({ type: "refund", key: r.id, date: r.date, amount: tiyin(r.amount), voided: false, payout: r.payout }, `Qaytarish ${r.id}: ${names.get(r.studentId) ?? r.studentId} (${r.kind}, ${r.payout})`);
+    add({ type: "refund", key: r.id, date: r.date, amount: tiyin(r.amount), voided: false, payout: r.payout }, `Qaytarish ${r.id}: ${names.get(r.studentId) ?? r.studentId} (${r.kind}, ${r.payout})`, r.branchId);
   }
   for (const r of readIfPresent<PayRowLite>(PAYROLL)) {
     if (r.status !== "approved" && r.status !== "paid") continue;
     const key = `${r.month.slice(0, 7)}:${r.teacherId}`;
     // a payroll row carries no approval date: it is dated the day the script first sees it
-    add({ type: "payroll_accrual", key, date: today(), amount: tiyin(r.total), voided: false }, `O'qituvchi oyligi hisoblandi: ${r.teacherName} (${r.month.slice(0, 7)})`);
-    if (r.status === "paid") add({ type: "payroll_payment", key, date: today(), amount: tiyin(r.total), voided: false }, `O'qituvchi oyligi to'landi: ${r.teacherName} (${r.month.slice(0, 7)})`);
+    add({ type: "payroll_accrual", key, date: today(), amount: tiyin(r.total), voided: false }, `O'qituvchi oyligi hisoblandi: ${r.teacherName} (${r.month.slice(0, 7)})`, r.branchId);
+    if (r.status === "paid") add({ type: "payroll_payment", key, date: today(), amount: tiyin(r.total), voided: false }, `O'qituvchi oyligi to'landi: ${r.teacherName} (${r.month.slice(0, 7)})`, r.branchId);
   }
-  return { sources, memos };
+  return { sources, memos, branches };
 }
 
 export function pendingList(): PendingItem[] {
@@ -192,7 +198,7 @@ export function syncLedger(only?: (item: PendingItem) => boolean): SyncResult {
     ensureChart();
     fillMissingIds(PAYMENTS, "P");
     if (hasSheet(EXPENSES)) fillMissingIds(EXPENSES, "X");
-    const { sources, memos } = collectSources();
+    const { sources, memos, branches } = collectSources();
     const lines = journalLines();
     const closed = closedMonths();
     const specs: EntrySpec[] = [];
@@ -206,13 +212,13 @@ export function syncLedger(only?: (item: PendingItem) => boolean): SyncResult {
         continue;
       }
       if (item.kind === "post") {
-        specs.push({ date: item.date, memo: memos.get(sourceId(item.sourceType, item.sourceKey)) ?? `${item.sourceType} ${item.sourceKey}`, sourceType: item.sourceType, sourceKey: item.sourceKey, lines: item.lines });
+        specs.push({ date: item.date, memo: memos.get(sourceId(item.sourceType, item.sourceKey)) ?? `${item.sourceType} ${item.sourceKey}`, sourceType: item.sourceType, sourceKey: item.sourceKey, lines: item.lines, branchId: branches.get(sourceId(item.sourceType, item.sourceKey)) });
         posted++;
       } else {
         const base = item.sourceType.replace(/_void$/, "");
         const orig = lines.filter((l) => l.sourceType === base && l.sourceKey === item.sourceKey);
         if (orig.length === 0) continue;
-        specs.push({ date: item.date, memo: `Bekor qilish: ${orig[0]!.memo}`, sourceType: item.sourceType, sourceKey: item.sourceKey, lines: reverseLines(orig.map(spec)) });
+        specs.push({ date: item.date, memo: `Bekor qilish: ${orig[0]!.memo}`, sourceType: item.sourceType, sourceKey: item.sourceKey, lines: reverseLines(orig.map(spec)), branchId: orig[0]!.branchId });
         reversed++;
       }
     }
@@ -246,25 +252,25 @@ export function tryPostRefunds(): string {
 
 /** What the books say the cash desk holds through `through` (all cash-kind accounts), in so'm, the last journal line, and
  * the cash that came in and went out on that very day. */
-export function cashBookBalance(through: string): { balance: number; seq: number; cashIn: number; cashOut: number } {
+export function cashBookBalance(through: string, branch?: string): { balance: number; seq: number; cashIn: number; cashOut: number } {
   const kinds = readIfPresent<CashRow>(CASH_ACCOUNTS).filter((c) => c.kind === "cash").map((c) => c.code);
   const codes = new Set(kinds.length ? kinds : ["1000"]);
-  const lines = journalLines();
+  const lines = journalLines().filter((l) => !branch || l.branchId === branch); // one branch's own cash desk
   const mine = lines.filter((l) => codes.has(l.account));
   const upTo = mine.filter((l) => l.date <= through);
   const day = mine.filter((l) => l.date === through);
   return {
     balance: upTo.reduce((n, l) => n + l.debit - l.credit, 0) / SOM,
-    seq: lines.length ? lines[lines.length - 1]!.seq : 0,
+    seq: headOf(journalLinesAll()).seq,
     cashIn: day.reduce((n, l) => n + l.debit, 0) / SOM,
     cashOut: day.reduce((n, l) => n + l.credit, 0) / SOM,
   };
 }
 
 /** Books the difference found at a cash close (more cash than booked = other income, less = shortage); returns the entry number. */
-export function postCashDifference(date: string, closeId: string, difference: number): number {
+export function postCashDifference(date: string, closeId: string, difference: number, branchId?: string): number {
   const lines = postingLines({ event: "cash_close", direction: difference > 0 ? "over" : "short", amount: tiyin(Math.abs(difference)) });
-  const [no] = postEntries([{ date, memo: `Kassa farqi (${difference > 0 ? "ortiqcha" : "kamomad"}): smena ${closeId}`, sourceType: "cash_close", sourceKey: closeId, lines }]);
+  const [no] = postEntries([{ date, memo: `Kassa farqi (${difference > 0 ? "ortiqcha" : "kamomad"}): smena ${closeId}`, sourceType: "cash_close", sourceKey: closeId, lines, branchId }]);
   return no!;
 }
 
@@ -350,7 +356,8 @@ export function addCashAccount(code: string, name: string, kind: "cash" | "bank"
 
 // ---- verification, closing --------------------------------------------------------------------------------------------
 export function verifyJournal(): { verdict: Verdict; lines: number; message: string } {
-  const lines = journalLines();
+  requireCenterWide("Jurnalni tekshirish"); // the chain is one per center: a branch's partial view cannot be verified
+  const lines = journalLinesAll();
   const verdict = verifyChain(lines, periods());
   let message: string;
   if (verdict.ok) message = `Jurnal to'g'ri: ${lines.length} qator, hash zanjiri va ${periods().length} ta yopilgan davr tekshirildi.`;
@@ -364,6 +371,7 @@ export function verifyJournal(): { verdict: Verdict; lines: number; message: str
 }
 
 export function closePeriod(month?: string): string {
+  requireCenterWide("Davrni yopish");
   const m = (month ?? askText("Davrni yopish", "Yopiladigan oy (yyyy-mm). Faqat tugagan oy yopiladi, qayta ochib bo'lmaydi.")).slice(0, 7);
   return withLock(() => {
     if (!isIsoDate(`${m}-01`)) throw new Error(`Noto'g'ri oy: "${m}". Format: 2026-10`);
@@ -374,7 +382,7 @@ export function closePeriod(month?: string): string {
     if (unposted.length) throw new Error(`${unposted.length} ta hujjat hali jurnalga o'tkazilmagan: avval Buxgalteriya > Kutayotganlarni o'tkazish.`);
     const verdict = verifyJournal();
     if (!verdict.verdict.ok) throw new Error(`Jurnal tekshiruvdan o'tmadi, yopib bo'lmaydi.\n${verdict.message}`);
-    const p = makePeriod(m, journalLines());
+    const p = makePeriod(m, journalLinesAll());
     append(PERIODS, [{ month: p.month, lastSeq: p.lastSeq, headHash: p.headHash, totalDebit: p.totalDebit / SOM, totalCredit: p.totalCredit / SOM, periodHash: p.periodHash, closedOn: today() }]);
     return `${m} yopildi: ${p.lastSeq} qator, davr hashi ${p.periodHash.slice(0, 12)}...`;
   });

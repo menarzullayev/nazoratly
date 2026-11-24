@@ -74,12 +74,8 @@ async def org_today(conn: Conn) -> date:
 
 
 async def current_head(conn: Conn, org_id: int) -> Head:
-    row = await fetch_one(
-        conn,
-        "SELECT l.seq, l.hash, e.entry_no FROM journal_lines l JOIN journal_entries e ON e.org_id = l.org_id AND e.id = l.entry_id "
-        "WHERE l.org_id = %s ORDER BY l.seq DESC LIMIT 1",
-        (org_id,),
-    )
+    # ledger_head() reads the whole center's chain even in a branch session (the chain is one per center)
+    row = await fetch_one(conn, "SELECT seq, hash, entry_no FROM ledger_head(%s)", (org_id,))
     return Head() if row is None else Head(int(row["seq"]), int(row["entry_no"]), str(row["hash"]))
 
 
@@ -91,6 +87,30 @@ async def closed_months(conn: Conn) -> set[str]:
 async def account_ids(conn: Conn, org_id: int) -> dict[str, tuple[int, bool]]:
     rows = await fetch_all(conn, "SELECT id, code, active FROM accounts WHERE org_id = %s", (org_id,))
     return {r["code"]: (int(r["id"]), bool(r["active"])) for r in rows}
+
+
+_SOURCE_TABLES = {  # journal source type -> the table holding the source row (its branch becomes the entry's branch)
+    "payment": "payments",
+    "expense": "expenses",
+    "refund": "refunds",
+    "cash_close": "cash_closes",
+    "bill_payment": "bill_payments",
+    "payroll_accrual": "teacher_payrolls",
+    "payroll_payment": "teacher_payrolls",
+}
+
+
+async def entry_branch(conn: Conn, source_type: str, source_key: str, reverses: int | None) -> int | None:
+    """The branch of a new entry: the entry it reverses, else its source row. None = let the database use the session
+    branch (a manual entry) or the center's default branch."""
+    if reverses is not None:
+        row = await fetch_one(conn, "SELECT branch_id FROM journal_entries WHERE id = %s", (reverses,))
+        return None if row is None else int(row["branch_id"])
+    table = _SOURCE_TABLES.get(source_type)
+    if table is None or not source_key.isdigit():
+        return None
+    row = await fetch_one(conn, f"SELECT branch_id FROM {table} WHERE id = %s", (int(source_key),))
+    return None if row is None else int(row["branch_id"])
 
 
 async def post_entry(
@@ -131,8 +151,8 @@ async def post_entry(
     )
     entry = await fetch_one(
         conn,
-        "INSERT INTO journal_entries (org_id, entry_no, entry_date, memo, source_type, source_key, line_count, reverses_entry_id, created_by_user_id) "
-        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+        "INSERT INTO journal_entries (org_id, entry_no, entry_date, memo, source_type, source_key, line_count, reverses_entry_id, created_by_user_id, branch_id) "
+        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
         (
             org_id,
             head.entry_no + 1,
@@ -143,6 +163,7 @@ async def post_entry(
             len(lines),
             reverses,
             user_id,
+            await entry_branch(conn, source_type, source_key, reverses),
         ),
     )
     assert entry is not None

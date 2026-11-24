@@ -79,6 +79,7 @@ class Session:
     request_id: str | None = None
     actor_type: str = "user"
     agent_client_id: int | None = None
+    branch_id: int | None = None  # the branch the session works in (RLS scope); None = the whole center
 
 
 def _conninfo_kwargs(settings: Settings) -> dict[str, Any]:
@@ -147,13 +148,14 @@ async def _apply_session(conn: Conn, s: Session) -> None:
     await conn.execute(
         "SELECT set_config('app.org_id', %s, true), set_config('app.user_id', %s, true),"
         " set_config('app.request_id', %s, true), set_config('app.actor_type', %s, true),"
-        " set_config('app.agent_client_id', %s, true)",
+        " set_config('app.agent_client_id', %s, true), set_config('app.branch_id', %s, true)",
         (
             str(s.org_id) if s.org_id is not None else "",
             str(s.user_id) if s.user_id is not None else "",
             s.request_id or "",
             s.actor_type,
             str(s.agent_client_id) if s.agent_client_id is not None else "",
+            str(s.branch_id) if s.branch_id is not None else "",
         ),
     )
 

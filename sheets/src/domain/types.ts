@@ -2,6 +2,8 @@
 export type ISODate = string;
 
 export interface Student {
+  /** branch mark (Filial ID); empty = the default branch. Set by the adapter, never by domain code */
+  branchId?: string;
   id: string;
   fullName: string;
   status: "lead" | "active" | "paused" | "left";
@@ -13,6 +15,8 @@ export interface Student {
 }
 
 export interface Group {
+  /** branch mark (Filial ID); empty = the default branch. Set by the adapter, never by domain code */
+  branchId?: string;
   id: string;
   name: string;
   teacherId: string;
@@ -28,6 +32,8 @@ export interface Group {
 }
 
 export interface Enrollment {
+  /** branch mark (Filial ID); empty = the default branch. Set by the adapter, never by domain code */
+  branchId?: string;
   id: string;
   studentId: string;
   groupId: string;
@@ -44,6 +50,8 @@ export interface Enrollment {
 }
 
 export interface Charge {
+  /** branch mark (Filial ID); empty = the default branch. Set by the adapter, never by domain code */
+  branchId?: string;
   id: string;
   studentId: string;
   enrollmentId: string;
@@ -59,6 +67,8 @@ export interface Charge {
 }
 
 export interface Payment {
+  /** branch mark (Filial ID); empty = the default branch. Set by the adapter, never by domain code */
+  branchId?: string;
   id: string;
   studentId: string;
   paidOn: ISODate;
@@ -70,6 +80,8 @@ export interface Payment {
 }
 
 export interface AttendanceRow {
+  /** branch mark (Filial ID); empty = the default branch. Set by the adapter, never by domain code */
+  branchId?: string;
   date: ISODate;
   groupId: string;
   studentId: string;
@@ -79,6 +91,8 @@ export interface AttendanceRow {
 }
 
 export interface Teacher {
+  /** branch mark (Filial ID); empty = the default branch. Set by the adapter, never by domain code */
+  branchId?: string;
   id: string;
   fullName: string;
   payModel: "fixed" | "per_lesson" | "percent";
@@ -88,6 +102,8 @@ export interface Teacher {
 }
 
 export interface ReminderDraft {
+  /** branch mark (Filial ID); empty = the default branch. Set by the adapter, never by domain code */
+  branchId?: string;
   id: string;
   studentId: string;
   createdOn: ISODate;
@@ -99,6 +115,8 @@ export interface ReminderDraft {
 export type LeadStage = "new" | "contacted" | "trial_scheduled" | "trial_attended" | "enrolled" | "lost";
 
 export interface Lead {
+  /** branch mark (Filial ID); empty = the default branch. Set by the adapter, never by domain code */
+  branchId?: string;
   id: string;
   fullName: string;
   phone: string;
@@ -112,6 +130,8 @@ export interface Lead {
 }
 
 export interface LeadLogRow {
+  /** branch mark (Filial ID); empty = the default branch. Set by the adapter, never by domain code */
+  branchId?: string;
   leadId: string;
   date: ISODate;
   kind: "call" | "message" | "meeting" | "trial" | "note";
@@ -120,6 +140,8 @@ export interface LeadLogRow {
 }
 
 export interface Entitlement {
+  /** branch mark (Filial ID); empty = the default branch. Set by the adapter, never by domain code */
+  branchId?: string;
   id: string;
   studentId: string;
   groupId: string;
@@ -139,6 +161,8 @@ export interface Entitlement {
 
 /** One invitation of a student by another; keeps the rule it was made under. */
 export interface Referral {
+  /** branch mark (Filial ID); empty = the default branch. Set by the adapter, never by domain code */
+  branchId?: string;
   id: string;
   referrerId: string;
   invitedId: string;
@@ -165,6 +189,8 @@ export interface Promo {
 }
 
 export interface PromoUse {
+  /** branch mark (Filial ID); empty = the default branch. Set by the adapter, never by domain code */
+  branchId?: string;
   code: string;
   studentId: string;
   enrollmentId: string;
@@ -174,6 +200,8 @@ export interface PromoUse {
 }
 
 export interface SourceCostRow {
+  /** branch mark (Filial ID); empty = the default branch. Set by the adapter, never by domain code */
+  branchId?: string;
   source: string;
   month: ISODate;
   amount: number;
@@ -182,6 +210,8 @@ export interface SourceCostRow {
 
 /** One dated part of a payment plan: a charge split into installments (sheet "To'lov rejalari"). */
 export interface Installment {
+  /** branch mark (Filial ID); empty = the default branch. Set by the adapter, never by domain code */
+  branchId?: string;
   chargeId: string;
   seq: number;
   dueDate: ISODate;
@@ -190,6 +220,8 @@ export interface Installment {
 
 /** A lesson package sold to an enrollment (sheet "Abonementlar"): a charge plus lessons and an expiry. */
 export interface Package {
+  /** branch mark (Filial ID); empty = the default branch. Set by the adapter, never by domain code */
+  branchId?: string;
   id: string;
   studentId: string;
   enrollmentId: string;
@@ -202,6 +234,8 @@ export interface Package {
 
 /** An operating expense (sheet "Xarajatlar"). Teacher pay is NOT recorded here: it comes from the payroll sheet. */
 export interface Expense {
+  /** branch mark (Filial ID); empty = the default branch. Set by the adapter, never by domain code */
+  branchId?: string;
   id: string;
   date: ISODate;
   category: "rent" | "utilities" | "salary" | "marketing" | "equipment" | "tax" | "other";
@@ -214,6 +248,8 @@ export interface Expense {
 }
 
 export interface WaitlistRow {
+  /** branch mark (Filial ID); empty = the default branch. Set by the adapter, never by domain code */
+  branchId?: string;
   id: string;
   groupId: string;
   studentId: string;
@@ -225,6 +261,8 @@ export interface WaitlistRow {
 
 /** A lasting discount rule of one student (sheet "Chegirmalar"). The family discount is automatic (center settings). */
 export interface StudentDiscount {
+  /** branch mark (Filial ID); empty = the default branch. Set by the adapter, never by domain code */
+  branchId?: string;
   id: string;
   studentId: string;
   enrollmentId: string; // "" = every tuition charge of the student
@@ -240,6 +278,8 @@ export interface StudentDiscount {
 
 /** What a lasting discount took off one enrollment's month (sheet "Chegirma qatorlari"). */
 export interface DiscountLineRow {
+  /** branch mark (Filial ID); empty = the default branch. Set by the adapter, never by domain code */
+  branchId?: string;
   studentId: string;
   enrollmentId: string;
   chargeId: string; // "" for a month that was completely free (no charge)
@@ -254,6 +294,8 @@ export interface DiscountLineRow {
 
 /** A refund (sheet "Qaytarishlar"); append-only. */
 export interface Refund {
+  /** branch mark (Filial ID); empty = the default branch. Set by the adapter, never by domain code */
+  branchId?: string;
   id: string;
   studentId: string;
   date: ISODate;
@@ -272,6 +314,8 @@ export interface Refund {
 
 /** A daily cash close (sheet "Kassa smenalari"); append-only. */
 export interface CashClose {
+  /** branch mark (Filial ID); empty = the default branch. Set by the adapter, never by domain code */
+  branchId?: string;
   id: string;
   date: ISODate;
   shiftNo: number;
