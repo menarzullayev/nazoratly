@@ -12,12 +12,13 @@ from fastapi.responses import Response
 router = APIRouter(include_in_schema=False)
 
 UI_DIR = Path(__file__).resolve().parent.parent / "ui"
-PAGES = {"scan": "scan.html", "import": "import.html", "calendar": "calendar.html"}
+PAGES = {"scan": "scan.html", "import": "import.html", "calendar": "calendar.html", "teacher": "teacher.html"}
 STATIC = {
     "common.js": "text/javascript; charset=utf-8",
     "scan.js": "text/javascript; charset=utf-8",
     "import.js": "text/javascript; charset=utf-8",
     "calendar.js": "text/javascript; charset=utf-8",
+    "teacher.js": "text/javascript; charset=utf-8",
     "jsQR.js": "text/javascript; charset=utf-8",
     "ui.css": "text/css; charset=utf-8",
 }

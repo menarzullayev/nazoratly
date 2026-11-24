@@ -794,6 +794,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/auth/accept-teacher-invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept a teacher invitation with a new account (email or phone + password) */
+        post: operations["accept_teacher_invite_v1_auth_accept_teacher_invite_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/auth/login": {
         parameters: {
             query?: never;
@@ -890,6 +907,23 @@ export interface paths {
         put?: never;
         /** Get an access token for another of your centers */
         post: operations["switch_org_v1_auth_switch_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/telegram-miniapp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sign in from the Telegram Mini App (verified initData of an account linked through an invitation) */
+        post: operations["telegram_miniapp_login_v1_auth_telegram_miniapp_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2148,6 +2182,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/lessons/unmarked": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Finished lessons of the last 7 days without any roll call (a teacher sees only own) */
+        get: operations["unmarked_lessons_v1_lessons_unmarked_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/lessons/{lesson_id}": {
         parameters: {
             query?: never;
@@ -2321,6 +2372,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/me/accept-teacher-invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept a teacher invitation with the account you are signed in with */
+        post: operations["accept_teacher_invite_existing_v1_me_accept_teacher_invite_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/me/invitations/{org_id}/accept": {
         parameters: {
             query?: never;
@@ -2332,6 +2400,40 @@ export interface paths {
         put?: never;
         /** Accept an invitation to a center */
         post: operations["accept_invitation_v1_me_invitations__org_id__accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My internal reminders, newest first */
+        get: operations["notifications_v1_notifications_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/notifications/{notification_id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark one as read */
+        post: operations["read_notification_v1_notifications__notification_id__read_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3543,6 +3645,212 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/teacher-app/reminders/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run the reminder pass of this center now (internal staff messages only; safe to repeat) */
+        post: operations["run_reminders_v1_teacher_app_reminders_run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/teacher-app/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get App Settings */
+        get: operations["get_app_settings_v1_teacher_app_settings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch App Settings */
+        patch: operations["patch_app_settings_v1_teacher_app_settings_patch"];
+        trace?: never;
+    };
+    "/v1/teacher-invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Invitations, newest first */
+        get: operations["list_invitations_v1_teacher_invitations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/teacher-invitations/{invitation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke an open invitation */
+        delete: operations["revoke_invitation_v1_teacher_invitations__invitation_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/teacher-messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What teachers wrote to guardians (read-only log) */
+        get: operations["teacher_messages_v1_teacher_messages_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/teacher/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The groups this teacher teaches */
+        get: operations["teacher_groups_v1_teacher_groups_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/teacher/groups/{group_id}/students": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Active students of one of the teacher's own groups (no contact details) */
+        get: operations["teacher_group_students_v1_teacher_groups__group_id__students_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/teacher/guardian-messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What this teacher wrote (read-only) */
+        get: operations["own_messages_v1_teacher_guardian_messages_get"];
+        put?: never;
+        /** Write to the guardians of a student of an own group (logged, limited per day, can be switched off) */
+        post: operations["send_message_v1_teacher_guardian_messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/teacher/lessons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The teacher's lessons in a date range (default: today) */
+        get: operations["teacher_lessons_v1_teacher_lessons_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/teacher/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The signed-in teacher: profile, limits and counters */
+        get: operations["teacher_me_v1_teacher_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/teacher/message-templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ready-made message texts */
+        get: operations["message_templates_v1_teacher_message_templates_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/teacher/pay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Own hours and pay estimate for a month, plus the payroll if it exists */
+        get: operations["teacher_pay_v1_teacher_pay_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/teachers": {
         parameters: {
             query?: never;
@@ -3578,6 +3886,40 @@ export interface paths {
         head?: never;
         /** Patch Teacher */
         patch: operations["patch_teacher_v1_teachers__teacher_id__patch"];
+        trace?: never;
+    };
+    "/v1/teachers/{teacher_id}/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Invite a teacher (one-time code, 7 days); an older open invitation of this teacher is revoked */
+        post: operations["invite_teacher_v1_teachers__teacher_id__invitations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/teachers/{teacher_id}/messaging": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Switch a teacher's right to write to guardians on or off */
+        patch: operations["set_messaging_v1_teachers__teacher_id__messaging_patch"];
         trace?: never;
     };
     "/v1/trials/pending": {
@@ -3683,6 +4025,11 @@ export interface components {
             /** Student Name */
             student_name: string;
         };
+        /** AcceptExistingIn */
+        AcceptExistingIn: {
+            /** Code */
+            code: string;
+        };
         /** AcceptIn */
         AcceptIn: {
             /**
@@ -3695,6 +4042,19 @@ export interface components {
              * @enum {string}
              */
             mode: "full" | "prorated" | "free_until_next";
+        };
+        /** AcceptInviteIn */
+        AcceptInviteIn: {
+            /** Code */
+            code: string;
+            /** Email */
+            email?: string | null;
+            /** Full Name */
+            full_name?: string | null;
+            /** Password */
+            password: string;
+            /** Phone */
+            phone?: string | null;
         };
         /** AcceptOut */
         AcceptOut: {
@@ -3993,6 +4353,33 @@ export interface components {
              * Format: date
              */
             period_month: string;
+        };
+        /** AppSettingsOut */
+        AppSettingsOut: {
+            /**
+             * Digest After
+             * @description local time after which the owner gets the list of today's unmarked lessons
+             */
+            digest_after: string;
+            /**
+             * Guardian Daily Limit
+             * @description messages (per guardian reached) a teacher may send per day
+             */
+            guardian_daily_limit: number;
+            /**
+             * Reminder After Hours
+             * @description hours after a lesson ends before the teacher is reminded
+             */
+            reminder_after_hours: number;
+        };
+        /** AppSettingsPatch */
+        AppSettingsPatch: {
+            /** Digest After */
+            digest_after?: string | null;
+            /** Guardian Daily Limit */
+            guardian_daily_limit?: number | null;
+            /** Reminder After Hours */
+            reminder_after_hours?: number | null;
         };
         /** ApproveNoticeIn */
         ApproveNoticeIn: {
@@ -6347,6 +6734,35 @@ export interface components {
             /** Relation */
             relation: string;
         };
+        /** GuardianMessageIn */
+        GuardianMessageIn: {
+            /**
+             * Group Id
+             * @description which own group; default: the first one the student is in
+             */
+            group_id?: string | null;
+            /**
+             * Guardian Id
+             * @description one guardian; default: every guardian who can receive it
+             */
+            guardian_id?: string | null;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Template */
+            template?: ("absent" | "late" | "homework" | "praise" | "meeting") | null;
+            /** Text */
+            text?: string | null;
+        };
+        /** GuardianMessageOut */
+        GuardianMessageOut: {
+            /** Remaining Today */
+            remaining_today: number;
+            /** Sent */
+            sent: components["schemas"]["SentOut"][];
+        };
         /** GuardianOut */
         GuardianOut: {
             /** Full Name */
@@ -6534,6 +6950,84 @@ export interface components {
             next_follow_up_on: string | null;
             /** Summary */
             summary: string;
+        };
+        /** InvitationCreated */
+        InvitationCreated: {
+            /**
+             * Code
+             * @description shown ONCE; only its hash is stored. The teacher sends it to the bot or the API.
+             */
+            code: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Link
+             * @description t.me deep link when the bot username is configured
+             */
+            link: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "valid" | "used" | "revoked" | "expired";
+            /**
+             * Teacher Id
+             * Format: uuid
+             */
+            teacher_id: string;
+            /** Teacher Name */
+            teacher_name: string;
+            /** Used At */
+            used_at: string | null;
+            /** Used Via */
+            used_via: ("bot" | "api") | null;
+        };
+        /** InvitationOut */
+        InvitationOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "valid" | "used" | "revoked" | "expired";
+            /**
+             * Teacher Id
+             * Format: uuid
+             */
+            teacher_id: string;
+            /** Teacher Name */
+            teacher_name: string;
+            /** Used At */
+            used_at: string | null;
+            /** Used Via */
+            used_via: ("bot" | "api") | null;
         };
         /** InvoiceIn */
         InvoiceIn: {
@@ -6919,27 +7413,32 @@ export interface components {
              */
             seq: number;
         };
-        /** MeOut */
-        MeOut: {
-            /** Email */
-            email: string | null;
-            /** Full Name */
-            full_name: string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            org: components["schemas"]["OrgRef"] | null;
-            /** Organizations */
-            organizations: components["schemas"]["OrgRef"][];
-            /** Phone */
-            phone: string | null;
-        };
         /** Message */
         Message: {
             /** Message */
             message: string;
+        };
+        /** MessagingIn */
+        MessagingIn: {
+            /** Enabled */
+            enabled: boolean;
+        };
+        /** MessagingOut */
+        MessagingOut: {
+            /** Enabled */
+            enabled: boolean;
+            /**
+             * Teacher Id
+             * Format: uuid
+             */
+            teacher_id: string;
+        };
+        /** MiniAppLoginIn */
+        MiniAppLoginIn: {
+            /** Init Data */
+            init_data: string;
+            /** Org Id */
+            org_id?: string | null;
         };
         /** MonthCell */
         MonthCell: {
@@ -7144,6 +7643,27 @@ export interface components {
             student_id: string;
             /** Student Name */
             student_name: string;
+        };
+        /** NotificationOut */
+        NotificationOut: {
+            /** Body */
+            body: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Day */
+            day: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Read At */
+            read_at: string | null;
         };
         /** OfferOut */
         OfferOut: {
@@ -7364,6 +7884,92 @@ export interface components {
             student_id: string;
             /** Student Name */
             student_name: string;
+        };
+        /** OwnGroupOut */
+        OwnGroupOut: {
+            /** Course Name */
+            course_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Status */
+            status: string;
+            /** Students */
+            students: number;
+        };
+        /** OwnLessonOut */
+        OwnLessonOut: {
+            /**
+             * End Time
+             * Format: time
+             */
+            end_time: string;
+            /** Enrolled */
+            enrolled: number;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Group Name */
+            group_name: string;
+            /** Is Substitute */
+            is_substitute: boolean;
+            /** Kind */
+            kind: string;
+            /**
+             * Lesson Date
+             * Format: date
+             */
+            lesson_date: string;
+            /**
+             * Lesson Id
+             * Format: uuid
+             */
+            lesson_id: string;
+            /** Marked */
+            marked: number;
+            /**
+             * Needs Roll Call
+             * @description the lesson is over, not cancelled and has no roll call yet
+             */
+            needs_roll_call: boolean;
+            /**
+             * Start Time
+             * Format: time
+             */
+            start_time: string;
+            /** Status */
+            status: string;
+        };
+        /** OwnMessageOut */
+        OwnMessageOut: {
+            /** Body */
+            body: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Delivery */
+            delivery: string;
+            /** Group Name */
+            group_name: string;
+            /** Guardian Name */
+            guardian_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Student Name */
+            student_name: string;
+            /** Template */
+            template: string | null;
         };
         /** PackageIn */
         PackageIn: {
@@ -7617,6 +8223,17 @@ export interface components {
             /** Offset */
             offset: number;
         };
+        /** Page[InvitationOut] */
+        Page_InvitationOut_: {
+            /** Has More */
+            has_more: boolean;
+            /** Items */
+            items: components["schemas"]["InvitationOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
         /** Page[LeadOut] */
         Page_LeadOut_: {
             /** Has More */
@@ -7661,6 +8278,17 @@ export interface components {
             /** Offset */
             offset: number;
         };
+        /** Page[NotificationOut] */
+        Page_NotificationOut_: {
+            /** Has More */
+            has_more: boolean;
+            /** Items */
+            items: components["schemas"]["NotificationOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
         /** Page[OnlineTxOut] */
         Page_OnlineTxOut_: {
             /** Has More */
@@ -7678,6 +8306,17 @@ export interface components {
             has_more: boolean;
             /** Items */
             items: components["schemas"]["OutboxOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
+        /** Page[OwnMessageOut] */
+        Page_OwnMessageOut_: {
+            /** Has More */
+            has_more: boolean;
+            /** Items */
+            items: components["schemas"]["OwnMessageOut"][];
             /** Limit */
             limit: number;
             /** Offset */
@@ -7787,7 +8426,18 @@ export interface components {
             /** Has More */
             has_more: boolean;
             /** Items */
-            items: components["schemas"]["StudentOut"][];
+            items: components["schemas"]["nazoratly__routers__students__StudentOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
+        /** Page[TeacherMessageOut] */
+        Page_TeacherMessageOut_: {
+            /** Has More */
+            has_more: boolean;
+            /** Items */
+            items: components["schemas"]["TeacherMessageOut"][];
             /** Limit */
             limit: number;
             /** Offset */
@@ -7866,6 +8516,30 @@ export interface components {
             method: "cash" | "card" | "bank_transfer" | "other";
             /** Note */
             note?: string | null;
+        };
+        /** PayOut */
+        PayOut: {
+            /**
+             * Estimate
+             * @description whole so'm, from the lessons held so far (see the payroll for the final number)
+             */
+            estimate: number;
+            /** Hours */
+            hours: string;
+            /** Lessons */
+            lessons: number;
+            /** Minutes */
+            minutes: number;
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+            /** Pay Model */
+            pay_model: string;
+            /** Pay Rate */
+            pay_rate: string;
+            payroll: components["schemas"]["PayrollRef"] | null;
         };
         /** PaymentIn */
         PaymentIn: {
@@ -8064,6 +8738,13 @@ export interface components {
             teacher_id: string;
             /** Teacher Name */
             teacher_name: string;
+            /** Total */
+            total: string;
+        };
+        /** PayrollRef */
+        PayrollRef: {
+            /** Status */
+            status: string;
             /** Total */
             total: string;
         };
@@ -9174,6 +9855,24 @@ export interface components {
              */
             guardian_id: string;
         };
+        /** SentOut */
+        SentOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Guardian Id
+             * Format: uuid
+             */
+            guardian_id: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+        };
         /** SettingsOut */
         SettingsOut: {
             /**
@@ -9608,36 +10307,6 @@ export interface components {
              */
             status: "lead" | "active" | "paused" | "graduated" | "left";
         };
-        /** StudentOut */
-        StudentOut: {
-            /** Birth Date */
-            birth_date: string | null;
-            /**
-             * Branch Id
-             * @description the branch the student belongs to (move him with POST /students/{id}/transfer); None when he moved to a branch you cannot see
-             */
-            branch_id: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /** Full Name */
-            full_name: string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Joined On */
-            joined_on: string | null;
-            /** Notes */
-            notes: string | null;
-            /** Phone */
-            phone: string | null;
-            /** Status */
-            status: string;
-        };
         /** StudentPatch */
         StudentPatch: {
             /** Birth Date */
@@ -9735,6 +10404,13 @@ export interface components {
             /** Phone */
             phone?: string | null;
         };
+        /** SweepOut */
+        SweepOut: {
+            /** Digests */
+            digests: number;
+            /** Teacher Reminders */
+            teacher_reminders: number;
+        };
         /** SwitchIn */
         SwitchIn: {
             /**
@@ -9783,6 +10459,51 @@ export interface components {
              */
             staff_id?: string | null;
         };
+        /** TeacherMessageOut */
+        TeacherMessageOut: {
+            /** Body */
+            body: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Delivery
+             * @description status of the outbox message: queued, sending, sent, failed, cancelled
+             */
+            delivery: string;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Guardian Id
+             * Format: uuid
+             */
+            guardian_id: string;
+            /** Guardian Name */
+            guardian_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+            /**
+             * Teacher Id
+             * Format: uuid
+             */
+            teacher_id: string;
+            /** Teacher Name */
+            teacher_name: string;
+            /** Template */
+            template: string | null;
+        };
         /** TeacherOut */
         TeacherOut: {
             /**
@@ -9827,6 +10548,16 @@ export interface components {
             staff_id?: string | null;
             /** Status */
             status?: ("active" | "inactive") | null;
+        };
+        /** TemplateOut */
+        TemplateOut: {
+            /** Code */
+            code: string;
+            /**
+             * Text
+             * @description with {student}, {group} and {date} placeholders
+             */
+            text: string;
         };
         /** TokenOut */
         TokenOut: {
@@ -9955,6 +10686,36 @@ export interface components {
             name: string;
             /** Type */
             type: string;
+        };
+        /** UnmarkedOut */
+        UnmarkedOut: {
+            /** End Time */
+            end_time: string;
+            /** Group Name */
+            group_name: string;
+            /**
+             * Lesson Date
+             * Format: date
+             */
+            lesson_date: string;
+            /**
+             * Lesson Id
+             * Format: uuid
+             */
+            lesson_id: string;
+            /** Reminder At */
+            reminder_at: string;
+            /** Start Time */
+            start_time: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "waiting" | "reminder_due" | "reminded";
+            /** Teacher Id */
+            teacher_id: string | null;
+            /** Teacher Name */
+            teacher_name: string | null;
         };
         /** UnmatchedLedgerLine */
         UnmatchedLedgerLine: {
@@ -10195,6 +10956,23 @@ export interface components {
              * @description defaults to telegram when the guardian has a chat, else sms
              */
             channel?: ("telegram" | "sms") | null;
+        };
+        /** MeOut */
+        nazoratly__routers__auth__MeOut: {
+            /** Email */
+            email: string | null;
+            /** Full Name */
+            full_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            org: components["schemas"]["OrgRef"] | null;
+            /** Organizations */
+            organizations: components["schemas"]["OrgRef"][];
+            /** Phone */
+            phone: string | null;
         };
         /** SendOut */
         nazoratly__routers__certificates__SendOut: {
@@ -10450,6 +11228,75 @@ export interface components {
             outstanding_total: string;
             /** Overdue Total */
             overdue_total: string;
+        };
+        /** StudentOut */
+        nazoratly__routers__students__StudentOut: {
+            /** Birth Date */
+            birth_date: string | null;
+            /**
+             * Branch Id
+             * @description the branch the student belongs to (move him with POST /students/{id}/transfer); None when he moved to a branch you cannot see
+             */
+            branch_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Full Name */
+            full_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Joined On */
+            joined_on: string | null;
+            /** Notes */
+            notes: string | null;
+            /** Phone */
+            phone: string | null;
+            /** Status */
+            status: string;
+        };
+        /** MeOut */
+        nazoratly__routers__teacher_me__MeOut: {
+            /** Full Name */
+            full_name: string;
+            /** Groups */
+            groups: number;
+            /** Messages Left Today */
+            messages_left_today: number;
+            /** Messages Sent Today */
+            messages_sent_today: number;
+            /** Messaging Enabled */
+            messaging_enabled: boolean;
+            /** Pay Model */
+            pay_model: string;
+            /** Phone */
+            phone: string | null;
+            /**
+             * Teacher Id
+             * Format: uuid
+             */
+            teacher_id: string;
+            /** Unread Notifications */
+            unread_notifications: number;
+        };
+        /** StudentOut */
+        nazoratly__routers__teacher_me__StudentOut: {
+            /** Full Name */
+            full_name: string;
+            /**
+             * Guardian Reachable
+             * @description a guardian can receive a Telegram message (link, reminders, consent)
+             */
+            guardian_reachable: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
         };
     };
     responses: never;
@@ -12122,6 +12969,39 @@ export interface operations {
             };
         };
     };
+    accept_teacher_invite_v1_auth_accept_teacher_invite_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptInviteIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     login_v1_auth_login_post: {
         parameters: {
             query?: never;
@@ -12307,6 +13187,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AccessOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    telegram_miniapp_login_v1_auth_telegram_miniapp_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MiniAppLoginIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenOut"];
                 };
             };
             /** @description Validation Error */
@@ -15671,6 +16584,26 @@ export interface operations {
             };
         };
     };
+    unmarked_lessons_v1_lessons_unmarked_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnmarkedOut"][];
+                };
+            };
+        };
+    };
     get_lesson_v1_lessons__lesson_id__get: {
         parameters: {
             query?: never;
@@ -16087,7 +17020,40 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MeOut"];
+                    "application/json": components["schemas"]["nazoratly__routers__auth__MeOut"];
+                };
+            };
+        };
+    };
+    accept_teacher_invite_existing_v1_me_accept_teacher_invite_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptExistingIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgRef"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -16110,6 +17076,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OrgRef"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    notifications_v1_notifications_get: {
+        parameters: {
+            query?: {
+                unread?: boolean;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_NotificationOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_notification_v1_notifications__notification_id__read_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notification_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationOut"];
                 };
             };
             /** @description Validation Error */
@@ -18338,7 +19368,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StudentOut"];
+                    "application/json": components["schemas"]["nazoratly__routers__students__StudentOut"];
                 };
             };
             /** @description Validation Error */
@@ -18435,7 +19465,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StudentOut"];
+                    "application/json": components["schemas"]["nazoratly__routers__students__StudentOut"];
                 };
             };
             /** @description Validation Error */
@@ -18940,6 +19970,397 @@ export interface operations {
             };
         };
     };
+    run_reminders_v1_teacher_app_reminders_run_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SweepOut"];
+                };
+            };
+        };
+    };
+    get_app_settings_v1_teacher_app_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppSettingsOut"];
+                };
+            };
+        };
+    };
+    patch_app_settings_v1_teacher_app_settings_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AppSettingsPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_invitations_v1_teacher_invitations_get: {
+        parameters: {
+            query?: {
+                teacher_id?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_InvitationOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_invitation_v1_teacher_invitations__invitation_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invitation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    teacher_messages_v1_teacher_messages_get: {
+        parameters: {
+            query?: {
+                teacher_id?: string | null;
+                /** @description only this day (center time) */
+                day?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_TeacherMessageOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    teacher_groups_v1_teacher_groups_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OwnGroupOut"][];
+                };
+            };
+        };
+    };
+    teacher_group_students_v1_teacher_groups__group_id__students_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["nazoratly__routers__teacher_me__StudentOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    own_messages_v1_teacher_guardian_messages_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_OwnMessageOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_message_v1_teacher_guardian_messages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GuardianMessageIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuardianMessageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    teacher_lessons_v1_teacher_lessons_get: {
+        parameters: {
+            query?: {
+                from?: string | null;
+                to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OwnLessonOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    teacher_me_v1_teacher_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["nazoratly__routers__teacher_me__MeOut"];
+                };
+            };
+        };
+    };
+    message_templates_v1_teacher_message_templates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateOut"][];
+                };
+            };
+        };
+    };
+    teacher_pay_v1_teacher_pay_get: {
+        parameters: {
+            query?: {
+                month?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_teachers_v1_teachers_get: {
         parameters: {
             query?: {
@@ -19090,6 +20511,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TeacherOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    invite_teacher_v1_teachers__teacher_id__invitations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teacher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationCreated"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_messaging_v1_teachers__teacher_id__messaging_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teacher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessagingIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessagingOut"];
                 };
             };
             /** @description Validation Error */

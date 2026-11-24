@@ -113,8 +113,15 @@
     if (S.access) show(true); else { show(false); form(""); }
   }
 
+  /** Adopt a token response obtained elsewhere (the Telegram Mini App sign-in); a response without a center is ignored. */
+  function signIn(d) {
+    if (!d || !d.org) return false;
+    S.access = d.access_token; S.refresh = d.refresh_token; S.orgId = d.org.id; S.orgName = d.org.name; save();
+    return true;
+  }
+
   function signOut() { clear(); location.reload(); }
   function session() { return S; }
 
-  window.NZ = { h: h, api: api, uuid: uuid, mountLogin: mountLogin, signOut: signOut, session: session };
+  window.NZ = { h: h, api: api, uuid: uuid, mountLogin: mountLogin, signIn: signIn, signOut: signOut, session: session };
 })();

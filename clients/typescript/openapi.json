@@ -30,6 +30,22 @@
         "title": "AbsenceRow",
         "type": "object"
       },
+      "AcceptExistingIn": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "maxLength": 40,
+            "minLength": 4,
+            "title": "Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "title": "AcceptExistingIn",
+        "type": "object"
+      },
       "AcceptIn": {
         "additionalProperties": false,
         "properties": {
@@ -60,6 +76,67 @@
           "mode"
         ],
         "title": "AcceptIn",
+        "type": "object"
+      },
+      "AcceptInviteIn": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "maxLength": 40,
+            "minLength": 4,
+            "title": "Code",
+            "type": "string"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "format": "email",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "password": {
+            "maxLength": 128,
+            "minLength": 10,
+            "title": "Password",
+            "type": "string"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "description": "E.164, e.g. +998901234567",
+                "pattern": "^\\+[1-9][0-9]{7,14}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          }
+        },
+        "required": [
+          "code",
+          "password"
+        ],
+        "title": "AcceptInviteIn",
         "type": "object"
       },
       "AcceptOut": {
@@ -790,6 +867,77 @@
           "kind"
         ],
         "title": "AllocationOut",
+        "type": "object"
+      },
+      "AppSettingsOut": {
+        "properties": {
+          "digest_after": {
+            "description": "local time after which the owner gets the list of today's unmarked lessons",
+            "title": "Digest After",
+            "type": "string"
+          },
+          "guardian_daily_limit": {
+            "description": "messages (per guardian reached) a teacher may send per day",
+            "title": "Guardian Daily Limit",
+            "type": "integer"
+          },
+          "reminder_after_hours": {
+            "description": "hours after a lesson ends before the teacher is reminded",
+            "title": "Reminder After Hours",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "reminder_after_hours",
+          "guardian_daily_limit",
+          "digest_after"
+        ],
+        "title": "AppSettingsOut",
+        "type": "object"
+      },
+      "AppSettingsPatch": {
+        "additionalProperties": false,
+        "properties": {
+          "digest_after": {
+            "anyOf": [
+              {
+                "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Digest After"
+          },
+          "guardian_daily_limit": {
+            "anyOf": [
+              {
+                "maximum": 500.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guardian Daily Limit"
+          },
+          "reminder_after_hours": {
+            "anyOf": [
+              {
+                "maximum": 48.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reminder After Hours"
+          }
+        },
+        "title": "AppSettingsPatch",
         "type": "object"
       },
       "ApproveNoticeIn": {
@@ -6747,6 +6895,99 @@
         "title": "GuardianLink",
         "type": "object"
       },
+      "GuardianMessageIn": {
+        "additionalProperties": false,
+        "properties": {
+          "group_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "which own group; default: the first one the student is in",
+            "title": "Group Id"
+          },
+          "guardian_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "one guardian; default: every guardian who can receive it",
+            "title": "Guardian Id"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "template": {
+            "anyOf": [
+              {
+                "enum": [
+                  "absent",
+                  "late",
+                  "homework",
+                  "praise",
+                  "meeting"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          }
+        },
+        "required": [
+          "student_id"
+        ],
+        "title": "GuardianMessageIn",
+        "type": "object"
+      },
+      "GuardianMessageOut": {
+        "properties": {
+          "remaining_today": {
+            "title": "Remaining Today",
+            "type": "integer"
+          },
+          "sent": {
+            "items": {
+              "$ref": "#/components/schemas/SentOut"
+            },
+            "title": "Sent",
+            "type": "array"
+          }
+        },
+        "required": [
+          "sent",
+          "remaining_today"
+        ],
+        "title": "GuardianMessageOut",
+        "type": "object"
+      },
       "GuardianOut": {
         "properties": {
           "full_name": {
@@ -7196,6 +7437,179 @@
           "created_at"
         ],
         "title": "InteractionOut",
+        "type": "object"
+      },
+      "InvitationCreated": {
+        "properties": {
+          "code": {
+            "description": "shown ONCE; only its hash is stored. The teacher sends it to the bot or the API.",
+            "title": "Code",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "t.me deep link when the bot username is configured",
+            "title": "Link"
+          },
+          "status": {
+            "enum": [
+              "valid",
+              "used",
+              "revoked",
+              "expired"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "teacher_id": {
+            "format": "uuid",
+            "title": "Teacher Id",
+            "type": "string"
+          },
+          "teacher_name": {
+            "title": "Teacher Name",
+            "type": "string"
+          },
+          "used_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Used At"
+          },
+          "used_via": {
+            "anyOf": [
+              {
+                "enum": [
+                  "bot",
+                  "api"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Used Via"
+          }
+        },
+        "required": [
+          "id",
+          "teacher_id",
+          "teacher_name",
+          "status",
+          "expires_at",
+          "created_at",
+          "used_at",
+          "used_via",
+          "code",
+          "link"
+        ],
+        "title": "InvitationCreated",
+        "type": "object"
+      },
+      "InvitationOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "valid",
+              "used",
+              "revoked",
+              "expired"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "teacher_id": {
+            "format": "uuid",
+            "title": "Teacher Id",
+            "type": "string"
+          },
+          "teacher_name": {
+            "title": "Teacher Name",
+            "type": "string"
+          },
+          "used_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Used At"
+          },
+          "used_via": {
+            "anyOf": [
+              {
+                "enum": [
+                  "bot",
+                  "api"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Used Via"
+          }
+        },
+        "required": [
+          "id",
+          "teacher_id",
+          "teacher_name",
+          "status",
+          "expires_at",
+          "created_at",
+          "used_at",
+          "used_via"
+        ],
+        "title": "InvitationOut",
         "type": "object"
       },
       "InvoiceIn": {
@@ -8445,68 +8859,6 @@
         "title": "MatchIn",
         "type": "object"
       },
-      "MeOut": {
-        "properties": {
-          "email": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Email"
-          },
-          "full_name": {
-            "title": "Full Name",
-            "type": "string"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "org": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/OrgRef"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "organizations": {
-            "items": {
-              "$ref": "#/components/schemas/OrgRef"
-            },
-            "title": "Organizations",
-            "type": "array"
-          },
-          "phone": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Phone"
-          }
-        },
-        "required": [
-          "id",
-          "full_name",
-          "email",
-          "phone",
-          "org",
-          "organizations"
-        ],
-        "title": "MeOut",
-        "type": "object"
-      },
       "Message": {
         "properties": {
           "message": {
@@ -8518,6 +8870,67 @@
           "message"
         ],
         "title": "Message",
+        "type": "object"
+      },
+      "MessagingIn": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "title": "MessagingIn",
+        "type": "object"
+      },
+      "MessagingOut": {
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "teacher_id": {
+            "format": "uuid",
+            "title": "Teacher Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "teacher_id",
+          "enabled"
+        ],
+        "title": "MessagingOut",
+        "type": "object"
+      },
+      "MiniAppLoginIn": {
+        "additionalProperties": false,
+        "properties": {
+          "init_data": {
+            "maxLength": 4096,
+            "minLength": 10,
+            "title": "Init Data",
+            "type": "string"
+          },
+          "org_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Org Id"
+          }
+        },
+        "required": [
+          "init_data"
+        ],
+        "title": "MiniAppLoginIn",
         "type": "object"
       },
       "MonthCell": {
@@ -8968,6 +9381,62 @@
           "decided_at"
         ],
         "title": "NoticeOut",
+        "type": "object"
+      },
+      "NotificationOut": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "day": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "read_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Read At"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "body",
+          "day",
+          "created_at",
+          "read_at"
+        ],
+        "title": "NotificationOut",
         "type": "object"
       },
       "OfferOut": {
@@ -9503,6 +9972,171 @@
           "created_at"
         ],
         "title": "OutboxOut",
+        "type": "object"
+      },
+      "OwnGroupOut": {
+        "properties": {
+          "course_name": {
+            "title": "Course Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "students": {
+            "title": "Students",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "course_name",
+          "status",
+          "students"
+        ],
+        "title": "OwnGroupOut",
+        "type": "object"
+      },
+      "OwnLessonOut": {
+        "properties": {
+          "end_time": {
+            "format": "time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "enrolled": {
+            "title": "Enrolled",
+            "type": "integer"
+          },
+          "group_id": {
+            "format": "uuid",
+            "title": "Group Id",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "is_substitute": {
+            "title": "Is Substitute",
+            "type": "boolean"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "lesson_date": {
+            "format": "date",
+            "title": "Lesson Date",
+            "type": "string"
+          },
+          "lesson_id": {
+            "format": "uuid",
+            "title": "Lesson Id",
+            "type": "string"
+          },
+          "marked": {
+            "title": "Marked",
+            "type": "integer"
+          },
+          "needs_roll_call": {
+            "description": "the lesson is over, not cancelled and has no roll call yet",
+            "title": "Needs Roll Call",
+            "type": "boolean"
+          },
+          "start_time": {
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "lesson_id",
+          "group_id",
+          "group_name",
+          "lesson_date",
+          "start_time",
+          "end_time",
+          "status",
+          "kind",
+          "is_substitute",
+          "enrolled",
+          "marked",
+          "needs_roll_call"
+        ],
+        "title": "OwnLessonOut",
+        "type": "object"
+      },
+      "OwnMessageOut": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "delivery": {
+            "title": "Delivery",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "guardian_name": {
+            "title": "Guardian Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          },
+          "template": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template"
+          }
+        },
+        "required": [
+          "id",
+          "student_name",
+          "guardian_name",
+          "group_name",
+          "template",
+          "body",
+          "delivery",
+          "created_at"
+        ],
+        "title": "OwnMessageOut",
         "type": "object"
       },
       "PackageIn": {
@@ -10151,6 +10785,37 @@
         "title": "Page[GuardianOut]",
         "type": "object"
       },
+      "Page_InvitationOut_": {
+        "properties": {
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InvitationOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset",
+          "has_more"
+        ],
+        "title": "Page[InvitationOut]",
+        "type": "object"
+      },
       "Page_LeadOut_": {
         "properties": {
           "has_more": {
@@ -10275,6 +10940,37 @@
         "title": "Page[NoticeOut]",
         "type": "object"
       },
+      "Page_NotificationOut_": {
+        "properties": {
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/NotificationOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset",
+          "has_more"
+        ],
+        "title": "Page[NotificationOut]",
+        "type": "object"
+      },
       "Page_OnlineTxOut_": {
         "properties": {
           "has_more": {
@@ -10335,6 +11031,37 @@
           "has_more"
         ],
         "title": "Page[OutboxOut]",
+        "type": "object"
+      },
+      "Page_OwnMessageOut_": {
+        "properties": {
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OwnMessageOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset",
+          "has_more"
+        ],
+        "title": "Page[OwnMessageOut]",
         "type": "object"
       },
       "Page_PackageOut_": {
@@ -10624,7 +11351,7 @@
           },
           "items": {
             "items": {
-              "$ref": "#/components/schemas/StudentOut"
+              "$ref": "#/components/schemas/nazoratly__routers__students__StudentOut"
             },
             "title": "Items",
             "type": "array"
@@ -10645,6 +11372,37 @@
           "has_more"
         ],
         "title": "Page[StudentOut]",
+        "type": "object"
+      },
+      "Page_TeacherMessageOut_": {
+        "properties": {
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TeacherMessageOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset",
+          "has_more"
+        ],
+        "title": "Page[TeacherMessageOut]",
         "type": "object"
       },
       "Page_TeacherOut_": {
@@ -10849,6 +11607,62 @@
           "method"
         ],
         "title": "PayIn",
+        "type": "object"
+      },
+      "PayOut": {
+        "properties": {
+          "estimate": {
+            "description": "whole so'm, from the lessons held so far (see the payroll for the final number)",
+            "title": "Estimate",
+            "type": "integer"
+          },
+          "hours": {
+            "title": "Hours",
+            "type": "string"
+          },
+          "lessons": {
+            "title": "Lessons",
+            "type": "integer"
+          },
+          "minutes": {
+            "title": "Minutes",
+            "type": "integer"
+          },
+          "month": {
+            "format": "date",
+            "title": "Month",
+            "type": "string"
+          },
+          "pay_model": {
+            "title": "Pay Model",
+            "type": "string"
+          },
+          "pay_rate": {
+            "title": "Pay Rate",
+            "type": "string"
+          },
+          "payroll": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PayrollRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "month",
+          "lessons",
+          "minutes",
+          "hours",
+          "pay_model",
+          "pay_rate",
+          "estimate",
+          "payroll"
+        ],
+        "title": "PayOut",
         "type": "object"
       },
       "PaymentIn": {
@@ -11370,6 +12184,24 @@
           "note"
         ],
         "title": "PayrollOut",
+        "type": "object"
+      },
+      "PayrollRef": {
+        "properties": {
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "total"
+        ],
+        "title": "PayrollRef",
         "type": "object"
       },
       "PendingOut": {
@@ -13989,6 +14821,32 @@
         "title": "SendIn",
         "type": "object"
       },
+      "SentOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "guardian_id": {
+            "format": "uuid",
+            "title": "Guardian Id",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "guardian_id",
+          "created_at"
+        ],
+        "title": "SentOut",
+        "type": "object"
+      },
       "SettingsOut": {
         "properties": {
           "ai_daily_limit": {
@@ -15193,100 +16051,6 @@
         "title": "StudentIn",
         "type": "object"
       },
-      "StudentOut": {
-        "properties": {
-          "birth_date": {
-            "anyOf": [
-              {
-                "format": "date",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Birth Date"
-          },
-          "branch_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "the branch the student belongs to (move him with POST /students/{id}/transfer); None when he moved to a branch you cannot see",
-            "title": "Branch Id"
-          },
-          "created_at": {
-            "format": "date-time",
-            "title": "Created At",
-            "type": "string"
-          },
-          "full_name": {
-            "title": "Full Name",
-            "type": "string"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "joined_on": {
-            "anyOf": [
-              {
-                "format": "date",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Joined On"
-          },
-          "notes": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Notes"
-          },
-          "phone": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Phone"
-          },
-          "status": {
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "branch_id",
-          "full_name",
-          "birth_date",
-          "phone",
-          "status",
-          "joined_on",
-          "notes",
-          "created_at"
-        ],
-        "title": "StudentOut",
-        "type": "object"
-      },
       "StudentPatch": {
         "additionalProperties": false,
         "properties": {
@@ -15628,6 +16392,24 @@
         "title": "SupplierPatch",
         "type": "object"
       },
+      "SweepOut": {
+        "properties": {
+          "digests": {
+            "title": "Digests",
+            "type": "integer"
+          },
+          "teacher_reminders": {
+            "title": "Teacher Reminders",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "teacher_reminders",
+          "digests"
+        ],
+        "title": "SweepOut",
+        "type": "object"
+      },
       "SwitchIn": {
         "additionalProperties": false,
         "properties": {
@@ -15758,6 +16540,87 @@
           "full_name"
         ],
         "title": "TeacherIn",
+        "type": "object"
+      },
+      "TeacherMessageOut": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "delivery": {
+            "description": "status of the outbox message: queued, sending, sent, failed, cancelled",
+            "title": "Delivery",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "guardian_id": {
+            "format": "uuid",
+            "title": "Guardian Id",
+            "type": "string"
+          },
+          "guardian_name": {
+            "title": "Guardian Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          },
+          "teacher_id": {
+            "format": "uuid",
+            "title": "Teacher Id",
+            "type": "string"
+          },
+          "teacher_name": {
+            "title": "Teacher Name",
+            "type": "string"
+          },
+          "template": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template"
+          }
+        },
+        "required": [
+          "id",
+          "teacher_id",
+          "teacher_name",
+          "student_id",
+          "student_name",
+          "guardian_id",
+          "guardian_name",
+          "group_name",
+          "template",
+          "body",
+          "delivery",
+          "created_at"
+        ],
+        "title": "TeacherMessageOut",
         "type": "object"
       },
       "TeacherOut": {
@@ -15937,6 +16800,25 @@
           }
         },
         "title": "TeacherPatch",
+        "type": "object"
+      },
+      "TemplateOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "text": {
+            "description": "with {student}, {group} and {date} placeholders",
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "text"
+        ],
+        "title": "TemplateOut",
         "type": "object"
       },
       "TokenOut": {
@@ -16236,6 +17118,81 @@
           "balance_credit"
         ],
         "title": "TrialRow",
+        "type": "object"
+      },
+      "UnmarkedOut": {
+        "properties": {
+          "end_time": {
+            "title": "End Time",
+            "type": "string"
+          },
+          "group_name": {
+            "title": "Group Name",
+            "type": "string"
+          },
+          "lesson_date": {
+            "format": "date",
+            "title": "Lesson Date",
+            "type": "string"
+          },
+          "lesson_id": {
+            "format": "uuid",
+            "title": "Lesson Id",
+            "type": "string"
+          },
+          "reminder_at": {
+            "title": "Reminder At",
+            "type": "string"
+          },
+          "start_time": {
+            "title": "Start Time",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "waiting",
+              "reminder_due",
+              "reminded"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "teacher_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Teacher Id"
+          },
+          "teacher_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Teacher Name"
+          }
+        },
+        "required": [
+          "lesson_id",
+          "group_name",
+          "teacher_id",
+          "teacher_name",
+          "lesson_date",
+          "start_time",
+          "end_time",
+          "state",
+          "reminder_at"
+        ],
+        "title": "UnmarkedOut",
         "type": "object"
       },
       "UnmatchedLedgerLine": {
@@ -16766,6 +17723,68 @@
         "title": "ApproveIn",
         "type": "object"
       },
+      "nazoratly__routers__auth__MeOut": {
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "org": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OrgRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "organizations": {
+            "items": {
+              "$ref": "#/components/schemas/OrgRef"
+            },
+            "title": "Organizations",
+            "type": "array"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          }
+        },
+        "required": [
+          "id",
+          "full_name",
+          "email",
+          "phone",
+          "org",
+          "organizations"
+        ],
+        "title": "MeOut",
+        "type": "object"
+      },
       "nazoratly__routers__certificates__SendOut": {
         "properties": {
           "certificate_id": {
@@ -17256,6 +18275,186 @@
           "credit"
         ],
         "title": "BalanceOut",
+        "type": "object"
+      },
+      "nazoratly__routers__students__StudentOut": {
+        "properties": {
+          "birth_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Date"
+          },
+          "branch_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "the branch the student belongs to (move him with POST /students/{id}/transfer); None when he moved to a branch you cannot see",
+            "title": "Branch Id"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "joined_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Joined On"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "branch_id",
+          "full_name",
+          "birth_date",
+          "phone",
+          "status",
+          "joined_on",
+          "notes",
+          "created_at"
+        ],
+        "title": "StudentOut",
+        "type": "object"
+      },
+      "nazoratly__routers__teacher_me__MeOut": {
+        "properties": {
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "groups": {
+            "title": "Groups",
+            "type": "integer"
+          },
+          "messages_left_today": {
+            "title": "Messages Left Today",
+            "type": "integer"
+          },
+          "messages_sent_today": {
+            "title": "Messages Sent Today",
+            "type": "integer"
+          },
+          "messaging_enabled": {
+            "title": "Messaging Enabled",
+            "type": "boolean"
+          },
+          "pay_model": {
+            "title": "Pay Model",
+            "type": "string"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "teacher_id": {
+            "format": "uuid",
+            "title": "Teacher Id",
+            "type": "string"
+          },
+          "unread_notifications": {
+            "title": "Unread Notifications",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "teacher_id",
+          "full_name",
+          "phone",
+          "pay_model",
+          "messaging_enabled",
+          "messages_sent_today",
+          "messages_left_today",
+          "groups",
+          "unread_notifications"
+        ],
+        "title": "MeOut",
+        "type": "object"
+      },
+      "nazoratly__routers__teacher_me__StudentOut": {
+        "properties": {
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "guardian_reachable": {
+            "description": "a guardian can receive a Telegram message (link, reminders, consent)",
+            "title": "Guardian Reachable",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "full_name",
+          "guardian_reachable"
+        ],
+        "title": "StudentOut",
         "type": "object"
       }
     },
@@ -20198,6 +21397,47 @@
         ]
       }
     },
+    "/v1/auth/accept-teacher-invite": {
+      "post": {
+        "operationId": "accept_teacher_invite_v1_auth_accept_teacher_invite_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptInviteIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Accept a teacher invitation with a new account (email or phone + password)",
+        "tags": [
+          "teacher app (sign-in)"
+        ]
+      }
+    },
     "/v1/auth/login": {
       "post": {
         "operationId": "login_v1_auth_login_post",
@@ -20451,6 +21691,47 @@
         "summary": "Get an access token for another of your centers",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/v1/auth/telegram-miniapp": {
+      "post": {
+        "operationId": "telegram_miniapp_login_v1_auth_telegram_miniapp_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MiniAppLoginIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sign in from the Telegram Mini App (verified initData of an account linked through an invitation)",
+        "tags": [
+          "teacher app (sign-in)"
         ]
       }
     },
@@ -26612,6 +27893,36 @@
         ]
       }
     },
+    "/v1/lessons/unmarked": {
+      "get": {
+        "operationId": "unmarked_lessons_v1_lessons_unmarked_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UnmarkedOut"
+                  },
+                  "title": "Response Unmarked Lessons V1 Lessons Unmarked Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Finished lessons of the last 7 days without any roll call (a teacher sees only own)",
+        "tags": [
+          "teacher app (owner)"
+        ]
+      }
+    },
     "/v1/lessons/{lesson_id}": {
       "get": {
         "operationId": "get_lesson_v1_lessons__lesson_id__get",
@@ -27339,7 +28650,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MeOut"
+                  "$ref": "#/components/schemas/nazoratly__routers__auth__MeOut"
                 }
               }
             },
@@ -27354,6 +28665,52 @@
         "summary": "Current user and centers",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/v1/me/accept-teacher-invite": {
+      "post": {
+        "operationId": "accept_teacher_invite_existing_v1_me_accept_teacher_invite_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptExistingIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgRef"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Accept a teacher invitation with the account you are signed in with",
+        "tags": [
+          "teacher app (sign-in)"
         ]
       }
     },
@@ -27402,6 +28759,126 @@
         "summary": "Accept an invitation to a center",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/v1/notifications": {
+      "get": {
+        "operationId": "notifications_v1_notifications_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "unread",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Unread",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 1000000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_NotificationOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "My internal reminders, newest first",
+        "tags": [
+          "teacher app"
+        ]
+      }
+    },
+    "/v1/notifications/{notification_id}/read": {
+      "post": {
+        "operationId": "read_notification_v1_notifications__notification_id__read_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "notification_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Notification Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Mark one as read",
+        "tags": [
+          "teacher app"
         ]
       }
     },
@@ -31472,7 +32949,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StudentOut"
+                  "$ref": "#/components/schemas/nazoratly__routers__students__StudentOut"
                 }
               }
             },
@@ -31622,7 +33099,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StudentOut"
+                  "$ref": "#/components/schemas/nazoratly__routers__students__StudentOut"
                 }
               }
             },
@@ -32463,6 +33940,702 @@
         ]
       }
     },
+    "/v1/teacher-app/reminders/run": {
+      "post": {
+        "operationId": "run_reminders_v1_teacher_app_reminders_run_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SweepOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Run the reminder pass of this center now (internal staff messages only; safe to repeat)",
+        "tags": [
+          "teacher app (owner)"
+        ]
+      }
+    },
+    "/v1/teacher-app/settings": {
+      "get": {
+        "operationId": "get_app_settings_v1_teacher_app_settings_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppSettingsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get App Settings",
+        "tags": [
+          "teacher app (owner)"
+        ]
+      },
+      "patch": {
+        "operationId": "patch_app_settings_v1_teacher_app_settings_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppSettingsPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppSettingsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Patch App Settings",
+        "tags": [
+          "teacher app (owner)"
+        ]
+      }
+    },
+    "/v1/teacher-invitations": {
+      "get": {
+        "operationId": "list_invitations_v1_teacher_invitations_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "teacher_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Teacher Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 1000000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_InvitationOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Invitations, newest first",
+        "tags": [
+          "teacher app (owner)"
+        ]
+      }
+    },
+    "/v1/teacher-invitations/{invitation_id}": {
+      "delete": {
+        "operationId": "revoke_invitation_v1_teacher_invitations__invitation_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "invitation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Invitation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Revoke an open invitation",
+        "tags": [
+          "teacher app (owner)"
+        ]
+      }
+    },
+    "/v1/teacher-messages": {
+      "get": {
+        "operationId": "teacher_messages_v1_teacher_messages_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "teacher_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Teacher Id"
+            }
+          },
+          {
+            "description": "only this day (center time)",
+            "in": "query",
+            "name": "day",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "only this day (center time)",
+              "title": "Day"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 1000000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_TeacherMessageOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "What teachers wrote to guardians (read-only log)",
+        "tags": [
+          "teacher app (owner)"
+        ]
+      }
+    },
+    "/v1/teacher/groups": {
+      "get": {
+        "operationId": "teacher_groups_v1_teacher_groups_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OwnGroupOut"
+                  },
+                  "title": "Response Teacher Groups V1 Teacher Groups Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "The groups this teacher teaches",
+        "tags": [
+          "teacher app"
+        ]
+      }
+    },
+    "/v1/teacher/groups/{group_id}/students": {
+      "get": {
+        "operationId": "teacher_group_students_v1_teacher_groups__group_id__students_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "group_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Group Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/nazoratly__routers__teacher_me__StudentOut"
+                  },
+                  "title": "Response Teacher Group Students V1 Teacher Groups  Group Id  Students Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Active students of one of the teacher's own groups (no contact details)",
+        "tags": [
+          "teacher app"
+        ]
+      }
+    },
+    "/v1/teacher/guardian-messages": {
+      "get": {
+        "operationId": "own_messages_v1_teacher_guardian_messages_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 1000000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_OwnMessageOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "What this teacher wrote (read-only)",
+        "tags": [
+          "teacher app"
+        ]
+      },
+      "post": {
+        "operationId": "send_message_v1_teacher_guardian_messages_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardianMessageIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuardianMessageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Write to the guardians of a student of an own group (logged, limited per day, can be switched off)",
+        "tags": [
+          "teacher app"
+        ]
+      }
+    },
+    "/v1/teacher/lessons": {
+      "get": {
+        "operationId": "teacher_lessons_v1_teacher_lessons_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OwnLessonOut"
+                  },
+                  "title": "Response Teacher Lessons V1 Teacher Lessons Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "The teacher's lessons in a date range (default: today)",
+        "tags": [
+          "teacher app"
+        ]
+      }
+    },
+    "/v1/teacher/me": {
+      "get": {
+        "operationId": "teacher_me_v1_teacher_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/nazoratly__routers__teacher_me__MeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "The signed-in teacher: profile, limits and counters",
+        "tags": [
+          "teacher app"
+        ]
+      }
+    },
+    "/v1/teacher/message-templates": {
+      "get": {
+        "operationId": "message_templates_v1_teacher_message_templates_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TemplateOut"
+                  },
+                  "title": "Response Message Templates V1 Teacher Message Templates Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ready-made message texts",
+        "tags": [
+          "teacher app"
+        ]
+      }
+    },
+    "/v1/teacher/pay": {
+      "get": {
+        "operationId": "teacher_pay_v1_teacher_pay_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "month",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Month"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Own hours and pay estimate for a month, plus the payroll if it exists",
+        "tags": [
+          "teacher app"
+        ]
+      }
+    },
     "/v1/teachers": {
       "get": {
         "operationId": "list_teachers_v1_teachers_get",
@@ -32736,6 +34909,112 @@
         "summary": "Patch Teacher",
         "tags": [
           "academics"
+        ]
+      }
+    },
+    "/v1/teachers/{teacher_id}/invitations": {
+      "post": {
+        "operationId": "invite_teacher_v1_teachers__teacher_id__invitations_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "teacher_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Teacher Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationCreated"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Invite a teacher (one-time code, 7 days); an older open invitation of this teacher is revoked",
+        "tags": [
+          "teacher app (owner)"
+        ]
+      }
+    },
+    "/v1/teachers/{teacher_id}/messaging": {
+      "patch": {
+        "operationId": "set_messaging_v1_teachers__teacher_id__messaging_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "teacher_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Teacher Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessagingIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Switch a teacher's right to write to guardians on or off",
+        "tags": [
+          "teacher app (owner)"
         ]
       }
     },

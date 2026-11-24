@@ -177,6 +177,8 @@ export const TEACHERS: TableDef = {
     { key: "payRate", header: "Stavka", width: 120, kind: "int", help: "so'm (qat'iy/dars) yoki foiz" },
     { key: "status", header: "Holat", width: 100, kind: "enum", labels: L.teacherStatus },
     DEMO,
+    { key: "telegramChatId", header: "Telegram chat ID", width: 130, kind: "text", plain: true, optional: true, help: "Ustoz botga taklif kodi bilan ulanganda avtomatik yoziladi (nazoratly > Ustoz ilovasi > Ustozni taklif qilish). Qo'lda o'zgartirmang" },
+    { key: "msgOff", header: "Vasiyga yozish o'chirilgan", width: 150, kind: "bool", optional: true, help: "Ha = bu ustoz bot orqali vasiylarga yoza olmaydi. Bo'sh/Yo'q = yoza oladi (kuniga limit bilan)" },
   ],
 };
 
@@ -691,6 +693,45 @@ export const CERTIFICATES: TableDef = {
   ],
 };
 
+export const TEACHER_INVITES: TableDef = {
+  sheet: "Ustoz taklifnomalari",
+  color: "#9334e6",
+  cols: [
+    { key: "id", header: "ID", width: 70, kind: "text" },
+    { key: "teacherId", header: "O'qituvchi ID", width: 110, kind: "text" },
+    { key: "codeHash", header: "Kod (SHA-256)", width: 220, kind: "text", plain: true, help: "Kodning o'zi saqlanmaydi, faqat izi. Kod egasiga bir marta ko'rsatiladi" },
+    { key: "status", header: "Holat", width: 110, kind: "enum", labels: { pending: "Kutilmoqda", used: "Ishlatilgan", revoked: "Bekor" } },
+    { key: "expiresAt", header: "Muddati (yyyy-mm-ddThh:mm)", width: 170, kind: "text", plain: true },
+    { key: "createdOn", header: "Yaratilgan", width: 110, kind: "date" },
+    { key: "usedOn", header: "Ishlatilgan", width: 110, kind: "date" },
+  ],
+};
+
+export const TEACHER_MESSAGES: TableDef = {
+  sheet: "Ustoz xabarlari",
+  color: "#9334e6",
+  cols: [
+    { key: "at", header: "Vaqt", width: 150, kind: "text", plain: true },
+    { key: "date", header: "Sana", width: 110, kind: "date" },
+    { key: "teacherId", header: "O'qituvchi ID", width: 110, kind: "text" },
+    { key: "studentId", header: "O'quvchi ID", width: 100, kind: "text" },
+    { key: "groupId", header: "Guruh ID", width: 90, kind: "text" },
+    { key: "template", header: "Shablon", width: 100, kind: "text", plain: true, help: "Bo'sh = erkin matn" },
+    { key: "body", header: "Matn", width: 380, kind: "text", plain: true, help: "Vasiyga yuborilgan matn. Jurnal: o'qituvchi uni o'zgartira yoki o'chira olmaydi (ustozlar varaqqa kirmaydi, faqat bot orqali ishlaydi)" },
+  ],
+};
+
+export const TEACHER_NOTICES: TableDef = {
+  sheet: "Ustoz eslatmalari",
+  color: "#9334e6",
+  cols: [
+    { key: "key", header: "Kalit", width: 240, kind: "text", plain: true, help: "lesson:<dars> yoki digest:<sana>: bir eslatma ikki marta yuborilmasligi uchun" },
+    { key: "kind", header: "Turi", width: 130, kind: "enum", labels: { lesson: "Ustozga eslatma", digest: "Egaga kun yakuni" } },
+    { key: "date", header: "Sana", width: 110, kind: "date" },
+    { key: "text", header: "Matn", width: 380, kind: "text", plain: true },
+  ],
+};
+
 export const LEDGER_TABLES: TableDef[] = [JOURNAL, PERIODS, CHART_ACCOUNTS, CASH_ACCOUNTS, REFUNDS, CASH_CLOSES];
 // ---- branches (G6): one center, one books, a branch mark on every row ---------------------------------------------------
 export const BRANCHES: TableDef = {
@@ -764,7 +805,7 @@ export const BRANCH_MARKED: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDA
 for (const t of BRANCH_MARKED) if (!t.cols.some((c) => c.key === "branchId")) t.cols.push(BRANCH_COL);
 export const BRANCH_TABLES: TableDef[] = [BRANCHES, STAFF, BRANCH_PRICES, BRANCH_SETTINGS, BRANCH_MOVES];
 
-export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, PACKAGES, INSTALLMENTS, DOCUMENTS, EXPENSES, WAITLIST, ...LEDGER_TABLES, STATEMENTS, STATEMENT_LINES, SUPPLIERS, SUPPLIER_BILLS, BILL_PAYMENTS, DISCOUNTS, DISCOUNT_LINES, ROOMS, SCHEDULE_CHANGES, REFERRALS, PROMOS, PROMO_USES, SOURCE_COSTS, MARKS, EXAMS, EXAM_RESULTS, REPORTS, CERTIFICATES, ...BRANCH_TABLES];
+export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, PACKAGES, INSTALLMENTS, DOCUMENTS, EXPENSES, WAITLIST, ...LEDGER_TABLES, STATEMENTS, STATEMENT_LINES, SUPPLIERS, SUPPLIER_BILLS, BILL_PAYMENTS, DISCOUNTS, DISCOUNT_LINES, ROOMS, SCHEDULE_CHANGES, REFERRALS, PROMOS, PROMO_USES, SOURCE_COSTS, MARKS, EXAMS, EXAM_RESULTS, REPORTS, CERTIFICATES, ...BRANCH_TABLES, TEACHER_INVITES, TEACHER_MESSAGES, TEACHER_NOTICES];
 
 export const SETTINGS_SHEET = "Sozlamalar";
 export const DEBTORS_SHEET = "Qarzdorlar";
@@ -799,5 +840,8 @@ export const SETTING_DEFAULTS: { key: string; label: string; value: string; help
 
   { key: "familySecond", label: "Oilaviy chegirma: 2-farzand (%)", value: "0", help: "Bir vasiyning (Vasiy ismi bir xil) ikkinchi farzandi uchun foiz. 0 = o'chirilgan" },
   { key: "familyThird", label: "Oilaviy chegirma: 3-farzand va keyingilar (%)", value: "0", help: "Uchinchi va undan keyingi farzandlar uchun foiz. 0 = o'chirilgan. Birinchi farzand to'liq narxda to'laydi" },
+  { key: "teacherReminderHours", label: "Ustoz eslatmasi: davomat belgilanmasa (soat)", value: "2", help: "Dars tugaganidan shuncha soat o'tib davomat belgilanmagan bo'lsa ustozga ichki eslatma boradi (0-48). Vasiylarga hech narsa yuborilmaydi" },
+  { key: "teacherDigestAfter", label: "Egaga kun yakuni ro'yxati: soat", value: "20:00", help: "Shu vaqtdan keyin bugungi davomat belgilanmagan darslar ro'yxati egaga (yuqoridagi chat ID) bir marta yuboriladi (HH:MM)" },
+  { key: "teacherDailyLimit", label: "Ustoz: vasiyga kunlik xabar limiti", value: "20", help: "Bitta ustoz kuniga nechta vasiyga bot orqali yoza oladi (0-500). Ustozga yozish huquqini o'chirish: O'qituvchilar varag'ida 'Vasiyga yozish o'chirilgan'" },
   { key: "ownerChatId", label: "Egasining Telegram chat ID si", value: "", help: "Vasiy 'To'lov qildim' bossa shu yerga xabar keladi (botga /start yozib, @userinfobot dan ID ni oling)" },
 ];

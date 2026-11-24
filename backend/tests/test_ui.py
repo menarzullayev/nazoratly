@@ -6,7 +6,7 @@ import httpx
 
 
 async def test_pages_and_assets_are_served_with_a_strict_csp(client: httpx.AsyncClient) -> None:
-    for page, camera in (("scan", "camera=(self)"), ("import", "camera=()"), ("calendar", "camera=()")):
+    for page, camera in (("scan", "camera=(self)"), ("import", "camera=()"), ("calendar", "camera=()"), ("teacher", "camera=()")):
         r = await client.get(f"/ui/{page}")
         assert r.status_code == 200 and r.headers["content-type"].startswith("text/html")
         csp = r.headers["content-security-policy"]
@@ -20,6 +20,7 @@ async def test_pages_and_assets_are_served_with_a_strict_csp(client: httpx.Async
         ("scan.js", "javascript"),
         ("import.js", "javascript"),
         ("calendar.js", "javascript"),
+        ("teacher.js", "javascript"),
         ("jsQR.js", "javascript"),
         ("ui.css", "css"),
     ):
