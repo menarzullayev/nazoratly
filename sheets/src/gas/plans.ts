@@ -4,11 +4,11 @@ import { computeDebts } from "../domain/debt";
 import { isIsoDate } from "../domain/dates";
 import { equalInstallments, installmentBalances, PlanRuleError, validatePlan } from "../domain/installments";
 import { formatSom, formatDmy } from "../domain/reminders";
-import type { Charge, Installment, Payment, Student } from "../domain/types";
+import type { Refund, Charge, Installment, Payment, Student } from "../domain/types";
 import { guard, withLock } from "./actions";
 import { pickId } from "./pick";
 import { read, readIfPresent, replaceWhere, today, updateById } from "./repo";
-import { CHARGES, INSTALLMENTS, PAYMENTS, STUDENTS } from "./schema";
+import { REFUNDS, CHARGES, INSTALLMENTS, PAYMENTS, STUDENTS } from "./schema";
 
 export const VIEW_SHEET = "Qismlar holati";
 const ui = (): GoogleAppsScript.Base.Ui => SpreadsheetApp.getUi();
@@ -38,7 +38,7 @@ export function createPaymentPlan(chargeId?: string, count?: number, firstDue?: 
     if (!charge) throw new Error(`Hisob topilmadi: ${id}`);
     if (charge.voided) throw new Error("Bekor qilingan hisobga reja tuzib bo'lmaydi.");
     const existing = readIfPresent<Installment>(INSTALLMENTS);
-    const { balances } = computeDebts(charges, read<Payment>(PAYMENTS), today(), existing);
+    const { balances } = computeDebts(charges, read<Payment>(PAYMENTS), today(), existing, readIfPresent<Refund>(REFUNDS));
     const bal = balances.find((b) => b.id === id)!;
     if (bal.outstanding <= 0) throw new Error("Bu hisob to'liq to'langan: reja kerak emas.");
 
@@ -96,7 +96,7 @@ export function checkPlans(): string {
 }
 
 export function openInstallments(): void {
-  const { balances } = computeDebts(read<Charge>(CHARGES), read<Payment>(PAYMENTS), today(), readIfPresent<Installment>(INSTALLMENTS));
+  const { balances } = computeDebts(read<Charge>(CHARGES), read<Payment>(PAYMENTS), today(), readIfPresent<Installment>(INSTALLMENTS), readIfPresent<Refund>(REFUNDS));
   const students = new Map(read<Student>(STUDENTS).map((s) => [s.id, s]));
   const byCharge = new Map<string, Installment[]>();
   for (const i of readIfPresent<Installment>(INSTALLMENTS)) (byCharge.get(i.chargeId) ?? byCharge.set(i.chargeId, []).get(i.chargeId)!).push(i);

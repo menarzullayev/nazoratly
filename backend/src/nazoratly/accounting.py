@@ -34,10 +34,15 @@ class LedgerError(Unprocessable):
 
 
 async def ensure_chart(conn: Conn, org_id: int) -> None:
-    """Seeds the chart template and the two default cash accounts once per center (idempotent)."""
-    if await fetch_one(
-        conn, "SELECT 1 AS x FROM accounts WHERE org_id = %s AND code = %s", (org_id, R.CHART[-1][0])
-    ):
+    """Seeds the chart template (accounts added to the template later too) and the two default cash accounts for a
+    center (idempotent)."""
+    have = await fetch_one(
+        conn,
+        "SELECT count(*) AS n FROM accounts WHERE org_id = %s AND code = ANY(%s)",
+        (org_id, [code for code, _, _ in R.CHART]),
+    )
+    assert have is not None
+    if have["n"] == len(R.CHART):
         return
     for code, name, kind in R.CHART:
         await execute(
@@ -258,6 +263,75 @@ async def post_expense(conn: Conn, org_id: int, user_id: int | None, expense_id:
     )
 
 
+async def post_refund(conn: Conn, org_id: int, user_id: int | None, refund_id: int) -> int | None:
+    """Money given back (cash or bank). A refund that stays as credit moves no money and posts nothing."""
+    row = await fetch_one(
+        conn,
+        "SELECT r.amount, r.payout, r.kind, r.refunded_on, s.full_name FROM refunds r "
+        "JOIN students s ON s.org_id = r.org_id AND s.id = r.student_id WHERE r.id = %s",
+        (refund_id,),
+    )
+    assert row is not None
+    lines = R.posting_lines({"event": "refund", "payout": row["payout"], "amount": row["amount"]})
+    if not lines:
+        return None
+    return await post_entry(
+        conn,
+        org_id,
+        user_id,
+        entry_date=row["refunded_on"],
+        memo=f"Qaytarish ({row['kind']}): {row['full_name']} ({row['payout']})",
+        source_type="refund",
+        source_key=str(refund_id),
+        lines=lines,
+    )
+
+
+async def post_cash_difference(
+    conn: Conn,
+    org_id: int,
+    user_id: int | None,
+    *,
+    close_id: int,
+    entry_date: date,
+    difference: Decimal,
+) -> int | None:
+    """Books the difference found at a cash close: more cash than booked is other income, less is a shortage."""
+    lines = R.posting_lines(
+        {
+            "event": "cash_close",
+            "direction": "over" if difference > 0 else "short",
+            "amount": abs(difference),
+        }
+    )
+    if not lines:
+        return None
+    return await post_entry(
+        conn,
+        org_id,
+        user_id,
+        entry_date=entry_date,
+        memo=f"Kassa farqi ({'ortiqcha' if difference > 0 else 'kamomad'}): smena yopilishi #{close_id}",
+        source_type="cash_close",
+        source_key=str(close_id),
+        lines=lines,
+    )
+
+
+async def cash_book_balance(conn: Conn, org_id: int, through: date) -> tuple[Decimal, int]:
+    """What the books say the cash desk holds through `through` (all cash-kind accounts) and the journal head line."""
+    row = await fetch_one(
+        conn,
+        "SELECT COALESCE(sum(l.debit - l.credit), 0) AS bal FROM journal_lines l "
+        "JOIN journal_entries e ON e.org_id = l.org_id AND e.id = l.entry_id "
+        "JOIN cash_accounts ca ON ca.org_id = l.org_id AND ca.account_id = l.account_id "
+        "WHERE l.org_id = %s AND ca.kind = 'cash' AND e.entry_date <= %s",
+        (org_id, through),
+    )
+    assert row is not None
+    return Decimal(row["bal"]), (await current_head(conn, org_id)).seq
+
+
 async def post_bill_payment(conn: Conn, org_id: int, user_id: int | None, bill_payment_id: int) -> int | None:
     row = await fetch_one(
         conn,
@@ -369,6 +443,13 @@ async def _sources(conn: Conn) -> list[dict[str, Any]]:
              "voided": r["voided"], "category": r["category"], "paid_from": r["paid_from"], "bill": r["bill"]}
         )  # fmt: skip
     for r in await fetch_all(
+        conn, "SELECT id, amount, payout, refunded_on FROM refunds WHERE payout <> 'credit' AND amount > 0"
+    ):
+        out.append(
+            {"type": "refund", "key": str(r["id"]), "date": r["refunded_on"].isoformat(), "amount": r["amount"],
+             "voided": False, "payout": r["payout"]}
+        )  # fmt: skip
+    for r in await fetch_all(
         conn, "SELECT id, amount, paid_on, paid_from, (voided_at IS NOT NULL) AS voided FROM bill_payments"
     ):
         out.append(
@@ -407,6 +488,7 @@ _POSTERS = {
     "payment": post_payment,
     "expense": post_expense,
     "bill_payment": post_bill_payment,
+    "refund": post_refund,
 }
 
 

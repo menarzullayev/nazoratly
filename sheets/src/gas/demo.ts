@@ -4,7 +4,7 @@
 import { demoBlockers, type Blocker, type DemoRow, type DemoTable } from "../domain/demo";
 import { guard, withLock } from "./actions";
 import { readIfPresent, replaceWhere } from "./repo";
-import { ATTENDANCE, CHARGES, DOCUMENTS, DRAFTS, ENROLLMENTS, ENTITLEMENTS, EXPENSES, GROUPS, INSTALLMENTS, LEADS, LEAD_LOG, PACKAGES, PAYMENTS, PROMO_USES, REFERRALS, SCHEDULE_CHANGES, STUDENTS, TEACHERS, WAITLIST, type TableDef } from "./schema";
+import { ATTENDANCE, CHARGES, DISCOUNT_LINES, DISCOUNTS, DOCUMENTS, DRAFTS, ENROLLMENTS, ENTITLEMENTS, EXPENSES, GROUPS, INSTALLMENTS, LEADS, LEAD_LOG, PACKAGES, PAYMENTS, PROMO_USES, REFERRALS, REFUNDS, SCHEDULE_CHANGES, STUDENTS, TEACHERS, WAITLIST, type TableDef } from "./schema";
 
 type Row = Record<string, unknown>;
 const flagged = (r: Row): boolean => r.demo === true;
@@ -27,6 +27,9 @@ const SPECS: Spec[] = [
   { key: "payments", def: PAYMENTS, label: "To'lovlar", id: (r) => s(r.id), refs: (r) => [["students", s(r.studentId)]] },
   { key: "expenses", def: EXPENSES, label: "Xarajatlar", id: (r) => s(r.id), refs: () => [] },
   { key: "leads", def: LEADS, label: "Lead'lar", id: (r) => s(r.id), refs: (r) => [["students", s(r.studentId)]] },
+  { key: "discounts", def: DISCOUNTS, label: "Chegirmalar", id: (r) => s(r.id), refs: (r) => [["students", s(r.studentId)], ["enrollments", s(r.enrollmentId)]] },
+  { key: "discountLines", def: DISCOUNT_LINES, label: "Chegirma qatorlari", id: (r) => `${s(r.enrollmentId)}|${s(r.month)}|${s(r.kind)}|${s(r.sourceId)}`, refs: (r) => [["students", s(r.studentId)], ["enrollments", s(r.enrollmentId)], ["charges", s(r.chargeId)]] },
+  { key: "refunds", def: REFUNDS, label: "Qaytarishlar", id: (r) => s(r.id), refs: (r) => [["students", s(r.studentId)], ["charges", s(r.chargeId)], ["payments", s(r.paymentId)]] },
   { key: "waitlist", def: WAITLIST, label: "Navbat", id: (r) => s(r.id), refs: (r) => [["groups", s(r.groupId)], ["students", s(r.studentId)]] },
 ];
 /** Tables without a Demo column: every row is real, so any of them pointing at a demo row blocks the removal. */

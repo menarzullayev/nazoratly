@@ -31,6 +31,8 @@ const event = (e: Rec): PostingEvent => {
     case "expense": return { event: "expense", category: String(e.category), amount, paidFrom: e.paid_from as string | undefined, bill: e.bill as boolean | undefined };
     case "bill_payment": return { event: "bill_payment", amount, paidFrom: e.paid_from as string | undefined };
     case "payroll_accrual": return { event: "payroll_accrual", amount };
+    case "refund": return { event: "refund", payout: String(e.payout), amount };
+    case "cash_close": return { event: "cash_close", direction: e.direction as "over" | "short", amount };
     default: return { event: "payroll_payment", amount };
   }
 };

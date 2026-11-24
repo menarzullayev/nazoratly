@@ -2154,6 +2154,184 @@
         "title": "CashAccountOut",
         "type": "object"
       },
+      "CashCloseIn": {
+        "additionalProperties": false,
+        "properties": {
+          "close_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "defaults to today (the center's date); not in the future",
+            "title": "Close Date"
+          },
+          "counted": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "the cash actually counted in the drawer, so'm",
+            "title": "Counted"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "required when counted differs from the books",
+            "title": "Note"
+          },
+          "post_difference": {
+            "default": false,
+            "description": "also book the difference in the journal (needs the accounting:write right)",
+            "title": "Post Difference",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "counted"
+        ],
+        "title": "CashCloseIn",
+        "type": "object"
+      },
+      "CashCloseOut": {
+        "properties": {
+          "adjustment_entry_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "the journal entry that booked the difference",
+            "title": "Adjustment Entry No"
+          },
+          "book_balance": {
+            "title": "Book Balance",
+            "type": "string"
+          },
+          "close_date": {
+            "format": "date",
+            "title": "Close Date",
+            "type": "string"
+          },
+          "counted": {
+            "title": "Counted",
+            "type": "string"
+          },
+          "difference": {
+            "title": "Difference",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "journal_seq": {
+            "description": "last journal line number when the close was made",
+            "title": "Journal Seq",
+            "type": "integer"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "shift_no": {
+            "title": "Shift No",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "over",
+              "short"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "close_date",
+          "shift_no",
+          "counted",
+          "book_balance",
+          "difference",
+          "status",
+          "note",
+          "journal_seq",
+          "adjustment_entry_no"
+        ],
+        "title": "CashCloseOut",
+        "type": "object"
+      },
+      "CashPreview": {
+        "properties": {
+          "book_balance": {
+            "description": "what the books say the cash desk holds through the date",
+            "title": "Book Balance",
+            "type": "string"
+          },
+          "cash_in": {
+            "description": "cash received on the date (journal debits of the cash accounts)",
+            "title": "Cash In",
+            "type": "string"
+          },
+          "cash_out": {
+            "description": "cash paid out on the date (journal credits of the cash accounts)",
+            "title": "Cash Out",
+            "type": "string"
+          },
+          "close_date": {
+            "format": "date",
+            "title": "Close Date",
+            "type": "string"
+          },
+          "journal_seq": {
+            "title": "Journal Seq",
+            "type": "integer"
+          },
+          "next_shift_no": {
+            "title": "Next Shift No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "close_date",
+          "book_balance",
+          "cash_in",
+          "cash_out",
+          "journal_seq",
+          "next_shift_no"
+        ],
+        "title": "CashPreview",
+        "type": "object"
+      },
       "ChangeOut": {
         "properties": {
           "created_at": {
@@ -2421,6 +2599,42 @@
             "format": "date",
             "title": "Due Date",
             "type": "string"
+          },
+          "early_discount": {
+            "default": "0.00",
+            "description": "so'm off when paid by early_pay_by",
+            "title": "Early Discount",
+            "type": "string"
+          },
+          "early_granted": {
+            "default": false,
+            "description": "the early discount was earned (the amount is already reduced)",
+            "title": "Early Granted",
+            "type": "boolean"
+          },
+          "early_pay_by": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Early Pay By"
+          },
+          "gross_amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "fee before the lasting discounts (None on older charges)",
+            "title": "Gross Amount"
           },
           "id": {
             "format": "uuid",
@@ -3377,6 +3591,337 @@
           "counts"
         ],
         "title": "DemoOut",
+        "type": "object"
+      },
+      "DiscountIn": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "exclusiveMinimum": 0.0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "description": "UZS amount, 2 decimals"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "so'm off ONE charge (individual only)",
+            "title": "Amount"
+          },
+          "enrollment_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "limit the rule to one enrollment (default: every tuition charge of the student)",
+            "title": "Enrollment Id"
+          },
+          "kind": {
+            "enum": [
+              "individual",
+              "scholarship",
+              "early_pay"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "pay_by_day": {
+            "anyOf": [
+              {
+                "maximum": 28.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "early_pay: the day of the billed month the money must arrive by",
+            "title": "Pay By Day"
+          },
+          "percent": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 100.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "percent of the fee (scholarship: 100 = free)",
+            "title": "Percent"
+          },
+          "reason": {
+            "maxLength": 500,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "defaults to today (the center's date)",
+            "title": "Valid From"
+          },
+          "valid_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "empty = until ended",
+            "title": "Valid To"
+          }
+        },
+        "required": [
+          "student_id",
+          "kind",
+          "reason"
+        ],
+        "title": "DiscountIn",
+        "type": "object"
+      },
+      "DiscountKindRow": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "lines": {
+            "title": "Lines",
+            "type": "integer"
+          },
+          "students": {
+            "title": "Students",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kind",
+          "lines",
+          "students",
+          "amount"
+        ],
+        "title": "DiscountKindRow",
+        "type": "object"
+      },
+      "DiscountOut": {
+        "properties": {
+          "active": {
+            "description": "valid today",
+            "title": "Active",
+            "type": "boolean"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "enrollment_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enrollment Id"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "pay_by_day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pay By Day"
+          },
+          "percent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percent"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          },
+          "valid_from": {
+            "format": "date",
+            "title": "Valid From",
+            "type": "string"
+          },
+          "valid_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid To"
+          }
+        },
+        "required": [
+          "id",
+          "student_id",
+          "student_name",
+          "enrollment_id",
+          "kind",
+          "percent",
+          "amount",
+          "pay_by_day",
+          "reason",
+          "valid_from",
+          "valid_to",
+          "active"
+        ],
+        "title": "DiscountOut",
+        "type": "object"
+      },
+      "DiscountPatch": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 3,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "valid_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "end the rule (the last day it applies)",
+            "title": "Valid To"
+          }
+        },
+        "title": "DiscountPatch",
+        "type": "object"
+      },
+      "DiscountReport": {
+        "properties": {
+          "month": {
+            "format": "date",
+            "title": "Month",
+            "type": "string"
+          },
+          "other_total": {
+            "title": "Other Total",
+            "type": "string"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/DiscountKindRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "scholarship_total": {
+            "description": "scholarships are shown separately from the other discounts",
+            "title": "Scholarship Total",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "month",
+          "rows",
+          "total",
+          "scholarship_total",
+          "other_total"
+        ],
+        "title": "DiscountReport",
         "type": "object"
       },
       "DocumentDetail": {
@@ -4586,6 +5131,12 @@
             "title": "Created",
             "type": "integer"
           },
+          "discounted": {
+            "default": 0,
+            "description": "new charges that got a lasting discount",
+            "title": "Discounted",
+            "type": "integer"
+          },
           "month": {
             "format": "date",
             "title": "Month",
@@ -4593,6 +5144,12 @@
           },
           "skipped_existing": {
             "title": "Skipped Existing",
+            "type": "integer"
+          },
+          "skipped_free": {
+            "default": 0,
+            "description": "enrollments that are completely free this month (scholarship): no charge",
+            "title": "Skipped Free",
             "type": "integer"
           },
           "skipped_package_groups": {
@@ -8221,6 +8778,37 @@
         "title": "Page[BranchOut]",
         "type": "object"
       },
+      "Page_CashCloseOut_": {
+        "properties": {
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CashCloseOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset",
+          "has_more"
+        ],
+        "title": "Page[CashCloseOut]",
+        "type": "object"
+      },
       "Page_ChargeOut_": {
         "properties": {
           "has_more": {
@@ -8281,6 +8869,37 @@
           "has_more"
         ],
         "title": "Page[CourseOut]",
+        "type": "object"
+      },
+      "Page_DiscountOut_": {
+        "properties": {
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DiscountOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset",
+          "has_more"
+        ],
+        "title": "Page[DiscountOut]",
         "type": "object"
       },
       "Page_DocumentOut_": {
@@ -8808,6 +9427,37 @@
           "has_more"
         ],
         "title": "Page[PendingTrial]",
+        "type": "object"
+      },
+      "Page_RefundOut_": {
+        "properties": {
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RefundOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset",
+          "has_more"
+        ],
+        "title": "Page[RefundOut]",
         "type": "object"
       },
       "Page_RoomOut_": {
@@ -9400,6 +10050,12 @@
               }
             ],
             "title": "Payer Guardian Id"
+          },
+          "refunded": {
+            "default": "0.00",
+            "description": "given back in cash or to the bank (a refund)",
+            "title": "Refunded",
+            "type": "string"
           },
           "student_id": {
             "format": "uuid",
@@ -10516,6 +11172,302 @@
         "title": "RefreshIn",
         "type": "object"
       },
+      "RefundIn": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "exclusiveMinimum": 0.0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "description": "UZS amount, 2 decimals"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "wrong_payment: so'm to give back (default: all refundable); to_credit: so'm to move to credit",
+            "title": "Amount"
+          },
+          "charge_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "leaving, to_credit: the tuition charge",
+            "title": "Charge Id"
+          },
+          "kind": {
+            "enum": [
+              "wrong_payment",
+              "leaving",
+              "package_remainder",
+              "to_credit"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "left_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "leaving: last day attended (default today)",
+            "title": "Left On"
+          },
+          "package_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "package_remainder: the package",
+            "title": "Package Id"
+          },
+          "payment_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "wrong_payment: the mistaken payment",
+            "title": "Payment Id"
+          },
+          "payout": {
+            "description": "cash or bank = money leaves; credit = it stays as the student's credit",
+            "enum": [
+              "cash",
+              "bank",
+              "credit"
+            ],
+            "title": "Payout",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 500,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "student_id",
+          "payout",
+          "reason"
+        ],
+        "title": "RefundIn",
+        "type": "object"
+      },
+      "RefundOut": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "charge_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Charge Id"
+          },
+          "charge_reduction": {
+            "title": "Charge Reduction",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "left_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Left On"
+          },
+          "package_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Package Id"
+          },
+          "payment_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Id"
+          },
+          "payments": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/RefundPaymentOut"
+            },
+            "title": "Payments",
+            "type": "array"
+          },
+          "payout": {
+            "title": "Payout",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "refunded_on": {
+            "format": "date",
+            "title": "Refunded On",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "student_id",
+          "student_name",
+          "kind",
+          "payout",
+          "amount",
+          "charge_reduction",
+          "charge_id",
+          "payment_id",
+          "package_id",
+          "left_on",
+          "reason",
+          "refunded_on"
+        ],
+        "title": "RefundOut",
+        "type": "object"
+      },
+      "RefundPaymentOut": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "payment_id": {
+            "format": "uuid",
+            "title": "Payment Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "payment_id",
+          "amount"
+        ],
+        "title": "RefundPaymentOut",
+        "type": "object"
+      },
+      "RefundPreview": {
+        "properties": {
+          "amount": {
+            "description": "money that leaves (cash/bank) or becomes credit",
+            "title": "Amount",
+            "type": "string"
+          },
+          "available": {
+            "title": "Available",
+            "type": "string"
+          },
+          "charge_reduction": {
+            "description": "how much the tuition charge shrinks",
+            "title": "Charge Reduction",
+            "type": "string"
+          },
+          "errors": {
+            "description": "empty when the refund can be made",
+            "items": {
+              "type": "string"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "payout": {
+            "title": "Payout",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "payout",
+          "amount",
+          "charge_reduction",
+          "available",
+          "errors"
+        ],
+        "title": "RefundPreview",
+        "type": "object"
+      },
       "RegisterIn": {
         "additionalProperties": false,
         "properties": {
@@ -11609,6 +12561,16 @@
             "title": "Excused Mode",
             "type": "string"
           },
+          "family_discount_2nd_percent": {
+            "description": "percent off for the second child of a family (0 = off)",
+            "title": "Family Discount 2Nd Percent",
+            "type": "string"
+          },
+          "family_discount_3rd_percent": {
+            "description": "percent off for the third and later children of a family (0 = off)",
+            "title": "Family Discount 3Rd Percent",
+            "type": "string"
+          },
           "lead_reminder_days": {
             "description": "quiet days after which an open lead shows in the internal reminder list",
             "title": "Lead Reminder Days",
@@ -11660,6 +12622,8 @@
           "package_expiry_days",
           "package_low_lessons",
           "lead_reminder_days",
+          "family_discount_2nd_percent",
+          "family_discount_3rd_percent",
           "demo_mode",
           "requisites",
           "ai_enabled",
@@ -11722,6 +12686,38 @@
               }
             ],
             "title": "Excused Mode"
+          },
+          "family_discount_2nd_percent": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Family Discount 2Nd Percent"
+          },
+          "family_discount_3rd_percent": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Family Discount 3Rd Percent"
           },
           "lead_reminder_days": {
             "anyOf": [
@@ -17834,6 +18830,251 @@
         ]
       }
     },
+    "/v1/cash-close": {
+      "get": {
+        "operationId": "list_closes_v1_cash_close_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 1000000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_CashCloseOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Closes",
+        "tags": [
+          "cash close"
+        ]
+      },
+      "post": {
+        "operationId": "close_cash_v1_cash_close_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CashCloseIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CashCloseOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Close the cash desk of a day (smena)",
+        "tags": [
+          "cash close"
+        ]
+      }
+    },
+    "/v1/cash-close/preview": {
+      "get": {
+        "operationId": "preview_v1_cash_close_preview_get",
+        "parameters": [
+          {
+            "description": "defaults to today",
+            "in": "query",
+            "name": "close_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "defaults to today",
+              "title": "Close Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CashPreview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "What the books say the cash desk holds (for the count before closing)",
+        "tags": [
+          "cash close"
+        ]
+      }
+    },
+    "/v1/cash-close/{close_id}": {
+      "get": {
+        "operationId": "get_close_v1_cash_close__close_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "close_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Close Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CashCloseOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Close",
+        "tags": [
+          "cash close"
+        ]
+      }
+    },
     "/v1/charges": {
       "get": {
         "operationId": "list_charges_v1_charges_get",
@@ -18867,6 +20108,218 @@
         "summary": "Switch demo mode on: write the sample data",
         "tags": [
           "demo mode"
+        ]
+      }
+    },
+    "/v1/discounts": {
+      "get": {
+        "operationId": "list_discounts_v1_discounts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "student_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Student Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "individual",
+                    "scholarship",
+                    "early_pay"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "active_only",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Active Only",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 1000000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_DiscountOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Discounts",
+        "tags": [
+          "discounts"
+        ]
+      },
+      "post": {
+        "operationId": "create_discount_v1_discounts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscountIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscountOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Add a lasting discount rule",
+        "tags": [
+          "discounts"
+        ]
+      }
+    },
+    "/v1/discounts/{discount_id}": {
+      "patch": {
+        "operationId": "patch_discount_v1_discounts__discount_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "discount_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Discount Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscountPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscountOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "End a rule (or fix its reason); amounts are never edited: add a new rule instead",
+        "tags": [
+          "discounts"
         ]
       }
     },
@@ -24560,6 +26013,279 @@
         ]
       }
     },
+    "/v1/refunds": {
+      "get": {
+        "operationId": "list_refunds_v1_refunds_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "student_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Student Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "wrong_payment",
+                    "leaving",
+                    "package_remainder",
+                    "to_credit"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 1000000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_RefundOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Refunds",
+        "tags": [
+          "refunds"
+        ]
+      },
+      "post": {
+        "operationId": "create_refund_v1_refunds_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefundIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Make a refund",
+        "tags": [
+          "refunds"
+        ]
+      }
+    },
+    "/v1/refunds/preview": {
+      "post": {
+        "operationId": "preview_refund_v1_refunds_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefundIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundPreview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "What a refund would do (amounts and problems), nothing is written",
+        "tags": [
+          "refunds"
+        ]
+      }
+    },
+    "/v1/refunds/{refund_id}": {
+      "get": {
+        "operationId": "get_refund_v1_refunds__refund_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "refund_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Refund Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Refund",
+        "tags": [
+          "refunds"
+        ]
+      }
+    },
     "/v1/reports/absences": {
       "get": {
         "operationId": "absence_report_v1_reports_absences_get",
@@ -24709,6 +26435,56 @@
         "summary": "Students with overdue debt",
         "tags": [
           "finance"
+        ]
+      }
+    },
+    "/v1/reports/discounts": {
+      "get": {
+        "operationId": "discount_report_v1_reports_discounts_get",
+        "parameters": [
+          {
+            "description": "any date inside the month",
+            "in": "query",
+            "name": "month",
+            "required": true,
+            "schema": {
+              "description": "any date inside the month",
+              "format": "date",
+              "title": "Month",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscountReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Discounts given in a month by kind (scholarships separate)",
+        "tags": [
+          "discounts"
         ]
       }
     },

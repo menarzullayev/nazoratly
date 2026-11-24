@@ -52,6 +52,9 @@ export interface Charge {
   dueDate: ISODate;
   voided: boolean;
   note: string;
+  grossAmount?: number; // fee before the lasting discounts (empty on older charges)
+  earlyDiscount?: number; // so'm off when paid by earlyPayBy (0 = no offer)
+  earlyPayBy?: ISODate | "";
   demo?: boolean;
 }
 
@@ -218,4 +221,64 @@ export interface WaitlistRow {
   status: "waiting" | "enrolled" | "removed";
   note: string;
   demo?: boolean;
+}
+
+/** A lasting discount rule of one student (sheet "Chegirmalar"). The family discount is automatic (center settings). */
+export interface StudentDiscount {
+  id: string;
+  studentId: string;
+  enrollmentId: string; // "" = every tuition charge of the student
+  kind: "individual" | "scholarship" | "early_pay";
+  percent: number; // 0 = not a percent rule
+  amount: number; // so'm off ONE charge; 0 = not an amount rule
+  payByDay: number; // early_pay: the day of the billed month the money must arrive by
+  reason: string;
+  validFrom: ISODate;
+  validTo: ISODate | ""; // "" = until ended
+  demo?: boolean;
+}
+
+/** What a lasting discount took off one enrollment's month (sheet "Chegirma qatorlari"). */
+export interface DiscountLineRow {
+  studentId: string;
+  enrollmentId: string;
+  chargeId: string; // "" for a month that was completely free (no charge)
+  month: ISODate;
+  kind: "family" | "individual" | "scholarship" | "early_pay";
+  sourceId: string; // the Chegirmalar rule, "" for the family discount
+  percent: number;
+  amount: number;
+  reason: string;
+  demo?: boolean;
+}
+
+/** A refund (sheet "Qaytarishlar"); append-only. */
+export interface Refund {
+  id: string;
+  studentId: string;
+  date: ISODate;
+  kind: "wrong_payment" | "leaving" | "package_remainder" | "to_credit";
+  payout: "cash" | "bank" | "credit";
+  amount: number; // money that left (cash/bank) or became credit
+  chargeReduction: number; // how much the tuition charge shrank
+  chargeId: string;
+  paymentId: string;
+  packageId: string;
+  leftOn: ISODate | "";
+  reason: string;
+  note: string;
+  demo?: boolean;
+}
+
+/** A daily cash close (sheet "Kassa smenalari"); append-only. */
+export interface CashClose {
+  id: string;
+  date: ISODate;
+  shiftNo: number;
+  counted: number;
+  bookBalance: number;
+  difference: number;
+  note: string;
+  journalSeq: number; // last journal line number when the close was made
+  entryNo: number; // the journal entry that booked the difference (0 = none)
 }

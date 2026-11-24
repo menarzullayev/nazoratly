@@ -1,0 +1,1130 @@
+{
+  "family_percent": [
+    {
+      "name": "first child pays full",
+      "in": {
+        "rank": 1,
+        "second": "10",
+        "third": "20"
+      },
+      "out": "0"
+    },
+    {
+      "name": "second child",
+      "in": {
+        "rank": 2,
+        "second": "10",
+        "third": "20"
+      },
+      "out": "10"
+    },
+    {
+      "name": "third child",
+      "in": {
+        "rank": 3,
+        "second": "10",
+        "third": "20"
+      },
+      "out": "20"
+    },
+    {
+      "name": "fifth child uses the third-child percent",
+      "in": {
+        "rank": 5,
+        "second": "10",
+        "third": "20"
+      },
+      "out": "20"
+    },
+    {
+      "name": "switched off (second 0)",
+      "in": {
+        "rank": 2,
+        "second": "0",
+        "third": "0"
+      },
+      "out": "0"
+    },
+    {
+      "name": "fractional percent kept",
+      "in": {
+        "rank": 2,
+        "second": "7.5",
+        "third": "12.5"
+      },
+      "out": "7.5"
+    },
+    {
+      "name": "rank 0 (not billable) gets nothing",
+      "in": {
+        "rank": 0,
+        "second": "10",
+        "third": "20"
+      },
+      "out": "0"
+    }
+  ],
+  "lasting_discounts": [
+    {
+      "name": "no discounts",
+      "in": {
+        "base": 500000,
+        "discounts": []
+      },
+      "out": {
+        "lines": [],
+        "net": 500000
+      }
+    },
+    {
+      "name": "family 10 percent",
+      "in": {
+        "base": 500000,
+        "discounts": [
+          {
+            "kind": "family",
+            "percent": "10"
+          }
+        ]
+      },
+      "out": {
+        "lines": [
+          {
+            "index": 0,
+            "kind": "family",
+            "amount": 50000
+          }
+        ],
+        "net": 450000
+      }
+    },
+    {
+      "name": "individual fixed amount",
+      "in": {
+        "base": 500000,
+        "discounts": [
+          {
+            "kind": "individual",
+            "amount": 80000
+          }
+        ]
+      },
+      "out": {
+        "lines": [
+          {
+            "index": 0,
+            "kind": "individual",
+            "amount": 80000
+          }
+        ],
+        "net": 420000
+      }
+    },
+    {
+      "name": "order is scholarship, family, individual whatever the input order",
+      "in": {
+        "base": 500000,
+        "discounts": [
+          {
+            "kind": "individual",
+            "percent": "5"
+          },
+          {
+            "kind": "family",
+            "percent": "10"
+          },
+          {
+            "kind": "scholarship",
+            "percent": "50"
+          }
+        ]
+      },
+      "out": {
+        "lines": [
+          {
+            "index": 2,
+            "kind": "scholarship",
+            "amount": 250000
+          },
+          {
+            "index": 1,
+            "kind": "family",
+            "amount": 50000
+          },
+          {
+            "index": 0,
+            "kind": "individual",
+            "amount": 25000
+          }
+        ],
+        "net": 175000
+      }
+    },
+    {
+      "name": "full scholarship leaves nothing to pay",
+      "in": {
+        "base": 500000,
+        "discounts": [
+          {
+            "kind": "scholarship",
+            "percent": "100"
+          }
+        ]
+      },
+      "out": {
+        "lines": [
+          {
+            "index": 0,
+            "kind": "scholarship",
+            "amount": 500000
+          }
+        ],
+        "net": 0
+      }
+    },
+    {
+      "name": "the total is capped, the later discount is truncated",
+      "in": {
+        "base": 500000,
+        "discounts": [
+          {
+            "kind": "scholarship",
+            "percent": "80"
+          },
+          {
+            "kind": "family",
+            "percent": "15"
+          },
+          {
+            "kind": "individual",
+            "amount": 100000
+          }
+        ]
+      },
+      "out": {
+        "lines": [
+          {
+            "index": 0,
+            "kind": "scholarship",
+            "amount": 400000
+          },
+          {
+            "index": 1,
+            "kind": "family",
+            "amount": 75000
+          },
+          {
+            "index": 2,
+            "kind": "individual",
+            "amount": 25000
+          }
+        ],
+        "net": 0
+      }
+    },
+    {
+      "name": "a discount that takes nothing writes no line",
+      "in": {
+        "base": 500000,
+        "discounts": [
+          {
+            "kind": "scholarship",
+            "percent": "100"
+          },
+          {
+            "kind": "family",
+            "percent": "10"
+          }
+        ]
+      },
+      "out": {
+        "lines": [
+          {
+            "index": 0,
+            "kind": "scholarship",
+            "amount": 500000
+          }
+        ],
+        "net": 0
+      }
+    },
+    {
+      "name": "rounds half up to a whole so'm",
+      "in": {
+        "base": 15,
+        "discounts": [
+          {
+            "kind": "family",
+            "percent": "10"
+          }
+        ]
+      },
+      "out": {
+        "lines": [
+          {
+            "index": 0,
+            "kind": "family",
+            "amount": 2
+          }
+        ],
+        "net": 13
+      }
+    },
+    {
+      "name": "fractional percent rounds half up",
+      "in": {
+        "base": 1005,
+        "discounts": [
+          {
+            "kind": "family",
+            "percent": "12.5"
+          }
+        ]
+      },
+      "out": {
+        "lines": [
+          {
+            "index": 0,
+            "kind": "family",
+            "amount": 126
+          }
+        ],
+        "net": 879
+      }
+    },
+    {
+      "name": "two percent decimals",
+      "in": {
+        "base": 100000,
+        "discounts": [
+          {
+            "kind": "individual",
+            "percent": "33.33"
+          }
+        ]
+      },
+      "out": {
+        "lines": [
+          {
+            "index": 0,
+            "kind": "individual",
+            "amount": 33330
+          }
+        ],
+        "net": 66670
+      }
+    },
+    {
+      "name": "two individual rules keep their input order",
+      "in": {
+        "base": 300000,
+        "discounts": [
+          {
+            "kind": "individual",
+            "percent": "10"
+          },
+          {
+            "kind": "individual",
+            "amount": 20000
+          }
+        ]
+      },
+      "out": {
+        "lines": [
+          {
+            "index": 0,
+            "kind": "individual",
+            "amount": 30000
+          },
+          {
+            "index": 1,
+            "kind": "individual",
+            "amount": 20000
+          }
+        ],
+        "net": 250000
+      }
+    },
+    {
+      "name": "nothing to discount",
+      "in": {
+        "base": 0,
+        "discounts": [
+          {
+            "kind": "family",
+            "percent": "10"
+          }
+        ]
+      },
+      "out": {
+        "lines": [],
+        "net": 0
+      }
+    }
+  ],
+  "early_discount": [
+    {
+      "name": "5 percent",
+      "in": {
+        "net": 450000,
+        "percent": "5"
+      },
+      "out": 22500
+    },
+    {
+      "name": "zero percent",
+      "in": {
+        "net": 100000,
+        "percent": "0"
+      },
+      "out": 0
+    },
+    {
+      "name": "rounds half up",
+      "in": {
+        "net": 1005,
+        "percent": "10"
+      },
+      "out": 101
+    },
+    {
+      "name": "never the whole price",
+      "in": {
+        "net": 2,
+        "percent": "99"
+      },
+      "out": 1
+    },
+    {
+      "name": "price of one so'm gets nothing",
+      "in": {
+        "net": 1,
+        "percent": "99"
+      },
+      "out": 0
+    },
+    {
+      "name": "no price",
+      "in": {
+        "net": 0,
+        "percent": "10"
+      },
+      "out": 0
+    }
+  ],
+  "early_pay_by": [
+    {
+      "name": "fifth of the month",
+      "in": {
+        "month": "2026-11-01",
+        "day": 5
+      },
+      "out": "2026-11-05"
+    },
+    {
+      "name": "any date inside the month works",
+      "in": {
+        "month": "2026-11-17",
+        "day": 28
+      },
+      "out": "2026-11-28"
+    }
+  ],
+  "early_granted": [
+    {
+      "name": "paid the reduced price on time",
+      "in": {
+        "pay_by": "2026-11-05",
+        "payments": [
+          {
+            "on": "2026-11-03",
+            "amount": 427500
+          }
+        ],
+        "amount": 450000,
+        "early": 22500
+      },
+      "out": {
+        "granted": true,
+        "on_time": 427500,
+        "excess": 0
+      }
+    },
+    {
+      "name": "paid on the last day",
+      "in": {
+        "pay_by": "2026-11-05",
+        "payments": [
+          {
+            "on": "2026-11-05",
+            "amount": 427500
+          }
+        ],
+        "amount": 450000,
+        "early": 22500
+      },
+      "out": {
+        "granted": true,
+        "on_time": 427500,
+        "excess": 0
+      }
+    },
+    {
+      "name": "one day late",
+      "in": {
+        "pay_by": "2026-11-05",
+        "payments": [
+          {
+            "on": "2026-11-06",
+            "amount": 450000
+          }
+        ],
+        "amount": 450000,
+        "early": 22500
+      },
+      "out": {
+        "granted": false,
+        "on_time": 0,
+        "excess": 0
+      }
+    },
+    {
+      "name": "part on time, the rest late",
+      "in": {
+        "pay_by": "2026-11-05",
+        "payments": [
+          {
+            "on": "2026-11-04",
+            "amount": 200000
+          },
+          {
+            "on": "2026-11-09",
+            "amount": 250000
+          }
+        ],
+        "amount": 450000,
+        "early": 22500
+      },
+      "out": {
+        "granted": false,
+        "on_time": 200000,
+        "excess": 0
+      }
+    },
+    {
+      "name": "full price paid on time: the surplus is excess",
+      "in": {
+        "pay_by": "2026-11-05",
+        "payments": [
+          {
+            "on": "2026-11-05",
+            "amount": 450000
+          }
+        ],
+        "amount": 450000,
+        "early": 22500
+      },
+      "out": {
+        "granted": true,
+        "on_time": 450000,
+        "excess": 22500
+      }
+    },
+    {
+      "name": "two payments on time add up",
+      "in": {
+        "pay_by": "2026-11-05",
+        "payments": [
+          {
+            "on": "2026-11-01",
+            "amount": 400000
+          },
+          {
+            "on": "2026-11-05",
+            "amount": 27500
+          }
+        ],
+        "amount": 450000,
+        "early": 22500
+      },
+      "out": {
+        "granted": true,
+        "on_time": 427500,
+        "excess": 0
+      }
+    },
+    {
+      "name": "one so'm short",
+      "in": {
+        "pay_by": "2026-11-05",
+        "payments": [
+          {
+            "on": "2026-11-05",
+            "amount": 427499
+          }
+        ],
+        "amount": 450000,
+        "early": 22500
+      },
+      "out": {
+        "granted": false,
+        "on_time": 427499,
+        "excess": 0
+      }
+    },
+    {
+      "name": "no early discount on the charge",
+      "in": {
+        "pay_by": "2026-11-05",
+        "payments": [
+          {
+            "on": "2026-11-01",
+            "amount": 450000
+          }
+        ],
+        "amount": 450000,
+        "early": 0
+      },
+      "out": {
+        "granted": false,
+        "on_time": 450000,
+        "excess": 0
+      }
+    },
+    {
+      "name": "late money after the on-time payment is excess",
+      "in": {
+        "pay_by": "2026-11-05",
+        "payments": [
+          {
+            "on": "2026-11-02",
+            "amount": 427500
+          },
+          {
+            "on": "2026-11-20",
+            "amount": 22500
+          }
+        ],
+        "amount": 450000,
+        "early": 22500
+      },
+      "out": {
+        "granted": true,
+        "on_time": 427500,
+        "excess": 22500
+      }
+    }
+  ],
+  "leaving": [
+    {
+      "name": "left on the 10th of a 30-day month, fully paid",
+      "in": {
+        "amount": 300000,
+        "paid": 300000,
+        "left_on": "2026-11-10",
+        "month": "2026-11-01"
+      },
+      "out": {
+        "used": 100000,
+        "reduction": 200000,
+        "refund": 200000
+      }
+    },
+    {
+      "name": "nothing paid: the charge shrinks, no money back",
+      "in": {
+        "amount": 300000,
+        "paid": 0,
+        "left_on": "2026-11-10",
+        "month": "2026-11-01"
+      },
+      "out": {
+        "used": 100000,
+        "reduction": 200000,
+        "refund": 0
+      }
+    },
+    {
+      "name": "partly paid: only what exceeds the used part",
+      "in": {
+        "amount": 300000,
+        "paid": 150000,
+        "left_on": "2026-11-10",
+        "month": "2026-11-01"
+      },
+      "out": {
+        "used": 100000,
+        "reduction": 200000,
+        "refund": 50000
+      }
+    },
+    {
+      "name": "paid less than the used part",
+      "in": {
+        "amount": 300000,
+        "paid": 80000,
+        "left_on": "2026-11-10",
+        "month": "2026-11-01"
+      },
+      "out": {
+        "used": 100000,
+        "reduction": 200000,
+        "refund": 0
+      }
+    },
+    {
+      "name": "left before the month started",
+      "in": {
+        "amount": 300000,
+        "paid": 300000,
+        "left_on": "2026-10-30",
+        "month": "2026-11-01"
+      },
+      "out": {
+        "used": 0,
+        "reduction": 300000,
+        "refund": 300000
+      }
+    },
+    {
+      "name": "left after the month ended",
+      "in": {
+        "amount": 300000,
+        "paid": 300000,
+        "left_on": "2026-12-02",
+        "month": "2026-11-01"
+      },
+      "out": {
+        "used": 300000,
+        "reduction": 0,
+        "refund": 0
+      }
+    },
+    {
+      "name": "left on the last day",
+      "in": {
+        "amount": 300000,
+        "paid": 300000,
+        "left_on": "2026-11-30",
+        "month": "2026-11-01"
+      },
+      "out": {
+        "used": 300000,
+        "reduction": 0,
+        "refund": 0
+      }
+    },
+    {
+      "name": "left on the first day",
+      "in": {
+        "amount": 300000,
+        "paid": 300000,
+        "left_on": "2026-11-01",
+        "month": "2026-11-01"
+      },
+      "out": {
+        "used": 10000,
+        "reduction": 290000,
+        "refund": 290000
+      }
+    },
+    {
+      "name": "rounds the used part half up",
+      "in": {
+        "amount": 100000,
+        "paid": 100000,
+        "left_on": "2026-11-07",
+        "month": "2026-11-01"
+      },
+      "out": {
+        "used": 23333,
+        "reduction": 76667,
+        "refund": 76667
+      }
+    },
+    {
+      "name": "leap February",
+      "in": {
+        "amount": 290000,
+        "paid": 290000,
+        "left_on": "2028-02-10",
+        "month": "2028-02-01"
+      },
+      "out": {
+        "used": 100000,
+        "reduction": 190000,
+        "refund": 190000
+      }
+    },
+    {
+      "name": "paid above the charge is clamped to the charge",
+      "in": {
+        "amount": 300000,
+        "paid": 400000,
+        "left_on": "2026-11-10",
+        "month": "2026-11-01"
+      },
+      "out": {
+        "used": 100000,
+        "reduction": 200000,
+        "refund": 200000
+      }
+    },
+    {
+      "name": "month given as any date inside it",
+      "in": {
+        "amount": 300000,
+        "paid": 300000,
+        "left_on": "2026-11-10",
+        "month": "2026-11-17"
+      },
+      "out": {
+        "used": 100000,
+        "reduction": 200000,
+        "refund": 200000
+      }
+    }
+  ],
+  "package_remainder": [
+    {
+      "name": "three of eight lessons left",
+      "in": {
+        "price": 400000,
+        "package_lessons": 8,
+        "remaining_lessons": 3,
+        "paid": 400000
+      },
+      "out": 150000
+    },
+    {
+      "name": "nothing left",
+      "in": {
+        "price": 400000,
+        "package_lessons": 8,
+        "remaining_lessons": 0,
+        "paid": 400000
+      },
+      "out": 0
+    },
+    {
+      "name": "capped by what was paid",
+      "in": {
+        "price": 400000,
+        "package_lessons": 8,
+        "remaining_lessons": 8,
+        "paid": 100000
+      },
+      "out": 100000
+    },
+    {
+      "name": "rounds down",
+      "in": {
+        "price": 100000,
+        "package_lessons": 3,
+        "remaining_lessons": 1,
+        "paid": 100000
+      },
+      "out": 33333
+    },
+    {
+      "name": "rounds up",
+      "in": {
+        "price": 100000,
+        "package_lessons": 3,
+        "remaining_lessons": 2,
+        "paid": 100000
+      },
+      "out": 66667
+    },
+    {
+      "name": "more remaining than the package is clamped",
+      "in": {
+        "price": 400000,
+        "package_lessons": 8,
+        "remaining_lessons": 9,
+        "paid": 400000
+      },
+      "out": 400000
+    },
+    {
+      "name": "consumed lessons must stay covered (rounding would otherwise uncover one)",
+      "in": {
+        "price": 100000,
+        "package_lessons": 3,
+        "remaining_lessons": 2,
+        "paid": 100000,
+        "keep_lessons": 1
+      },
+      "out": 66666
+    },
+    {
+      "name": "keep cap does not bite when the split is exact",
+      "in": {
+        "price": 400000,
+        "package_lessons": 8,
+        "remaining_lessons": 3,
+        "paid": 400000,
+        "keep_lessons": 5
+      },
+      "out": 150000
+    },
+    {
+      "name": "partly paid package keeps its consumed lessons",
+      "in": {
+        "price": 400000,
+        "package_lessons": 8,
+        "remaining_lessons": 6,
+        "paid": 200000,
+        "keep_lessons": 2
+      },
+      "out": 100000
+    }
+  ],
+  "refund_errors": [
+    {
+      "name": "wrong payment in cash",
+      "in": {
+        "kind": "wrong_payment",
+        "payout": "cash",
+        "amount": 100000,
+        "available": 100000
+      },
+      "out": []
+    },
+    {
+      "name": "wrong payment to the bank",
+      "in": {
+        "kind": "wrong_payment",
+        "payout": "bank",
+        "amount": 50000,
+        "available": 100000
+      },
+      "out": []
+    },
+    {
+      "name": "more than available",
+      "in": {
+        "kind": "wrong_payment",
+        "payout": "cash",
+        "amount": 100001,
+        "available": 100000
+      },
+      "out": [
+        "exceeds_available"
+      ]
+    },
+    {
+      "name": "zero amount",
+      "in": {
+        "kind": "wrong_payment",
+        "payout": "cash",
+        "amount": 0,
+        "available": 100000
+      },
+      "out": [
+        "not_positive"
+      ]
+    },
+    {
+      "name": "to credit must be credit",
+      "in": {
+        "kind": "to_credit",
+        "payout": "cash",
+        "amount": 1000,
+        "available": 5000
+      },
+      "out": [
+        "bad_payout"
+      ]
+    },
+    {
+      "name": "to credit as credit",
+      "in": {
+        "kind": "to_credit",
+        "payout": "credit",
+        "amount": 1000,
+        "available": 5000
+      },
+      "out": []
+    },
+    {
+      "name": "wrong payment cannot be credit",
+      "in": {
+        "kind": "wrong_payment",
+        "payout": "credit",
+        "amount": 1000,
+        "available": 5000
+      },
+      "out": [
+        "bad_payout"
+      ]
+    },
+    {
+      "name": "leaving may become credit",
+      "in": {
+        "kind": "leaving",
+        "payout": "credit",
+        "amount": 1000,
+        "available": 5000
+      },
+      "out": []
+    },
+    {
+      "name": "package remainder in cash",
+      "in": {
+        "kind": "package_remainder",
+        "payout": "cash",
+        "amount": 150000,
+        "available": 150000
+      },
+      "out": []
+    },
+    {
+      "name": "unknown payout",
+      "in": {
+        "kind": "leaving",
+        "payout": "card",
+        "amount": 1000,
+        "available": 5000
+      },
+      "out": [
+        "bad_payout"
+      ]
+    },
+    {
+      "name": "unknown kind",
+      "in": {
+        "kind": "gift",
+        "payout": "cash",
+        "amount": 1000,
+        "available": 5000
+      },
+      "out": [
+        "bad_kind"
+      ]
+    },
+    {
+      "name": "several problems are all listed in a fixed order",
+      "in": {
+        "kind": "to_credit",
+        "payout": "bank",
+        "amount": -5,
+        "available": 100
+      },
+      "out": [
+        "not_positive",
+        "bad_payout"
+      ]
+    }
+  ],
+  "cash_difference": [
+    {
+      "name": "counted equals the books",
+      "in": {
+        "book": 1200000,
+        "counted": 1200000
+      },
+      "out": {
+        "difference": 0,
+        "status": "ok"
+      }
+    },
+    {
+      "name": "more cash than the books",
+      "in": {
+        "book": 1200000,
+        "counted": 1250000
+      },
+      "out": {
+        "difference": 50000,
+        "status": "over"
+      }
+    },
+    {
+      "name": "less cash than the books",
+      "in": {
+        "book": 1200000,
+        "counted": 1180000
+      },
+      "out": {
+        "difference": -20000,
+        "status": "short"
+      }
+    },
+    {
+      "name": "empty drawer, empty books",
+      "in": {
+        "book": 0,
+        "counted": 0
+      },
+      "out": {
+        "difference": 0,
+        "status": "ok"
+      }
+    },
+    {
+      "name": "books negative (a refund was booked before the cash)",
+      "in": {
+        "book": -10000,
+        "counted": 0
+      },
+      "out": {
+        "difference": 10000,
+        "status": "over"
+      }
+    }
+  ],
+  "cash_close_errors": [
+    {
+      "name": "balanced close needs no note",
+      "in": {
+        "counted": 1200000,
+        "difference": 0,
+        "note": ""
+      },
+      "out": []
+    },
+    {
+      "name": "difference needs a note",
+      "in": {
+        "counted": 1250000,
+        "difference": 50000,
+        "note": ""
+      },
+      "out": [
+        "note_required"
+      ]
+    },
+    {
+      "name": "a blank note is no note",
+      "in": {
+        "counted": 1180000,
+        "difference": -20000,
+        "note": "   "
+      },
+      "out": [
+        "note_required"
+      ]
+    },
+    {
+      "name": "difference with a note",
+      "in": {
+        "counted": 1180000,
+        "difference": -20000,
+        "note": "sinf puli ichkarida qoldi"
+      },
+      "out": []
+    },
+    {
+      "name": "negative count",
+      "in": {
+        "counted": -1,
+        "difference": 0,
+        "note": ""
+      },
+      "out": [
+        "negative_counted"
+      ]
+    }
+  ]
+}

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends
@@ -11,7 +12,7 @@ from nazoratly.db import Conn, execute, fetch_one
 from nazoratly.deps import DB, Principal, require
 from nazoratly.errors import Forbidden
 from nazoratly.idempotency import IdempotentRoute
-from nazoratly.schemas import Model, Out
+from nazoratly.schemas import Dec2, Model, Out
 
 router = APIRouter(prefix="/v1", tags=["settings"], route_class=IdempotentRoute)
 
@@ -26,6 +27,12 @@ class SettingsOut(Out):
     package_low_lessons: int
     lead_reminder_days: int = Field(
         description="quiet days after which an open lead shows in the internal reminder list"
+    )
+    family_discount_2nd_percent: Dec2 = Field(
+        description="percent off for the second child of a family (0 = off)"
+    )
+    family_discount_3rd_percent: Dec2 = Field(
+        description="percent off for the third and later children of a family (0 = off)"
     )
     demo_mode: bool = Field(description="the center is in demo mode (switched through /v1/demo)")
     requisites: str | None = Field(
@@ -47,6 +54,12 @@ class SettingsPatch(Model):
     package_expiry_days: Annotated[int, Field(ge=1, le=730)] | None = None
     package_low_lessons: Annotated[int, Field(ge=0, le=50)] | None = None
     lead_reminder_days: Annotated[int, Field(ge=1, le=60)] | None = None
+    family_discount_2nd_percent: (
+        Annotated[Decimal, Field(ge=0, le=100, max_digits=5, decimal_places=2)] | None
+    ) = None
+    family_discount_3rd_percent: (
+        Annotated[Decimal, Field(ge=0, le=100, max_digits=5, decimal_places=2)] | None
+    ) = None
     requisites: Annotated[str, StringConstraints(strip_whitespace=True, max_length=1000)] | None = Field(
         default=None, description="empty string clears it"
     )
@@ -62,7 +75,7 @@ async def load_settings(conn: Conn, org_id: int) -> SettingsOut:
     )
     row = await fetch_one(
         conn,
-        "SELECT trial_free_lessons, trial_free_days, excused_mode, makeup_expiry_days, makeup_lapses, package_expiry_days, package_low_lessons, lead_reminder_days, demo_mode, requisites, ai_enabled, ai_sees_names, ai_daily_limit FROM org_settings WHERE org_id = %s",
+        "SELECT trial_free_lessons, trial_free_days, excused_mode, makeup_expiry_days, makeup_lapses, package_expiry_days, package_low_lessons, lead_reminder_days, family_discount_2nd_percent, family_discount_3rd_percent, demo_mode, requisites, ai_enabled, ai_sees_names, ai_daily_limit FROM org_settings WHERE org_id = %s",
         (org_id,),
     )
     assert row is not None

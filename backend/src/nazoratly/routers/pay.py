@@ -34,6 +34,7 @@ from nazoratly.db import Conn, Database, Session, execute, fetch_all, fetch_one
 from nazoratly.deps import DB, Paging, Principal, require
 from nazoratly.errors import ApiError, Conflict, NotFound, Unprocessable
 from nazoratly.idempotency import IdempotentRoute
+from nazoratly.money import revoke_unearned_early
 from nazoratly.routers.finance import allocate_fifo
 from nazoratly.schemas import Dec2, Model, Out, Page, make_page
 from nazoratly.secrets_box import SecretsBox
@@ -123,7 +124,12 @@ async def _cancel(conn: Conn, tx: dict[str, Any], reason: int | None) -> int:
     """Cancel a created (-> -1) or performed (-> -2, the payment is voided and its allocations released) transaction."""
     new_state = -2 if tx["state"] == 2 else -1
     if tx["state"] == 2 and tx["payment_id"] is not None:
-        await execute(conn, "DELETE FROM payment_allocations WHERE payment_id = %s", (tx["payment_id"],))
+        released = await fetch_all(
+            conn,
+            "DELETE FROM payment_allocations WHERE payment_id = %s RETURNING charge_id",
+            (tx["payment_id"],),
+        )
+        await revoke_unearned_early(conn, [r["charge_id"] for r in released])
         await execute(
             conn,
             "UPDATE payments SET voided_at = now(), void_reason = %s WHERE id = %s AND voided_at IS NULL",

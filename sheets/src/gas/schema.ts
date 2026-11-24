@@ -1,5 +1,5 @@
 /** Sheet layout: one table per tab, Uzbek headers, enum labels shown to users and mapped to domain values. */
-export type Kind = "text" | "date" | "int" | "bool" | "enum";
+export type Kind = "text" | "date" | "int" | "num" | "bool" | "enum";
 
 export interface ColDef {
   key: string;
@@ -47,6 +47,11 @@ const L = {
   rewardType: { amount: "Summa", percent: "Foiz", free_lesson: "Bepul dars" },
   refCondition: { paid: "To'lagandan keyin", enrolled: "Yozilgandan keyin" },
   promoKind: { percent: "Foiz", amount: "Summa" },
+
+  discountKind: { individual: "Individual", scholarship: "Stipendiya", early_pay: "Erta to'lov" },
+  discountLineKind: { family: "Oilaviy", individual: "Individual", scholarship: "Stipendiya", early_pay: "Erta to'lov" },
+  refundKind: { wrong_payment: "Xato to'lov", leaving: "Ketdi (oy qoldig'i)", package_remainder: "Abonement qoldig'i", to_credit: "Kreditga o'tkazish" },
+  payout: { cash: "Naqd", bank: "Bank", credit: "Kredit" },
 } as const;
 
 /** Marks sample rows ("Namuna ma'lumot"). "Demo ma'lumotni tozalash" deletes only flagged rows. */
@@ -137,6 +142,9 @@ export const CHARGES: TableDef = {
     { key: "dueDate", header: "To'lov muddati", width: 120, kind: "date" },
     { key: "note", header: "Izoh", width: 200, kind: "text" },
     { key: "voided", header: "Bekor qilingan", width: 110, kind: "bool", help: "Hisobni o'chirmang, 'Ha' qilib bekor qiling" },
+    { key: "grossAmount", header: "Chegirmasiz summa", width: 130, kind: "int", help: "Doimiy chegirmalardan oldingi narx (avtomatik)" },
+    { key: "earlyDiscount", header: "Erta to'lov chegirmasi", width: 130, kind: "int", help: "Muddatigacha to'lansa shuncha so'm kamayadi (avtomatik)" },
+    { key: "earlyPayBy", header: "Erta to'lov muddati", width: 130, kind: "date", help: "Shu sanagacha (shu kun ham) to'langan pul chegirmani beradi" },
     DEMO,
   ],
 };
@@ -530,8 +538,83 @@ export const SOURCE_COSTS: TableDef = {
   ],
 };
 
-export const LEDGER_TABLES: TableDef[] = [JOURNAL, PERIODS, CHART_ACCOUNTS, CASH_ACCOUNTS];
-export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, PACKAGES, INSTALLMENTS, DOCUMENTS, EXPENSES, WAITLIST, ...LEDGER_TABLES, STATEMENTS, STATEMENT_LINES, SUPPLIERS, SUPPLIER_BILLS, BILL_PAYMENTS, ROOMS, SCHEDULE_CHANGES, REFERRALS, PROMOS, PROMO_USES, SOURCE_COSTS];
+
+
+export const DISCOUNTS: TableDef = {
+  sheet: "Chegirmalar",
+  color: "#e37400",
+  cols: [
+    { key: "id", header: "ID", width: 70, kind: "text", help: "Avtomatik (D0001...)" },
+    { key: "studentId", header: "O'quvchi ID", width: 100, kind: "text" },
+    { key: "enrollmentId", header: "Yozilish ID", width: 100, kind: "text", help: "Bo'sh = o'quvchining har bir oylik hisobiga" },
+    { key: "kind", header: "Turi", width: 120, kind: "enum", labels: L.discountKind, help: "Individual: foiz yoki summa. Stipendiya: foiz (100 = to'liq bepul). Erta to'lov: foiz + muddat kuni" },
+    { key: "percent", header: "Foiz %", width: 80, kind: "num", help: "0 = foiz emas. Foiz oylik narxdan (yozilish chegirmasidan keyin) hisoblanadi" },
+    { key: "amount", header: "Summa", width: 100, kind: "int", help: "Faqat individual: BITTA hisobdan ayiriladigan so'm" },
+    { key: "payByDay", header: "Muddat kuni", width: 100, kind: "int", help: "Faqat erta to'lov: oyning shu kunigacha (1-28)" },
+    { key: "reason", header: "Sabab", width: 240, kind: "text", help: "Majburiy" },
+    { key: "validFrom", header: "Boshlanishi", width: 110, kind: "date" },
+    { key: "validTo", header: "Tugashi", width: 110, kind: "date", help: "Bo'sh = tugatilmaguncha. Tugatilgan qoidani uzaytirib bo'lmaydi: yangisini qo'shing" },
+    DEMO,
+  ],
+};
+
+export const DISCOUNT_LINES: TableDef = {
+  sheet: "Chegirma qatorlari",
+  color: "#e37400",
+  cols: [
+    { key: "studentId", header: "O'quvchi ID", width: 100, kind: "text" },
+    { key: "enrollmentId", header: "Yozilish ID", width: 100, kind: "text" },
+    { key: "chargeId", header: "Hisob ID", width: 90, kind: "text", help: "Bo'sh = oy to'liq bepul edi (hisob yaratilmadi)" },
+    { key: "month", header: "Oy", width: 100, kind: "date" },
+    { key: "kind", header: "Turi", width: 120, kind: "enum", labels: L.discountLineKind },
+    { key: "sourceId", header: "Qoida ID", width: 90, kind: "text", help: "Chegirmalar varag'idagi qoida (oilaviy chegirmada bo'sh)" },
+    { key: "percent", header: "Foiz %", width: 80, kind: "num" },
+    { key: "amount", header: "Summa", width: 100, kind: "int" },
+    { key: "reason", header: "Sabab", width: 240, kind: "text" },
+    DEMO,
+  ],
+};
+
+export const REFUNDS: TableDef = {
+  sheet: "Qaytarishlar",
+  color: "#c5221f",
+  cols: [
+    { key: "id", header: "ID", width: 80, kind: "text", help: "Avtomatik (R0001...)" },
+    { key: "studentId", header: "O'quvchi ID", width: 100, kind: "text" },
+    { key: "date", header: "Sana", width: 110, kind: "date" },
+    { key: "kind", header: "Turi", width: 160, kind: "enum", labels: L.refundKind },
+    { key: "payout", header: "Qanday", width: 90, kind: "enum", labels: L.payout, help: "Naqd/Bank: pul chiqadi (jurnalga yoziladi). Kredit: pul o'quvchi kreditida qoladi (jurnalga yozilmaydi)" },
+    { key: "amount", header: "Summa", width: 110, kind: "int" },
+    { key: "chargeReduction", header: "Hisob kamaydi", width: 120, kind: "int", help: "Oylik hisob shuncha kamaygan" },
+    { key: "chargeId", header: "Hisob ID", width: 90, kind: "text" },
+    { key: "paymentId", header: "To'lov ID", width: 90, kind: "text" },
+    { key: "packageId", header: "Abonement ID", width: 100, kind: "text" },
+    { key: "leftOn", header: "Ketgan sana", width: 110, kind: "date" },
+    { key: "reason", header: "Sabab", width: 240, kind: "text" },
+    { key: "note", header: "Izoh", width: 200, kind: "text", plain: true },
+    DEMO,
+  ],
+};
+
+export const CASH_CLOSES: TableDef = {
+  sheet: "Kassa smenalari",
+  color: "#5f6368",
+  cols: [
+    { key: "id", header: "ID", width: 80, kind: "text", help: "Avtomatik (M0001...)" },
+    { key: "date", header: "Sana", width: 110, kind: "date" },
+    { key: "shiftNo", header: "Smena №", width: 80, kind: "int" },
+    { key: "counted", header: "Sanalgan naqd", width: 120, kind: "int", help: "Kassadagi haqiqiy naqd pul" },
+    { key: "bookBalance", header: "Hisob bo'yicha", width: 120, kind: "int", signed: true, help: "Jurnal bo'yicha kassa qoldig'i shu sanagacha" },
+    { key: "difference", header: "Farq", width: 100, kind: "int", signed: true, help: "Sanalgan - hisob bo'yicha" },
+    { key: "note", header: "Izoh", width: 260, kind: "text", plain: true, help: "Farq bo'lsa majburiy" },
+    { key: "journalSeq", header: "Jurnal №", width: 90, kind: "int", help: "Smena yopilganda jurnalning oxirgi qatori" },
+    { key: "entryNo", header: "Farq yozuvi №", width: 110, kind: "int", help: "Farq jurnalga yozilgan bo'lsa shu yozuv raqami (0 = yozilmagan)" },
+  ],
+};
+
+
+export const LEDGER_TABLES: TableDef[] = [JOURNAL, PERIODS, CHART_ACCOUNTS, CASH_ACCOUNTS, REFUNDS, CASH_CLOSES];
+export const ALL_TABLES: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, PACKAGES, INSTALLMENTS, DOCUMENTS, EXPENSES, WAITLIST, ...LEDGER_TABLES, STATEMENTS, STATEMENT_LINES, SUPPLIERS, SUPPLIER_BILLS, BILL_PAYMENTS, DISCOUNTS, DISCOUNT_LINES, ROOMS, SCHEDULE_CHANGES, REFERRALS, PROMOS, PROMO_USES, SOURCE_COSTS];
 
 export const SETTINGS_SHEET = "Sozlamalar";
 export const DEBTORS_SHEET = "Qarzdorlar";
@@ -563,5 +646,8 @@ export const SETTING_DEFAULTS: { key: string; label: string; value: string; help
   { key: "referralCondition", label: "Tavsiya sharti", value: "To'lagandan keyin", help: "To'lagandan keyin = taklif qilingan o'quvchi to'lov qilganda, Yozilgandan keyin = faol yozilishga o'tganda" },
   { key: "referralMinPaid", label: "Tavsiya: kamida to'langan (so'm)", value: "0", help: "Faqat 'To'lagandan keyin' sharti uchun: taklif qilingan o'quvchi jami shuncha to'lashi kerak (0 = istalgan to'lov)" },
   { key: "leadReminderDays", label: "Lead eslatmasi: jim kunlar", value: "3", help: "Yangi/aloqada/sinovga yozilgan lead bilan shuncha kun aloqa bo'lmasa 'Lead eslatmalari' ro'yxatiga tushadi (1-60). Lead'ga hech narsa yuborilmaydi: bu faqat xodim uchun ro'yxat" },
+
+  { key: "familySecond", label: "Oilaviy chegirma: 2-farzand (%)", value: "0", help: "Bir vasiyning (Vasiy ismi bir xil) ikkinchi farzandi uchun foiz. 0 = o'chirilgan" },
+  { key: "familyThird", label: "Oilaviy chegirma: 3-farzand va keyingilar (%)", value: "0", help: "Uchinchi va undan keyingi farzandlar uchun foiz. 0 = o'chirilgan. Birinchi farzand to'liq narxda to'laydi" },
   { key: "ownerChatId", label: "Egasining Telegram chat ID si", value: "", help: "Vasiy 'To'lov qildim' bossa shu yerga xabar keladi (botga /start yozib, @userinfobot dan ID ni oling)" },
 ];

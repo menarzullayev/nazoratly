@@ -1076,6 +1076,119 @@ BEGIN
 END $$;
 ROLLBACK;
 
+-- ---------------------------------------------------------------- 0020-0023: discounts, refunds, cash close (G1)
+BEGIN;
+DO $$
+DECLARE d1 BIGINT; pay BIGINT; rf BIGINT;
+BEGIN
+  -- student discount rules: exactly one of percent / amount, kind-specific shape, reason, dates
+  PERFORM public.t_expect('23514', $q$INSERT INTO student_discounts (org_id, student_id, kind, percent, amount, reason, valid_from) VALUES (1,1,'individual',10,5000,'both values','2026-11-01')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO student_discounts (org_id, student_id, kind, reason, valid_from) VALUES (1,1,'individual','no value','2026-11-01')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO student_discounts (org_id, student_id, kind, amount, reason, valid_from) VALUES (1,1,'scholarship',5000,'scholarship is a percent','2026-11-01')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO student_discounts (org_id, student_id, kind, percent, reason, valid_from) VALUES (1,1,'early_pay',5,'early needs a day','2026-11-01')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO student_discounts (org_id, student_id, kind, percent, pay_by_day, reason, valid_from) VALUES (1,1,'early_pay',100,5,'whole price','2026-11-01')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO student_discounts (org_id, student_id, kind, percent, pay_by_day, reason, valid_from) VALUES (1,1,'early_pay',5,29,'day out of range','2026-11-01')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO student_discounts (org_id, student_id, kind, percent, pay_by_day, reason, valid_from) VALUES (1,1,'individual',5,5,'pay-by only for early','2026-11-01')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO student_discounts (org_id, student_id, kind, percent, reason, valid_from) VALUES (1,1,'individual',0,'zero percent','2026-11-01')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO student_discounts (org_id, student_id, kind, percent, reason, valid_from) VALUES (1,1,'individual',101,'over a hundred','2026-11-01')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO student_discounts (org_id, student_id, kind, percent, reason, valid_from) VALUES (1,1,'individual',5,'x','2026-11-01')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO student_discounts (org_id, student_id, kind, percent, reason, valid_from, valid_to) VALUES (1,1,'individual',5,'ends before it starts','2026-11-01','2026-10-01')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO student_discounts (org_id, student_id, kind, percent, reason, valid_from) VALUES (1,1,'gift',5,'unknown kind','2026-11-01')$q$);
+  PERFORM public.t_expect('23503', $q$INSERT INTO student_discounts (org_id, student_id, kind, percent, reason, valid_from) VALUES (2,1,'individual',5,'another center student','2026-11-01')$q$);
+  INSERT INTO student_discounts (org_id, student_id, kind, percent, reason, valid_from) VALUES (1,1,'scholarship',100,'olympiad winner','2026-11-01') RETURNING id INTO d1;
+  INSERT INTO student_discounts (org_id, student_id, enrollment_id, kind, amount, reason, valid_from) VALUES (1,1,1,'individual',50000,'sibling of staff','2026-11-01');
+  INSERT INTO student_discounts (org_id, student_id, kind, percent, pay_by_day, reason, valid_from) VALUES (1,1,'early_pay',5,5,'pays early','2026-11-01');
+  PERFORM public.t_expect('23514', $q$INSERT INTO org_settings (org_id, family_discount_2nd_percent) VALUES (2, 101)$q$);
+  IF (SELECT count(*) FROM audit_log WHERE entity_type = 'student_discounts') < 3 THEN RAISE EXCEPTION 'discount rules are audited'; END IF;
+
+  -- charges: the early-payment offer travels as a pair; granted only with an offer
+  PERFORM public.t_expect('23514', $q$UPDATE charges SET early_discount = 5000 WHERE id = 1$q$);                 -- no pay-by date
+  PERFORM public.t_expect('23514', $q$UPDATE charges SET early_pay_by = '2026-10-05' WHERE id = 1$q$);          -- date without a discount
+  PERFORM public.t_expect('23514', $q$UPDATE charges SET early_granted_at = now() WHERE id = 1$q$);            -- granted without an offer
+  PERFORM public.t_expect('23514', $q$UPDATE charges SET gross_amount = 0 WHERE id = 1$q$);
+  PERFORM public.t_expect('23514', $q$UPDATE charges SET early_discount = 25000, early_pay_by = '2026-10-05' WHERE id = 1$q$);               -- no rule behind the offer
+  UPDATE charges SET early_discount = 25000, early_pay_by = '2026-10-05', early_source_id = (SELECT id FROM student_discounts WHERE kind = 'early_pay' LIMIT 1) WHERE id = 1;
+
+  -- discount lines: unique per enrollment, month, kind and rule; the family discount has no rule
+  INSERT INTO discount_lines (org_id, student_id, enrollment_id, charge_id, period_month, kind, source_id, percent, amount) VALUES (1,1,1,1,'2026-10-01','scholarship',d1,100,500000);
+  PERFORM public.t_expect('23505', format($q$INSERT INTO discount_lines (org_id, student_id, enrollment_id, charge_id, period_month, kind, source_id, amount) VALUES (1,1,1,1,'2026-10-01','scholarship',%s,1)$q$, d1));
+  PERFORM public.t_expect('23514', format($q$INSERT INTO discount_lines (org_id, student_id, enrollment_id, period_month, kind, source_id, amount) VALUES (1,1,1,'2026-10-01','family',%s,1)$q$, d1));
+  PERFORM public.t_expect('23514', $q$INSERT INTO discount_lines (org_id, student_id, enrollment_id, period_month, kind, amount) VALUES (1,1,1,'2026-10-01','individual',1)$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO discount_lines (org_id, student_id, enrollment_id, period_month, kind, amount) VALUES (1,1,1,'2026-10-02','family',1)$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO discount_lines (org_id, student_id, enrollment_id, period_month, kind, amount) VALUES (1,1,1,'2026-10-01','family',0)$q$);
+  INSERT INTO discount_lines (org_id, student_id, enrollment_id, charge_id, period_month, kind, amount) VALUES (1,1,1,NULL,'2026-10-01','family',10);          -- a free month has no charge
+  PERFORM public.t_expect('23505', $q$INSERT INTO discount_lines (org_id, student_id, enrollment_id, charge_id, period_month, kind, amount) VALUES (1,1,1,NULL,'2026-10-01','family',10)$q$);
+
+  -- refunds: a refunded part is no longer allocatable and never exceeds the payment
+  INSERT INTO payments (org_id, student_id, amount, method) VALUES (1,1,100000,'cash') RETURNING id INTO pay;
+  PERFORM public.t_expect('23514', format($q$UPDATE payments SET refunded = 100001 WHERE id = %s$q$, pay));
+  PERFORM public.t_expect('23514', format($q$UPDATE payments SET refunded = -1 WHERE id = %s$q$, pay));
+  UPDATE payments SET refunded = 40000 WHERE id = pay;
+  PERFORM public.t_expect('23514', format($q$INSERT INTO payment_allocations (org_id, payment_id, charge_id, amount) VALUES (1,%s,1,70000)$q$, pay));   -- 70000 + 40000 > 100000
+  INSERT INTO payment_allocations (org_id, payment_id, charge_id, amount) VALUES (1,pay,1,60000);
+  PERFORM public.t_expect('23514', format($q$UPDATE payments SET refunded = 50000 WHERE id = %s$q$, pay));                                               -- 60000 allocated
+  PERFORM public.t_expect('23514', format($q$UPDATE payments SET refunded = 10000 WHERE id = %s$q$, pay));                                               -- a refund cannot be taken back
+  PERFORM public.t_expect('23514', format($q$UPDATE payments SET amount = 90000 WHERE id = %s$q$, pay));                                                 -- refunded payment amount is fixed
+  DELETE FROM payment_allocations WHERE payment_id = pay;
+  PERFORM public.t_expect('23514', format($q$UPDATE payments SET voided_at = now(), void_reason = 'oops' WHERE id = %s$q$, pay));                       -- has refunds
+
+  INSERT INTO refunds (org_id, student_id, kind, payout, amount, payment_id, reason, refunded_on) VALUES (1,1,'wrong_payment','cash',40000,pay,'entered twice','2026-11-24') RETURNING id INTO rf;
+  INSERT INTO refund_payments (org_id, refund_id, payment_id, amount) VALUES (1,rf,pay,40000);
+  PERFORM public.t_expect('23505', format($q$INSERT INTO refund_payments (org_id, refund_id, payment_id, amount) VALUES (1,%s,%s,1)$q$, rf, pay));
+  PERFORM public.t_expect('23514', format($q$INSERT INTO refunds (org_id, student_id, kind, payout, amount, payment_id, reason, refunded_on) VALUES (1,1,'wrong_payment','credit',1000,%s,'credit is not a payout here','2026-11-24')$q$, pay));
+  PERFORM public.t_expect('23514', $q$INSERT INTO refunds (org_id, student_id, kind, payout, amount, charge_id, reason, refunded_on) VALUES (1,1,'to_credit','cash',1000,1,'to credit is credit','2026-11-24')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO refunds (org_id, student_id, kind, payout, amount, reason, refunded_on) VALUES (1,1,'wrong_payment','cash',1000,'needs a payment','2026-11-24')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO refunds (org_id, student_id, kind, payout, amount, reason, refunded_on) VALUES (1,1,'leaving','cash',1000,'needs a charge and a date','2026-11-24')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO refunds (org_id, student_id, kind, payout, amount, charge_id, reason, refunded_on) VALUES (1,1,'leaving','cash',1000,1,'needs the leave date','2026-11-24')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO refunds (org_id, student_id, kind, payout, amount, charge_id, reason, refunded_on) VALUES (1,1,'package_remainder','cash',1000,1,'needs a package','2026-11-24')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO refunds (org_id, student_id, kind, payout, amount, charge_id, left_on, reason, refunded_on) VALUES (1,1,'leaving','cash',0,1,'2026-11-10','zero amount','2026-11-24')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO refunds (org_id, student_id, kind, payout, amount, charge_id, left_on, reason, refunded_on) VALUES (1,1,'leaving','cash',1000,1,'2026-11-10','x','2026-11-24')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO refunds (org_id, student_id, kind, payout, amount, charge_id, reason, refunded_on) VALUES (1,1,'to_credit','credit',1000,1,'ok','2026-11-24'), (1,1,'gift','cash',1,1,'unknown kind','2026-11-24')$q$);
+  INSERT INTO refunds (org_id, student_id, kind, payout, amount, charge_reduction, charge_id, left_on, reason, refunded_on) VALUES (1,1,'leaving','credit',1000,2000,1,'2026-11-10','left in the middle','2026-11-24');
+  IF (SELECT credit FROM v_student_balance WHERE student_id = 1) <> (SELECT COALESCE(sum(amount - refunded), 0) FROM payments WHERE student_id = 1 AND voided_at IS NULL) - (SELECT COALESCE(sum(amount), 0) FROM payment_allocations WHERE payment_id IN (SELECT id FROM payments WHERE student_id = 1 AND voided_at IS NULL)) THEN
+    RAISE EXCEPTION 'student credit excludes refunded money';
+  END IF;
+  IF (SELECT count(*) FROM audit_log WHERE entity_type = 'refunds') < 2 THEN RAISE EXCEPTION 'refunds are audited'; END IF;
+
+  -- cash close: difference arithmetic, the note, one close per shift, the adjusting entry only with a difference
+  PERFORM public.t_expect('23514', $q$INSERT INTO cash_closes (org_id, close_date, shift_no, counted, book_balance, difference, note) VALUES (1,'2026-11-24',1,100,90,5,'wrong difference')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO cash_closes (org_id, close_date, shift_no, counted, book_balance, difference) VALUES (1,'2026-11-24',1,100,90,10)$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO cash_closes (org_id, close_date, shift_no, counted, book_balance, difference, note) VALUES (1,'2026-11-24',1,100,90,10,'   ')$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO cash_closes (org_id, close_date, shift_no, counted, book_balance, difference) VALUES (1,'2026-11-24',0,100,100,0)$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO cash_closes (org_id, close_date, shift_no, counted, book_balance, difference) VALUES (1,'2026-11-24',1,-1,0,-1)$q$);
+  INSERT INTO cash_closes (org_id, close_date, shift_no, counted, book_balance, difference) VALUES (1,'2026-11-24',1,100,100,0);
+  PERFORM public.t_expect('23505', $q$INSERT INTO cash_closes (org_id, close_date, shift_no, counted, book_balance, difference) VALUES (1,'2026-11-24',1,100,100,0)$q$);
+  INSERT INTO cash_closes (org_id, close_date, shift_no, counted, book_balance, difference, note) VALUES (1,'2026-11-24',2,90,100,-10,'sinf puli');
+END $$;
+
+-- tenant isolation and append-only privileges of the new tables
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '2'; SET LOCAL app.user_id = '2';
+DO $$
+BEGIN
+  ASSERT (SELECT count(*) FROM student_discounts) = 0, 'another center sees no discount rules';
+  ASSERT (SELECT count(*) FROM discount_lines) = 0, 'another center sees no discount lines';
+  ASSERT (SELECT count(*) FROM refunds) = 0, 'another center sees no refunds';
+  ASSERT (SELECT count(*) FROM refund_payments) = 0, 'another center sees no refund splits';
+  ASSERT (SELECT count(*) FROM cash_closes) = 0, 'another center sees no cash closes';
+  PERFORM public.t_expect('42501', $q$INSERT INTO cash_closes (org_id, close_date, shift_no, counted, book_balance, difference) VALUES (1,'2026-11-25',1,0,0,0)$q$);
+END $$;
+RESET ROLE;
+SET LOCAL ROLE nazoratly_app; SET LOCAL app.org_id = '1'; SET LOCAL app.user_id = '1';
+DO $$
+BEGIN
+  ASSERT (SELECT count(*) FROM student_discounts) = 3, 'own discount rules are visible';
+  PERFORM public.t_expect('42501', $q$DELETE FROM refunds$q$);
+  PERFORM public.t_expect('42501', $q$UPDATE refunds SET amount = 1$q$);
+  PERFORM public.t_expect('42501', $q$DELETE FROM refund_payments$q$);
+  PERFORM public.t_expect('42501', $q$UPDATE cash_closes SET counted = 1$q$);
+  PERFORM public.t_expect('23514', $q$UPDATE cash_closes SET adjustment_entry_id = NULL$q$);                       -- nothing to attach
+  PERFORM public.t_expect('42501', $q$DELETE FROM cash_closes$q$);
+  PERFORM public.t_expect('42501', $q$DELETE FROM discount_lines$q$);
+  PERFORM public.t_expect('42501', $q$UPDATE discount_lines SET amount = 1$q$);
+  PERFORM public.t_expect('42501', $q$DELETE FROM student_discounts$q$);
+END $$;
+ROLLBACK;
+
 -- clean up so the down-migration test starts from the original state (the journal is immutable: only the
 -- superuser of the test database may switch its guards off)
 DROP FUNCTION public.t_post(bigint, date, text, text, text, jsonb, text, int, bigint);

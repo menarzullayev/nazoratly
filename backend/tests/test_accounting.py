@@ -82,7 +82,7 @@ async def raw_payment(
 # ---- chart, cash accounts -----------------------------------------------------------------------------------
 async def test_the_chart_and_the_two_cash_accounts_are_seeded(tenant: Tenant) -> None:
     chart = await ok(await tenant.get(f"{A}/accounts"))
-    assert [a["code"] for a in chart][:3] == ["1000", "1010", "2000"] and len(chart) == 15
+    assert [a["code"] for a in chart][:3] == ["1000", "1010", "2000"] and len(chart) == 17
     assert {a["code"]: a["normal_side"] for a in chart}["4000"] == "credit"
     cash = await ok(await tenant.get(f"{A}/cash-accounts"))
     assert [(c["account_code"], c["kind"], c["balance"]) for c in cash] == [
