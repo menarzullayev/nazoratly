@@ -93,7 +93,11 @@ services:
     restart: unless-stopped
 
   web:
-    build: {context: ., dockerfile: web/Dockerfile}
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+      args:
+        NEXT_PUBLIC_DEMO_SHEET_COPY_URL: ${NEXT_PUBLIC_DEMO_SHEET_COPY_URL:-}
     ports:
       - "127.0.0.1:${NAZORATLY_WEB_PORT:-8012}:80"
     restart: unless-stopped

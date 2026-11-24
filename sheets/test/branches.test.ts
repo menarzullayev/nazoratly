@@ -53,7 +53,7 @@ function twoBranches(): void {
 describe("workbook setup", () => {
   it("creates the branch tabs, the default branch and a Filial column on every business tab", () => {
     for (const def of [BRANCHES, STAFF]) expect(h.rows(def.sheet)[0]).toEqual(def.cols.map((c) => c.header));
-    expect(h.rows(BRANCHES.sheet)[1]).toEqual([A, "Asosiy filial", "", "Faol", "Ha"]);
+    expect(h.rows(BRANCHES.sheet)[1]!.slice(0, 5)).toEqual([A, "Asosiy filial", "", "Faol", "Ha"]); // (then the Demo mark: empty)
     for (const def of BRANCH_MARKED) expect(h.rows(def.sheet)[0]!.at(-1), def.sheet).toBe(BRANCH_COL.header);
     setupWorkbook(); // again: still one default branch
     expect(h.rows(BRANCHES.sheet)).toHaveLength(2);

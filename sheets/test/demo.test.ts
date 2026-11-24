@@ -45,7 +45,7 @@ describe("sample data", () => {
       expect(rows.length, def.sheet).toBeGreaterThan(0);
       expect(rows.every((r) => r.demo === true), def.sheet).toBe(true);
     }
-    expect(new Set(read<Group>(GROUPS).map((g) => g.id)).size).toBe(3);
+    expect(new Set(read<Group>(GROUPS).map((g) => g.id)).size).toBe(5);
   });
 
   it("is refused a second time, and demo money never reaches the journal", () => {
@@ -78,7 +78,7 @@ describe("clearing demo data", () => {
     loadSampleData();
     const settings = JSON.stringify(h.rows("Sozlamalar"));
     const out = demo.clearDemoData();
-    expect(out.deleted.find((d) => d.label === "O'quvchilar")!.count).toBe(11);
+    expect(out.deleted.find((d) => d.label === "O'quvchilar")!.count).toBe(13);
     expect(realStudents().map((s) => s.id)).toEqual(["S0001"]);
     expect(demoStudents()).toHaveLength(0);
     expect(read<Group>(GROUPS).map((g) => g.id)).toEqual(["G0001"]);
@@ -121,7 +121,7 @@ describe("clearing demo data", () => {
     loadSampleData();
     h.answers.push("NO");
     demo.menu.clear();
-    expect(h.alerts.at(-1)!.message).toContain("O'quvchilar: 11");
+    expect(h.alerts.at(-1)!.message).toContain("O'quvchilar: 13");
     expect(demo.hasDemoRows()).toBe(true);
     h.answers.push("YES", "OK");
     demo.menu.clear();
@@ -149,7 +149,7 @@ describe("refreshing sample data", () => {
     const msg = resetSampleData();
     expect(msg).toContain("Telegram ulanishlari saqlandi: 1");
     expect(realStudents().map((s) => s.fullName)).toEqual(["Real One"]);
-    expect(demoStudents()).toHaveLength(11);
+    expect(demoStudents()).toHaveLength(13);
     expect(demoStudents().some((s) => s.fullName === "Stale Edited Name")).toBe(false);
     const again = demoStudents().find((s) => s.fullName === "Aziz Rahimov")!;
     expect([again.guardianChatId, again.consentNotify]).toEqual(["777", true]);
@@ -159,7 +159,7 @@ describe("refreshing sample data", () => {
     loadSampleData();
     append(PAYMENTS, [{ id: "P9999", studentId: demoStudents()[0]!.id, paidOn: "2026-11-02", amount: 100, method: "Naqd", note: "", voided: false }]);
     expect(() => resetSampleData()).toThrow(/tozalab bo'lmaydi/);
-    expect(demoStudents()).toHaveLength(11);
+    expect(demoStudents()).toHaveLength(13);
   });
 
   it("charges of the sample are real-looking and flagged", () => {

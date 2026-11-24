@@ -843,6 +843,10 @@ export const GUARDIAN_LINKS: TableDef = {
 
 /** Tables whose rows carry a branch mark: the same decisions as the strict tables of db/migrations/0050 (the catalog). */
 export const BRANCH_MARKED: TableDef[] = [STUDENTS, GROUPS, ENROLLMENTS, ATTENDANCE, CHARGES, PAYMENTS, TEACHERS, PAYROLL, DRAFTS, LEADS, LEAD_LOG, ENTITLEMENTS, INSTALLMENTS, PACKAGES, DOCUMENTS, JOURNAL, SUPPLIER_BILLS, BILL_PAYMENTS, WAITLIST, ROOMS, SCHEDULE_CHANGES, REFERRALS, PROMO_USES, SOURCE_COSTS, DISCOUNTS, DISCOUNT_LINES, REFUNDS, CASH_CLOSES, MARKS, EXAMS, EXAM_RESULTS, REPORTS, CERTIFICATES, EXPENSES, GUARDIAN_REQUESTS, GUARDIAN_LINKS];
+/** Sample rows of the newer tables carry the same Demo mark; `optional` so a workbook set up before this column still reads. */
+const DEMO_OPT: ColDef = { ...DEMO, optional: true };
+export const DEMO_TABLES: TableDef[] = [ENTITLEMENTS, ROOMS, SCHEDULE_CHANGES, REFERRALS, PROMOS, PROMO_USES, SOURCE_COSTS, MARKS, EXAMS, EXAM_RESULTS, REPORTS, CERTIFICATES, CASH_CLOSES, GUARDIAN_REQUESTS, GUARDIAN_LINKS, TEACHER_INVITES, BRANCHES];
+for (const t of DEMO_TABLES) if (!t.cols.some((c) => c.key === "demo")) t.cols.push(DEMO_OPT);
 for (const t of BRANCH_MARKED) if (!t.cols.some((c) => c.key === "branchId")) t.cols.push(BRANCH_COL);
 export const BRANCH_TABLES: TableDef[] = [BRANCHES, STAFF, BRANCH_PRICES, BRANCH_SETTINGS, BRANCH_MOVES];
 
