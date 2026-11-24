@@ -57,6 +57,7 @@ describe("journey: grades, exams, monthly report, certificate", () => {
   });
 
   it("monthly report: draft for one student and for the whole group, approve+send needs the owner's yes and a linked guardian", () => {
+    h.props.set("TELEGRAM_BOT_TOKEN", "123:abc");
     drive(h, "menuMarkSet", "S0001", "G0001", "2026-11-04", "5", "A'lo");
     const one = drive(h, "menuReportMake", "S0001", "G0001", "2026-11");
     expect(one.last).toContain("Qoralama tayyor: R0001");
@@ -75,7 +76,6 @@ describe("journey: grades, exams, monthly report, certificate", () => {
     expect(drive(h, "menuReportSend", "R0002").last).toMatch(/Telegram|ulanmagan|rozilik/i);
     expect(h.fetches).toHaveLength(0);
     // the owner confirms for S0001: one document goes out and the report is final
-    h.props.set("TELEGRAM_BOT_TOKEN", "123:abc");
     const sent = drive(h, "menuReportSend", "R0001");
     expect(sent.last).toContain("vasiyga yuborildi");
     expect(h.fetches.map((f) => f.body._method)).toEqual(["sendDocument"]);
