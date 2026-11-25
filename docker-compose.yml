@@ -16,7 +16,7 @@ services:
       retries: 20
 
   migrate:
-    build: {context: ., dockerfile: backend/Dockerfile}
+    image: nazoratly-backend:latest
     command: ["sh", "-c", "python -m nazoratly.migrate up && python -m nazoratly.migrate roles"]
     environment:
       NAZORATLY_MIGRATE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/nazoratly
@@ -29,7 +29,10 @@ services:
     restart: "no"
 
   api:
+    # One build for the whole backend image: api, migrate, mcp and worker all run it (before, four identical
+    # parallel builds ran on every `up --build`, which cost 4x the CPU/RAM peak and four history entries).
     build: {context: ., dockerfile: backend/Dockerfile}
+    image: nazoratly-backend:latest
     environment:
       NAZORATLY_ENV: ${NAZORATLY_ENV:-dev}
       NAZORATLY_TRUST_PROXY_HEADERS: ${NAZORATLY_TRUST_PROXY_HEADERS:-false}
@@ -57,7 +60,7 @@ services:
     restart: unless-stopped
 
   mcp:
-    build: {context: ., dockerfile: backend/Dockerfile}
+    image: nazoratly-backend:latest
     command: ["python", "-m", "nazoratly.mcp_server"]
     environment:
       NAZORATLY_DATABASE_URL_AGENT: postgresql://nazoratly_agent:${NAZORATLY_AGENT_PASSWORD}@db:5432/nazoratly
@@ -75,7 +78,7 @@ services:
     restart: unless-stopped
 
   worker:
-    build: {context: ., dockerfile: backend/Dockerfile}
+    image: nazoratly-backend:latest
     command: ["python", "-m", "nazoratly.worker"]
     environment:
       NAZORATLY_DATABASE_URL_WORKER: postgresql://nazoratly_worker:${NAZORATLY_WORKER_PASSWORD}@db:5432/nazoratly
