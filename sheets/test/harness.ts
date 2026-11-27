@@ -136,7 +136,9 @@ export interface Harness {
   /** answers for the next ui.alert() calls (default "YES"); use "NO" to decline a confirmation */
   answers: string[];
   fetches: { url: string; body: Record<string, unknown> }[];
-  triggers: { fn: string; everyHours: number }[];
+  triggers: { fn: string; everyHours?: number; everyMinutes?: number }[];
+  /** the document lock (one getUpdates run at a time) */
+  documentLockHeld: boolean;
   telegram: { handler: (method: string, body: Record<string, unknown>) => { status: number; body: unknown } };
   props: Map<string, string>;
   webUrl: string | null;
@@ -166,6 +168,7 @@ export function installHarness(): Harness {
     answers: [],
     fetches: [],
     triggers: [],
+    documentLockHeld: false,
     telegram: { handler: () => ({ status: 200, body: { ok: true, result: {} } }) },
     props: new Map(),
     user: OWNER,
@@ -213,7 +216,13 @@ export function installHarness(): Harness {
     newBlob: (data: string, type: string, name: string) => makeBlob(data, type, name),
   };
   g.Session = { getEffectiveUser: () => ({ getEmail: () => OWNER }), getActiveUser: () => ({ getEmail: () => h.user }) };
-  g.LockService = { getScriptLock: () => ({ tryLock: () => true, releaseLock: () => {} }) };
+  g.LockService = {
+    getScriptLock: () => ({ tryLock: () => true, releaseLock: () => {} }),
+    getDocumentLock: () => ({
+      tryLock: () => { if (h.documentLockHeld) return false; h.documentLockHeld = true; return true; },
+      releaseLock: () => { h.documentLockHeld = false; },
+    }),
+  };
   g.PropertiesService = {
     getUserProperties: () => ({
       getProperty: (k: string) => h.userProps.get(k) ?? null,
@@ -258,7 +267,15 @@ export function installHarness(): Harness {
     deleteTrigger: (t: { id: { fn: string } }) => {
       h.triggers = h.triggers.filter((x) => x !== t.id);
     },
-    newTrigger: (fn: string) => ({ timeBased: () => ({ everyHours: (n: number) => ({ create: () => h.triggers.push({ fn, everyHours: n }) }) }) }),
+    newTrigger: (fn: string) => ({
+      timeBased: () => ({
+        everyHours: (n: number) => ({ create: () => h.triggers.push({ fn, everyHours: n }) }),
+        everyMinutes: (n: number) => {
+          if (![1, 5, 10, 15, 30].includes(n)) throw new Error(`everyMinutes(${n}) is not allowed`);
+          return { create: () => h.triggers.push({ fn, everyMinutes: n }) };
+        },
+      }),
+    }),
   };
   return h;
 }

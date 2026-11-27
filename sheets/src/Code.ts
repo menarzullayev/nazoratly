@@ -17,6 +17,7 @@ import * as money from "./gas/money";
 import * as packages from "./gas/packages";
 import * as payables from "./gas/payables";
 import * as plans from "./gas/plans";
+import * as polling from "./gas/polling";
 import * as reconcile from "./gas/reconcile";
 import * as schedule from "./gas/schedule";
 import * as teacher from "./gas/teacher";
@@ -217,6 +218,11 @@ g.onOpen = (): void => {
         .addItem("Telegram sozlash", "menuSetupTelegram")
         .addItem("Webhook relay sozlamalari", "menuWebhookInfo")
         .addItem("Relay manzilini o'zgartirish", "menuRelayUrl")
+        .addSeparator()
+        .addItem("So'rab turishni yoqish (har 5 daqiqada)", "menuPollFive")
+        .addItem("So'rab turish: har 1 daqiqada", "menuPollOne")
+        .addItem("So'rab turishni o'chirish (webhook)", "menuPollOff")
+        .addItem("So'rab turish holati va kvota", "menuPollStatus")
         .addItem("Vasiylar uchun ulash havolalari", "menuLinkCodes"),
     )
     .addSubMenu(
@@ -398,6 +404,11 @@ g.menuStatementFinalize = reconcile.menu.finalize;
 g.menuPayroll = (): void => actions.guard("Oylik", actions.calculatePayroll);
 g.menuWebhookInfo = (): void => actions.guard("Webhook", actions.showWebhookInfo);
 g.menuRelayUrl = (): void => actions.guard("Relay manzili", actions.changeRelayUrl);
+g.menuPollFive = (): void => actions.guard("So'rab turish", () => actions.enablePolling(5));
+g.menuPollOne = (): void => actions.guard("So'rab turish", () => actions.enablePolling(1));
+g.menuPollOff = (): void => actions.guard("So'rab turish", actions.disablePolling);
+g.menuPollStatus = (): void => actions.guard("So'rab turish", actions.showPollingStatus);
+g.telegramPoll = polling.pollTick; // the getUpdates trigger
 g.menuHelp = (): void => actions.showHelp();
 g.menuSetup = (): void =>
   actions.guard("Sozlash", () => {
