@@ -96,6 +96,10 @@ class Unprocessable(ApiError):
     status_code, code = 422, "unprocessable"
 
 
+class InvalidResetCode(Unprocessable):
+    code = "invalid_reset_code"
+
+
 class BadQrCode(Unprocessable):
     code = "bad_code"
 

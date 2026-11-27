@@ -777,6 +777,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/attendance/qr-codes/issue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Give a QR code to every student who has none (students who left are skipped) */
+        post: operations["issue_all_codes_v1_attendance_qr_codes_issue_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/attendance/scan": {
         parameters: {
             query?: never;
@@ -913,6 +930,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/auth/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set a new password with a one-time reset code
+         * @description The code comes from a link an operator issued (`python -m nazoratly.password_reset`). A wrong, used, expired and
+         *     replaced code all get the same answer. Success signs the account out everywhere and lifts its login lockout.
+         */
+        post: operations["reset_password_v1_auth_reset_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/auth/switch": {
         parameters: {
             query?: never;
@@ -941,6 +979,74 @@ export interface paths {
         put?: never;
         /** Sign in from the Telegram Mini App (verified initData of an account linked through an invitation) */
         post: operations["telegram_miniapp_login_v1_auth_telegram_miniapp_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/web/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Panel: log in (refresh token in a cookie) */
+        post: operations["web_login_v1_auth_web_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/web/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Panel: end the cookie session */
+        post: operations["web_logout_v1_auth_web_logout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/web/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Panel: rotate the cookie session */
+        post: operations["web_refresh_v1_auth_web_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/web/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Panel: create a center and its owner account */
+        post: operations["web_register_v1_auth_web_register_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3487,6 +3593,24 @@ export interface paths {
         get: operations["debtors_v1_reports_debtors_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/reports/debtors/reminders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Draft debt reminders (nothing is stored or sent) and who was left out */
+        get: operations["preview_reminders_v1_reports_debtors_reminders_get"];
+        put?: never;
+        /** Approve reminders: queue them for the guardians (this call IS the person's approval) */
+        post: operations["send_reminders_v1_reports_debtors_reminders_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7815,6 +7939,14 @@ export interface components {
              */
             student_id: string;
         };
+        /** IssueAllOut */
+        IssueAllOut: {
+            /**
+             * Issued
+             * @description how many students got a code now; students who had one keep it
+             */
+            issued: number;
+        };
         /** ItemIn */
         ItemIn: {
             /**
@@ -10418,6 +10550,42 @@ export interface components {
             /** Phone */
             phone?: string | null;
         };
+        /** ReminderDraftOut */
+        ReminderDraftOut: {
+            /**
+             * Guardian Id
+             * Format: uuid
+             */
+            guardian_id: string;
+            /** Guardian Name */
+            guardian_name: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "overdue" | "upcoming";
+            /** Overdue Total */
+            overdue_total: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+            /** Text */
+            text: string;
+        };
+        /** ReminderMessageIn */
+        ReminderMessageIn: {
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Text */
+            text: string;
+        };
         /** ReminderOut */
         ReminderOut: {
             /** Days */
@@ -10444,6 +10612,66 @@ export interface components {
             source: string | null;
             /** Stage */
             stage: string;
+        };
+        /** ReminderPreviewOut */
+        ReminderPreviewOut: {
+            /** Drafts */
+            drafts: components["schemas"]["ReminderDraftOut"][];
+            /** Skipped */
+            skipped: components["schemas"]["ReminderSkipOut"][];
+        };
+        /** ReminderQueuedOut */
+        ReminderQueuedOut: {
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+        };
+        /** ReminderRefusedOut */
+        ReminderRefusedOut: {
+            /**
+             * Reason
+             * @description a skip reason of the preview, or `not_due` when nothing calls for a reminder
+             */
+            reason: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+        };
+        /** ReminderSendIn */
+        ReminderSendIn: {
+            /** Messages */
+            messages: components["schemas"]["ReminderMessageIn"][];
+        };
+        /** ReminderSendOut */
+        ReminderSendOut: {
+            /** Queued */
+            queued: components["schemas"]["ReminderQueuedOut"][];
+            /** Refused */
+            refused: components["schemas"]["ReminderRefusedOut"][];
+        };
+        /** ReminderSkipOut */
+        ReminderSkipOut: {
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "no_consent" | "no_chat" | "cooldown" | "below_threshold" | "student_inactive" | "already_overdue";
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
         };
         /** ReportDetail */
         ReportDetail: {
@@ -10596,6 +10824,13 @@ export interface components {
             student_id: string;
             /** Student Name */
             student_name: string;
+        };
+        /** ResetIn */
+        ResetIn: {
+            /** Code */
+            code: string;
+            /** New Password */
+            new_password: string;
         };
         /** ResultRecord */
         ResultRecord: {
@@ -11069,6 +11304,11 @@ export interface components {
              */
             family_discount_3rd_percent: string;
             /**
+             * Installment Remind Days
+             * @description draft a reminder this many days before an installment is due (0 = off)
+             */
+            installment_remind_days: number;
+            /**
              * Lead Reminder Days
              * @description quiet days after which an open lead shows in the internal reminder list
              */
@@ -11081,6 +11321,21 @@ export interface components {
             package_expiry_days: number;
             /** Package Low Lessons */
             package_low_lessons: number;
+            /**
+             * Reminder Cooldown Days
+             * @description no second debt reminder draft for a student within these days
+             */
+            reminder_cooldown_days: number;
+            /**
+             * Reminder Min Overdue
+             * @description no debt reminder draft below this overdue amount, whole so'm
+             */
+            reminder_min_overdue: number;
+            /**
+             * Reminder Template
+             * @description own text of the debt reminder ({guardian} {student} {amount} {days} {center}); null = standard
+             */
+            reminder_template: string | null;
             /**
              * Requisites
              * @description the center's own requisites, printed on receipts and invoices
@@ -11105,6 +11360,8 @@ export interface components {
             family_discount_2nd_percent?: number | string | null;
             /** Family Discount 3Rd Percent */
             family_discount_3rd_percent?: number | string | null;
+            /** Installment Remind Days */
+            installment_remind_days?: number | null;
             /** Lead Reminder Days */
             lead_reminder_days?: number | null;
             /** Makeup Expiry Days */
@@ -11115,6 +11372,15 @@ export interface components {
             package_expiry_days?: number | null;
             /** Package Low Lessons */
             package_low_lessons?: number | null;
+            /** Reminder Cooldown Days */
+            reminder_cooldown_days?: number | null;
+            /** Reminder Min Overdue */
+            reminder_min_overdue?: number | null;
+            /**
+             * Reminder Template
+             * @description empty string = back to the standard text
+             */
+            reminder_template?: string | null;
             /**
              * Requisites
              * @description empty string clears it
@@ -12130,6 +12396,41 @@ export interface components {
             /** Student Name */
             student_name: string;
         };
+        /** WebRefreshIn */
+        WebRefreshIn: {
+            /** Org Id */
+            org_id?: string | null;
+        };
+        /** WebSessionOut */
+        WebSessionOut: {
+            /** Access Token */
+            access_token: string;
+            /** Expires In */
+            expires_in: number;
+            org: components["schemas"]["OrgRef"] | null;
+            /** Organizations */
+            organizations: components["schemas"]["OrgRef"][];
+            /**
+             * Token Type
+             * @default bearer
+             */
+            token_type: string;
+            user: components["schemas"]["WebUser"];
+        };
+        /** WebUser */
+        WebUser: {
+            /** Email */
+            email: string | null;
+            /** Full Name */
+            full_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Phone */
+            phone: string | null;
+        };
         /** WeeklySlot */
         WeeklySlot: {
             /**
@@ -12175,6 +12476,11 @@ export interface components {
         };
         /** MeOut */
         nazoratly__routers__auth__MeOut: {
+            /**
+             * Branch Id
+             * @description the branch this staff member is restricted to; null = all branches (or no center selected)
+             */
+            branch_id: string | null;
             /** Email */
             email: string | null;
             /** Full Name */
@@ -12187,6 +12493,11 @@ export interface components {
             org: components["schemas"]["OrgRef"] | null;
             /** Organizations */
             organizations: components["schemas"]["OrgRef"][];
+            /**
+             * Permissions
+             * @description what the role may do in the selected center (empty without one); the server enforces it anyway
+             */
+            permissions: string[];
             /** Phone */
             phone: string | null;
         };
@@ -14402,6 +14713,26 @@ export interface operations {
             };
         };
     };
+    issue_all_codes_v1_attendance_qr_codes_issue_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueAllOut"];
+                };
+            };
+        };
+    };
     scan_v1_attendance_scan_post: {
         parameters: {
             query?: never;
@@ -14670,6 +15001,39 @@ export interface operations {
             };
         };
     };
+    reset_password_v1_auth_reset_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResetIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     switch_org_v1_auth_switch_post: {
         parameters: {
             query?: never;
@@ -14723,6 +15087,125 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["nazoratly__routers__auth__TokenOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    web_login_v1_auth_web_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebSessionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    web_logout_v1_auth_web_logout_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+        };
+    };
+    web_refresh_v1_auth_web_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebRefreshIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebSessionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    web_register_v1_auth_web_register_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebSessionOut"];
                 };
             };
             /** @description Validation Error */
@@ -20887,6 +21370,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DebtorRow"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_reminders_v1_reports_debtors_reminders_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReminderPreviewOut"];
+                };
+            };
+        };
+    };
+    send_reminders_v1_reports_debtors_reminders_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReminderSendIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReminderSendOut"];
                 };
             };
             /** @description Validation Error */

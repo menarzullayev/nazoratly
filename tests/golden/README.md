@@ -1,5 +1,7 @@
 # Golden cases
 
+`reminders.json`: debt reminder drafts (who gets one, who is skipped and why, and the exact texts).
+
 JSON files here are read by BOTH implementations of the business rules:
 
 - Python: `backend/tests/test_golden_*.py` (rules in `backend/src/nazoratly/rules/`)

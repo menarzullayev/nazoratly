@@ -20,12 +20,13 @@ from nazoratly.routers.auth import (
     _MEMBERSHIPS_SQL,
     OrgRef,
     Password,
+    SignedIn,
     TokenOut,
     _issue_refresh,
-    _org_ref,
     _pick_org,
     _token_response,
     locked_rows,
+    org_ref,
 )
 from nazoratly.schemas import Model, Phone
 from nazoratly.security import hash_password
@@ -98,7 +99,7 @@ async def accept_teacher_invite(body: AcceptInviteIn, request: Request, db: DB, 
             async with conn.transaction():
                 user = await fetch_one(
                     conn,
-                    "INSERT INTO users (email, phone, full_name, password_hash) VALUES (%s, %s, %s, %s) RETURNING id, public_id",
+                    "INSERT INTO users (email, phone, full_name, password_hash) VALUES (%s, %s, %s, %s) RETURNING id, public_id, full_name, email, phone",
                     (
                         str(body.email).lower() if body.email else None,
                         body.phone,
@@ -123,7 +124,7 @@ async def accept_teacher_invite(body: AcceptInviteIn, request: Request, db: DB, 
         )
         rows = await fetch_all(conn, _MEMBERSHIPS_SQL, (user["id"],))
     org_public = next(r["id"] for r in rows if r["org_internal_id"] == peek["out_org_id"])
-    return _token_response(settings, user, rows, _pick_org(rows, org_public), refresh)
+    return _token_response(settings, SignedIn(user, rows, _pick_org(rows, org_public), refresh))
 
 
 class AcceptExistingIn(Model):
@@ -149,7 +150,7 @@ async def accept_teacher_invite_existing(
             raise invite_error(exc.diag.message_primary or "") from exc
         assert got is not None
         rows = await fetch_all(conn, _MEMBERSHIPS_SQL, (user.user_id,))
-    return _org_ref(next(r for r in rows if r["org_internal_id"] == got["out_org_id"]))
+    return org_ref(next(r for r in rows if r["org_internal_id"] == got["out_org_id"]))
 
 
 class MiniAppLoginIn(Model):
@@ -173,7 +174,9 @@ async def telegram_miniapp_login(body: MiniAppLoginIn, request: Request, db: DB,
         raise Unauthorized("Invalid Telegram data") from None
     async with db.auth_tx(Session(None, None, request_id_of(request))) as conn:
         user = await fetch_one(
-            conn, "SELECT id, public_id, status FROM users WHERE telegram_user_id = %s", (tg.id,)
+            conn,
+            "SELECT id, public_id, status, full_name, email, phone FROM users WHERE telegram_user_id = %s",
+            (tg.id,),
         )
         if user is None or user["status"] != "active":
             raise Forbidden(
@@ -194,4 +197,4 @@ async def telegram_miniapp_login(body: MiniAppLoginIn, request: Request, db: DB,
         refresh = await _issue_refresh(
             conn, settings, user["id"], uuid.uuid4(), request.headers.get("user-agent"), lock
         )
-    return _token_response(settings, user, rows, org, refresh, lock)
+    return _token_response(settings, SignedIn(user, rows, org, refresh, lock))

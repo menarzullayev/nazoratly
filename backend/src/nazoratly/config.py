@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 from typing import Literal
+from urllib.parse import urlsplit
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -109,6 +110,22 @@ class Settings(BaseSettings):
             except ValueError as e:
                 raise ValueError("NAZORATLY_SECRETS_KEY must be a urlsafe-base64 32-byte Fernet key") from e
         return v
+
+    @property
+    def panel_origin(self) -> str | None:
+        """The origin the staff panel is served from (the origin of `public_base_url`), as a browser writes it in the
+        `Origin` header. None = the panel's cookie-session routes are closed and no reset link can be issued."""
+        if self.public_base_url is None:
+            return None
+        parts = urlsplit(self.public_base_url.strip())
+        scheme, host = parts.scheme.lower(), (parts.hostname or "").lower()
+        local = host in ("localhost", "127.0.0.1", "::1")
+        if not host or not (scheme == "https" or (scheme == "http" and local)):
+            return None
+        netloc = f"[{host}]" if ":" in host else host
+        if parts.port is not None and parts.port != (443 if scheme == "https" else 80):
+            netloc = f"{netloc}:{parts.port}"
+        return f"{scheme}://{netloc}"
 
     @model_validator(mode="after")
     def _rules(self) -> Settings:

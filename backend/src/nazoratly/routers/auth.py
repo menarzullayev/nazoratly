@@ -4,18 +4,21 @@ from __future__ import annotations
 
 import re
 import uuid
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Request
+import structlog
+from fastapi import APIRouter, Depends, Request, Response
 from psycopg.errors import UniqueViolation
 from pydantic import EmailStr, Field, StringConstraints, model_validator
 
 from nazoratly.config import Settings
 from nazoratly.db import Conn, Database, Session, execute, fetch_all, fetch_one
 from nazoratly.deps import DB, AuthUser, Cfg, current_user, request_id_of
-from nazoratly.errors import Conflict, Forbidden, TooManyRequests, Unauthorized
+from nazoratly.errors import ApiError, Conflict, Forbidden, InvalidResetCode, TooManyRequests, Unauthorized
 from nazoratly.middleware import request_ip
+from nazoratly.permissions import permissions_for
 from nazoratly.schemas import Message, Model, Out, Phone
 from nazoratly.security import (
     hash_password,
@@ -25,8 +28,10 @@ from nazoratly.security import (
     sha256,
     verify_password,
 )
+from nazoratly.web_cookie import clear_session_cookie
 
 router = APIRouter(prefix="/v1", tags=["auth"])
+log = structlog.get_logger()
 
 Password = Annotated[str, StringConstraints(min_length=10, max_length=128)]
 _PHONE_LIKE = re.compile(r"^\+[1-9][0-9]{7,14}$")
@@ -106,6 +111,17 @@ class MeOut(Out):
     phone: str | None
     org: OrgRef | None
     organizations: list[OrgRef]
+    permissions: list[str] = Field(
+        description="what the role may do in the selected center (empty without one); the server enforces it anyway"
+    )
+    branch_id: uuid.UUID | None = Field(
+        description="the branch this staff member is restricted to; null = all branches (or no center selected)"
+    )
+
+
+class ResetIn(Model):
+    code: Annotated[str, StringConstraints(min_length=20, max_length=200)]
+    new_password: Password
 
 
 _MEMBERSHIPS_SQL = (
@@ -117,7 +133,7 @@ _MEMBERSHIPS_SQL = (
 )
 
 
-def _org_ref(row: dict[str, Any]) -> OrgRef:
+def org_ref(row: dict[str, Any]) -> OrgRef:
     return OrgRef(
         id=row["id"], name=row["name"], role=row["role"], membership_status=row["membership_status"]
     )
@@ -163,28 +179,45 @@ def _pick_org(rows: list[dict[str, Any]], wanted: uuid.UUID | None) -> dict[str,
     return active[0] if len(active) == 1 else None
 
 
-def _token_response(
-    settings: Settings,
-    user: dict[str, Any],
-    rows: list[dict[str, Any]],
-    org: dict[str, Any] | None,
-    refresh: str,
-    org_lock: int | None = None,
-) -> TokenOut:
-    access, ttl = issue_access_token(
-        settings,
-        user_id=user["id"],
-        user_public_id=user["public_id"],
-        org_id=org["org_internal_id"] if org else None,
-        org_lock=org_lock,
-    )
+@dataclass(frozen=True)
+class SignedIn:
+    """What a successful sign-in produced; the JSON routes and the panel's cookie routes render it differently."""
+
+    user: dict[str, Any]  # id, public_id, full_name, email, phone
+    rows: list[dict[str, Any]]
+    org: dict[str, Any] | None
+    refresh: str
+    org_lock: int | None = None
+
+    def access_token(self, settings: Settings) -> tuple[str, int]:
+        return issue_access_token(
+            settings,
+            user_id=self.user["id"],
+            user_public_id=self.user["public_id"],
+            org_id=self.org["org_internal_id"] if self.org else None,
+            org_lock=self.org_lock,
+        )
+
+
+def _token_response(settings: Settings, signed: SignedIn) -> TokenOut:
+    access, ttl = signed.access_token(settings)
     return TokenOut(
         access_token=access,
         expires_in=ttl,
-        refresh_token=refresh,
-        org=_org_ref(org) if org else None,
-        organizations=[_org_ref(r) for r in rows],
+        refresh_token=signed.refresh,
+        org=org_ref(signed.org) if signed.org else None,
+        organizations=[org_ref(r) for r in signed.rows],
     )
+
+
+async def revoke_family_of(db: Database, token: str) -> None:
+    async with db.auth_tx() as conn:
+        await execute(
+            conn,
+            "UPDATE refresh_tokens SET revoked_at = now() WHERE revoked_at IS NULL AND family_id = "
+            "(SELECT family_id FROM refresh_tokens WHERE token_hash = %s)",
+            (sha256(token),),
+        )
 
 
 @router.post(
@@ -194,6 +227,10 @@ def _token_response(
     summary="Create a center and its owner account",
 )
 async def register(body: RegisterIn, request: Request, db: DB, settings: Cfg) -> TokenOut:
+    return _token_response(settings, await register_account(body, request, db, settings))
+
+
+async def register_account(body: RegisterIn, request: Request, db: Database, settings: Settings) -> SignedIn:
     pw_hash = await hash_password(body.password)
     rid = request_id_of(request)
     async with db.auth_tx(Session(None, None, rid)) as conn:
@@ -204,7 +241,7 @@ async def register(body: RegisterIn, request: Request, db: DB, settings: Cfg) ->
                 user = await fetch_one(
                     conn,
                     "INSERT INTO users (email, phone, full_name, password_hash) VALUES (%s, %s, %s, %s) "
-                    "RETURNING id, public_id",
+                    "RETURNING id, public_id, full_name, email, phone",
                     (str(body.email).lower() if body.email else None, body.phone, body.full_name, pw_hash),
                 )
         except Exception as exc:
@@ -226,7 +263,7 @@ async def register(body: RegisterIn, request: Request, db: DB, settings: Cfg) ->
             conn, settings, user["id"], uuid.uuid4(), request.headers.get("user-agent")
         )
         rows = await fetch_all(conn, _MEMBERSHIPS_SQL, (user["id"],))
-    return _token_response(settings, user, rows, _pick_org(rows, org["public_id"]), refresh)
+    return SignedIn(user, rows, _pick_org(rows, org["public_id"]), refresh)
 
 
 def _identifier_columns(identifier: str) -> tuple[str, str]:
@@ -240,11 +277,16 @@ def _identifier_columns(identifier: str) -> tuple[str, str]:
 
 @router.post("/auth/login", response_model=TokenOut, summary="Log in with email/phone and password")
 async def login(body: LoginIn, request: Request, db: DB, settings: Cfg) -> TokenOut:
+    return _token_response(settings, await password_sign_in(body, request, db, settings))
+
+
+async def password_sign_in(body: LoginIn, request: Request, db: Database, settings: Settings) -> SignedIn:
+    """Password check with the shared failure counter and lockout: the one way a password opens a session."""
     column, ident = _identifier_columns(body.identifier)
     ip = request_ip(request, settings)
     rid = request_id_of(request)
     failure: Unauthorized | TooManyRequests | None = None
-    result: TokenOut | None = None
+    result: SignedIn | None = None
     async with db.auth_tx(Session(None, None, rid)) as conn:
         await execute(conn, "DELETE FROM login_attempts WHERE created_at < now() - interval '2 days'")
         failures = await fetch_one(
@@ -263,7 +305,7 @@ async def login(body: LoginIn, request: Request, db: DB, settings: Cfg) -> Token
         else:
             user = await fetch_one(
                 conn,
-                f"SELECT id, public_id, password_hash, status, full_name FROM users WHERE {column} = %s",
+                f"SELECT id, public_id, password_hash, status, full_name, email, phone FROM users WHERE {column} = %s",
                 (ident,),
             )
             ok = await verify_password(user["password_hash"] if user else None, body.password)
@@ -297,7 +339,7 @@ async def login(body: LoginIn, request: Request, db: DB, settings: Cfg) -> Token
                     refresh = await _issue_refresh(
                         conn, settings, user["id"], uuid.uuid4(), request.headers.get("user-agent")
                     )
-                    result = _token_response(settings, user, rows, org, refresh)
+                    result = SignedIn(user, rows, org, refresh)
     if failure is not None:  # raised after the transaction committed so the failed attempt is recorded
         raise failure
     assert result is not None
@@ -306,19 +348,31 @@ async def login(body: LoginIn, request: Request, db: DB, settings: Cfg) -> Token
 
 @router.post("/auth/refresh", response_model=TokenOut, summary="Rotate a refresh token")
 async def refresh_token(body: RefreshIn, request: Request, db: DB, settings: Cfg) -> TokenOut:
+    signed = await rotate_session(body.refresh_token, body.org_id, request, db, settings)
+    return _token_response(settings, signed)
+
+
+class SessionOver(Unauthorized):
+    """The presented refresh token can never work again (unknown, revoked, expired, reused, account disabled). A plain
+    `Unauthorized` from `rotate_session` means only the requested center was refused and the token is still good."""
+
+
+async def rotate_session(
+    token: str, org_id: uuid.UUID | None, request: Request, db: Database, settings: Settings
+) -> SignedIn:
     failure: Unauthorized | None = None
-    result: TokenOut | None = None
+    result: SignedIn | None = None
     rid = request_id_of(request)
     async with db.auth_tx(Session(None, None, rid)) as conn:
         tok = await fetch_one(
             conn,
             "SELECT id, user_id, family_id, used_at, revoked_at, expires_at, org_lock FROM refresh_tokens "
             "WHERE token_hash = %s FOR UPDATE",
-            (sha256(body.refresh_token),),
+            (sha256(token),),
         )
         now = datetime.now(UTC)
         if tok is None or tok["revoked_at"] is not None or tok["expires_at"] <= now:
-            failure = Unauthorized("Invalid refresh token")
+            failure = SessionOver("Invalid refresh token")
         elif tok["used_at"] is not None:
             # a rotated token was presented again: assume theft and kill the whole session family
             await execute(
@@ -326,13 +380,15 @@ async def refresh_token(body: RefreshIn, request: Request, db: DB, settings: Cfg
                 "UPDATE refresh_tokens SET revoked_at = now() WHERE family_id = %s AND revoked_at IS NULL",
                 (tok["family_id"],),
             )
-            failure = Unauthorized("Refresh token reuse detected; please log in again")
+            failure = SessionOver("Refresh token reuse detected; please log in again")
         else:
             user = await fetch_one(
-                conn, "SELECT id, public_id, status FROM users WHERE id = %s", (tok["user_id"],)
+                conn,
+                "SELECT id, public_id, status, full_name, email, phone FROM users WHERE id = %s",
+                (tok["user_id"],),
             )
             if user is None or user["status"] != "active":
-                failure = Unauthorized("Account is not active")
+                failure = SessionOver("Account is not active")
             else:
                 await conn.execute("SELECT set_config('app.user_id', %s, true)", (str(user["id"]),))
                 rows = await fetch_all(conn, _MEMBERSHIPS_SQL, (user["id"],))
@@ -340,7 +396,7 @@ async def refresh_token(body: RefreshIn, request: Request, db: DB, settings: Cfg
                 if lock is not None:
                     rows = locked_rows(rows, lock)
                 try:
-                    org = _pick_org(rows, body.org_id)
+                    org = _pick_org(rows, org_id)
                     if lock is not None and org is None:
                         raise Forbidden("You no longer teach in that center")
                 except Forbidden as exc:
@@ -352,7 +408,7 @@ async def refresh_token(body: RefreshIn, request: Request, db: DB, settings: Cfg
                     new = await _issue_refresh(
                         conn, settings, user["id"], tok["family_id"], request.headers.get("user-agent"), lock
                     )
-                    result = _token_response(settings, user, rows, org, new, lock)
+                    result = SignedIn(user, rows, org, new, lock)
     if failure is not None:
         raise failure
     assert result is not None
@@ -361,13 +417,7 @@ async def refresh_token(body: RefreshIn, request: Request, db: DB, settings: Cfg
 
 @router.post("/auth/logout", response_model=Message, summary="Revoke the session of a refresh token")
 async def logout(body: LogoutIn, db: DB) -> Message:
-    async with db.auth_tx() as conn:
-        await execute(
-            conn,
-            "UPDATE refresh_tokens SET revoked_at = now() WHERE revoked_at IS NULL AND family_id = "
-            "(SELECT family_id FROM refresh_tokens WHERE token_hash = %s)",
-            (sha256(body.refresh_token),),
-        )
+    await revoke_family_of(db, body.refresh_token)
     return Message(message="logged out")
 
 
@@ -389,12 +439,15 @@ async def switch_org(
     access, ttl = issue_access_token(
         settings, user_id=user.user_id, user_public_id=user.user_public_id, org_id=org["org_internal_id"]
     )
-    return AccessOut(access_token=access, expires_in=ttl, org=_org_ref(org))
+    return AccessOut(access_token=access, expires_in=ttl, org=org_ref(org))
 
 
 @router.post("/auth/password", response_model=Message, summary="Change password and sign out everywhere")
 async def change_password(
-    body: PasswordChangeIn, user: Annotated[AuthUser, Depends(current_user)], db: DB
+    body: PasswordChangeIn,
+    response: Response,
+    user: Annotated[AuthUser, Depends(current_user)],
+    db: DB,
 ) -> Message:
     user.require_unlocked()
     new_hash = await hash_password(body.new_password)
@@ -411,6 +464,7 @@ async def change_password(
             )
     if not ok:
         raise Unauthorized("Current password is incorrect")
+    clear_session_cookie(response)  # a panel in this browser must sign in again
     return Message(message="password changed; all sessions were signed out")
 
 
@@ -425,14 +479,96 @@ async def me(user: Annotated[AuthUser, Depends(current_user)], db: DB) -> MeOut:
     if user.org_lock is not None:
         rows = locked_rows(rows, user.org_lock)
     current = next((r for r in rows if r["org_internal_id"] == user.org_id), None)
+    permissions: list[str] = []
+    branch: uuid.UUID | None = None
+    if current is not None and current["membership_status"] == "active":
+        permissions = sorted(permissions_for(current["role"]))
+        async with db.tx(Session(user.user_id, user.org_id, user.request_id)) as conn:
+            m = await fetch_one(
+                conn,
+                "SELECT b.public_id AS branch_id FROM memberships m LEFT JOIN branches b "
+                "ON b.org_id = m.org_id AND b.id = m.branch_id WHERE m.user_id = %s",
+                (user.user_id,),
+            )
+        branch = None if m is None else m["branch_id"]
     return MeOut(
         id=u["public_id"],
         full_name=u["full_name"],
         email=u["email"] if user.org_lock is None else None,
         phone=u["phone"] if user.org_lock is None else None,
-        org=_org_ref(current) if current else None,
-        organizations=[_org_ref(r) for r in rows],
+        org=org_ref(current) if current else None,
+        organizations=[org_ref(r) for r in rows],
+        permissions=permissions,
+        branch_id=branch,
     )
+
+
+_RESET_REFUSED = "This reset link is not valid. Ask for a new one."
+RESET_MAX_FAILURES = 10  # per client address inside the login lockout window
+
+
+@router.post("/auth/reset", response_model=Message, summary="Set a new password with a one-time reset code")
+async def reset_password(body: ResetIn, request: Request, db: DB, settings: Cfg) -> Message:
+    """The code comes from a link an operator issued (`python -m nazoratly.password_reset`). A wrong, used, expired and
+    replaced code all get the same answer. Success signs the account out everywhere and lifts its login lockout."""
+    new_hash = await hash_password(body.new_password)  # before the lookup: every request costs the same
+    ip = request_ip(request, settings)
+    attempts = f"reset:{ip}"
+    failure: ApiError | None = None
+    done: dict[str, Any] | None = None
+    async with db.auth_tx(Session(None, None, request_id_of(request))) as conn:
+        failed = await fetch_one(
+            conn,
+            "SELECT count(*) AS n FROM login_attempts WHERE identifier = %s AND NOT succeeded "
+            "AND created_at > now() - make_interval(secs => %s)",
+            (attempts, settings.login_lockout_window_s),
+        )
+        assert failed is not None
+        if failed["n"] >= RESET_MAX_FAILURES:
+            failure = TooManyRequests(
+                "Too many failed attempts, try again later",
+                headers={"Retry-After": str(settings.login_lockout_window_s)},
+            )
+        else:
+            code = await fetch_one(
+                conn,
+                "SELECT c.id, c.user_id, u.email, u.phone FROM password_reset_codes c "
+                "JOIN users u ON u.id = c.user_id WHERE c.code_hash = %s AND c.used_at IS NULL "
+                "AND c.revoked_at IS NULL AND c.expires_at > now() AND u.status = 'active' FOR UPDATE OF c",
+                (sha256(body.code),),
+            )
+            if code is None:
+                await execute(
+                    conn,
+                    "INSERT INTO login_attempts (identifier, ip, succeeded) VALUES (%s, %s, false)",
+                    (attempts, ip),
+                )
+                failure = InvalidResetCode(_RESET_REFUSED)
+            else:
+                await execute(
+                    conn, "UPDATE password_reset_codes SET used_at = now() WHERE id = %s", (code["id"],)
+                )
+                await execute(
+                    conn, "UPDATE users SET password_hash = %s WHERE id = %s", (new_hash, code["user_id"])
+                )
+                await execute(
+                    conn,
+                    "UPDATE refresh_tokens SET revoked_at = now() WHERE user_id = %s AND revoked_at IS NULL",
+                    (code["user_id"],),
+                )
+                for identifier in (code["email"], code["phone"]):
+                    if identifier:  # a success row ends the lockout: only later failures are counted
+                        await execute(
+                            conn,
+                            "INSERT INTO login_attempts (identifier, ip, succeeded) VALUES (%s, %s, true)",
+                            (str(identifier).lower(), ip),
+                        )
+                done = code
+    if failure is not None:  # raised after the commit so the failed attempt is recorded
+        raise failure
+    assert done is not None
+    log.info("password_reset_used", reset_id=done["id"], user_id=done["user_id"])
+    return Message(message="password changed; all sessions were signed out")
 
 
 @router.post(
@@ -453,7 +589,7 @@ async def accept_invitation(
             (user.user_id, target["org_internal_id"]),
         )
         target["membership_status"] = "active"
-    return _org_ref(target)
+    return org_ref(target)
 
 
 _ = Database  # re-export for type checkers

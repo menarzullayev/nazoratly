@@ -10,6 +10,7 @@ from nazoratly.routers import (
     agents,
     ai,
     auth,
+    auth_web,
     branches,
     cabinet,
     cashclose,
@@ -36,6 +37,7 @@ from nazoratly.routers import (
     qr,
     reconciliation,
     refunds,
+    reminders,
     results,
     schedule,
     settings,
@@ -49,6 +51,7 @@ from nazoratly.routers import (
 
 router = APIRouter()
 router.include_router(auth.router)
+router.include_router(auth_web.router)
 router.include_router(org.router)
 router.include_router(branches.router)
 router.include_router(students.router)
@@ -68,6 +71,7 @@ router.include_router(
 router.include_router(lessons.router)
 router.include_router(schedule.router)
 router.include_router(finance.router)
+router.include_router(reminders.router)
 router.include_router(discounts.router)
 router.include_router(refunds.router)
 router.include_router(cashclose.router)
