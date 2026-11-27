@@ -1,6 +1,6 @@
 # Tayyorlik holati va server–Sheets tengligi
 
-Audit sanasi: 2026-11-27, commit `842801a`. Xulosa: **hali production-ready emas.**
+Audit sanasi: 2026-11-27, commit `842801a` (20-21-qatorlar Telegram botlar o'zgarishida yangilandi; quyidagi test sonlari audit paytidagi). Xulosa: **hali production-ready emas.**
 
 ## "Tayyor" mezoni (egasi tasdiqlagan, 2026-11-27)
 
@@ -65,8 +65,8 @@ Belgilar: **Bor** = kodda API yoki menyu mavjud. Bu ikkala tomonda xatti-harakat
 | 17 | Boshqaruv paneli va hisobotlar | Bor | Bor | |
 | 18 | Import | Bor | Bor | |
 | 19 | Demo ma'lumot | Bor | Bor | |
-| 20 | Ustoz ilovasi | Bor (bot, Mini App) | Qisman | Taklif va eslatma bor, Mini App yo'q |
-| 21 | Vasiy kabineti | Qisman | Qisman | Serverda portal bor, lekin compose sozlamalari bot uchun kerakli o'zgaruvchilarni uzatmaydi. Sheets'da faqat xodim tasdiqlaydigan so'rovlar |
+| 20 | Ustoz ilovasi | Bor (bot, Mini App) | Qisman | Taklif va eslatma bor, Mini App yo'q. Serverda ustoz va vasiy bitta botda rol/markaz menyusi bilan; Sheets bot relay yoki so'rab turish (`getUpdates`) bilan. Ikkalasi ham haqiqiy Telegram/Google'da sinalmagan |
+| 21 | Vasiy kabineti | Qisman | Qisman | Serverda bot, Mini App va portal bor; compose kerakli o'zgaruvchilarni uzatadi, markaz o'z botini ulashi mumkin (token yoki Managed Bots, sozlama ekrani yo'q, faqat API). Jonli tizimga chiqarilmagan va haqiqiy Telegram'da sinalmagan. Sheets'da faqat xodim tasdiqlaydigan so'rovlar |
 | 22 | AI yordamchi | Qisman | Qisman | Serverda tashqi AI jarayoni jonli tizimda sozlanmagan. Sheets'da faqat qoidaga asoslangan hisobotlar, AI modeli yo'q |
 | 23 | AI-agent kirishi (MCP) | Bor | Yo'q | |
 | 24 | Xodim hisoblari, rol va ruxsat | Bor | Qisman | Google ulashish va ayrim varaq/ustun himoyasi |
