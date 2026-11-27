@@ -52,7 +52,7 @@ const NEEDS: Record<string, Record<string, string[]>> = {
   ScriptApp: { getService: [], getProjectTriggers: [SC.trigger], newTrigger: [SC.trigger], deleteTrigger: [SC.trigger] },
   Session: { getActiveUser: [SC.email], getEffectiveUser: [SC.email] },
   HtmlService: { createHtmlOutputFromFile: [] },
-  LockService: { getScriptLock: [] },
+  LockService: { getScriptLock: [], getDocumentLock: [] },
   PropertiesService: { getUserProperties: [], getScriptProperties: [] },
   Utilities: { getUuid: [], formatDate: [], newBlob: [], sleep: [] },
   ContentService: { createTextOutput: [] },

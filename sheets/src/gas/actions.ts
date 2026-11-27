@@ -18,6 +18,9 @@ import { makeupDays, markCreditsUsed, reduceByCredits, syncAttendance } from "./
 import { pickWebAppUrl, isWebAppUrl } from "../domain/urls";
 import { getToken, props, sendMessage, sendRich, setToken, tg, webhookSecret } from "./telegram";
 import { tryPostPayments } from "./ledger";
+import { pollMinutes, pollingStatus, startPolling, stopPolling } from "./polling";
+import { pollingEnabled } from "./pollingMode";
+import type { PollMinutes } from "../domain/polling";
 
 type StudentRow = Student & { phone?: string; consentDate?: string; consentPolicy?: string; linkCode?: string; linkUrl?: string };
 
@@ -413,6 +416,48 @@ export function setupTelegram(): void {
   finishTelegramSetup();
 }
 
+/** Point Telegram at the relay, else straight at the web app; returns what to tell the owner. */
+function setBotWebhook(relay: string, url: string, dropPending: boolean): string {
+  const common = { allowed_updates: ["message", "callback_query"], drop_pending_updates: dropPending };
+  if (relay) {
+    const w = tg("setWebhook", { url: relay, secret_token: webhookSecret(), ...common });
+    return w.ok ? `Vasiylarni ulash (webhook relay orqali) yoqildi: ${relay}` : `Webhook xatosi: ${w.description}`;
+  }
+  if (url) {
+    const w = tg("setWebhook", { url: `${url}?s=${webhookSecret()}`, ...common });
+    return w.ok ? "Vasiylarni ulash (webhook) yoqildi." : `Webhook xatosi: ${w.description}`;
+  }
+  return "Vasiylarni botga ulash uchun skriptni Web App sifatida joylang (Deploy > New deployment > Web app, 'Anyone'), so'ng bu amalni qayta bajaring.";
+}
+
+export function enablePolling(minutes: PollMinutes): void {
+  if (minutes === 1) {
+    const ok = ui().alert(
+      "So'rab turish: har 1 daqiqada",
+      "Har daqiqada so'rash Google'ning kunlik trigger vaqtini tez sarflaydi (gmail.com akkauntida kuniga 90 daqiqa, Workspace'da 6 soat). Chegara tugasa bot ertagacha javob bermaydi. Sarf o'lchanadi va ogohlantirish 'Sozlamalar'dagi egasining Telegram chatiga yuboriladi. Davom etamizmi?",
+      ui().ButtonSet.YES_NO,
+    );
+    if (ok !== ui().Button.YES) return;
+  }
+  startPolling(minutes);
+  ui().alert("So'rab turish", `Yoqildi: har ${minutes} daqiqada. Webhook o'chirildi. Botning javobi shu oraliqqacha kechikishi mumkin.`, ui().ButtonSet.OK);
+}
+
+export function disablePolling(): void {
+  if (!pollingEnabled()) {
+    ui().alert("So'rab turish", "So'rab turish rejimi yoqilmagan edi.", ui().ButtonSet.OK);
+    return;
+  }
+  stopPolling();
+  const url = pickWebAppUrl(props().getProperty("WEBAPP_URL"), ScriptApp.getService().getUrl());
+  const hook = setBotWebhook(props().getProperty("RELAY_URL") ?? "", url, false); // waiting messages are kept
+  ui().alert("So'rab turish", `O'chirildi. ${hook}`, ui().ButtonSet.OK);
+}
+
+export const showPollingStatus = (): void => {
+  ui().alert("So'rab turish holati", pollingStatus(), ui().ButtonSet.OK);
+};
+
 function finishTelegramSetup(): void {
   const me = tg("getMe");
   if (!me.ok) throw new Error(`Bot bilan bog'lanib bo'lmadi: ${me.description}`);
@@ -434,14 +479,10 @@ function finishTelegramSetup(): void {
       props().setProperty("RELAY_URL", v);
     }
   }
-  if (relay) {
-    const w = tg("setWebhook", { url: relay, secret_token: webhookSecret(), allowed_updates: ["message", "callback_query"], drop_pending_updates: true });
-    hook = w.ok ? `Vasiylarni ulash (webhook relay orqali) yoqildi: ${relay}` : `Webhook xatosi: ${w.description}`;
-  } else if (url) {
-    const w = tg("setWebhook", { url: `${url}?s=${webhookSecret()}`, allowed_updates: ["message", "callback_query"], drop_pending_updates: true });
-    hook = w.ok ? "Vasiylarni ulash (webhook) yoqildi." : `Webhook xatosi: ${w.description}`;
+  if (pollingEnabled()) {
+    hook = `So'rab turish rejimi yoqilgan (har ${pollMinutes()} daqiqada): webhook o'rnatilmaydi.`;
   } else {
-    hook = "Vasiylarni botga ulash uchun skriptni Web App sifatida joylang (Deploy > New deployment > Web app, 'Anyone'), so'ng bu amalni qayta bajaring.";
+    hook = setBotWebhook(relay, url, true);
   }
   const prof = profile.length ? `Bot profili (qisman): ${profile.slice(0, 3).join("; ")}` : "Bot profili yangilandi (buyruqlar uz/ru/en, tavsif).";
   ui().alert("Telegram", `Bot ulandi: @${username}\n${prof}\n${hook}`, ui().ButtonSet.OK);

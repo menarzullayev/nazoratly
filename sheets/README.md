@@ -34,6 +34,12 @@ Birinchi mijozlar uchun: o'quv markazini Google Sheets ichida professional yurit
 3. nazoratly > Telegram eslatmalar > **Telegram sozlash** → tokenni kiriting (token faqat Script Properties'da saqlanadi, varaqda ko'rinmaydi; webhook avtomatik o'rnatiladi).
 4. **Vasiylar uchun ulash havolalari** → O'quvchilar varag'idagi "Ulash havolasi" ni vasiyga bering. Vasiy havolani ochadi, bot rozilik so'raydi ("Roziman"), shundan keyingina chat ID va rozilik yozuvi (sana + siyosat versiyasi) saqlanadi. `/stop` rozilikni qaytaradi. Havola bir martalik.
 
+### Xabarlar qanday keladi: relay yoki so'rab turish
+Apps Script Telegram webhookini to'g'ridan-to'g'ri qabul qila olmaydi, shuning uchun ikki yo'l bor (ikkalasi bir vaqtda ishlamaydi):
+
+- **Relay** (javob darhol keladi). *Webhook relay sozlamalari* oynasidagi manzil va sirni relay operatoriga bering; u sizga o'z relay manzilingizni beradi. Uni *Relay manzilini o'zgartirish* bandiga kiriting.
+- **So'rab turish** (`getUpdates`, server kerak emas). *So'rab turishni yoqish*: webhook o'chiriladi va vaqt triggeri har **5 daqiqada** (yoki tanlasangiz har 1 daqiqada) yangi xabarlarni oladi. Botning javobi shu oraliqqacha kechikadi; tugma bosilganda Telegramning "kutilmoqda" belgisi javobgacha aylanib turishi yoki yo'qolishi mumkin. Google triggerlarning kunlik ishlash vaqtini cheklaydi (gmail.com: 90 daqiqa, Workspace: 6 soat; rasmiy hujjat, 2026-11-27). Skript shu Sheet triggerlarining vaqtini o'lchaydi, *So'rab turish holati va kvota* bandida ko'rsatadi va 70% / 90% da egasining Telegram chatiga ogohlantirish yuboradi. Bir ishga tushishning haqiqiy davomiyligi Google muhitida hali o'lchanmagan.
+
 ## Xavfsizlik va maxfiylik
 - Rozilik yo'q → eslatma loyihasi yaratilmaydi; yuborish paytida rozilik **qayta tekshiriladi**.
 - Eslatma hech qachon avtomatik ketmaydi: odam tasdiqlaydi (nazoratly "Model B" siyosati).

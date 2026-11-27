@@ -6,6 +6,7 @@
  * ../domain/teacher.ts (shared with the API through tests/golden/teacher.json).
  * Mini App and email login exist only in the API product: a Sheet has no accounts. New OAuth scope: script.scriptapp (the
  * optional hourly trigger of the reminders). */
+import { accountRun } from "./polling";
 import { expandLessons, type CalendarLesson, type Room, type ScheduleChange } from "../domain/calendar";
 import { computeDebts } from "../domain/debt";
 import { isIsoDate } from "../domain/dates";
@@ -497,5 +498,12 @@ export const menu = {
   },
 };
 
-/** The hourly trigger target. */
-export const tick = (): void => void reminderPass();
+/** The hourly trigger target. Its runtime counts against the same daily quota as the getUpdates mode. */
+export const tick = (): void => {
+  const started = Date.now();
+  try {
+    reminderPass();
+  } finally {
+    accountRun(Date.now() - started, null);
+  }
+};

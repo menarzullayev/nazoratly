@@ -9,6 +9,7 @@ import { sendRich, tg, webhookSecret, sendMessage } from "./telegram";
 import { balanceHtmlForChat, withLock } from "./actions";
 import type { Student } from "../domain/types";
 import { awaitingConsent, phoneLinkStudents, qrLinkRequest } from "./guardian";
+import { pollingEnabled } from "./pollingMode";
 
 type StudentRow = Student & { linkCode?: string };
 
@@ -41,13 +42,21 @@ export function handlePost(e: GoogleAppsScript.Events.DoPost): GoogleAppsScript.
   const given = e.parameter?.s ?? "";
   const secret = webhookSecret();
   if (given.length !== secret.length || given !== secret) return text("ok");
+  // getUpdates mode: the webhook is removed, so nothing may be handled twice through this door
+  if (pollingEnabled()) return text("ok");
   let update: unknown;
   try {
     update = JSON.parse(e.postData?.contents ?? "{}");
   } catch {
     return text("ok");
   }
-  if (handleTeacherUpdate(update)) return text("ok"); // the teacher bot (G8): invitation, roll call, messages
+  processUpdate(update);
+  return text("ok");
+}
+
+/** One Telegram update, however it arrived (webhook or getUpdates). */
+export function processUpdate(update: unknown): void {
+  if (handleTeacherUpdate(update)) return; // the teacher bot (G8): invitation, roll call, messages
   const u = parseUpdate(update);
   const center = readSettings().center;
   if (u.kind === "start") {
@@ -108,5 +117,4 @@ export function handlePost(e: GoogleAppsScript.Events.DoPost): GoogleAppsScript.
     for (const s of hits) updateById(STUDENTS, "id", s.id, { consentNotify: false, guardianChatId: "" });
     sendMessage(u.chatId, hits.length ? "Xabarlar to'xtatildi. Rozilikni qaytarish uchun markazdan yangi havola so'rang." : "Sizga ulangan o'quvchi topilmadi.");
   }
-  return text("ok");
 }
