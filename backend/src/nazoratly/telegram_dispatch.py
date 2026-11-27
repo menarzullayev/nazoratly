@@ -17,16 +17,16 @@ import httpx
 import psycopg
 import structlog
 
-from nazoratly import teacher_bot
+from nazoratly import teacher_bot, telegram_migration
 from nazoratly.config import Settings
-from nazoratly.db import Database, Session, fetch_all, fetch_one
+from nazoratly.db import Database, Session, execute, fetch_all, fetch_one
 from nazoratly.errors import ApiError, translate_db_error
 from nazoratly.guardian_bot import QR_CODE, GuardianBot
 from nazoratly.guardian_telegram import TelegramApi, contact_keyboard
 from nazoratly.rules import guardian as G
 from nazoratly.rules import teacher as R
 from nazoratly.secrets_box import SecretsBox
-from nazoratly.telegram_registry import ANON, BotInfo
+from nazoratly.telegram_registry import ANON, BotInfo, center_bots
 from nazoratly.telegram_scope import CALLBACK, MARKER, MENU, Scope
 
 log = structlog.get_logger("telegram_dispatch")
@@ -37,6 +37,11 @@ _HOME_COMMANDS = ("/start", "/menu", "/help")
 _NS = {"g": "guardian", "t": "teacher"}
 STALE = "Bu tugma yoki savol eskirgan: rol yoki markaz almashgan. Qaytadan tanlang."
 MENU_TITLE = "Qaysi sifatda davom etasiz?"
+OWN_BOT_TITLE = "Markazingizning o'z boti bor. O'tish uchun tugmani bosing:"
+BAD_MOVE_CODE = (
+    "O'tish kodi noto'g'ri, ishlatilgan, muddati tugagan yoki boshqa Telegram hisobi uchun berilgan. "
+    "Umumiy botdan yangisini oling."
+)
 LINK_HELP = (
     "Assalomu alaykum! Bu bot nazoratly o'quv markazlari uchun. Ulanish uchun:\n"
     "• ustozlar: markaz bergan taklif kodini yuboring (T-XXXXXXXX);\n"
@@ -122,6 +127,8 @@ class _Turn:
         self.tg = tg
         self.scope = Scope(only_org=dispatcher.bot.org_id)
         self.roles: list[Role] = []
+        self.offers: list[tuple[str, str]] = []  # shared bot: "move to your center's own bot" buttons
+        self.movable: dict[str, tuple[int, str]] = {}  # offer data -> (center, its bot's username)
         self.state = State(None, None, 0)
 
     # ---- who is this ---------------------------------------------------------------------------------------------
@@ -162,6 +169,26 @@ class _Turn:
         if any(self.scope.allows(int(r["org_id"])) for r in guarding):
             roles.append(Role("guardian", None, None, "Ota-ona"))
         self.roles = roles
+        if self.bot.shared:
+            await self.load_offers(sorted({int(r["org_id"]) for r in [*teaching, *guarding]}))
+
+    async def load_offers(self, org_ids: list[int]) -> None:
+        """Centers of this person that have a bot of their own which he has not opened yet."""
+        async with self.db.tx(ANON) as conn:
+            bots = await center_bots(conn, org_ids)
+            opened = await fetch_all(
+                conn,
+                "SELECT bot_id FROM telegram_chats WHERE telegram_user_id = %s AND unreachable_at IS NULL",
+                (self.tg,),
+            )
+        seen = {int(r["bot_id"]) for r in opened}
+        self.offers, self.movable = [], {}
+        for org_id, b in sorted(bots.items()):
+            if int(b["bot_id"]) in seen:
+                continue
+            data = f"{MENU}m:{b['org_public_id'].hex}"
+            self.offers.append((f"➡️ {b['org_name']} botiga o'tish"[:60], data))
+            self.movable[data] = (org_id, str(b["username"]))
 
     def find_role(self, kind: str | None, org_id: int | None) -> Role | None:
         return next((r for r in self.roles if r.kind == kind and r.org_id == org_id), None)
@@ -193,7 +220,8 @@ class _Turn:
 
     # ---- the two sides -------------------------------------------------------------------------------------------
     def menu_rows(self) -> list[list[tuple[str, str]]]:
-        return [[("🔄 Rol / markazni almashtirish", f"{MENU}menu")]] if len(self.roles) > 1 else []
+        switch = [[("🔄 Rol / markazni almashtirish", f"{MENU}menu")]] if len(self.roles) > 1 else []
+        return switch + [[offer] for offer in self.offers]
 
     def miniapp_url(self) -> str | None:
         base = self.d.settings.public_base_url
@@ -240,17 +268,60 @@ class _Turn:
             await self.teacher().say_help()
 
     async def unknown(self) -> None:
+        if self.offers:  # the person's centers stopped the shared bot: the way on is their own bot
+            await self.send_choices(OWN_BOT_TITLE, self.offers)
+            return
         await self.api.send_message(self.tg, LINK_HELP, contact_keyboard())
+
+    async def send_choices(self, title: str, choices: list[tuple[str, str]]) -> None:
+        rows = [[{"text": label[:60], "callback_data": data}] for label, data in choices[:20]]
+        await self.api.send_message(self.tg, title, {"inline_keyboard": rows})
 
     async def show_menu(self, title: str = MENU_TITLE) -> None:
         if not self.roles:
             await self.unknown()
             return
+        await self.send_choices(title, [(r.label, r.data) for r in self.roles] + self.offers)
+
+    # ---- moving to a center's own bot ----------------------------------------------------------------------------
+    async def offer_move(self, data: str, cb_id: str) -> None:
+        target = self.movable.get(data)  # only the person's own centers, re-read for this update
+        if target is None:
+            await self.api.answer_callback(cb_id, "Bu havola endi kerak emas.", alert=True)
+            return
+        org_id, username = target
+        await self.api.answer_callback(cb_id)
+        code = await telegram_migration.issue(self.db, org_id, self.tg)
         await self.api.send_message(
             self.tg,
-            title,
-            {"inline_keyboard": [[{"text": r.label[:60], "callback_data": r.data}] for r in self.roles[:20]]},
+            f"Quyidagi tugmani bosing va markaz botida «Start»ni bosing. Havola {telegram_migration.TTL_MINUTES} "
+            "daqiqa ishlaydi, bir marta va faqat sizning hisobingiz uchun.",
+            {"inline_keyboard": [[{"text": f"@{username}", "url": f"https://t.me/{username}?start={code}"}]]},
         )
+
+    async def move(self, code: str) -> None:
+        if self.bot.org_id is None:
+            await self.api.send_message(self.tg, "Bu kod markazning o'z boti uchun: uni o'sha botda oching.")
+            return
+        guardian = self.guardian()
+        if await guardian.blocked(self.tg):
+            await self.api.send_message(
+                self.tg, "Juda ko'p noto'g'ri urinish. Bir soatdan keyin qayta urinib ko'ring."
+            )
+            return
+        if not await telegram_migration.redeem(self.db, self.bot.org_id, self.tg, code):
+            await guardian.record_failure(self.tg)
+            await self.api.send_message(self.tg, BAD_MOVE_CODE)
+            return
+        async with self.db.tx(ANON) as conn:
+            await execute(
+                conn,
+                "UPDATE telegram_chats SET opened_via = 'code' WHERE bot_id = %s AND telegram_user_id = %s",
+                (self.bot.id, self.tg),
+            )
+        await self.api.send_message(self.tg, "✅ Siz markazning o'z botiga o'tdingiz.")
+        role = await self.current()
+        await (self.home(role) if role is not None else self.show_menu())
 
     async def stale(self) -> None:
         if len(self.roles) > 1:
@@ -303,6 +374,9 @@ class _Turn:
         a reply to one of the bot's questions is never read as one."""
         if not candidate:
             return False
+        if telegram_migration.looks_like_code(candidate):
+            await self.move(candidate)
+            return True
         if R.normalize_invite_code(candidate) is not None:
             await self.link_teacher(candidate, name)
             return True
@@ -349,6 +423,9 @@ class _Turn:
         await self.load()
         data = str(cq.get("data") or "")
         cb_id = str(cq.get("id") or "")
+        if data.startswith(f"{MENU}m:"):
+            await self.offer_move(data, cb_id)
+            return
         if not self.roles:
             await self.api.answer_callback(cb_id, "Avval ulaning", alert=True)
             await self.unknown()

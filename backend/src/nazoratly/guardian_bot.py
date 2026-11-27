@@ -181,11 +181,11 @@ class GuardianBot:
             tg,
             f"{s['full_name']} ma'lumotlarini (davomat, to'lov, jadval, natijalar) ko'rish uchun shaxsiy ma'lumotlarni qayta "
             "ishlashga rozilik kerak. Rozilikni istalgan vaqtda markazga murojaat qilib qaytarib olishingiz mumkin.",
-            self._kb([[("✅ Roziman", f"c:{tok(s['id'])}"), ("Rad etaman", "n")]]),
+            self._kb([[("✅ Roziman", f"c:{tok(s['id'])}"), ("Rad etaman", "n")], *self.menu_rows]),
         )
 
     # ---- linking -------------------------------------------------------------------------------------------------
-    async def _blocked(self, tg: int) -> bool:
+    async def blocked(self, tg: int) -> bool:
         async with self.db.tx(_ANON) as conn:
             await execute(
                 conn, "DELETE FROM guardian_link_attempts WHERE attempted_at < now() - interval '1 day'"
@@ -197,7 +197,7 @@ class GuardianBot:
             )
         return bool(n and n["n"] >= LINK_ATTEMPTS_PER_HOUR)
 
-    async def _fail(self, tg: int) -> None:
+    async def record_failure(self, tg: int) -> None:
         async with self.db.tx(_ANON) as conn:
             await execute(conn, "INSERT INTO guardian_link_attempts (telegram_user_id) VALUES (%s)", (tg,))
 
@@ -213,7 +213,7 @@ class GuardianBot:
             await self.api.send_message(tg, "Kod noto'g'ri formatda. Markaz bergan 8 belgili kodni yuboring.")
 
     async def _code(self, tg: int, name: str | None, code: str) -> None:
-        if await self._blocked(tg):
+        if await self.blocked(tg):
             await self.api.send_message(
                 tg,
                 "Juda ko'p noto'g'ri urinish. Bir soatdan keyin qayta urinib ko'ring yoki markazga murojaat qiling.",
@@ -237,7 +237,7 @@ class GuardianBot:
             await self.api.send_message(tg, note)
             return
         if row is None or state != "ok" or not self.scope.allows(int(row["org_id"])):
-            await self._fail(tg)
+            await self.record_failure(tg)
             await self.api.send_message(
                 tg, "Kod noto'g'ri, ishlatilgan yoki muddati tugagan. Markazdan yangi kod so'rang."
             )
@@ -250,7 +250,7 @@ class GuardianBot:
                 (row["code_id"],),
             )
             if not claimed:
-                await self._fail(tg)
+                await self.record_failure(tg)
                 await self.api.send_message(
                     tg, "Kod noto'g'ri, ishlatilgan yoki muddati tugagan. Markazdan yangi kod so'rang."
                 )
@@ -283,7 +283,7 @@ class GuardianBot:
         await self._home(tg)
 
     async def _qr(self, tg: int, name: str | None, qr: str) -> None:
-        if await self._blocked(tg):
+        if await self.blocked(tg):
             await self.api.send_message(
                 tg, "Juda ko'p noto'g'ri urinish. Bir soatdan keyin qayta urinib ko'ring."
             )
@@ -294,7 +294,7 @@ class GuardianBot:
             await self.api.send_message(tg, note)
             return
         if hit is None or not self.scope.allows(int(hit["org_id"])):
-            await self._fail(tg)
+            await self.record_failure(tg)
             await self.api.send_message(
                 tg, "Bu kartaga o'quvchi topilmadi. Kodni tekshiring yoki markazga murojaat qiling."
             )
@@ -318,7 +318,7 @@ class GuardianBot:
             contact.get("user_id") == tg
         )  # Telegram sets user_id only for the sender's own contact card
         key = G.phone_key(str(contact.get("phone_number") or ""))
-        if await self._blocked(tg):
+        if await self.blocked(tg):
             await self.api.send_message(tg, "Juda ko'p urinish. Bir soatdan keyin qayta urinib ko'ring.")
             return
         async with self.db.tx(_ANON) as conn:
@@ -351,7 +351,7 @@ class GuardianBot:
                 )
                 linked_any = True
         if not linked_any:
-            await self._fail(tg)
+            await self.record_failure(tg)
             await self.api.send_message(
                 tg,
                 "Bu raqam bo'yicha o'quvchi topilmadi yoki raqam boshqa hisobga ulangan. Markaz bergan kodni yuboring.",

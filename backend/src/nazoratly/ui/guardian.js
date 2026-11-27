@@ -60,6 +60,8 @@
 
   async function miniLogin(choice) {
     var body = { init_data: miniAppData() };
+    var bot = new URLSearchParams(location.search).get("bot"); // a center's own bot signs with its own token
+    if (bot) body.bot = bot;
     if (choice !== undefined) body.choice = choice;
     var r = await call("POST", "/v1/cabinet/auth/telegram", body);
     S.token = r.token; save();

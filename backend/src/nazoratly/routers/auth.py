@@ -124,21 +124,33 @@ def _org_ref(row: dict[str, Any]) -> OrgRef:
 
 
 async def _issue_refresh(
-    conn: Conn, settings: Settings, user_id: int, family_id: uuid.UUID, user_agent: str | None
+    conn: Conn,
+    settings: Settings,
+    user_id: int,
+    family_id: uuid.UUID,
+    user_agent: str | None,
+    org_lock: int | None = None,
 ) -> str:
     token = new_opaque_token("nzr")
     await execute(
         conn,
-        "INSERT INTO refresh_tokens (user_id, family_id, token_hash, expires_at, user_agent) VALUES (%s, %s, %s, %s, %s)",
+        "INSERT INTO refresh_tokens (user_id, family_id, token_hash, expires_at, user_agent, org_lock) "
+        "VALUES (%s, %s, %s, %s, %s, %s)",
         (
             user_id,
             family_id,
             sha256(token),
             datetime.now(UTC) + timedelta(seconds=settings.refresh_token_ttl_s),
             (user_agent or "")[:300] or None,
+            org_lock,
         ),
     )
     return token
+
+
+def locked_rows(rows: list[dict[str, Any]], org_lock: int) -> list[dict[str, Any]]:
+    """What a sign-in locked to a center may see and enter: that center, and only while teaching in it."""
+    return [r for r in rows if r["org_internal_id"] == org_lock and r["role"] == "teacher"]
 
 
 def _pick_org(rows: list[dict[str, Any]], wanted: uuid.UUID | None) -> dict[str, Any] | None:
@@ -157,12 +169,14 @@ def _token_response(
     rows: list[dict[str, Any]],
     org: dict[str, Any] | None,
     refresh: str,
+    org_lock: int | None = None,
 ) -> TokenOut:
     access, ttl = issue_access_token(
         settings,
         user_id=user["id"],
         user_public_id=user["public_id"],
         org_id=org["org_internal_id"] if org else None,
+        org_lock=org_lock,
     )
     return TokenOut(
         access_token=access,
@@ -298,7 +312,7 @@ async def refresh_token(body: RefreshIn, request: Request, db: DB, settings: Cfg
     async with db.auth_tx(Session(None, None, rid)) as conn:
         tok = await fetch_one(
             conn,
-            "SELECT id, user_id, family_id, used_at, revoked_at, expires_at FROM refresh_tokens "
+            "SELECT id, user_id, family_id, used_at, revoked_at, expires_at, org_lock FROM refresh_tokens "
             "WHERE token_hash = %s FOR UPDATE",
             (sha256(body.refresh_token),),
         )
@@ -322,8 +336,13 @@ async def refresh_token(body: RefreshIn, request: Request, db: DB, settings: Cfg
             else:
                 await conn.execute("SELECT set_config('app.user_id', %s, true)", (str(user["id"]),))
                 rows = await fetch_all(conn, _MEMBERSHIPS_SQL, (user["id"],))
+                lock = tok["org_lock"]
+                if lock is not None:
+                    rows = locked_rows(rows, lock)
                 try:
                     org = _pick_org(rows, body.org_id)
+                    if lock is not None and org is None:
+                        raise Forbidden("You no longer teach in that center")
                 except Forbidden as exc:
                     failure = Unauthorized(exc.message)
                 else:
@@ -331,9 +350,9 @@ async def refresh_token(body: RefreshIn, request: Request, db: DB, settings: Cfg
                         conn, "UPDATE refresh_tokens SET used_at = now() WHERE id = %s", (tok["id"],)
                     )
                     new = await _issue_refresh(
-                        conn, settings, user["id"], tok["family_id"], request.headers.get("user-agent")
+                        conn, settings, user["id"], tok["family_id"], request.headers.get("user-agent"), lock
                     )
-                    result = _token_response(settings, user, rows, org, new)
+                    result = _token_response(settings, user, rows, org, new, lock)
     if failure is not None:
         raise failure
     assert result is not None
@@ -358,6 +377,7 @@ async def logout(body: LogoutIn, db: DB) -> Message:
 async def switch_org(
     body: SwitchIn, user: Annotated[AuthUser, Depends(current_user)], db: DB, settings: Cfg
 ) -> AccessOut:
+    user.require_unlocked()
     async with db.auth_tx(Session(user.user_id, None, user.request_id)) as conn:
         rows = await fetch_all(conn, _MEMBERSHIPS_SQL, (user.user_id,))
     try:
@@ -376,6 +396,7 @@ async def switch_org(
 async def change_password(
     body: PasswordChangeIn, user: Annotated[AuthUser, Depends(current_user)], db: DB
 ) -> Message:
+    user.require_unlocked()
     new_hash = await hash_password(body.new_password)
     ok = False
     async with db.auth_tx(Session(user.user_id, None, user.request_id)) as conn:
@@ -401,12 +422,14 @@ async def me(user: Annotated[AuthUser, Depends(current_user)], db: DB) -> MeOut:
         )
         rows = await fetch_all(conn, _MEMBERSHIPS_SQL, (user.user_id,))
     assert u is not None
+    if user.org_lock is not None:
+        rows = locked_rows(rows, user.org_lock)
     current = next((r for r in rows if r["org_internal_id"] == user.org_id), None)
     return MeOut(
         id=u["public_id"],
         full_name=u["full_name"],
-        email=u["email"],
-        phone=u["phone"],
+        email=u["email"] if user.org_lock is None else None,
+        phone=u["phone"] if user.org_lock is None else None,
         org=_org_ref(current) if current else None,
         organizations=[_org_ref(r) for r in rows],
     )
@@ -418,6 +441,7 @@ async def me(user: Annotated[AuthUser, Depends(current_user)], db: DB) -> MeOut:
 async def accept_invitation(
     org_id: uuid.UUID, user: Annotated[AuthUser, Depends(current_user)], db: DB
 ) -> OrgRef:
+    user.require_unlocked()
     async with db.auth_tx(Session(user.user_id, None, user.request_id)) as conn:
         rows = await fetch_all(conn, _MEMBERSHIPS_SQL, (user.user_id,))
         target = next((r for r in rows if r["id"] == org_id and r["membership_status"] == "invited"), None)
