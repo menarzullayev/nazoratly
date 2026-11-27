@@ -1472,4 +1472,6 @@ async def test_cabinet_page_is_served_for_telegram_and_calls_only_documented_end
     for path in called:
         assert any(p.startswith(path.rstrip("/")) for p in spec), path
     # the page never puts the session token into a URL
-    assert "?token" not in js.text and "location.search" not in js.text
+    # nothing secret travels in the address: the only thing read from the query is the public id of a center's bot
+    assert "?token" not in js.text
+    assert js.text.count("location.search") == 1 and 'new URLSearchParams(location.search).get("bot")' in js.text

@@ -25,12 +25,13 @@ from nazoratly.routers.auth import (
     _org_ref,
     _pick_org,
     _token_response,
+    locked_rows,
 )
 from nazoratly.schemas import Model, Phone
 from nazoratly.security import hash_password
 from nazoratly.teacher_app import canonical_invite, invite_hash
 from nazoratly.telegram_auth import BadInitData, verify_init_data
-from nazoratly.telegram_registry import shared_token
+from nazoratly.telegram_registry import miniapp_signer
 
 router = APIRouter(prefix="/v1", tags=["teacher app (sign-in)"])
 
@@ -137,6 +138,7 @@ class AcceptExistingIn(Model):
 async def accept_teacher_invite_existing(
     body: AcceptExistingIn, user: Annotated[AuthUser, Depends(current_user)], db: DB
 ) -> OrgRef:
+    user.require_unlocked()
     code_hash = invite_hash(canonical_invite(body.code))
     async with db.auth_tx(Session(user.user_id, None, user.request_id)) as conn:
         try:
@@ -153,6 +155,7 @@ async def accept_teacher_invite_existing(
 class MiniAppLoginIn(Model):
     init_data: Annotated[str, StringConstraints(min_length=10, max_length=4096)]
     org_id: uuid.UUID | None = None
+    bot: uuid.UUID | None = None  # the center's own bot the page was opened from (?bot= in its address)
 
 
 @router.post(
@@ -161,11 +164,11 @@ class MiniAppLoginIn(Model):
     summary="Sign in from the Telegram Mini App (verified initData of an account linked through an invitation)",
 )
 async def telegram_miniapp_login(body: MiniAppLoginIn, request: Request, db: DB, settings: Cfg) -> TokenOut:
-    token_of_bot = await shared_token(db, settings, request.app.state.secrets_box)
-    if token_of_bot is None:
+    signer = await miniapp_signer(db, settings, request.app.state.secrets_box, body.bot)
+    if signer is None:
         raise NotFound("Telegram sign-in is not configured")
     try:
-        tg = verify_init_data(body.init_data, token_of_bot)
+        tg = verify_init_data(body.init_data, signer.token)
     except BadInitData:
         raise Unauthorized("Invalid Telegram data") from None
     async with db.auth_tx(Session(None, None, request_id_of(request))) as conn:
@@ -177,11 +180,18 @@ async def telegram_miniapp_login(body: MiniAppLoginIn, request: Request, db: DB,
                 "This Telegram account is not linked to a staff member: ask the center for an invitation"
             )
         rows = await fetch_all(conn, _MEMBERSHIPS_SQL, (user["id"],))
+        lock = signer.only_org
+        if lock is not None:  # the center's own bot: only this center, only as its teacher
+            rows = locked_rows(rows, lock)
+            if not rows:
+                raise Forbidden("This Telegram account does not teach in the center of this bot")
+        elif signer.moved:  # centers that stopped the shared bot are entered through their own bot
+            rows = [r for r in rows if r["org_internal_id"] not in signer.moved]
         org = _pick_org(rows, body.org_id)
         if not any(r["membership_status"] == "active" for r in rows):
             raise Forbidden("No active membership")
         await execute(conn, "UPDATE users SET last_login_at = now() WHERE id = %s", (user["id"],))
         refresh = await _issue_refresh(
-            conn, settings, user["id"], uuid.uuid4(), request.headers.get("user-agent")
+            conn, settings, user["id"], uuid.uuid4(), request.headers.get("user-agent"), lock
         )
-    return _token_response(settings, user, rows, org, refresh)
+    return _token_response(settings, user, rows, org, refresh, lock)

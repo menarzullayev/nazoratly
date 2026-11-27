@@ -46,6 +46,15 @@ class AuthUser:
     user_public_id: uuid.UUID
     org_id: int | None
     request_id: str
+    org_lock: int | None = None  # signed in through a center's own bot: locked to that center, as a teacher
+
+    def require_unlocked(self) -> None:
+        """Account-wide actions are closed to a sign-in that came through a center's own bot (the center holds that
+        bot's token, so the sign-in proves nothing beyond the center)."""
+        if self.org_lock is not None:
+            raise Forbidden(
+                "Not available after signing in through a center's own bot: sign in with your password"
+            )
 
 
 @dataclass(frozen=True)
@@ -113,7 +122,9 @@ async def current_user(
         )
     if row is None or row["status"] != "active":
         raise Unauthorized("Account is not active")
-    return AuthUser(claims.user_id, claims.user_public_id, claims.org_id, rid)
+    if claims.org_lock is not None and claims.org_id != claims.org_lock:
+        raise Unauthorized("Invalid or expired token", headers={"WWW-Authenticate": "Bearer"})
+    return AuthUser(claims.user_id, claims.user_public_id, claims.org_id, rid, claims.org_lock)
 
 
 BRANCH_HEADER = "X-Branch"
@@ -143,6 +154,8 @@ async def principal(request: Request, user: Annotated[AuthUser, Depends(current_
             requested_id = None if row is None else int(row["id"])
     if m is None or m["status"] != "active":
         raise Forbidden("No active membership in this center")
+    if user.org_lock is not None and m["role"] != "teacher":
+        raise Forbidden("A sign-in through a center's own bot only works as its teacher")
     if m["org_status"] != "active":
         raise Forbidden("Center is not active")
     scope_branch: int | None = m["branch_id"]

@@ -46,7 +46,7 @@ from nazoratly.guardian_telegram import verify_init_data
 from nazoratly.rules import guardian as G
 from nazoratly.schemas import Dec2, Model, Out
 from nazoratly.telegram_delivery import send_text
-from nazoratly.telegram_registry import shared_token
+from nazoratly.telegram_registry import miniapp_signer
 
 router = APIRouter(prefix="/v1/cabinet", tags=["guardian cabinet"])
 _bearer = HTTPBearer(auto_error=False, description="Guardian session token (gs_...) from /v1/cabinet/auth/*")
@@ -91,6 +91,9 @@ class TelegramLoginIn(Model):
     choice: int | None = Field(
         default=None, ge=0, description="which center, when the Telegram account is linked in several"
     )
+    bot: uuid.UUID | None = Field(
+        default=None, description="the center's own bot the Mini App was opened from (?bot= in its address)"
+    )
 
 
 @router.post(
@@ -99,15 +102,16 @@ class TelegramLoginIn(Model):
     summary="Mini App sign-in: send Telegram's `initData`; the signature and its age are checked",
 )
 async def auth_telegram(body: TelegramLoginIn, request: Request, db: DB, cfg: Cfg) -> TokenOut:
-    token_of_bot = await shared_token(db, cfg, request.app.state.secrets_box)
-    if token_of_bot is None:
+    signer = await miniapp_signer(db, cfg, request.app.state.secrets_box, body.bot)
+    if signer is None:
         raise NotFound("Telegram sign-in is not configured")
-    user = verify_init_data(body.init_data, token_of_bot)
+    user = verify_init_data(body.init_data, signer.token)
     if user is None:
         raise Unauthorized("Telegram data is not valid or has expired")
     tg = int(user["id"])
     async with db.tx(_ANON) as conn:
         found = await fetch_all(conn, "SELECT * FROM guardian_find_by_telegram(%s)", (tg,))
+    found = [r for r in found if signer.allows(int(r["org_id"]))]
     if not found:
         raise Forbidden("This Telegram account is not linked to a student", details={"reason": "not_linked"})
     if len(found) > 1 and body.choice is None:

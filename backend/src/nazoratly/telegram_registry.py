@@ -113,10 +113,35 @@ async def shared_bot(db: Database, settings: Settings, box: SecretsBox | None) -
     )
 
 
-async def shared_token(db: Database, settings: Settings, box: SecretsBox | None) -> str | None:
-    """The token that signs the shared bot's Mini App data and sends its messages: registered, else the environment's."""
+@dataclass(frozen=True)
+class Signer:
+    """The bot whose token signed a Mini App's data, and the centers a sign-in through it may reach."""
+
+    token: str = field(repr=False)
+    only_org: int | None = None  # a center's own bot
+    moved: frozenset[int] = frozenset()  # shared bot: centers that stopped it
+
+    def allows(self, org_id: int) -> bool:
+        return org_id == self.only_org if self.only_org is not None else org_id not in self.moved
+
+
+async def miniapp_signer(
+    db: Database, settings: Settings, box: SecretsBox | None, public_id: uuid.UUID | None
+) -> Signer | None:
+    """The signer for a Mini App opened from `public_id` (None = the shared bot); None when there is no such bot."""
+    if public_id is not None:
+        found = await find_by_public_id(db, settings, box, public_id)
+        if found is None:
+            return None
+        if found[0].org_id is not None:
+            return Signer(found[0].token, only_org=found[0].org_id)
     bot = await shared_bot(db, settings, box)
-    return bot.token if bot is not None else env_token(settings)
+    token = bot.token if bot is not None else env_token(settings)
+    if token is None:
+        return None
+    async with db.tx(ANON) as conn:
+        rows = await fetch_all(conn, "SELECT org_id FROM tg_stopped_centers()")
+    return Signer(token, moved=frozenset(int(r["org_id"]) for r in rows))
 
 
 async def center_bots(conn: Conn, org_ids: list[int]) -> dict[int, dict[str, Any]]:

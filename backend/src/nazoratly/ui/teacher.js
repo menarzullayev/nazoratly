@@ -198,7 +198,10 @@
     var data = new URLSearchParams(location.hash.slice(1)).get("tgWebAppData");
     if (data && !NZ.session().access) {
       try {
-        var r = await fetch("/v1/auth/telegram-miniapp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ init_data: data }) });
+        var body = { init_data: data };
+        var bot = new URLSearchParams(location.search).get("bot"); // a center's own bot signs with its own token
+        if (bot) body.bot = bot;
+        var r = await fetch("/v1/auth/telegram-miniapp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
         if (r.ok) NZ.signIn(await r.json());
       } catch (e) { /* fall back to the sign-in form */ }
     }

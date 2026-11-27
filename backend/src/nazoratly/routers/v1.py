@@ -43,6 +43,7 @@ from nazoratly.routers import (
     teacher_admin,
     teacher_auth,
     teacher_me,
+    telegram_bots,
     waitlist,
 )
 
@@ -87,4 +88,5 @@ router.include_router(teacher_auth.router)
 router.include_router(teacher_me.router)
 router.include_router(guardian_staff.router)
 router.include_router(cabinet.router)
+router.include_router(telegram_bots.router)
 router.include_router(pay.settings_router)

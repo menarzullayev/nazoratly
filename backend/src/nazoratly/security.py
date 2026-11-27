@@ -55,10 +55,16 @@ class AccessClaims:
     user_public_id: uuid.UUID
     org_id: int | None
     jti: str
+    org_lock: int | None = None  # a sign-in through a center's own bot: nothing outside that center
 
 
 def issue_access_token(
-    settings: Settings, *, user_id: int, user_public_id: uuid.UUID, org_id: int | None
+    settings: Settings,
+    *,
+    user_id: int,
+    user_public_id: uuid.UUID,
+    org_id: int | None,
+    org_lock: int | None = None,
 ) -> tuple[str, int]:
     now = int(time.time())
     ttl = settings.access_token_ttl_s
@@ -73,6 +79,8 @@ def issue_access_token(
         "exp": now + ttl,
         "typ": "access",
     }
+    if org_lock is not None:
+        payload["lock"] = org_lock
     return jwt.encode(payload, settings.jwt_secret.get_secret_value(), algorithm="HS256"), ttl
 
 
@@ -100,10 +108,12 @@ def decode_access_token(settings: Settings, token: str) -> AccessClaims:
         if data.get("typ") != "access":
             raise Unauthorized("Invalid token type")
         org = data.get("org")
+        lock = data.get("lock")
         return AccessClaims(
             user_id=int(data["uid"]),
             user_public_id=uuid.UUID(data["sub"]),
             org_id=int(org) if org is not None else None,
             jti=str(data.get("jti", "")),
+            org_lock=int(lock) if lock is not None else None,
         )
     raise Unauthorized("Invalid or expired token") from last
