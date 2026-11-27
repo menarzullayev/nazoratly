@@ -8,13 +8,21 @@ from datetime import datetime
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Request
-from pydantic import SecretStr
+from pydantic import SecretStr, StringConstraints
 
 from nazoratly.db import Conn, execute, fetch_all, fetch_one
 from nazoratly.deps import DB, Cfg, Principal, require
 from nazoratly.errors import Conflict, NotFound
 from nazoratly.schemas import Message, Model, Out
-from nazoratly.telegram_connect import connect_bot, disconnect_bot
+from nazoratly.telegram_connect import (
+    AnotherBotConnected,
+    NotConfigured,
+    connect_bot,
+    disconnect_bot,
+    require_ready,
+)
+from nazoratly.telegram_managed import TTL_MINUTES, code_hash, default_username, new_code
+from nazoratly.telegram_registry import shared_bot
 
 router = APIRouter(prefix="/v1/telegram", tags=["telegram bots"])
 
@@ -190,3 +198,81 @@ async def shared_switch(body: SharedBotIn, p: Owner, db: DB, cfg: Cfg) -> BotOut
         if not changed:
             raise Conflict("Connect the center's own bot first")
         return await _status(conn, cfg.public_base_url)
+
+
+# ---- Managed Bots -----------------------------------------------------------------------------------------------------
+class ManagedIn(Model):
+    suggested_username: (
+        Annotated[str, StringConstraints(pattern=r"^[A-Za-z][A-Za-z0-9_]{1,28}[Bb][Oo][Tt]$")] | None
+    ) = None
+
+
+class ManagedCreated(Out):
+    id: uuid.UUID
+    confirm_link: str
+    expires_at: datetime
+
+
+class ManagedStatus(Out):
+    id: uuid.UUID
+    status: Literal["waiting_confirmation", "waiting_creation", "connected", "expired", "cancelled", "failed"]
+    suggested_username: str
+    expires_at: datetime
+    failure: str | None
+
+
+@router.post(
+    "/bot/managed",
+    response_model=ManagedCreated,
+    status_code=201,
+    summary="Connect a new bot through Telegram Managed Bots: returns the link the owner opens in the shared bot",
+)
+async def managed_start(body: ManagedIn, request: Request, p: Owner, db: DB, cfg: Cfg) -> ManagedCreated:
+    require_ready(cfg, request.app.state.secrets_box)
+    manager = await shared_bot(db, cfg, request.app.state.secrets_box)
+    if manager is None:
+        raise NotConfigured("The shared bot, which manages the new bots, is not set up on this server yet")
+    code = new_code()
+    async with db.tx(p.session()) as conn:
+        if await fetch_one(conn, "SELECT 1 AS x FROM telegram_bots WHERE status = 'active'") is not None:
+            raise AnotherBotConnected("The center already has a bot: disconnect it first")
+        await execute(
+            conn,
+            "UPDATE telegram_managed_requests SET cancelled_at = now() WHERE completed_at IS NULL AND cancelled_at IS NULL",
+        )
+        row = await fetch_one(
+            conn,
+            "INSERT INTO telegram_managed_requests (org_id, created_by_user_id, token_hash, suggested_username, expires_at) "
+            "VALUES (%s, %s, %s, %s, now() + make_interval(mins => %s)) RETURNING public_id, expires_at",
+            (
+                p.org_id,
+                p.user_id,
+                code_hash(code),
+                body.suggested_username or default_username(),
+                TTL_MINUTES,
+            ),
+        )
+    assert row is not None
+    return ManagedCreated(
+        id=row["public_id"],
+        confirm_link=f"https://t.me/{manager.username}?start={code}",
+        expires_at=row["expires_at"],
+    )
+
+
+@router.get(
+    "/bot/managed", response_model=ManagedStatus, summary="How the latest Managed Bots request stands"
+)
+async def managed_status(p: Owner, db: DB) -> ManagedStatus:
+    async with db.tx(p.session()) as conn:
+        row = await fetch_one(
+            conn,
+            "SELECT public_id AS id, suggested_username, expires_at, failure, CASE "
+            "WHEN completed_at IS NOT NULL THEN 'connected' WHEN cancelled_at IS NOT NULL THEN 'cancelled' "
+            "WHEN failure IS NOT NULL THEN 'failed' WHEN expires_at <= now() THEN 'expired' "
+            "WHEN confirmed_at IS NULL THEN 'waiting_confirmation' ELSE 'waiting_creation' END AS status "
+            "FROM telegram_managed_requests q ORDER BY q.id DESC LIMIT 1",
+        )
+    if row is None:
+        raise NotFound("No Managed Bots request yet")
+    return ManagedStatus(**row)
