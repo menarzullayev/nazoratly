@@ -50,12 +50,8 @@ class Settings(BaseSettings):
         None  # Telegram setWebhook secret_token (also sent to the target as ?s=)
     )
 
-    # Guardian cabinet (G7): the bot that answers guardians, its webhook secret and the public address of the Mini App page.
-    # Nothing is sent unless a token is set; unset = the bot endpoint answers 404 and login codes are not delivered.
-    # (telegram_bot_token / telegram_api_base are shared with the teacher app below)
-    guardian_bot_secret: SecretStr | None = None  # setWebhook secret_token for /hooks/guardian-bot
-    guardian_bot_username: str | None = None  # without @, for deep links
-    public_base_url: str | None = None  # e.g. https://nazoratly.bugvector.uz (Mini App button, portal link)
+    # The public https address of this server: bot webhooks (/hooks/bot/{id}), the Mini App button and the portal link.
+    public_base_url: str | None = None  # e.g. https://nazoratly.bugvector.uz
 
     # AI assistant (G5): the host-side worker that runs `claude -p`; unset = AI not configured = rule-based reports only.
     ai_worker_url: str | None = None
@@ -63,11 +59,11 @@ class Settings(BaseSettings):
     ai_model: str = "haiku"
     ai_timeout_s: float = Field(default=90.0, gt=0)
 
-    # Teacher app (G8). All optional: without them the bot webhook and the Mini App login answer 404 and replies are not sent.
-    telegram_bot_token: SecretStr | None = None  # also checks the Mini App initData signature
-    telegram_bot_username: str | None = None  # without @; builds the t.me invitation link
+    # The shared Telegram bot (guardians and teachers of every center without a bot of its own). Optional: without it
+    # nothing is sent and the Mini App login answers 404. Register it with `python -m nazoratly.telegram_setup shared`.
+    telegram_bot_token: SecretStr | None = None  # also checks the shared bot's Mini App initData signature
+    telegram_bot_username: str | None = None  # without @; invitation links while the bot is not registered
     telegram_api_base: str = "https://api.telegram.org"
-    tg_teacher_secret: SecretStr | None = None  # secret_token of the teacher bot webhook
     teacher_reminder_interval_s: int = Field(
         default=300, ge=0
     )  # reminder loop in the API process; 0 = off (env test: off)
@@ -89,14 +85,11 @@ class Settings(BaseSettings):
         "otel_exporter_otlp_endpoint",
         "tg_relay_target",
         "tg_relay_secret",
-        "guardian_bot_secret",
-        "guardian_bot_username",
         "public_base_url",
         "ai_worker_url",
         "ai_worker_token",
         "telegram_bot_token",
         "telegram_bot_username",
-        "tg_teacher_secret",
         mode="before",
     )
     @classmethod

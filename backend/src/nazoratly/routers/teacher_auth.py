@@ -30,6 +30,7 @@ from nazoratly.schemas import Model, Phone
 from nazoratly.security import hash_password
 from nazoratly.teacher_app import canonical_invite, invite_hash
 from nazoratly.telegram_auth import BadInitData, verify_init_data
+from nazoratly.telegram_registry import shared_token
 
 router = APIRouter(prefix="/v1", tags=["teacher app (sign-in)"])
 
@@ -160,10 +161,11 @@ class MiniAppLoginIn(Model):
     summary="Sign in from the Telegram Mini App (verified initData of an account linked through an invitation)",
 )
 async def telegram_miniapp_login(body: MiniAppLoginIn, request: Request, db: DB, settings: Cfg) -> TokenOut:
-    if settings.telegram_bot_token is None:
+    token_of_bot = await shared_token(db, settings, request.app.state.secrets_box)
+    if token_of_bot is None:
         raise NotFound("Telegram sign-in is not configured")
     try:
-        tg = verify_init_data(body.init_data, settings.telegram_bot_token.get_secret_value())
+        tg = verify_init_data(body.init_data, token_of_bot)
     except BadInitData:
         raise Unauthorized("Invalid Telegram data") from None
     async with db.auth_tx(Session(None, None, request_id_of(request))) as conn:

@@ -1,12 +1,12 @@
 """The teacher's Telegram bot (G8): link with an invitation code, today's lessons, roll call by buttons, groups, schedule,
 hours and pay, and direct messages to guardians (templates or free text).
 
-`handle_update` is transport-agnostic: the webhook route (`/hooks/teacher-bot`) feeds it Telegram updates and replies go
-out through `TgClient` (tests inject a fake httpx transport; nothing real is ever called from here by itself). It works as the
-teacher: every action runs through the same functions and rules the API uses, with a teacher Principal, so a teacher can
-never reach a foreign group or lesson from the bot either.
+The dispatcher (`nazoratly.telegram_dispatch`) routes updates here and replies go out through `TgClient` (tests inject a
+fake httpx transport; nothing real is ever called from here by itself). It works as the teacher of ONE center (the one the
+person chose): every action runs through the same functions and rules the API uses, with a teacher Principal, so a teacher
+can never reach a foreign group or lesson from the bot either.
 
-Callback data (<= 64 bytes, state-free): `l:<lesson32>` open a roll call, `r:<lesson32>:<page>` page it,
+Callback data (<= 64 bytes, sent as `t:<epoch>:` + the following, see `nazoratly.telegram_scope`): `l:<lesson32>` open a roll call, `r:<lesson32>:<page>` page it,
 `a:<lesson32>:<student8>:<p|a|l|e>:<page>` mark one student, `m1` pick a group, `m1:<group32>` its students,
 `m2:<student32>` pick a template, `m3:<student32>:<code>` send a template, `m4:<student32>` ask for free text (a reply to the
 prompt carrying `#<student32>` is the text), `n` nothing."""
@@ -21,7 +21,6 @@ from typing import Any
 import httpx
 import structlog
 
-from nazoratly.config import Settings
 from nazoratly.db import Database, Session, fetch_all, fetch_one
 from nazoratly.deps import Principal
 from nazoratly.errors import ApiError
@@ -39,6 +38,7 @@ from nazoratly.teacher_app import (
     require_teacher,
     send_guardian_message,
 )
+from nazoratly.telegram_scope import Scope, keyboard
 
 log = structlog.get_logger("teacher_bot")
 
@@ -52,10 +52,6 @@ HELP = (
     "/oylik - soatlar va oylik\n"
     "/xabar - vasiyga xabar yozish\n"
     "/yordam - shu ro'yxat"
-)
-LINK_HELP = (
-    "Assalomu alaykum! Bu o'qituvchilar boti. Ulanish uchun markaz bergan taklif kodini yuboring: "
-    "/start T-XXXXXXXX"
 )
 INVITE_ERRORS = {
     "invitation_unknown": "Bunday taklif kodi topilmadi. Kodni tekshiring.",
@@ -77,11 +73,8 @@ MESSAGE_ERRORS = {
 class TgClient:
     """Minimal Bot API client. The token never appears in logs or exceptions."""
 
-    def __init__(self, settings: Settings, transport: httpx.AsyncBaseTransport | None) -> None:
-        assert settings.telegram_bot_token is not None
-        self._url = (
-            f"{settings.telegram_api_base.rstrip('/')}/bot{settings.telegram_bot_token.get_secret_value()}"
-        )
+    def __init__(self, api_base: str, token: str, transport: httpx.AsyncBaseTransport | None) -> None:
+        self._url = f"{api_base.rstrip('/')}/bot{token}"
         self._transport = transport
 
     async def call(self, method: str, payload: dict[str, Any]) -> None:
@@ -94,22 +87,36 @@ class TgClient:
             log.warning("telegram_call_error", method=method, error=type(exc).__name__)
 
 
-def kb(rows: list[list[tuple[str, str]]]) -> dict[str, Any]:
-    return {"inline_keyboard": [[{"text": t, "callback_data": d} for t, d in row] for row in rows]}
-
-
 class Ctx:
-    """Everything one update needs: who writes, where to answer."""
+    """Everything one update needs: who writes, where to answer, which center he acts in."""
 
-    def __init__(self, db: Database, settings: Settings, tg: TgClient, chat_id: int, tg_user_id: int) -> None:
-        self.db, self.settings, self.tg, self.chat_id, self.tg_user_id = db, settings, tg, chat_id, tg_user_id
+    def __init__(
+        self,
+        db: Database,
+        tg: TgClient,
+        chat_id: int,
+        tg_user_id: int,
+        *,
+        org_id: int | None = None,
+        epoch: int = 0,
+        menu_rows: list[list[tuple[str, str]]] | None = None,
+    ) -> None:
+        self.db, self.tg, self.chat_id, self.tg_user_id = db, tg, chat_id, tg_user_id
+        self.org_id, self.epoch = org_id, epoch
+        self.menu_rows = menu_rows or []  # role switch etc., shown under the help text
         self.principal: Principal | None = None
+
+    def kb(self, rows: list[list[tuple[str, str]]]) -> dict[str, Any]:
+        return keyboard("t", self.epoch, rows)
 
     async def say(self, text: str, markup: dict[str, Any] | None = None) -> None:
         payload: dict[str, Any] = {"chat_id": self.chat_id, "text": text}
         if markup:
             payload["reply_markup"] = markup
         await self.tg.call("sendMessage", payload)
+
+    async def say_help(self, intro: str = "") -> None:
+        await self.say(f"{intro}{HELP}", self.kb(self.menu_rows) if self.menu_rows else None)
 
     async def edit(self, message_id: int, text: str, markup: dict[str, Any] | None = None) -> None:
         payload: dict[str, Any] = {"chat_id": self.chat_id, "message_id": message_id, "text": text}
@@ -118,17 +125,19 @@ class Ctx:
         await self.tg.call("editMessageText", payload)
 
     async def principal_or_none(self) -> Principal | None:
-        """The teacher behind this Telegram account (first active teacher membership), or None."""
+        """The teacher behind this Telegram account in the chosen center (checked against the database every time)."""
         if self.principal is not None:
             return self.principal
+        if self.org_id is None:
+            return None
         async with self.db.auth_tx(Session(None, None, None)) as conn:
             row = await fetch_one(
                 conn,
                 "SELECT u.id AS user_id, u.public_id AS user_public_id, m.org_id, m.role, m.branch_id "
-                "FROM users u JOIN memberships m ON m.user_id = u.id "
+                "FROM users u JOIN memberships m ON m.user_id = u.id JOIN organizations o ON o.id = m.org_id "
                 "WHERE u.telegram_user_id = %s AND u.status = 'active' AND m.status = 'active' AND m.role = 'teacher' "
-                "ORDER BY m.id LIMIT 1",
-                (self.tg_user_id,),
+                "AND o.status = 'active' AND o.deleted_at IS NULL AND m.org_id = %s",
+                (self.tg_user_id, self.org_id),
             )
         if row is None:
             return None
@@ -157,21 +166,25 @@ def uuid_of(h: str) -> uuid.UUID | None:
 
 
 # ---- linking ----------------------------------------------------------------------------------------------------------
-async def link_account(ctx: Ctx, code_text: str, first_name: str) -> None:
+async def link_account(ctx: Ctx, code_text: str, first_name: str, scope: Scope) -> tuple[int, str] | None:
+    """Accept an invitation. Returns (center id, the confirmation to show) when the account became its teacher."""
     try:
         code = canonical_invite(code_text)
     except ApiError:
         await ctx.say("Taklif kodi T-XXXXXXXX ko'rinishida bo'ladi. Kodni tekshiring.")
-        return
+        return None
     h = invite_hash(code)
     async with ctx.db.auth_tx(Session(None, None, None)) as conn:
         peek = await fetch_one(conn, "SELECT * FROM teacher_invite_peek(%s)", (h,))
         if peek is None:
             await ctx.say(INVITE_ERRORS["invitation_unknown"])
-            return
+            return None
+        if not scope.allows(int(peek["out_org_id"])):  # another center's code: tell nothing about it
+            await ctx.say(scope.moved_note(int(peek["out_org_id"])) or INVITE_ERRORS["invitation_unknown"])
+            return None
         if peek["out_status"] != "pending":
             await ctx.say(INVITE_ERRORS[f"invitation_{peek['out_status']}"])
-            return
+            return None
         user = await fetch_one(
             conn, "SELECT id, status FROM users WHERE telegram_user_id = %s", (ctx.tg_user_id,)
         )
@@ -186,15 +199,17 @@ async def link_account(ctx: Ctx, code_text: str, first_name: str) -> None:
                 assert user is not None
                 if user["status"] != "active":
                     await ctx.say(INVITE_ERRORS["membership_suspended"])
-                    return
+                    return None
                 await fetch_one(conn, "SELECT * FROM teacher_invite_accept(%s, %s, 'bot')", (h, user["id"]))
         except Exception as exc:  # CheckViolation carries the reason in its message
             reason = getattr(getattr(exc, "diag", None), "message_primary", "") or ""
             if reason in INVITE_ERRORS:
                 await ctx.say(INVITE_ERRORS[reason])
-                return
+                return None
             raise
-    await ctx.say(f"Ulandi! {peek['org_name']} markazi, o'qituvchi: {peek['teacher_name']}.\n\n{HELP}")
+    return int(
+        peek["out_org_id"]
+    ), f"Ulandi! {peek['org_name']} markazi, o'qituvchi: {peek['teacher_name']}.\n\n"
 
 
 # ---- commands ---------------------------------------------------------------------------------------------------------
@@ -231,7 +246,7 @@ async def show_today(ctx: Ctx, p: Principal) -> None:
             buttons.append(
                 [(f"📋 {fmt_time(r['start_time'])} {r['group_name']}", f"l:{hex32(r['public_id'])}")]
             )
-    await ctx.say("\n".join(lines), kb(buttons) if buttons else None)
+    await ctx.say("\n".join(lines), ctx.kb(buttons) if buttons else None)
 
 
 async def roster_view(ctx: Ctx, p: Principal, lesson: uuid.UUID, page: int) -> tuple[str, dict[str, Any]]:
@@ -270,7 +285,7 @@ async def roster_view(ctx: Ctx, p: Principal, lesson: uuid.UUID, page: int) -> t
         nav.append(("➡️", f"r:{lesson.hex}:{page + 1}"))
     if nav:
         rows.append(nav)
-    return text, kb(rows)
+    return text, ctx.kb(rows)
 
 
 async def mark_one(ctx: Ctx, p: Principal, lesson: uuid.UUID, student8: str, code: str) -> str:
@@ -359,7 +374,7 @@ async def pick_group(ctx: Ctx, p: Principal) -> None:
         return
     await ctx.say(
         f"Qaysi guruh? (bugun yana {left} ta xabar yuborish mumkin)",
-        kb([[(f"{g['name']} ({g['students']})", f"m1:{hex32(g['public_id'])}")] for g in groups]),
+        ctx.kb([[(f"{g['name']} ({g['students']})", f"m1:{hex32(g['public_id'])}")] for g in groups]),
     )
 
 
@@ -381,7 +396,7 @@ async def pick_student(ctx: Ctx, p: Principal, group: uuid.UUID) -> None:
         return
     await ctx.say(
         "Qaysi o'quvchining vasiysiga?",
-        kb([[(r["full_name"][:40], f"m2:{hex32(r['public_id'])}")] for r in rows]),
+        ctx.kb([[(r["full_name"][:40], f"m2:{hex32(r['public_id'])}")] for r in rows]),
     )
 
 
@@ -395,7 +410,7 @@ async def pick_template(ctx: Ctx, student: uuid.UUID) -> None:
     }
     rows = [[(labels[c], f"m3:{hex32(student)}:{c}")] for c in R.TEMPLATES]
     rows.append([("✍️ Erkin matn", f"m4:{hex32(student)}")])
-    await ctx.say("Qaysi xabar?", kb(rows))
+    await ctx.say("Qaysi xabar?", ctx.kb(rows))
 
 
 async def send_message(
@@ -429,26 +444,11 @@ async def send_message(
 
 
 # ---- the update router ---------------------------------------------------------------------------------------------
-_START = re.compile(r"^/start(?:@\w+)?(?:\s+(\S+))?$", re.IGNORECASE)
-_PROMPT_TAG = re.compile(r"#([0-9a-f]{32})\b")
+_PROMPT_TAG = re.compile(r"#t\d{1,9}:([0-9a-f]{32})\b")
 
 
-async def on_message(ctx: Ctx, msg: dict[str, Any]) -> None:
+async def on_message(ctx: Ctx, p: Principal, msg: dict[str, Any]) -> None:
     text = str(msg.get("text", "")).strip()
-    first_name = str(msg.get("from", {}).get("first_name", ""))
-    m = _START.match(text)
-    if m:
-        if m.group(1):
-            await link_account(ctx, m.group(1), first_name)
-            return
-        text = "/yordam"
-    elif R.normalize_invite_code(text):  # the code pasted as a plain message
-        await link_account(ctx, text, first_name)
-        return
-    p = await ctx.principal_or_none()
-    if p is None:
-        await ctx.say(LINK_HELP)
-        return
     cmd = text.split()[0].lower().split("@")[0] if text.startswith("/") else ""
     reply_to = msg.get("reply_to_message") or {}
     tag = _PROMPT_TAG.search(str(reply_to.get("text", "")))
@@ -469,20 +469,11 @@ async def on_message(ctx: Ctx, msg: dict[str, Any]) -> None:
     if handler is not None:
         await handler(ctx, p)
     else:
-        await ctx.say(HELP)
+        await ctx.say_help()
 
 
-async def on_callback(ctx: Ctx, cb: dict[str, Any]) -> None:
-    data = str(cb.get("data", ""))
-    cb_id = cb.get("id")
-    mid = cb.get("message", {}).get("message_id")
+async def on_callback(ctx: Ctx, p: Principal, data: str, cb_id: str, mid: Any) -> None:
     toast = ""
-    p = await ctx.principal_or_none()
-    if p is None:
-        await ctx.tg.call(
-            "answerCallbackQuery", {"callback_query_id": cb_id, "text": "Avval ulaning", "show_alert": True}
-        )
-        return
     parts = data.split(":")
     try:
         if parts[0] == "l" and len(parts) == 2 and (lesson := uuid_of(parts[1])):
@@ -508,7 +499,7 @@ async def on_callback(ctx: Ctx, cb: dict[str, Any]) -> None:
                 "sendMessage",
                 {
                     "chat_id": ctx.chat_id,
-                    "text": f"Vasiyga yuboriladigan matnni shu xabarga javob qilib yozing. #{hex32(student)}",
+                    "text": f"Vasiyga yuboriladigan matnni shu xabarga javob qilib yozing. #t{ctx.epoch}:{hex32(student)}",
                     "reply_markup": {"force_reply": True, "input_field_placeholder": "Matn..."},
                 },
             )
@@ -517,28 +508,3 @@ async def on_callback(ctx: Ctx, cb: dict[str, Any]) -> None:
     await ctx.tg.call(
         "answerCallbackQuery", {"callback_query_id": cb_id, **({"text": toast} if toast else {})}
     )
-
-
-async def handle_update(
-    db: Database, settings: Settings, transport: httpx.AsyncBaseTransport | None, update: dict[str, Any]
-) -> None:
-    """Process one Telegram update. Never raises (Telegram would retry a failing update forever): errors are logged."""
-    msg = update.get("message")
-    cb = update.get("callback_query")
-    src = msg or (cb or {}).get("message") or {}
-    sender = (msg or cb or {}).get("from") or {}
-    chat = src.get("chat") or {}
-    if chat.get("type") != "private" or "id" not in sender or chat.get("id") != sender.get("id"):
-        return
-    ctx = Ctx(db, settings, TgClient(settings, transport), int(chat["id"]), int(sender["id"]))
-    try:
-        if msg is not None and "text" in msg:
-            await on_message(ctx, msg)
-        elif cb is not None:
-            await on_callback(ctx, cb)
-    except Exception:
-        log.exception("teacher_bot_failed", update_id=update.get("update_id"))
-        try:
-            await ctx.say("Xatolik yuz berdi. Keyinroq urinib ko'ring.")
-        except Exception:
-            log.exception("teacher_bot_reply_failed")

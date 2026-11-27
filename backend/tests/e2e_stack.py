@@ -41,6 +41,7 @@ from starlette.routing import Route
 
 from tests.conftest import MIGRATIONS, PG_IMAGE, ROLE_PW, SUPER_PW, Tenant, make_tenant
 from tests.helpers import consent, enroll, mk_group, mk_guardian, mk_student, mk_teacher, ok, org_today
+from tests.telegram_support import next_update_id, register_shared
 
 BOT_TOKEN = "123456:TEST-bot-token-not-real"
 HOOK_SECRET = "hook-secret-for-tests-123"
@@ -147,6 +148,7 @@ def new_chat() -> int:
 class Factory:
     def __init__(self, client: httpx.AsyncClient, pg: dict[str, Any], bot: FakeBot) -> None:
         self.client, self.pg, self.bot = client, pg, bot
+        self.hook_path = ""  # the registered shared bot's webhook
 
     def sql(self, query: str, params: tuple[Any, ...] = ()) -> None:
         with psycopg.connect(self.pg["super"], autocommit=True) as c:
@@ -472,7 +474,9 @@ class Factory:
 
     async def hook(self, update: dict[str, Any]) -> int:
         r = await self.client.post(
-            "/hooks/guardian-bot", json=update, headers={"X-Telegram-Bot-Api-Secret-Token": HOOK_SECRET}
+            self.hook_path,
+            json={"update_id": next_update_id(), **update},
+            headers={"X-Telegram-Bot-Api-Secret-Token": HOOK_SECRET},
         )
         return r.status_code
 
@@ -556,9 +560,7 @@ async def main() -> None:
             login_max_failures=50,
             db_pool_max=20,
             telegram_bot_token=SecretStr(BOT_TOKEN),
-            guardian_bot_secret=SecretStr(HOOK_SECRET),
             public_base_url="http://127.0.0.1",
-            guardian_bot_username="nazoratly_test_bot",
         )
         app = create_app(settings)
         bot = FakeBot()
@@ -568,6 +570,7 @@ async def main() -> None:
             app.state.outbound_transport = httpx.MockTransport(bot)
             seed_client = httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://seed")
             factory = Factory(seed_client, pg, bot)
+            factory.hook_path = register_shared(pg["super"], app.state.secrets_box, BOT_TOKEN, HOOK_SECRET)
             servers = [
                 uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=api_port, log_level="warning")),
                 uvicorn.Server(
