@@ -1779,6 +1779,82 @@
         "title": "BookedItem",
         "type": "object"
       },
+      "BotOut": {
+        "properties": {
+          "connected": {
+            "title": "Connected",
+            "type": "boolean"
+          },
+          "connected_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Connected At"
+          },
+          "method": {
+            "anyOf": [
+              {
+                "enum": [
+                  "token",
+                  "managed"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method"
+          },
+          "miniapp_urls": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MiniAppUrls"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "people_moved": {
+            "default": 0,
+            "title": "People Moved",
+            "type": "integer"
+          },
+          "people_total": {
+            "default": 0,
+            "title": "People Total",
+            "type": "integer"
+          },
+          "shared_bot_stopped": {
+            "default": false,
+            "title": "Shared Bot Stopped",
+            "type": "boolean"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          }
+        },
+        "required": [
+          "connected"
+        ],
+        "title": "BotOut",
+        "type": "object"
+      },
       "BranchIn": {
         "additionalProperties": false,
         "properties": {
@@ -4074,6 +4150,22 @@
           "rows"
         ],
         "title": "CommitOut",
+        "type": "object"
+      },
+      "ConnectIn": {
+        "additionalProperties": false,
+        "properties": {
+          "token": {
+            "format": "password",
+            "title": "Token",
+            "type": "string",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "title": "ConnectIn",
         "type": "object"
       },
       "ConsentIn": {
@@ -9111,6 +9203,100 @@
         "title": "MakeupRight",
         "type": "object"
       },
+      "ManagedCreated": {
+        "properties": {
+          "confirm_link": {
+            "title": "Confirm Link",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "confirm_link",
+          "expires_at"
+        ],
+        "title": "ManagedCreated",
+        "type": "object"
+      },
+      "ManagedIn": {
+        "additionalProperties": false,
+        "properties": {
+          "suggested_username": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z][A-Za-z0-9_]{1,28}[Bb][Oo][Tt]$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggested Username"
+          }
+        },
+        "title": "ManagedIn",
+        "type": "object"
+      },
+      "ManagedStatus": {
+        "properties": {
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "failure": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "waiting_confirmation",
+              "waiting_creation",
+              "connected",
+              "expired",
+              "cancelled",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "suggested_username": {
+            "title": "Suggested Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "suggested_username",
+          "expires_at",
+          "failure"
+        ],
+        "title": "ManagedStatus",
+        "type": "object"
+      },
       "ManualLinkIn": {
         "additionalProperties": false,
         "properties": {
@@ -9415,9 +9601,57 @@
         "title": "MessagingOut",
         "type": "object"
       },
+      "MigrationOut": {
+        "properties": {
+          "bot_username": {
+            "title": "Bot Username",
+            "type": "string"
+          },
+          "moved": {
+            "title": "Moved",
+            "type": "integer"
+          },
+          "people": {
+            "items": {
+              "$ref": "#/components/schemas/PersonOut"
+            },
+            "title": "People",
+            "type": "array"
+          },
+          "shared_bot_stopped": {
+            "title": "Shared Bot Stopped",
+            "type": "boolean"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "bot_username",
+          "shared_bot_stopped",
+          "total",
+          "moved",
+          "people"
+        ],
+        "title": "MigrationOut",
+        "type": "object"
+      },
       "MiniAppLoginIn": {
         "additionalProperties": false,
         "properties": {
+          "bot": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bot"
+          },
           "init_data": {
             "maxLength": 4096,
             "minLength": 10,
@@ -9441,6 +9675,24 @@
           "init_data"
         ],
         "title": "MiniAppLoginIn",
+        "type": "object"
+      },
+      "MiniAppUrls": {
+        "properties": {
+          "guardian": {
+            "title": "Guardian",
+            "type": "string"
+          },
+          "teacher": {
+            "title": "Teacher",
+            "type": "string"
+          }
+        },
+        "required": [
+          "guardian",
+          "teacher"
+        ],
+        "title": "MiniAppUrls",
         "type": "object"
       },
       "MonthCell": {
@@ -13098,6 +13350,55 @@
         "title": "PeriodOut",
         "type": "object"
       },
+      "PersonOut": {
+        "properties": {
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "moved": {
+            "title": "Moved",
+            "type": "boolean"
+          },
+          "moved_via": {
+            "anyOf": [
+              {
+                "enum": [
+                  "code",
+                  "direct"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Moved Via"
+          },
+          "role": {
+            "enum": [
+              "teacher",
+              "guardian"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "id",
+          "full_name",
+          "moved",
+          "moved_via"
+        ],
+        "title": "PersonOut",
+        "type": "object"
+      },
       "PhoneIn": {
         "additionalProperties": false,
         "properties": {
@@ -16213,6 +16514,20 @@
         "title": "SettingsPatch",
         "type": "object"
       },
+      "SharedBotIn": {
+        "additionalProperties": false,
+        "properties": {
+          "stopped": {
+            "title": "Stopped",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "stopped"
+        ],
+        "title": "SharedBotIn",
+        "type": "object"
+      },
       "SkippedItem": {
         "properties": {
           "reason": {
@@ -17942,6 +18257,19 @@
       "TelegramLoginIn": {
         "additionalProperties": false,
         "properties": {
+          "bot": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "the center's own bot the Mini App was opened from (?bot= in its address)",
+            "title": "Bot"
+          },
           "choice": {
             "anyOf": [
               {
@@ -20270,6 +20598,46 @@
         "summary": "Liveness: the process is up",
         "tags": [
           "ops"
+        ]
+      }
+    },
+    "/hooks/relay/{relay_id}": {
+      "post": {
+        "operationId": "sheet_relay_hooks_relay__relay_id__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "relay_id",
+            "required": true,
+            "schema": {
+              "title": "Relay Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Telegram webhook relay of one registered Sheets connection",
+        "tags": [
+          "webhook relays"
         ]
       }
     },
@@ -38311,6 +38679,242 @@
         "summary": "Switch a teacher's right to write to guardians on or off",
         "tags": [
           "teacher app (owner)"
+        ]
+      }
+    },
+    "/v1/telegram/bot": {
+      "delete": {
+        "operationId": "delete_bot_v1_telegram_bot_delete",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Disconnect the center's bot and forget its token",
+        "tags": [
+          "telegram bots"
+        ]
+      },
+      "get": {
+        "operationId": "get_bot_v1_telegram_bot_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "The center's own bot (never its token)",
+        "tags": [
+          "telegram bots"
+        ]
+      },
+      "put": {
+        "operationId": "put_bot_v1_telegram_bot_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Connect the center's own bot with its BotFather token (sets the bot's webhook; the token is stored encrypted)",
+        "tags": [
+          "telegram bots"
+        ]
+      }
+    },
+    "/v1/telegram/bot/managed": {
+      "get": {
+        "operationId": "managed_status_v1_telegram_bot_managed_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "How the latest Managed Bots request stands",
+        "tags": [
+          "telegram bots"
+        ]
+      },
+      "post": {
+        "operationId": "managed_start_v1_telegram_bot_managed_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManagedIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedCreated"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Connect a new bot through Telegram Managed Bots: returns the link the owner opens in the shared bot",
+        "tags": [
+          "telegram bots"
+        ]
+      }
+    },
+    "/v1/telegram/bot/migration": {
+      "get": {
+        "operationId": "migration_v1_telegram_bot_migration_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MigrationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Who has moved to the center's own bot",
+        "tags": [
+          "telegram bots"
+        ]
+      }
+    },
+    "/v1/telegram/bot/shared": {
+      "put": {
+        "operationId": "shared_switch_v1_telegram_bot_shared_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SharedBotIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Stop (or resume) the shared bot for this center: people who have not moved can then not be reached",
+        "tags": [
+          "telegram bots"
         ]
       }
     },

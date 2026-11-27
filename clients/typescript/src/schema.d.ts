@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/hooks/relay/{relay_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Telegram webhook relay of one registered Sheets connection */
+        post: operations["sheet_relay_hooks_relay__relay_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/hooks/telegram": {
         parameters: {
             query?: never;
@@ -4385,6 +4402,77 @@ export interface paths {
         patch: operations["set_messaging_v1_teachers__teacher_id__messaging_patch"];
         trace?: never;
     };
+    "/v1/telegram/bot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The center's own bot (never its token) */
+        get: operations["get_bot_v1_telegram_bot_get"];
+        /** Connect the center's own bot with its BotFather token (sets the bot's webhook; the token is stored encrypted) */
+        put: operations["put_bot_v1_telegram_bot_put"];
+        post?: never;
+        /** Disconnect the center's bot and forget its token */
+        delete: operations["delete_bot_v1_telegram_bot_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/telegram/bot/managed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** How the latest Managed Bots request stands */
+        get: operations["managed_status_v1_telegram_bot_managed_get"];
+        put?: never;
+        /** Connect a new bot through Telegram Managed Bots: returns the link the owner opens in the shared bot */
+        post: operations["managed_start_v1_telegram_bot_managed_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/telegram/bot/migration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Who has moved to the center's own bot */
+        get: operations["migration_v1_telegram_bot_migration_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/telegram/bot/shared": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Stop (or resume) the shared bot for this center: people who have not moved can then not be reached */
+        put: operations["shared_switch_v1_telegram_bot_shared_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/trials/pending": {
         parameters: {
             query?: never;
@@ -5201,6 +5289,33 @@ export interface components {
             referral_id: string;
             /** Referrer Name */
             referrer_name: string;
+        };
+        /** BotOut */
+        BotOut: {
+            /** Connected */
+            connected: boolean;
+            /** Connected At */
+            connected_at?: string | null;
+            /** Method */
+            method?: ("token" | "managed") | null;
+            miniapp_urls?: components["schemas"]["MiniAppUrls"] | null;
+            /**
+             * People Moved
+             * @default 0
+             */
+            people_moved: number;
+            /**
+             * People Total
+             * @default 0
+             */
+            people_total: number;
+            /**
+             * Shared Bot Stopped
+             * @default false
+             */
+            shared_bot_stopped: boolean;
+            /** Username */
+            username?: string | null;
         };
         /** BranchIn */
         BranchIn: {
@@ -6162,6 +6277,14 @@ export interface components {
             skipped_duplicates: number;
             /** Skipped Errors */
             skipped_errors: number;
+        };
+        /** ConnectIn */
+        ConnectIn: {
+            /**
+             * Token
+             * Format: password
+             */
+            token: string;
         };
         /** ConsentIn */
         ConsentIn: {
@@ -8059,6 +8182,48 @@ export interface components {
             /** Slots */
             slots: components["schemas"]["SlotOut"][];
         };
+        /** ManagedCreated */
+        ManagedCreated: {
+            /** Confirm Link */
+            confirm_link: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+        };
+        /** ManagedIn */
+        ManagedIn: {
+            /** Suggested Username */
+            suggested_username?: string | null;
+        };
+        /** ManagedStatus */
+        ManagedStatus: {
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Failure */
+            failure: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "waiting_confirmation" | "waiting_creation" | "connected" | "expired" | "cancelled" | "failed";
+            /** Suggested Username */
+            suggested_username: string;
+        };
         /** ManualLinkIn */
         ManualLinkIn: {
             /**
@@ -8177,12 +8342,34 @@ export interface components {
              */
             teacher_id: string;
         };
+        /** MigrationOut */
+        MigrationOut: {
+            /** Bot Username */
+            bot_username: string;
+            /** Moved */
+            moved: number;
+            /** People */
+            people: components["schemas"]["PersonOut"][];
+            /** Shared Bot Stopped */
+            shared_bot_stopped: boolean;
+            /** Total */
+            total: number;
+        };
         /** MiniAppLoginIn */
         MiniAppLoginIn: {
+            /** Bot */
+            bot?: string | null;
             /** Init Data */
             init_data: string;
             /** Org Id */
             org_id?: string | null;
+        };
+        /** MiniAppUrls */
+        MiniAppUrls: {
+            /** Guardian */
+            guardian: string;
+            /** Teacher */
+            teacher: string;
         };
         /** MonthCell */
         MonthCell: {
@@ -9657,6 +9844,25 @@ export interface components {
             /** Total Debit */
             total_debit: string;
         };
+        /** PersonOut */
+        PersonOut: {
+            /** Full Name */
+            full_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Moved */
+            moved: boolean;
+            /** Moved Via */
+            moved_via: ("code" | "direct") | null;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "teacher" | "guardian";
+        };
         /** PhoneIn */
         PhoneIn: {
             /** Phone */
@@ -10919,6 +11125,11 @@ export interface components {
             /** Trial Free Lessons */
             trial_free_lessons?: number | null;
         };
+        /** SharedBotIn */
+        SharedBotIn: {
+            /** Stopped */
+            stopped: boolean;
+        };
         /** SkippedItem */
         SkippedItem: {
             /**
@@ -11542,6 +11753,11 @@ export interface components {
         };
         /** TelegramLoginIn */
         TelegramLoginIn: {
+            /**
+             * Bot
+             * @description the center's own bot the Mini App was opened from (?bot= in its address)
+             */
+            bot?: string | null;
             /**
              * Choice
              * @description which center, when the Telegram account is linked in several
@@ -12579,6 +12795,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Health"];
+                };
+            };
+        };
+    };
+    sheet_relay_hooks_relay__relay_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                relay_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -22783,6 +23030,185 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MessagingOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_bot_v1_telegram_bot_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BotOut"];
+                };
+            };
+        };
+    };
+    put_bot_v1_telegram_bot_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConnectIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BotOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_bot_v1_telegram_bot_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+        };
+    };
+    managed_status_v1_telegram_bot_managed_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedStatus"];
+                };
+            };
+        };
+    };
+    managed_start_v1_telegram_bot_managed_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManagedIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedCreated"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    migration_v1_telegram_bot_migration_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MigrationOut"];
+                };
+            };
+        };
+    };
+    shared_switch_v1_telegram_bot_shared_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SharedBotIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BotOut"];
                 };
             };
             /** @description Validation Error */

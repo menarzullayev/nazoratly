@@ -7,6 +7,19 @@
 - Tekshiruv: `curl https://nazoratly.bugvector.uz/health` va `/ready`. `prod` rejimida `/docs` o'chiq.
 - Cheklov: PC o'chiq/internetsiz bo'lsa xizmat ishlamaydi (haqiqiy hosting emas); zaxira nusxa: `docker compose exec db pg_dump -U postgres nazoratly > backup.sql`.
 
+## Telegram botlar (0068-0071)
+Jonli tizimga chiqarish alohida tasdiqlanadi. Tartib:
+
+1. Zaxira nusxa: `docker compose exec db pg_dump -U postgres nazoratly > backup.sql`.
+2. `.env`: `NAZORATLY_SECRETS_KEY` (bot tokenlari shu kalit bilan shifrlanadi; kalit yo'qolsa markaz botlarini qayta ulash kerak; `api` va `worker` da bir xil), `NAZORATLY_PUBLIC_BASE_URL` (`https://...`), umumiy bot bo'lsa `NAZORATLY_TELEGRAM_BOT_TOKEN` va `NAZORATLY_TELEGRAM_BOT_USERNAME`. `NAZORATLY_TG_TEACHER_SECRET`, `NAZORATLY_GUARDIAN_BOT_SECRET`, `NAZORATLY_GUARDIAN_BOT_USERNAME` endi o'qilmaydi.
+3. `docker compose up -d --build` (migratsiyalar `migrate` xizmatida qo'llanadi).
+4. Umumiy bot uchun bir marta: `docker compose exec api python -m nazoratly.telegram_setup shared`. Buyruq botni ro'yxatga oladi, yangi webhook siri bilan `/hooks/bot/{id}` ni o'rnatadi. **Diqqat:** bu buyruq o'sha botning oldingi webhookini almashtiradi. Sheets relay'ga ulangan botni umumiy bot qilib bo'lmaydi: bitta botda bitta webhook, umumiy bot uchun alohida bot kerak.
+5. BotFather (egasi): Mini App/menu tugmasi `https://<manzil>/ui/teacher`; Managed Bots uchun shu botning sozlamasida (BotFather Mini App) **Bot Management Mode** ni yoqish.
+6. Markazning o'z boti: egasi `PUT /v1/telegram/bot {token}` yoki Managed Bots (docs/API.md). Uning Mini App tugmasi manzili `GET /v1/telegram/bot` javobidagi `miniapp_urls`.
+7. Sheets relay ulanishi: `docker compose exec api python -m nazoratly.relays add --label "<mijoz>" --target <web app .../exec>` (sir ekranda so'raladi). Chiqqan manzilni mijoz Sheet'da *Relay manzilini o'zgartirish* ga kiritadi.
+
+Tekshiruv: botga `/start`; `docker compose logs api worker` da `telegram_` ogohlantirishlari yo'qligi.
+
 ## Sayt (web) va yo'l bo'yicha marshrutlash
 
 `nazoratly.bugvector.uz` bitta hostname; Cloudflare tunnel yo'l bo'yicha ajratadi (`~/.cloudflared/nazoratly.yml`):

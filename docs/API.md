@@ -116,7 +116,7 @@ docker compose up --build     # db + migratsiya + api (8000) + mcp (8001) + work
 ```
 Migratsiyalar: `python -m nazoratly.migrate up|down|status|roles` (OWNER ulanishi `NAZORATLY_MIGRATE_URL`, superuser yoki BYPASSRLS; rol parollari `NAZORATLY_*_PASSWORD` dan). Ilova `nazoratly_app` va `nazoratly_auth` ulanishlari bilan ishlaydi.
 
-Sozlamalar (`NAZORATLY_` prefiksi): `DATABASE_URL_APP`, `DATABASE_URL_AUTH`, `JWT_SECRET` (≥32 belgi; almashtirish uchun eskisini `JWT_PREVIOUS_SECRETS` ga), `ENV` (`prod` da `/docs` o'chadi, HSTS yoqiladi, wildcard CORS taqiqlanadi), `CORS_ORIGINS`, `TRUST_PROXY_HEADERS` (faqat ishonchli proksi orqasida), `RATE_LIMIT_PER_MINUTE`, `AUTH_RATE_LIMIT_PER_MINUTE`, `LOGIN_MAX_FAILURES`, `SECRETS_KEY` (Fernet; Payme/Click kalitlarini saqlash uchun), `SENTRY_DSN`, `OTEL_EXPORTER_OTLP_ENDPOINT`. MCP: `DATABASE_URL_AGENT`, `MCP_ALLOWED_HOSTS`, `MCP_CALLS_PER_MINUTE`. Worker: `DATABASE_URL_WORKER`, `TELEGRAM_BOT_TOKEN`, `WORKER_POLL_INTERVAL_S`.
+Sozlamalar (`NAZORATLY_` prefiksi): `DATABASE_URL_APP`, `DATABASE_URL_AUTH`, `JWT_SECRET` (≥32 belgi; almashtirish uchun eskisini `JWT_PREVIOUS_SECRETS` ga), `ENV` (`prod` da `/docs` o'chadi, HSTS yoqiladi, wildcard CORS taqiqlanadi), `CORS_ORIGINS`, `TRUST_PROXY_HEADERS` (faqat ishonchli proksi orqasida), `RATE_LIMIT_PER_MINUTE`, `AUTH_RATE_LIMIT_PER_MINUTE`, `LOGIN_MAX_FAILURES`, `SECRETS_KEY` (Fernet; Payme/Click kalitlarini saqlash uchun), `SENTRY_DSN`, `OTEL_EXPORTER_OTLP_ENDPOINT`. MCP: `DATABASE_URL_AGENT`, `MCP_ALLOWED_HOSTS`, `MCP_CALLS_PER_MINUTE`. Telegram: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `PUBLIC_BASE_URL`, `SECRETS_KEY`. Worker: `DATABASE_URL_WORKER`, `TELEGRAM_BOT_TOKEN`, `SECRETS_KEY` (markaz botlari uchun), `WORKER_POLL_INTERVAL_S`.
 
 ## Sinash va sifat darvozalari
 ```powershell
@@ -129,6 +129,37 @@ bash ../db/scripts/test_migrations.sh
 ```
 CI: `.github/workflows/ci.yml` (lint, mypy, pytest, OpenAPI sinxronligi, pip-audit, migratsiya up/down, TS klient, gitleaks, Docker image).
 
+## Telegram botlar (migratsiyalar 0068-0071)
+Dizayn: `docs/superpowers/specs/2026-11-27-telegram-bots-design.md`.
+
+### Bitta kirish va taqsimlagich
+- Har bot (umumiy va markaz boti) bitta manzilga ulanadi: `POST /hooks/bot/{bot_id}`. `X-Telegram-Bot-Api-Secret-Token` shu botning o'z siri (bazada faqat SHA-256). Noma'lum/uzilgan bot `404`, noto'g'ri sir `403`, `update_id` siz so'rov `400`. Har `(bot, update_id)` bir marta ishlanadi (bazada, 3 kundan keyin tozalanadi). Eski `/hooks/guardian-bot` va `/hooks/teacher-bot` olib tashlangan.
+- Taqsimlash tartibi: kod/QR → botning savoliga javob belgisi → tugma nom maydoni (`g:` vasiy, `t:` ustoz) → tanlangan rol → tanlash menyusi → noma'lum odamga faqat ulash yo'riqnomasi. Prefiksi yo'q 8 belgili vasiy kodi botning savoliga javob sifatida yozilsa, kod emas, javob deb olinadi.
+- Rol va markaz bitta menyuda (`/rol`): `Ustoz – <markaz>` (har markaz alohida), `Ota-ona`. Saqlangan tanlov faqat menyu uchun: ruxsat har amalda bazadagi bog'lanishdan o'qiladi. Rol yoki markaz almashsa eski tugma va javob belgisi rad etiladi.
+- Yuborish: markaz boti (agar odam uni ochgan bo'lsa), aks holda umumiy bot (markaz uni to'xtatmagan bo'lsa). Bot bloklangan bo'lsa belgilab qo'yiladi va keyingisi sinaladi. Yo'l qolmasa xabar `failed`, sababi `undeliverable: ...` (ro'yxatlarda "yetkazilmadi" holati).
+- Umumiy botni ro'yxatga olish va webhookini o'rnatish: `python -m nazoratly.telegram_setup shared` (`docs/DEPLOY.md`).
+
+### Markazning o'z boti (faqat egasi, `org:manage`)
+| So'rov | Vazifa |
+|---|---|
+| `GET /v1/telegram/bot` | holat: username, ulash usuli, umumiy bot to'xtatilganmi, Mini App manzillari, o'tganlar soni. Token hech qachon qaytmaydi |
+| `PUT /v1/telegram/bot {token}` | BotFather tokeni bilan ulash yoki o'sha botning tokenini yangilash. `409 bot_in_use` (boshqa markaz yoki umumiy bot), `409 another_bot_connected`, `422 telegram_refused`, `409 telegram_not_configured` |
+| `DELETE /v1/telegram/bot` | uzish: webhook o'chiriladi, token unutiladi, shu bot orqali kirilgan sessiyalar tugatiladi |
+| `GET /v1/telegram/bot/migration` | kim o'z botga o'tgan (ustoz va vasiylar, o'tish yo'li: `code` yoki `direct`) |
+| `PUT /v1/telegram/bot/shared {stopped}` | umumiy botni shu markaz uchun to'xtatish/qayta yoqish. To'xtatilgandan keyin o'tmaganlarga xabar yetkazilmaydi |
+| `POST /v1/telegram/bot/managed {suggested_username?}` | Managed Bots: javobda `confirm_link` (egasi umumiy botda ochadi) |
+| `GET /v1/telegram/bot/managed` | so'rov holati: `waiting_confirmation`, `waiting_creation`, `connected`, `expired`, `cancelled`, `failed` |
+
+- Bosqichli o'tish: umumiy botda "markaz botiga o'tish" tugmasi 30 daqiqalik, bir martalik, faqat shu Telegram hisobi uchun `NZM-` kodli havola beradi. Markaz botida suhbat ochgan odam (kod bilan yoki to'g'ridan-to'g'ri) o'tgan hisoblanadi. Yangi taklif va vasiy kodi havolalari markaz botiga ko'rsatadi.
+- Markaz boti faqat o'z markazi doirasida ishlaydi: boshqa markaz kodi, taklifi, QR kartasi yoki telefon bog'lanishi qabul qilinmaydi.
+- Mini App: `initData` sahifa ochilgan botning tokeni bilan tekshiriladi (`POST /v1/auth/telegram-miniapp` va `POST /v1/cabinet/auth/telegram` da `bot`). Markaz boti orqali kirilgan xodim sessiyasi shu markaz bilan qulflanadi: faqat ustoz roli, markaz almashtirish va akkaunt amallari yopiq, `/v1/me` aloqa ma'lumotini bermaydi.
+- Managed Bots: egasi so'rov yaratadi → `confirm_link` ni o'z Telegramidan ochadi (so'rov shu hisobga bog'lanadi) → botdagi tugma yoki `t.me/newbot/...` havolasi bilan bot yaratadi → server `managed_bot` update'ida yaratuvchini so'rovga solishtiradi va tokenni `getManagedBotToken` bilan oladi. Boshqa odam yaratgan bot hech bir markazga ulanmaydi. Token almashsa yangilanadi; bot egasi o'zgarsa markazdan uziladi.
+- Markaz sozlama ekrani web panel bosqichida; hozircha API.
+
+### Sheets relay
+- `POST /hooks/relay/{relay_id}`: har ulanishning o'z yozuvi, manzili va siri. Faqat `https://script.google.com/.../exec` manzillariga uzatiladi; xabar mazmuni saqlanmaydi va logga yozilmaydi. Operator buyrug'i: `python -m nazoratly.relays add|list|disable`.
+- Eski bitta manzilli `/hooks/telegram` (`NAZORATLY_TG_RELAY_TARGET/SECRET`) ishlayveradi va shu manzil qoidasiga bo'ysunadi.
+
 ## Ma'lum cheklovlar
 - Rate limit jarayon ichida (bir nusxa uchun aniq); ko'p nusxada har biri o'z oynasini yuritadi — parol taxmini uchun DB'dagi login qulfi (markaziy) ishlaydi. Ko'p nusxa kerak bo'lsa Redis/proksi limiti qo'shiladi.
 - Access token (15 daqiqa) parol o'zgargandan keyin muddati tugaguncha amal qiladi; refresh tokenlar darhol bekor qilinadi. A'zolik/foydalanuvchi holati esa har so'rovda tekshiriladi.
@@ -136,7 +167,6 @@ CI: `.github/workflows/ci.yml` (lint, mypy, pytest, OpenAPI sinxronligi, pip-aud
 - Eskiz adapteri Eskiz hujjatidagi endpointlarga qarab yozilgan (Postman kolleksiyasi), haqiqiy hisob bilan sinalmagan (hisob foyda boshlangach). Sheets edition `sheets/` papkada (Apps Script + Telegram); undan ko'chirish: `python -m nazoratly.tools.sheets_import` (sheets/README.md).
 - Click qaytarish: `POST /v1/online-transactions/{id}/reverse` Click merchant API `payment/reversal` ni chaqiradi (`Auth: merchant_user_id:sha1(ts+secret):ts`; `merchant_user_id` provayder sozlamasida), Click rad etsa hech narsa o'zgarmaydi, qabul qilsa to'lov void bo'ladi. Click qoidalari: faqat joriy hisobot oyidagi kartali to'lov. Sinov Click javobini taqlid qiladi (`MockTransport`).
 - Payme fiskalizatsiya (`SetFiscalData` / `detail`) amalga oshirilmagan: IKPU/package_code kerak, ular har markazning mahsulot kodlariga bog'liq va Payme bilan kelishiladi (spetsifikatsiyada ixtiyoriy).
-- Kirishda markaz tanlash/QR/Telegram login yo'q; ota-ona portali yo'q (faqat xodimlar).
 - Yuk (load) testi o'tkazilmagan; faqat mantiqiy va parallel (8 to'lov, 6 yozilish) testlar.
 - Hisobotlarda `CURRENT_DATE` server vaqt zonasi bo'yicha (tushum hisoboti markaz vaqt zonasida).
 
@@ -157,7 +187,8 @@ Qoidalar `rules/branches.py` (oltin: `tests/golden/branches.json`, Sheets bilan 
 - Taklif: `POST /v1/teachers/{id}/invitations` (egasi/admin) bir martalik kod `T-XXXXXXXX` beradi (7 kun, faqat SHA-256 saqlanadi, kod faqat shu javobda). Eski ochiq taklif bekor bo'ladi. `GET /v1/teacher-invitations`, `DELETE /v1/teacher-invitations/{id}`. Qabul qilish: botda `/start KOD`, yoki API: `POST /v1/auth/accept-teacher-invite {code, email|phone, password}` (yangi hisob, token qaytaradi) / `POST /v1/me/accept-teacher-invite {code}` (mavjud hisob).
 - Mini App kirish: `POST /v1/auth/telegram-miniapp {init_data}` (HMAC bilan tekshiriladi, `auth_date` 1 kundan eski bo'lmasin; hisob taklif orqali bog'langan bo'lishi kerak). `NAZORATLY_TELEGRAM_BOT_TOKEN` yo'q bo'lsa 404. Sahifa: `/ui/teacher` (kirish ma'lumoti URL fragmentida; QR skaner `/ui/scan` ga havola).
 - O'qituvchi: `GET /v1/teacher/me|groups|lessons|pay|notifications`, `GET /v1/teacher/groups/{id}/students` (aloqa ma'lumotisiz), `POST|GET /v1/teacher/guardian-messages`, `GET /v1/teacher/message-templates`. Davomat (`PUT /v1/lessons/{id}/attendance`), QR (`POST /v1/attendance/scan`), baho/izoh (`PUT /v1/marks`) va taqvim mavjud endpointlar: ular o'qituvchini o'z guruh/darslari bilan cheklaydi.
+- Mini App markaz botidan ochilsa so'rovda `bot` (sahifa manzilidagi `?bot=`) yuboriladi (quyida).
 - Vasiyga yozish (inson harakati): faqat o'z guruhi o'quvchisi (guruh o'qituvchisi), huquq yoqilgan, kuniga limit (standart 20, har bir vasiy hisoblanadi), matn 1-1000 belgi, shablon (`absent|late|homework|praise|meeting`) yoki erkin matn. Xabar outbox orqali ketadi (baza rozilik va "eslatma oladi" qoidasini baribir tekshiradi) va `teacher_guardian_messages` jurnaliga yoziladi: jurnalni hech kim API orqali o'zgartira/o'chira olmaydi (trigger + huquq). Egasi: `GET /v1/teacher-messages`, `PATCH /v1/teachers/{id}/messaging {enabled}`, `GET|PATCH /v1/teacher-app/settings` (eslatma soati, limit, kun yakuni vaqti).
 - Eslatmalar (faqat ichki, vasiyga hech narsa ketmaydi): dars tugagach X soatda davomat bo'lmasa o'qituvchiga, kun yakunida egaga/adminlarga ro'yxat. `staff_notifications` (ilovada `GET /v1/notifications`, Telegramga worker yuboradi). `GET /v1/lessons/unmarked`, `POST /v1/teacher-app/reminders/run`. API jarayonidagi sikl `NAZORATLY_TEACHER_REMINDER_INTERVAL_S` (standart 300; 0 = o'chirilgan).
-- Bot: `POST /hooks/teacher-bot` (`X-Telegram-Bot-Api-Secret-Token` = `NAZORATLY_TG_TEACHER_SECRET`); buyruqlar `/bugun /guruhlar /jadval /oylik /xabar /yordam`, davomat tugmalar bilan. Botni ulash (BotFather webhook / Mini App tugmasi) egasining qo'l ishi.
+- Bot: ustoz va vasiy bitta kirishdan foydalanadi (quyida "Telegram botlar"); ustoz buyruqlari `/bugun /guruhlar /jadval /oylik /xabar /yordam`, davomat tugmalar bilan.
 - Qoida: `rules/teacher.py` va Sheets `domain/teacher.ts`, umumiy `tests/golden/teacher.json`.
