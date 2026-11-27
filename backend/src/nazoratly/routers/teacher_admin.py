@@ -25,6 +25,7 @@ from nazoratly.teacher_app import (
     sweep_center,
     unmarked_now,
 )
+from nazoratly.telegram_registry import link_username
 
 router = APIRouter(prefix="/v1", tags=["teacher app (owner)"], route_class=IdempotentRoute)
 
@@ -87,8 +88,8 @@ async def invite_teacher(
         )
         assert row is not None
         out = await fetch_one(conn, f"{_INV_SQL} WHERE i.public_id = %s", (row["public_id"],))
+        username = await link_username(conn, p.org_id, cfg)
     assert out is not None
-    username = cfg.telegram_bot_username
     return InvitationCreated(
         **out, code=code, link=f"https://t.me/{username}?start={code}" if username else None
     )

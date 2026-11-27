@@ -23,12 +23,21 @@ from pydantic import SecretStr
 
 from tests.conftest import Tenant, make_tenant
 from tests.helpers import consent, enroll, mk_course, mk_group, mk_guardian, mk_student, ok, org_today
+from tests.telegram_support import (
+    chat_state,
+    drop_bots,
+    has_ns,
+    next_update_id,
+    register_shared,
+    strip_ns,
+)
 from tests.test_branches import branch_staff, mk_branch, view
 from tests.test_documents import set_requisites
 from tests.test_tenancy_and_staff import _login
 
 BOT_TOKEN = "123456:TEST-bot-token-not-real"
 HOOK_SECRET = "hook-secret-for-tests-123"
+BOT: dict[str, Any] = {}  # the registered shared bot of the running test
 TODAY = org_today()
 TOMORROW = TODAY + timedelta(days=1)
 
@@ -54,9 +63,16 @@ class FakeBot:
     def last(self, chat: int) -> str:
         return self.texts(chat)[-1]
 
-    def keyboard(self, chat: int) -> list[dict[str, Any]]:
+    def raw_keyboard(self, chat: int) -> list[dict[str, Any]]:
         msgs = [c for c in self.calls if c["method"] == "sendMessage" and c["chat"] == chat]
         return [b for row in msgs[-1]["json"].get("reply_markup", {}).get("inline_keyboard", []) for b in row]
+
+    def keyboard(self, chat: int) -> list[dict[str, Any]]:
+        """The buttons with the role namespace (`g:<epoch>:`) taken off; `hook` puts the current one back."""
+        return [
+            {**b, "callback_data": strip_ns(b["callback_data"])} if "callback_data" in b else b
+            for b in self.raw_keyboard(chat)
+        ]
 
     def documents(self, chat: int) -> list[dict[str, Any]]:
         return [c for c in self.calls if c["method"] == "sendDocument" and c["chat"] == chat]
@@ -66,18 +82,19 @@ class FakeBot:
 
 
 @pytest_asyncio.fixture
-async def tg(app: Any) -> AsyncIterator[FakeBot]:
+async def tg(app: Any, super_dsn: str) -> AsyncIterator[FakeBot]:
     fake = FakeBot()
     s = app.state.settings
-    old = (s.telegram_bot_token, s.guardian_bot_secret, s.public_base_url, s.guardian_bot_username)
+    old = (s.telegram_bot_token, s.public_base_url)
     s.telegram_bot_token = SecretStr(BOT_TOKEN)
-    s.guardian_bot_secret = SecretStr(HOOK_SECRET)
     s.public_base_url = "https://nazoratly.test"
-    s.guardian_bot_username = "nazoratly_test_bot"
+    BOT["path"] = register_shared(super_dsn, app.state.secrets_box, BOT_TOKEN, HOOK_SECRET)
+    BOT["dsn"], BOT["fake"] = super_dsn, fake
     app.state.outbound_transport = httpx.MockTransport(fake)
     yield fake
-    s.telegram_bot_token, s.guardian_bot_secret, s.public_base_url, s.guardian_bot_username = old
+    s.telegram_bot_token, s.public_base_url = old
     app.state.outbound_transport = None
+    drop_bots(super_dsn)
 
 
 def init_data(user_id: int, *, token: str = BOT_TOKEN, age_s: int = 0, tamper: bool = False) -> str:
@@ -98,12 +115,31 @@ def new_chat() -> int:
     return 5_000_000 + uuid.uuid4().int % 900_000_000
 
 
+async def _post(client: httpx.AsyncClient, update: dict[str, Any], secret: str) -> httpx.Response:
+    return await client.post(
+        BOT["path"],
+        json={"update_id": next_update_id(), **update},
+        headers={"X-Telegram-Bot-Api-Secret-Token": secret},
+    )
+
+
 async def hook(
     client: httpx.AsyncClient, update: dict[str, Any], secret: str = HOOK_SECRET
 ) -> httpx.Response:
-    return await client.post(
-        "/hooks/guardian-bot", json=update, headers={"X-Telegram-Bot-Api-Secret-Token": secret}
-    )
+    """Deliver an update the way Telegram does. A tap with bare callback data gets the guardian namespace of the
+    conversation, as the buttons the bot sent would carry it."""
+    cq = update.get("callback_query")
+    if cq is not None and not has_ns(cq["data"]):
+        chat = cq["from"]["id"]
+        state = chat_state(BOT["dsn"], chat)
+        if state is None or state[0] != "guardian":  # the person has not been shown a menu yet
+            before = len(BOT["fake"].calls)
+            await _post(client, msg(chat, "/start"), secret)
+            del BOT["fake"].calls[before:]
+            state = chat_state(BOT["dsn"], chat)
+        assert state is not None
+        update = {"callback_query": {**cq, "data": f"g:{state[2]}:{cq['data']}"}}
+    return await _post(client, update, secret)
 
 
 def msg(chat: int, text: str, **extra: Any) -> dict[str, Any]:
@@ -1230,9 +1266,12 @@ async def test_bot_rejects_a_wrong_secret_and_is_off_without_configuration(
     assert (await hook(client, msg(1, "/start"), secret="wrong")).status_code == 403
     assert (await hook(client, msg(1, "/start"), secret="")).status_code == 403
     assert tg.calls == []
-    app.state.settings.guardian_bot_secret = None
-    assert (await hook(client, msg(1, "/start"))).status_code == 404
-    app.state.settings.guardian_bot_secret = SecretStr(HOOK_SECRET)
+    unknown = await client.post(
+        "/hooks/bot/00000000-0000-0000-0000-000000000000",
+        json={"update_id": 1},
+        headers={"X-Telegram-Bot-Api-Secret-Token": HOOK_SECRET},
+    )
+    assert unknown.status_code == 404
 
 
 async def test_bot_start_for_a_stranger_asks_for_a_code_or_the_contact(
@@ -1334,7 +1373,7 @@ async def test_bot_absence_flow_through_a_force_reply(
     assert pick.startswith(f"xl:{t}:")
     await hook(client, tap(fam.chat, pick))
     prompt = tg.calls[-1]["json"]
-    assert prompt["reply_markup"]["force_reply"] is True and "#a:" in prompt["text"]
+    assert prompt["reply_markup"]["force_reply"] is True and re.search(r"#g\d+:a:", prompt["text"])
     await hook(client, msg(fam.chat, "Isitma bor", reply_to_message={"text": prompt["text"]}))
     assert "markazga yuborildi" in tg.last(fam.chat)
     (req,) = await ok(await tenant.get("/v1/guardian/requests"))

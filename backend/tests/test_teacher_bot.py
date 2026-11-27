@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import itertools
 import json
+import re
 import time
 import uuid
 from collections.abc import AsyncIterator
@@ -19,6 +20,7 @@ from nazoratly.main import create_app
 from nazoratly.telegram_auth import BadInitData, sign_init_data, verify_init_data
 from tests.conftest import Tenant
 from tests.helpers import enroll, mk_group, mk_student, mk_teacher, ok, org_today
+from tests.telegram_support import chat_state, drop_bots, has_ns, register_shared, strip_ns
 from tests.test_teacher_app import center, family, invite, lesson, sql
 
 TOKEN = "123456:TEST-BOT-TOKEN"
@@ -30,13 +32,13 @@ _ids = itertools.count(1_000)
 class Bot:
     """A running app with the bot configured and a recording Telegram."""
 
-    def __init__(self, client: httpx.AsyncClient, calls: list[tuple[str, dict[str, Any]]]) -> None:
-        self.http, self.calls = client, calls
+    def __init__(
+        self, client: httpx.AsyncClient, calls: list[tuple[str, dict[str, Any]]], path: str, dsn: str
+    ) -> None:
+        self.http, self.calls, self.path, self.dsn = client, calls, path, dsn
 
     async def send(self, update: dict[str, Any], headers: dict[str, str] | None = None) -> httpx.Response:
-        return await self.http.post(
-            "/hooks/teacher-bot", json=update, headers=HDR if headers is None else headers
-        )
+        return await self.http.post(self.path, json=update, headers=HDR if headers is None else headers)
 
     async def say(self, uid: int, text: str, **extra: Any) -> list[tuple[str, dict[str, Any]]]:
         return await self.update(
@@ -53,6 +55,10 @@ class Bot:
         )
 
     async def tap(self, uid: int, data: str, message_id: int = 10) -> list[tuple[str, dict[str, Any]]]:
+        """A tap on a button: bare data gets the teacher namespace of the conversation, as the bot's buttons carry it."""
+        state = chat_state(self.dsn, uid)
+        if not has_ns(data):
+            data = f"t:{state[2] if state else 0}:{data}"
         return await self.update(
             {
                 "update_id": next(_ids),
@@ -73,12 +79,11 @@ class Bot:
 
 
 @pytest_asyncio.fixture
-async def bot(settings: Any) -> AsyncIterator[Bot]:
+async def bot(settings: Any, super_dsn: str) -> AsyncIterator[Bot]:
     app = create_app(
         settings.model_copy(
             update={
                 "telegram_bot_token": SecretStr(TOKEN),
-                "tg_teacher_secret": SecretStr(SECRET),
                 "telegram_bot_username": "nazoratly_ustoz_bot",
             }
         )
@@ -92,8 +97,10 @@ async def bot(settings: Any) -> AsyncIterator[Bot]:
 
     async with app.router.lifespan_context(app):
         app.state.outbound_transport = httpx.MockTransport(handler)
+        path = register_shared(super_dsn, app.state.secrets_box, TOKEN, SECRET, "nazoratly_ustoz_bot")
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://bot") as c:
-            yield Bot(c, calls)
+            yield Bot(c, calls, path, super_dsn)
+        drop_bots(super_dsn)
 
 
 def texts(calls: list[tuple[str, dict[str, Any]]]) -> list[str]:
@@ -109,7 +116,9 @@ def buttons(calls: list[tuple[str, dict[str, Any]]]) -> list[tuple[str, str]]:
             and "inline_keyboard" in p["reply_markup"]
         ):
             out += [
-                (b["text"], b["callback_data"]) for row in p["reply_markup"]["inline_keyboard"] for b in row
+                (b["text"], strip_ns(b["callback_data"]))
+                for row in p["reply_markup"]["inline_keyboard"]
+                for b in row
             ]
     return out
 
@@ -122,14 +131,14 @@ def uid() -> int:
 async def test_hook_is_closed_until_configured_and_checks_the_secret(
     client: httpx.AsyncClient, bot: Bot
 ) -> None:
-    assert (await client.post("/hooks/teacher-bot", json={})).status_code == 404  # the default app has no bot
-    assert (await bot.http.post("/hooks/teacher-bot", json={})).status_code == 403
+    unknown = "/hooks/bot/00000000-0000-0000-0000-000000000000"
+    assert (await client.post(unknown, json={})).status_code == 404
+    assert (await bot.http.post(bot.path, json={})).status_code == 403
     assert (
-        await bot.http.post(
-            "/hooks/teacher-bot", json={}, headers={"X-Telegram-Bot-Api-Secret-Token": "nope"}
-        )
+        await bot.http.post(bot.path, json={}, headers={"X-Telegram-Bot-Api-Secret-Token": "nope"})
     ).status_code == 403
-    assert (await bot.http.post("/hooks/teacher-bot", content="not json", headers=HDR)).status_code == 400
+    assert (await bot.http.post(bot.path, content="not json", headers=HDR)).status_code == 400
+    assert (await bot.send({})).status_code == 400  # no update id
     assert (await bot.send({"update_id": next(_ids)})).status_code == 200  # an update of a kind we do not use
     assert bot.calls == []
 
@@ -176,7 +185,7 @@ async def test_teacher_links_the_telegram_account_with_the_invitation_code(
 ) -> None:
     prof = await mk_teacher(tenant)
     inv = await invite(tenant, prof)
-    assert inv["link"] is None  # the default test app has no bot username
+    assert inv["link"] == f"https://t.me/nazoratly_ustoz_bot?start={inv['code']}"  # the registered shared bot
     with_link = await ok(
         await bot.http.post(f"/v1/teachers/{(await mk_teacher(tenant))['id']}/invitations", headers=tenant.h),
         201,
@@ -340,7 +349,8 @@ async def test_messages_to_guardians_through_the_bot(
     # free text: the bot asks for a reply, the reply is the text
     ask = await bot.tap(u, next(d for _, d in templates if d.startswith("m4:")))
     prompt = ask[0][1]
-    assert prompt["reply_markup"]["force_reply"] is True and "#" + uuid.UUID(a["id"]).hex in prompt["text"]
+    assert prompt["reply_markup"]["force_reply"] is True
+    assert re.search(rf"#t\d+:{uuid.UUID(a['id']).hex}", prompt["text"])
     done = await bot.say(u, "Ertaga kelishsin.", reply_to_message={"message_id": 5, "text": prompt["text"]})
     assert "1 ta vasiyga" in texts(done)[0]
     # a stray text without a prompt is not a message to anybody
@@ -413,9 +423,8 @@ async def test_mini_app_login(client: httpx.AsyncClient, tenant: Tenant, bot: Bo
     c = await center(client, tenant)
     u = uid()
     body = {"init_data": init_data(u)}
-    assert (
-        await client.post("/v1/auth/telegram-miniapp", json=body)
-    ).status_code == 404  # the default app has no bot token
+    # the default app has no token in its environment: it verifies with the registered shared bot's
+    assert (await client.post("/v1/auth/telegram-miniapp", json=body)).status_code == 403
     r = await bot.http.post("/v1/auth/telegram-miniapp", json=body)
     assert r.status_code == 403  # a valid Telegram signature, but nobody is linked to this id
     sql(

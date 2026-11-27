@@ -16,18 +16,19 @@ from urllib.parse import parse_qsl
 import httpx
 import structlog
 
-from nazoratly.config import Settings
-
 log = structlog.get_logger("guardian_telegram")
 
 INIT_DATA_MAX_AGE_S = 86_400
 
 
 class TelegramApi:
-    def __init__(self, settings: Settings, transport: httpx.AsyncBaseTransport | None = None) -> None:
-        self._token = settings.telegram_bot_token.get_secret_value() if settings.telegram_bot_token else None
-        self._base = settings.telegram_api_base.rstrip("/")
+    def __init__(
+        self, api_base: str, token: str | None, transport: httpx.AsyncBaseTransport | None = None
+    ) -> None:
+        self._token = token
+        self._base = api_base.rstrip("/")
         self._transport = transport
+        self.last_error: tuple[int | None, str] = (None, "")  # (status, Bot API description) of a refusal
 
     @property
     def configured(self) -> bool:
@@ -53,6 +54,11 @@ class TelegramApi:
             return False
         ok = r.status_code == 200
         if not ok:
+            try:
+                note = str(r.json().get("description", ""))[:200]
+            except (ValueError, AttributeError):
+                note = ""
+            self.last_error = (r.status_code, note)
             log.warning("telegram_call_rejected", method=method, status=r.status_code)
         return ok
 
@@ -66,10 +72,14 @@ class TelegramApi:
             body["reply_markup"] = reply_markup
         return await self.call("sendMessage", json_body=body)
 
-    async def answer_callback(self, callback_id: str, text: str | None = None) -> bool:
+    async def answer_callback(
+        self, callback_id: str, text: str | None = None, *, alert: bool = False
+    ) -> bool:
         body: dict[str, Any] = {"callback_query_id": callback_id}
         if text:
             body["text"] = text[:190]
+        if alert:
+            body["show_alert"] = True
         return await self.call("answerCallbackQuery", json_body=body)
 
     async def send_document(
@@ -111,11 +121,6 @@ def verify_init_data(
 
 
 # ---- keyboards -------------------------------------------------------------------------------------------------
-def inline(rows: list[list[tuple[str, str]]]) -> dict[str, Any]:
-    """rows of (label, callback_data)."""
-    return {"inline_keyboard": [[{"text": t, "callback_data": d} for t, d in row] for row in rows]}
-
-
 def contact_keyboard() -> dict[str, Any]:
     return {
         "keyboard": [[{"text": "📱 Telefon raqamimni ulashish", "request_contact": True}]],

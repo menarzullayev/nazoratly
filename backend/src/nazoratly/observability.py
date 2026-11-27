@@ -30,9 +30,16 @@ def _redact(_: Any, __: str, event: dict[str, Any]) -> dict[str, Any]:
     return event
 
 
+def quiet_http_client_logs() -> None:
+    """Outbound request lines carry full URLs, and Bot API and relay URLs carry secrets: they are never logged."""
+    for name in ("httpx", "httpcore"):
+        logging.getLogger(name).setLevel(logging.WARNING)
+
+
 def configure_logging(settings: Settings) -> None:
     level = getattr(logging, settings.log_level.upper(), logging.INFO)
     logging.basicConfig(format="%(message)s", stream=sys.stdout, level=level, force=True)
+    quiet_http_client_logs()
     processors: list[Any] = [
         structlog.contextvars.merge_contextvars,
         structlog.processors.add_log_level,
@@ -49,6 +56,10 @@ def configure_logging(settings: Settings) -> None:
     )
 
 
+def _no_http_breadcrumbs(crumb: Any, _hint: Any) -> Any:
+    return None if crumb.get("type") == "http" or crumb.get("category") == "httplib" else crumb
+
+
 def configure_sentry(settings: Settings) -> bool:
     if settings.sentry_dsn is None:
         return False
@@ -61,6 +72,7 @@ def configure_sentry(settings: Settings) -> bool:
         send_default_pii=False,  # students' personal data must never reach a third party
         traces_sample_rate=0.0,
         max_request_body_size="never",
+        before_breadcrumb=_no_http_breadcrumbs,
     )
     return True
 

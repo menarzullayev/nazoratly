@@ -26,6 +26,7 @@ from nazoratly.guardian_service import (
 from nazoratly.idempotency import IdempotentRoute
 from nazoratly.rules import guardian as G
 from nazoratly.schemas import Model, Out
+from nazoratly.telegram_registry import link_username
 
 router = APIRouter(prefix="/v1/guardian", tags=["guardian cabinet (staff)"], route_class=IdempotentRoute)
 Relation = Literal["mother", "father", "guardian", "self", "other"]
@@ -83,7 +84,8 @@ async def issue_code(
         code, row = await issue_link_code(
             conn, org_id=p.org_id, student_id=sid, guardian_id=gid, relation=body.relation, user_id=p.user_id
         )
-    link = f"https://t.me/{cfg.guardian_bot_username}?start={code}" if cfg.guardian_bot_username else None
+        username = await link_username(conn, p.org_id, cfg)
+    link = f"https://t.me/{username}?start={code}" if username else None
     return CodeIssued(
         id=row["public_id"],
         student_id=body.student_id,

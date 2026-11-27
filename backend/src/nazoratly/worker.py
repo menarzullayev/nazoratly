@@ -13,6 +13,7 @@ import os
 import signal
 import sys
 import time
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
@@ -25,6 +26,16 @@ from psycopg_pool import AsyncConnectionPool
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from nazoratly.observability import quiet_http_client_logs
+from nazoratly.secrets_box import SecretsBox
+from nazoratly.telegram_delivery import (
+    MARK_UNREACHABLE_SQL,
+    ROUTES_SQL,
+    UNDELIVERABLE,
+    refused_for_good,
+    resolve_routes,
+)
+
 log = structlog.get_logger("worker")
 
 
@@ -32,7 +43,8 @@ class WorkerSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="NAZORATLY_", env_file=".env", extra="ignore")
 
     database_url_worker: SecretStr
-    telegram_bot_token: SecretStr | None = None  # empty = Telegram not configured
+    telegram_bot_token: SecretStr | None = None  # the shared bot; empty = only centers' own bots (if any)
+    secrets_key: SecretStr | None = None  # decrypts the bot tokens in the registry (centers' own bots)
     telegram_api_base: str = "https://api.telegram.org"
     eskiz_email: str | None = None  # SMS via Eskiz.uz; empty = SMS not configured
     eskiz_password: SecretStr | None = None
@@ -62,6 +74,7 @@ class Outcome:
     retry_after_s: int | None = None
     permanent: bool = False
     status_code: int | None = None
+    refused: bool = False  # this bot cannot message this chat: another route may
 
 
 class Sender(Protocol):
@@ -102,7 +115,11 @@ class TelegramSender:
             404,
         ):  # blocked bot, chat not found, bad token: retrying cannot help
             return Outcome(
-                False, f"telegram {r.status_code}: {desc}", permanent=True, status_code=r.status_code
+                False,
+                f"telegram {r.status_code}: {desc}",
+                permanent=True,
+                status_code=r.status_code,
+                refused=refused_for_good(r.status_code, desc),
             )
         return Outcome(False, f"telegram {r.status_code}: {desc}", status_code=r.status_code)
 
@@ -219,6 +236,11 @@ class Worker:
         )
         token = settings.telegram_bot_token
         self.senders: dict[str, Sender] = {"sms": NoSmsProvider()}
+        key = settings.secrets_key
+        self.box = SecretsBox(key.get_secret_value()) if key and key.get_secret_value().strip() else None
+        self._env_token = (
+            token.get_secret_value() if token is not None and token.get_secret_value().strip() else None
+        )
         pw = settings.eskiz_password
         if settings.eskiz_email and pw is not None and pw.get_secret_value():
             self.senders["sms"] = EskizSender(
@@ -227,10 +249,6 @@ class Worker:
                 settings.eskiz_from,
                 settings.eskiz_api_base,
                 self._http,
-            )
-        if token is not None and token.get_secret_value().strip():
-            self.senders["telegram"] = TelegramSender(
-                token.get_secret_value(), settings.telegram_api_base, self._http
             )
 
     async def open(self) -> None:
@@ -248,14 +266,9 @@ class Worker:
         async with self.pool.connection() as conn:
             cur = await conn.execute("SELECT * FROM staff_notice_claim(%s)", (self.settings.worker_batch,))
             claimed = list(await cur.fetchall())
-        sender = self.senders.get("telegram")
         for row in claimed:
-            if sender is None:
-                outcome = Outcome(False, "telegram is not configured", permanent=True)
-            else:
-                outcome = await sender.send(
-                    Message(int(row["notice_id"]), "telegram", row["body"], row["telegram_chat_id"], None)
-                )
+            notice = Message(int(row["notice_id"]), "telegram", row["body"], row["telegram_chat_id"], None)
+            outcome = await self._through_routes(int(row["org_id"]), notice, TelegramSender.send)
             async with self.pool.connection() as conn:
                 await conn.execute(
                     "SELECT staff_notice_complete(%s, %s, %s, %s, %s)",
@@ -279,11 +292,13 @@ class Worker:
                 row["has_document"],
                 row["text_delivered"],
             )
-            sender = self.senders.get(msg.channel)
-            if sender is None:
-                outcome = Outcome(False, f"channel {msg.channel} is not configured", permanent=True)
+            if msg.channel == "telegram":
+                deliver = self._deliver_document if msg.has_document else TelegramSender.send
+                outcome = await self._through_routes(int(row["org_id"]), msg, deliver)
             elif msg.has_document:
-                outcome = await self._deliver_document(msg, sender)
+                outcome = Outcome(False, "documents are delivered through Telegram only", permanent=True)
+            elif (sender := self.senders.get(msg.channel)) is None:
+                outcome = Outcome(False, f"channel {msg.channel} is not configured", permanent=True)
             else:
                 outcome = await sender.send(msg)
             async with self.pool.connection() as conn:
@@ -300,10 +315,34 @@ class Worker:
             )
         return len(claimed)
 
-    async def _deliver_document(self, msg: Message, sender: Sender) -> Outcome:
+    async def _through_routes(
+        self, org_id: int, msg: Message, deliver: Callable[[TelegramSender, Message], Awaitable[Outcome]]
+    ) -> Outcome:
+        """Send through the bot the person can be reached on: the center's own, else the shared one (0068). A bot that is
+        refused is remembered and the next one is tried; no bot left = a visible, permanent "undeliverable"."""
+        if msg.telegram_chat_id is None:
+            return Outcome(False, "recipient has no Telegram chat", permanent=True)
+        async with self.pool.connection() as conn:
+            cur = await conn.execute(ROUTES_SQL, (org_id, msg.telegram_chat_id))
+            rows = list(await cur.fetchall())
+        routes = resolve_routes(rows, self._env_token, self.box)
+        if not routes:
+            if self._env_token is None and not any(r["secret_ciphertext"] for r in rows):
+                return Outcome(False, "channel telegram is not configured", permanent=True)
+            return Outcome(False, UNDELIVERABLE, permanent=True)
+        outcome = Outcome(False, UNDELIVERABLE, permanent=True)
+        for route in routes:
+            sender = TelegramSender(route.token, self.settings.telegram_api_base, self._http)
+            outcome = await deliver(sender, msg)
+            if not outcome.refused:
+                return outcome
+            async with self.pool.connection() as conn:
+                await conn.execute(MARK_UNREACHABLE_SQL, (route.bot_id, msg.telegram_chat_id))
+        return Outcome(False, f"{UNDELIVERABLE}; last answer: {outcome.error}", permanent=True)
+
+    async def _deliver_document(self, sender: TelegramSender, msg: Message) -> Outcome:
         """Rich text first, then the PDF. A retry after a failed upload skips the text that was already delivered."""
-        if not isinstance(sender, TelegramSender) or msg.telegram_chat_id is None:
-            return Outcome(False, "documents are delivered through Telegram only", permanent=True)
+        assert msg.telegram_chat_id is not None
         if not msg.text_delivered:
             text = await sender.send_rich(msg)
             if not text.ok:
@@ -356,7 +395,11 @@ async def _main() -> None:
     for sig in (signal.SIGINT, signal.SIGTERM):
         with contextlib.suppress(NotImplementedError):  # Windows
             loop.add_signal_handler(sig, stop.set)
-    log.info("worker_started", telegram=settings.telegram_bot_token is not None)
+    log.info(
+        "worker_started",
+        shared_bot=settings.telegram_bot_token is not None,
+        center_bots=settings.secrets_key is not None,
+    )
     try:
         await worker.run_forever(stop)
     finally:
@@ -368,6 +411,7 @@ def main() -> None:
         sys.exit(0 if heartbeat_fresh() else 1)
     import structlog as _s
 
+    quiet_http_client_logs()
     _s.configure(
         processors=[
             _s.processors.add_log_level,

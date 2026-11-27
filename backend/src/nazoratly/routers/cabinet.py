@@ -42,17 +42,15 @@ from nazoratly.guardian_service import (
     student_of,
     upcoming_lessons_for_absence,
 )
-from nazoratly.guardian_telegram import TelegramApi, verify_init_data
+from nazoratly.guardian_telegram import verify_init_data
 from nazoratly.rules import guardian as G
 from nazoratly.schemas import Dec2, Model, Out
+from nazoratly.telegram_delivery import send_text
+from nazoratly.telegram_registry import shared_token
 
 router = APIRouter(prefix="/v1/cabinet", tags=["guardian cabinet"])
 _bearer = HTTPBearer(auto_error=False, description="Guardian session token (gs_...) from /v1/cabinet/auth/*")
 _ANON = Session(user_id=None, org_id=None, actor_type="system")
-
-
-def telegram_api(request: Request, cfg: Cfg) -> TelegramApi:
-    return TelegramApi(cfg, getattr(request.app.state, "outbound_transport", None))
 
 
 async def current_guardian(
@@ -79,7 +77,6 @@ async def current_guardian(
 
 
 Me = Annotated[GuardianCtx, Depends(current_guardian)]
-Api = Annotated[TelegramApi, Depends(telegram_api)]
 
 
 # ---- sign-in -----------------------------------------------------------------------------------------------------
@@ -101,10 +98,11 @@ class TelegramLoginIn(Model):
     response_model=TokenOut,
     summary="Mini App sign-in: send Telegram's `initData`; the signature and its age are checked",
 )
-async def auth_telegram(body: TelegramLoginIn, db: DB, cfg: Cfg) -> TokenOut:
-    if cfg.telegram_bot_token is None:
+async def auth_telegram(body: TelegramLoginIn, request: Request, db: DB, cfg: Cfg) -> TokenOut:
+    token_of_bot = await shared_token(db, cfg, request.app.state.secrets_box)
+    if token_of_bot is None:
         raise NotFound("Telegram sign-in is not configured")
-    user = verify_init_data(body.init_data, cfg.telegram_bot_token.get_secret_value())
+    user = verify_init_data(body.init_data, token_of_bot)
     if user is None:
         raise Unauthorized("Telegram data is not valid or has expired")
     tg = int(user["id"])
@@ -150,7 +148,7 @@ class LoginCodeAccepted(Out):
     status_code=202,
     summary="Portal sign-in, step 1: a 6-digit code is sent to the guardian's own Telegram chat (always 202: no enumeration)",
 )
-async def auth_code_request(body: PhoneIn, db: DB, api: Api) -> LoginCodeAccepted:
+async def auth_code_request(body: PhoneIn, request: Request, db: DB, cfg: Cfg) -> LoginCodeAccepted:
     key = G.phone_key(body.phone)
     if not key:
         return LoginCodeAccepted()
@@ -187,9 +185,14 @@ async def auth_code_request(body: PhoneIn, db: DB, api: Api) -> LoginCodeAccepte
                 (ctx.org_id, ctx.guardian_id, sha256_hex(code), G.LOGIN_TTL_S),
             )
             chat = int(g["telegram_chat_id"])
-        await api.send_message(
-            chat,
-            f"Nazoratly kirish kodi: {code}\n10 daqiqa amal qiladi. Siz so'ramagan bo'lsangiz, e'tibor bermang.",
+        await send_text(
+            db,
+            cfg,
+            request.app.state.secrets_box,
+            getattr(request.app.state, "outbound_transport", None),
+            org_id=ctx.org_id,
+            chat_id=chat,
+            text=f"Nazoratly kirish kodi: {code}\n10 daqiqa amal qiladi. Siz so'ramagan bo'lsangiz, e'tibor bermang.",
         )
     return LoginCodeAccepted()
 

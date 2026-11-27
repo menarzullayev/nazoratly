@@ -1899,4 +1899,48 @@ ALTER TABLE accounts DISABLE TRIGGER USER;
 DELETE FROM accounts;
 ALTER TABLE accounts ENABLE TRIGGER USER;
 
+-- ---------------------------------------------------------------- Telegram bots (0068)
+BEGIN;
+DO $$
+DECLARE shared bigint; own bigint;
+BEGIN
+  SELECT out_id INTO shared FROM tg_shared_register(9001, 'shared_bot', ''::bytea, repeat('a', 64));
+  INSERT INTO telegram_bots (org_id, bot_user_id, username, secret_ciphertext, token_hash, method, status)
+    VALUES (1, 9002, 'center_bot', ''::bytea, repeat('b', 64), 'token', 'active') RETURNING id INTO own;
+  PERFORM public.t_expect('23505', $q$INSERT INTO telegram_bots (org_id, bot_user_id, username, secret_ciphertext, token_hash, method) VALUES (1, 9003, 'second_bot', '', repeat('c', 64), 'token')$q$);  -- one live bot per center
+  PERFORM public.t_expect('23505', $q$INSERT INTO telegram_bots (org_id, bot_user_id, username, secret_ciphertext, token_hash, method) VALUES (2, 9002, 'center_bot', '', repeat('c', 64), 'token')$q$);  -- one center per bot
+  PERFORM public.t_expect('23514', $q$UPDATE telegram_bots SET status = 'disabled' WHERE bot_user_id = 9002$q$);  -- a disconnected bot forgets its token
+  PERFORM public.t_expect('23514', $q$UPDATE telegram_bots SET shared_stopped_at = now() WHERE org_id IS NULL$q$);
+  PERFORM public.t_expect('23514', $q$INSERT INTO telegram_bots (org_id, bot_user_id, username, method, status) VALUES (2, 9004, 'no_secret_bot', 'token', 'active')$q$);
+  ASSERT NOT EXISTS (SELECT 1 FROM audit_log WHERE entity_type = 'telegram_bots' AND (after_data ? 'secret_ciphertext' OR after_data ? 'token_hash')), 'the audit log never holds bot secrets';
+  ASSERT EXISTS (SELECT 1 FROM audit_log WHERE entity_type = 'telegram_bots' AND org_id = 1), 'connecting a bot is audited';
+
+  -- routes: the center bot only after the person opened it; the shared bot unless stopped
+  ASSERT (SELECT array_agg(bot_id ORDER BY route_order) FROM tg_delivery_routes(1, 42)) = ARRAY[shared], 'not opened: shared only';
+  INSERT INTO telegram_chats (bot_id, telegram_user_id) VALUES (own, 42);
+  ASSERT (SELECT array_agg(bot_id ORDER BY route_order) FROM tg_delivery_routes(1, 42)) = ARRAY[own, shared], 'opened: own first';
+  ASSERT (SELECT array_agg(bot_id ORDER BY route_order) FROM tg_delivery_routes(2, 42)) = ARRAY[shared], 'another center never uses this bot';
+  UPDATE telegram_bots SET shared_stopped_at = now() WHERE id = own;
+  ASSERT (SELECT array_agg(bot_id) FROM tg_delivery_routes(1, 42)) = ARRAY[own], 'stopped: own only';
+  PERFORM tg_mark_unreachable(own, 42);
+  ASSERT (SELECT count(*) FROM tg_delivery_routes(1, 42)) = 0, 'blocked and stopped: no route';
+
+  SET LOCAL ROLE nazoratly_app;
+  PERFORM set_config('app.org_id', '2', true);
+  ASSERT (SELECT count(*) FROM telegram_bots) = 0, 'another center sees no bot of center 1 and not the shared row';
+  PERFORM set_config('app.org_id', '1', true);
+  ASSERT (SELECT count(*) FROM telegram_bots) = 1, 'a center sees its own bot';
+  PERFORM set_config('app.guardian_id', '1', true);
+  ASSERT (SELECT count(*) FROM telegram_bots) = 0, 'a guardian session sees no bot row';
+  PERFORM set_config('app.guardian_id', '', true);
+  RESET ROLE;
+  SET LOCAL ROLE nazoratly_worker;
+  PERFORM tg_delivery_routes(1, 42);
+  PERFORM public.t_expect('42501', $q$SELECT * FROM telegram_bots$q$);
+  PERFORM public.t_expect('42501', $q$SELECT * FROM telegram_chats$q$);
+  PERFORM public.t_expect('42501', $q$SELECT * FROM tg_bot_by_public_id(gen_random_uuid())$q$);
+  RESET ROLE;
+END $$;
+ROLLBACK;
+
 SELECT 'ALL SCHEMA TESTS PASSED' AS result;

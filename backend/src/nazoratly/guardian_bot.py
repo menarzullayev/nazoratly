@@ -1,4 +1,6 @@
-"""The guardian bot (stage 1 of the cabinet): inline-keyboard buttons over the same service the Mini App and the portal use.
+"""The guardian side of the bots (stage 1 of the cabinet): inline-keyboard buttons over the same service the Mini App and
+the portal use. `nazoratly.telegram_dispatch` routes updates here; callback data is `g:<epoch>:...` and the conversation
+only reaches the centers of its scope (`nazoratly.telegram_scope`).
 
 The bot only ever ANSWERS: to a message, a tap or a shared contact of the guardian himself. It never starts a
 conversation, so nothing is sent to a guardian by automation (Model B); every request a guardian makes through it waits
@@ -8,17 +10,14 @@ so the bot has no session of its own. All Telegram calls go through `TelegramApi
 from __future__ import annotations
 
 import re
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any
 
-import psycopg
-import structlog
-
 from nazoratly.accounting import org_today
 from nazoratly.config import Settings
 from nazoratly.db import Database, Session, execute, fetch_all, fetch_one
-from nazoratly.errors import ApiError, translate_db_error
 from nazoratly.guardian_service import (
     LINK_ATTEMPTS_PER_HOUR,
     GuardianCtx,
@@ -41,10 +40,10 @@ from nazoratly.guardian_service import (
     tok,
     upcoming_lessons_for_absence,
 )
-from nazoratly.guardian_telegram import TelegramApi, contact_keyboard, inline
+from nazoratly.guardian_telegram import TelegramApi, contact_keyboard
 from nazoratly.rules import guardian as G
+from nazoratly.telegram_scope import Scope, keyboard
 
-log = structlog.get_logger("guardian_bot")
 _ANON = Session(user_id=None, org_id=None, actor_type="system")
 QR_CODE = re.compile(r"^NZQ1-[A-HJ-NP-Z2-9]{20}$")
 STATUS_TEXT = {
@@ -77,32 +76,29 @@ class Linked:
 
 
 class GuardianBot:
-    def __init__(self, db: Database, settings: Settings, api: TelegramApi) -> None:
+    def __init__(
+        self,
+        db: Database,
+        settings: Settings,
+        api: TelegramApi,
+        *,
+        scope: Scope,
+        epoch: int,
+        activate: Callable[[], Awaitable[int]],
+        menu_rows: list[list[tuple[str, str]]] | None = None,
+        miniapp_url: str | None = None,
+    ) -> None:
         self.db = db
         self.cfg = settings
         self.api = api
+        self.scope = scope
+        self.epoch = epoch
+        self.activate = activate  # a successful link makes "guardian" the chosen role; returns the new epoch
+        self.menu_rows = menu_rows or []
+        self.miniapp_url = miniapp_url
 
-    # ---- entry ---------------------------------------------------------------------------------------------------
-    async def handle(self, update: dict[str, Any]) -> None:
-        try:
-            if "callback_query" in update:
-                await self._callback(update["callback_query"])
-            elif "message" in update:
-                await self._message(update["message"])
-        except ApiError as exc:  # a rule said no: tell the guardian why, in his language
-            chat = _chat_of(update)
-            if chat is not None:
-                await self.api.send_message(chat, f"⚠️ {exc.message}")
-        except psycopg.Error as exc:
-            mapped = translate_db_error(exc)
-            if mapped is None:
-                log.exception("guardian_bot_failed")
-            else:
-                chat = _chat_of(update)
-                if chat is not None:
-                    await self.api.send_message(chat, f"⚠️ {mapped.message}")
-        except Exception:
-            log.exception("guardian_bot_failed")
+    def _kb(self, rows: list[list[tuple[str, str]]]) -> dict[str, Any]:
+        return keyboard("g", self.epoch, rows)
 
     # ---- who is this ---------------------------------------------------------------------------------------------
     async def _linked(self, tg: int) -> list[Linked]:
@@ -111,6 +107,7 @@ class GuardianBot:
         return [
             Linked(GuardianCtx(int(r["org_id"]), int(r["guardian_id"]), None, ""), str(r["center_name"]))
             for r in rows
+            if self.scope.allows(int(r["org_id"]))
         ]
 
     async def _find_student(self, tg: int, token: str) -> tuple[Linked, dict[str, Any]] | None:
@@ -121,38 +118,22 @@ class GuardianBot:
                         return lk, s
         return None
 
-    # ---- messages ------------------------------------------------------------------------------------------------
-    async def _message(self, m: dict[str, Any]) -> None:
-        chat = m.get("chat") or {}
-        sender = m.get("from") or {}
-        if (
-            chat.get("type") != "private"
-            or chat.get("id") != sender.get("id")
-            or not isinstance(sender.get("id"), int)
-        ):
-            return
-        tg = int(sender["id"])
-        name = " ".join(x for x in (sender.get("first_name"), sender.get("last_name")) if x) or None
+    # ---- entry points of the dispatcher --------------------------------------------------------------------------
+    async def on_marker(self, tg: int, text: str, reply_to: str) -> bool:
+        """A reply to a prompt of this bot (the reason of an absence). False when the prompt is not one of ours."""
+        marker = re.search(r"#g\d{1,9}:a:([0-9a-f]{12}):([0-9a-f]{12})", reply_to)
+        if marker is None:
+            return False
+        await self._absence_reason(tg, marker.group(2), marker.group(1), text)
+        return True
 
-        contact = m.get("contact")
-        if contact:
-            await self._contact(tg, contact)
-            return
-        text = str(m.get("text") or "").strip()
-        reply_to = (m.get("reply_to_message") or {}).get("text") or ""
-        marker = re.search(r"#a:([0-9a-f]{12}):([0-9a-f]{12})", str(reply_to))
-        if marker and text and not text.startswith("/"):
-            await self._absence_reason(tg, marker.group(2), marker.group(1), text)
-            return
-        if text.startswith("/start") or text.startswith("/menu") or text.startswith("/help"):
-            payload = text.split(maxsplit=1)[1].strip() if " " in text else ""
-            if payload and text.startswith("/start"):
-                await self._code_or_qr(tg, name, payload)
-                return
-            await self._home(tg)
-            return
-        if text and await self._code_or_qr(tg, name, text, quiet_if_not_code=True):
-            return
+    async def on_code(self, tg: int, name: str | None, text: str) -> None:
+        await self._code_or_qr(tg, name, text)
+
+    async def on_contact(self, tg: int, contact: dict[str, Any]) -> None:
+        await self._contact(tg, contact)
+
+    async def on_home(self, tg: int) -> None:
         await self._home(tg)
 
     async def _home(self, tg: int) -> None:
@@ -173,11 +154,8 @@ class GuardianBot:
         if len(students) == 1:
             await self._student_menu(tg, students[0][0], students[0][1])
             return
-        await self.api.send_message(
-            tg,
-            "Farzandni tanlang:",
-            inline([[(f"{s['full_name']} · {lk.center}", f"o:{tok(s['id'])}")] for lk, s in students][:20]),
-        )
+        picks = [[(f"{s['full_name']} · {lk.center}", f"o:{tok(s['id'])}")] for lk, s in students][:20]
+        await self.api.send_message(tg, "Farzandni tanlang:", self._kb(picks + self.menu_rows))
 
     async def _student_menu(self, tg: int, lk: Linked, s: dict[str, Any]) -> None:
         if not s["consent"]:
@@ -191,15 +169,10 @@ class GuardianBot:
             [("🚫 Darsga kela olmayman", f"x:{t}"), ("🤝 To'lov va'dasi", f"p:{t}")],
             [("🔁 Qoplash darsi", f"m:{t}"), ("🔑 Veb-portal", "l")],
         ]
-        markup = inline(rows)
-        if self.cfg.public_base_url:
+        markup = self._kb(rows + self.menu_rows)
+        if self.miniapp_url:
             markup["inline_keyboard"].append(
-                [
-                    {
-                        "text": "📱 Kabinetni ochish",
-                        "web_app": {"url": f"{self.cfg.public_base_url.rstrip('/')}/ui/guardian"},
-                    }
-                ]
+                [{"text": "📱 Kabinetni ochish", "web_app": {"url": self.miniapp_url}}]
             )
         await self.api.send_message(tg, f"{s['full_name']} ({lk.center})\nNimani ko'rmoqchisiz?", markup)
 
@@ -208,7 +181,7 @@ class GuardianBot:
             tg,
             f"{s['full_name']} ma'lumotlarini (davomat, to'lov, jadval, natijalar) ko'rish uchun shaxsiy ma'lumotlarni qayta "
             "ishlashga rozilik kerak. Rozilikni istalgan vaqtda markazga murojaat qilib qaytarib olishingiz mumkin.",
-            inline([[("✅ Roziman", f"c:{tok(s['id'])}"), ("Rad etaman", "n")]]),
+            self._kb([[("✅ Roziman", f"c:{tok(s['id'])}"), ("Rad etaman", "n")]]),
         )
 
     # ---- linking -------------------------------------------------------------------------------------------------
@@ -228,22 +201,16 @@ class GuardianBot:
         async with self.db.tx(_ANON) as conn:
             await execute(conn, "INSERT INTO guardian_link_attempts (telegram_user_id) VALUES (%s)", (tg,))
 
-    async def _code_or_qr(
-        self, tg: int, name: str | None, text: str, quiet_if_not_code: bool = False
-    ) -> bool:
+    async def _code_or_qr(self, tg: int, name: str | None, text: str) -> None:
         raw = text.strip()
         qr = raw.upper()
         code = G.normalize_code(raw)
         if QR_CODE.match(qr):
             await self._qr(tg, name, qr)
-            return True
-        if G.code_format_valid(code):
+        elif G.code_format_valid(code):
             await self._code(tg, name, code)
-            return True
-        if not quiet_if_not_code:
+        else:
             await self.api.send_message(tg, "Kod noto'g'ri formatda. Markaz bergan 8 belgili kodni yuboring.")
-            return True
-        return False
 
     async def _code(self, tg: int, name: str | None, code: str) -> None:
         if await self._blocked(tg):
@@ -266,7 +233,10 @@ class GuardianBot:
                 revoked=row["revoked_at"] is not None,
             )
         )
-        if row is None or state != "ok":
+        if row is not None and (note := self.scope.moved_note(int(row["org_id"]))):
+            await self.api.send_message(tg, note)
+            return
+        if row is None or state != "ok" or not self.scope.allows(int(row["org_id"])):
             await self._fail(tg)
             await self.api.send_message(
                 tg, "Kod noto'g'ri, ishlatilgan yoki muddati tugagan. Markazdan yangi kod so'rang."
@@ -308,6 +278,7 @@ class GuardianBot:
                 "UPDATE guardian_link_codes SET used_by_guardian_id = %s WHERE id = %s",
                 (gid, row["code_id"]),
             )
+        self.epoch = await self.activate()
         await self.api.send_message(tg, "✅ Ulandi.")
         await self._home(tg)
 
@@ -319,7 +290,10 @@ class GuardianBot:
             return
         async with self.db.tx(_ANON) as conn:
             hit = await fetch_one(conn, "SELECT * FROM guardian_find_student_by_qr(%s)", (qr,))
-        if hit is None:
+        if hit is not None and (note := self.scope.moved_note(int(hit["org_id"]))):
+            await self.api.send_message(tg, note)
+            return
+        if hit is None or not self.scope.allows(int(hit["org_id"])):
             await self._fail(tg)
             await self.api.send_message(
                 tg, "Bu kartaga o'quvchi topilmadi. Kodni tekshiring yoki markazga murojaat qiling."
@@ -350,7 +324,7 @@ class GuardianBot:
         async with self.db.tx(_ANON) as conn:
             found = await fetch_all(conn, "SELECT * FROM guardian_find_by_phone(%s)", (key,)) if key else []
         linked_any = False
-        for f in found:
+        for f in [f for f in found if self.scope.allows(int(f["org_id"]))]:
             decision = G.link_decision(method="phone", phone_verified=verified, phone_matches=True)
             if decision != "active":
                 continue
@@ -383,22 +357,13 @@ class GuardianBot:
                 "Bu raqam bo'yicha o'quvchi topilmadi yoki raqam boshqa hisobga ulangan. Markaz bergan kodni yuboring.",
             )
             return
+        self.epoch = await self.activate()
         await self.api.send_message(tg, "✅ Raqamingiz tasdiqlandi va ulandi.", {"remove_keyboard": True})
         await self._home(tg)
 
     # ---- callbacks -----------------------------------------------------------------------------------------------
-    async def _callback(self, cq: dict[str, Any]) -> None:
-        sender = cq.get("from") or {}
-        chat = ((cq.get("message") or {}).get("chat")) or {}
-        if (
-            chat.get("type") != "private"
-            or chat.get("id") != sender.get("id")
-            or not isinstance(sender.get("id"), int)
-        ):
-            return
-        tg = int(sender["id"])
-        data = str(cq.get("data") or "")
-        await self.api.answer_callback(str(cq.get("id", "")))
+    async def on_callback(self, tg: int, data: str, callback_id: str) -> None:
+        await self.api.answer_callback(callback_id)
         verb, _, rest = data.partition(":")
         if data == "n":
             await self.api.send_message(
@@ -497,7 +462,7 @@ class GuardianBot:
                 f"🤝 Va'da {pr['promise_date']:%d.%m}: {STATUS_TEXT.get(pr['status'], pr['status'])}"
             )
         await self.api.send_message(
-            tg, "\n".join(lines), inline([[("🤝 To'lov va'dasi", f"p:{tok(s['id'])}")]])
+            tg, "\n".join(lines), self._kb([[("🤝 To'lov va'dasi", f"p:{tok(s['id'])}")]])
         )
 
     async def _cb_documents(self, tg: int, lk: Linked, s: dict[str, Any], _: list[str]) -> None:
@@ -515,7 +480,7 @@ class GuardianBot:
             ]
             for d in docs[:8]
         ]
-        await self.api.send_message(tg, "🧾 Hujjatni tanlang (PDF yuboriladi):", inline(rows))
+        await self.api.send_message(tg, "🧾 Hujjatni tanlang (PDF yuboriladi):", self._kb(rows))
 
     async def _cb_send_document(self, tg: int, lk: Linked, s: dict[str, Any], rest: list[str]) -> None:
         async with self.db.tx(lk.ctx.session()) as conn:
@@ -559,7 +524,7 @@ class GuardianBot:
         if len(lines) == 1:
             lines.append("Hali natija yo'q.")
         rows = [[(f"Hisobot {r['month']} PDF", f"R:{tok(s['id'])}:{tok(r['id'])}")] for r in v["reports"][:4]]
-        await self.api.send_message(tg, "\n".join(lines), inline(rows) if rows else None)
+        await self.api.send_message(tg, "\n".join(lines), self._kb(rows) if rows else None)
 
     async def _cb_send_report(self, tg: int, lk: Linked, s: dict[str, Any], rest: list[str]) -> None:
         async with self.db.tx(lk.ctx.session()) as conn:
@@ -591,13 +556,13 @@ class GuardianBot:
             ]
             for lsn in lessons[:8]
         ]
-        await self.api.send_message(tg, "Qaysi darsga kela olmaysiz?", inline(rows))
+        await self.api.send_message(tg, "Qaysi darsga kela olmaysiz?", self._kb(rows))
 
     async def _cb_absence_prompt(self, tg: int, lk: Linked, s: dict[str, Any], rest: list[str]) -> None:
         lesson_tok = rest[0] if rest else ""
         await self.api.send_message(
             tg,
-            f"{s['full_name']} nega kela olmaydi? Sababni shu xabarga javob qilib yozing.\n#a:{lesson_tok}:{tok(s['id'])}",
+            f"{s['full_name']} nega kela olmaydi? Sababni shu xabarga javob qilib yozing.\n#g{self.epoch}:a:{lesson_tok}:{tok(s['id'])}",
             {"force_reply": True, "input_field_placeholder": "Sabab"},
         )
 
@@ -638,7 +603,7 @@ class GuardianBot:
             ]
             for d in offsets
         ]
-        await self.api.send_message(tg, "Qaysi sanagacha to'lashni va'da qilasiz?", inline(rows))
+        await self.api.send_message(tg, "Qaysi sanagacha to'lashni va'da qilasiz?", self._kb(rows))
 
     async def _cb_promise_make(self, tg: int, lk: Linked, s: dict[str, Any], rest: list[str]) -> None:
         try:
@@ -669,7 +634,7 @@ class GuardianBot:
         if not rows:
             await self.api.send_message(tg, "Ochiq qoplash huquqi yoki tanlash mumkin bo'lgan vaqt yo'q.")
             return
-        await self.api.send_message(tg, "🔁 Qoplash darsi uchun vaqtni tanlang:", inline(rows[:10]))
+        await self.api.send_message(tg, "🔁 Qoplash darsi uchun vaqtni tanlang:", self._kb(rows[:10]))
 
     async def _cb_makeup_make(self, tg: int, lk: Linked, s: dict[str, Any], rest: list[str]) -> None:
         if len(rest) < 2:
@@ -704,10 +669,3 @@ class GuardianBot:
         if len(lines) == 1:
             lines.append("Hali so'rov yo'q.")
         await self.api.send_message(tg, "\n".join(lines))
-
-
-def _chat_of(update: dict[str, Any]) -> int | None:
-    m = update.get("message") or (update.get("callback_query") or {}).get("message") or {}
-    chat = m.get("chat") or {}
-    cid = chat.get("id")
-    return int(cid) if chat.get("type") == "private" and isinstance(cid, int) else None
