@@ -216,6 +216,7 @@ g.onOpen = (): void => {
         .addSeparator()
         .addItem("Telegram sozlash", "menuSetupTelegram")
         .addItem("Webhook relay sozlamalari", "menuWebhookInfo")
+        .addItem("Relay manzilini o'zgartirish", "menuRelayUrl")
         .addItem("Vasiylar uchun ulash havolalari", "menuLinkCodes"),
     )
     .addSubMenu(
@@ -396,6 +397,7 @@ g.menuStatementUnmatch = reconcile.menu.unmatch;
 g.menuStatementFinalize = reconcile.menu.finalize;
 g.menuPayroll = (): void => actions.guard("Oylik", actions.calculatePayroll);
 g.menuWebhookInfo = (): void => actions.guard("Webhook", actions.showWebhookInfo);
+g.menuRelayUrl = (): void => actions.guard("Relay manzili", actions.changeRelayUrl);
 g.menuHelp = (): void => actions.showHelp();
 g.menuSetup = (): void =>
   actions.guard("Sozlash", () => {
