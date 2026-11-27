@@ -7,6 +7,7 @@ O'quv markazlari uchun boshqaruv tizimi (davomat, to'lov/qarz, o'qituvchi oyligi
 - `db/`: migratsiyalar `0001`-`0010` (`up`/`down`), sxema testlari, `db/scripts/test_migrations.sh`.
 - `backend/`: FastAPI ilovasi (`src/nazoratly`), testlar (`tests/`, haqiqiy PostgreSQL), `Dockerfile`.
 - `clients/typescript/`: OpenAPI'dan generatsiya qilingan tipli klient.
+- `panel/`: xodimlar web paneli (`/app`, 5 til). Bo'laklab quriladi, hozir 1-bo'lak (poydevor va kunlik ish); tafsilot docs/API.md.
 - `docker-compose.yml`, `.env.example`, `.github/workflows/ci.yml`.
 
 ## Tez boshlash

@@ -12,6 +12,20 @@ Holat: backend/API, MCP server, Telegram worker va Payme/Click callbacklari quri
 - **Xato formati:** `{"error": {"code", "message", "details", "request_id"}}`. Kodlar: `validation_error` (422), `unauthorized` (401), `forbidden` (403), `not_found` (404), `conflict` (409), `unprocessable` (422, biznes qoidasi/FK/CHECK), `rate_limited` (429, `Retry-After`), `retry` (503, deadlock/serialization), `payload_too_large` (413), `internal_error` (500).
 - **Kuzatuv:** har javobda `X-Request-ID` (kiruvchi qiymat qabul qilinadi); loglar JSON (structlog), parol/token redaksiya qilinadi; Sentry (`send_default_pii=false`) va OTLP trace faqat sozlanganda yoqiladi; `/health` (jonli), `/ready` (DB javob beradi).
 
+## Xodimlar paneli uchun yo'llar (migratsiyalar 0072-0073)
+
+**Cookie sessiya** (`POST /v1/auth/web/login|register|refresh|logout`): JSON yo'llari bilan bir xil kirish, token almashtirish, qayta ishlatishni aniqlash, bloklash va `org_lock` qoidalari, lekin yangilash tokeni faqat `__Secure-nz_refresh` cookie'sida (`HttpOnly; Secure; SameSite=Strict; Path=/v1/auth/web`, `Domain` yo'q, muddati yangilash tokeniniki). Javobda `access_token`, `expires_in`, `user`, `org`, `organizations`. To'rttalasida `Origin` majburiy va `NAZORATLY_PUBLIC_BASE_URL` originiga aynan teng, aks holda `403`; origin sozlanmagan bo'lsa yo'llar yopiq (`http` faqat localhost uchun). Shu nomli ikkita cookie kelsa `401`. `refresh` `{org_id?}` oladi (markaz almashtirish). Yaroqsiz, bekor qilingan yoki qayta ishlatilgan token cookie'ni o'chiradi; faqat so'ralgan markaz rad etilsa, sessiya saqlanadi. `POST /v1/auth/password` ham cookie'ni o'chiradi. JSON yo'llari cookie'ni o'qimaydi.
+
+**Parol tiklash:** `POST /v1/auth/reset {code, new_password}`. Kodni faqat `python -m nazoratly.password_reset` chiqaradi (docs/DEPLOY.md). Noto'g'ri, ishlatilgan, muddati o'tgan va almashtirilgan kodga bir xil `422 invalid_reset_code`; bir mijoz manzilidan 15 daqiqada 10 ta xatodan keyin `429`. Muvaffaqiyatda hamma yangilash tokenlari bekor bo'ladi va login bloki tozalanadi.
+
+**`GET /v1/me`** endi `permissions` (tanlangan markazdagi rol ruxsatlari) va `branch_id` (xodim biriktirilgan filial yoki `null`) qaytaradi. Panel rol matritsasining nusxasini saqlamaydi.
+
+**Qarz eslatmasi qoralamalari** (Sheets'dagi "Eslatma loyihalarini yaratish" bilan teng; `finance:read` + `students:write`): `GET /v1/reports/debtors/reminders` qoralamalar va o'tkazib yuborilganlar sababini beradi, hech narsa saqlamaydi va yubormaydi. Shu yo'lga `POST {messages:[{student_id, text}]}` (1..200) insonning tasdig'i: qoralamalar qulf ostida qayta hisoblanadi, hali ham mos o'quvchilar uchun tasdiqlangan matn outbox'ga qo'yiladi, qolganlari `refused` da. Qoidalar `rules/reminders.py`, oltin to'plam `tests/golden/reminders.json` (Sheets bilan umumiy). Kutish muddati shu yo'ldan qo'yilgan va bekor qilinmagan xabarlar bo'yicha. Sozlamalar (`/v1/settings`, markaz bo'yicha, filial almashtira olmaydi): `reminder_cooldown_days` (7), `reminder_min_overdue` (50000), `reminder_template` (`null` = standart), `installment_remind_days` (3).
+
+**Hamma o'quvchiga QR kod:** `POST /v1/attendance/qr-codes/issue` (`students:write`) kodi yo'q va ketmagan o'quvchilarga kod beradi (`{issued}`); mavjud kodlar o'zgarmaydi.
+
+**Panel (`panel/`, React + Vite, `/app`):** faqat shu API orqali ishlaydi; turlar `clients/typescript/src/schema.d.ts` dan. `panel/coverage.json` har bir API amalini ekranga bog'laydi, sababli istisno qiladi yoki keyingi bo'lakka qoldiradi; `npm test` uni `openapi.json` va panel kodi bilan solishtiradi. Hozir 1-bo'lak qurilgan: 119 amal ekranda; 1-bo'lakning 5 ta JSON auth yo'li va xodimga tegishli bo'lmagan 28 amal sababli istisno; 2-4-bo'laklarning 192 amali kutmoqda. Ishga tushirish: `cd panel && npm ci && NZ_API=http://127.0.0.1:8000 npm run dev` (kirish ishlashi uchun API da `NAZORATLY_PUBLIC_BASE_URL=http://localhost:5173`). Sinov: `npm run lint && npm run typecheck && npm test && npm run build && npm run e2e` (Docker va `uv` kerak).
+
 ## Rollar va ruxsatlar (`src/nazoratly/permissions.py`)
 | Rol | Nima qila oladi |
 |---|---|
