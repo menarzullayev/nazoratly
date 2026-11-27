@@ -17,7 +17,7 @@ import httpx
 import psycopg
 import structlog
 
-from nazoratly import teacher_bot, telegram_migration
+from nazoratly import teacher_bot, telegram_managed, telegram_migration
 from nazoratly.config import Settings
 from nazoratly.db import Database, Session, execute, fetch_all, fetch_one
 from nazoratly.errors import ApiError, translate_db_error
@@ -85,6 +85,11 @@ class Dispatcher:
     # ---- entry ---------------------------------------------------------------------------------------------------
     async def handle(self, update: dict[str, Any]) -> None:
         """Process one update. Never raises (Telegram would retry a failing update forever): errors are logged."""
+        managed = update.get("managed_bot")
+        if isinstance(managed, dict):
+            if self.bot.shared:  # only the shared bot manages bots
+                await self.managed(managed)
+            return
         msg = update.get("message")
         cb = update.get("callback_query")
         if not isinstance(msg, dict) and not isinstance(cb, dict):
@@ -114,6 +119,16 @@ class Dispatcher:
                 "telegram_dispatch_failed", bot=str(self.bot.public_id), update_id=update.get("update_id")
             )
             await self.api.send_message(tg, "Xatolik yuz berdi. Keyinroq urinib ko'ring.")
+
+    async def managed(self, update: dict[str, Any]) -> None:
+        try:
+            tell = await telegram_managed.on_managed_bot(
+                self.db, self.settings, self.box, self.transport, self.bot, update
+            )
+            if tell is not None:
+                await self.api.send_message(tell[0], tell[1], {"remove_keyboard": True})
+        except Exception:
+            log.exception("managed_bot_failed")
 
 
 class _Turn:
@@ -333,6 +348,8 @@ class _Turn:
 
     # ---- messages ------------------------------------------------------------------------------------------------
     async def message(self, m: dict[str, Any]) -> None:
+        if "managed_bot_created" in m:  # the `managed_bot` update carries what is needed
+            return
         await self.load()
         sender = m.get("from") or {}
         name = " ".join(x for x in (sender.get("first_name"), sender.get("last_name")) if x) or None
@@ -374,6 +391,9 @@ class _Turn:
         a reply to one of the bot's questions is never read as one."""
         if not candidate:
             return False
+        if telegram_managed.looks_like_code(candidate):
+            await self.confirm_managed(candidate)
+            return True
         if telegram_migration.looks_like_code(candidate):
             await self.move(candidate)
             return True
@@ -391,6 +411,36 @@ class _Turn:
             await self.guardian().on_code(self.tg, name, candidate)
             return True
         return False
+
+    async def confirm_managed(self, code: str) -> None:
+        """The center's owner proves which Telegram account will create the bot (Managed Bots)."""
+        if not self.bot.shared:
+            await self.api.send_message(
+                self.tg, "Bu kod umumiy nazoratly boti uchun: uni o'sha botda oching."
+            )
+            return
+        guardian = self.guardian()
+        if await guardian.blocked(self.tg):
+            await self.api.send_message(
+                self.tg, "Juda ko'p noto'g'ri urinish. Bir soatdan keyin qayta urinib ko'ring."
+            )
+            return
+        async with self.db.tx(ANON) as conn:
+            row = await fetch_one(
+                conn, "SELECT * FROM tg_managed_confirm(%s, %s)", (telegram_managed.code_hash(code), self.tg)
+            )
+        if row is None:
+            await guardian.record_failure(self.tg)
+            await self.api.send_message(self.tg, telegram_managed.BAD_CONFIRM)
+            return
+        name, username = str(row["org_name"]), str(row["suggested_username"])
+        link = telegram_managed.creation_link(self.bot.username, username, name)
+        await self.api.send_message(
+            self.tg,
+            f"«{name}» markazi uchun bot yaratish tasdiqlandi. Shu Telegram hisobidan "
+            f"{telegram_managed.TTL_MINUTES} daqiqa ichida pastdagi tugmani bosing yoki havolani oching:\n{link}",
+            telegram_managed.creation_keyboard(username, name),
+        )
 
     async def link_teacher(self, code: str, name: str | None) -> None:
         ctx = self.teacher()

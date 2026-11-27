@@ -1474,4 +1474,6 @@ async def test_cabinet_page_is_served_for_telegram_and_calls_only_documented_end
     # the page never puts the session token into a URL
     # nothing secret travels in the address: the only thing read from the query is the public id of a center's bot
     assert "?token" not in js.text
-    assert js.text.count("location.search") == 1 and 'new URLSearchParams(location.search).get("bot")' in js.text
+    assert (
+        js.text.count("location.search") == 1 and 'new URLSearchParams(location.search).get("bot")' in js.text
+    )

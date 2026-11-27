@@ -47,9 +47,9 @@ psql_sql "SELECT count(*) || ' tables, ' || (SELECT count(*) FROM pg_indexes WHE
 echo "== backfill: legacy data (state before the branch migrations) through up, backfill checks, down of 0055..0050"
 psql_sql "DROP FUNCTION IF EXISTS public.t_expect(text, text)" >/dev/null
 down
-up_until() { for f in $(docker exec "$NAME" sh -c "ls /tmp/migrations/*.up.sql | sort"); do case "$(basename "$f")" in 00[56][0-9]_*) ;; *) echo "UP   $(basename "$f")"; psql_file "$f";; esac; done; }
-up_from()  { for f in $(docker exec "$NAME" sh -c "ls /tmp/migrations/00[56]*.up.sql | sort"); do echo "UP   $(basename "$f")"; psql_file "$f"; done; }
-down_from() { for f in $(docker exec "$NAME" sh -c "ls /tmp/migrations/00[56]*.down.sql | sort -r"); do echo "DOWN $(basename "$f")"; psql_file "$f"; done; }
+up_until() { for f in $(docker exec "$NAME" sh -c "ls /tmp/migrations/*.up.sql | sort"); do case "$(basename "$f")" in 00[5-9][0-9]_*) ;; *) echo "UP   $(basename "$f")"; psql_file "$f";; esac; done; }
+up_from()  { for f in $(docker exec "$NAME" sh -c "ls /tmp/migrations/00[5-9]*.up.sql | sort"); do echo "UP   $(basename "$f")"; psql_file "$f"; done; }
+down_from() { for f in $(docker exec "$NAME" sh -c "ls /tmp/migrations/00[5-9]*.down.sql | sort -r"); do echo "DOWN $(basename "$f")"; psql_file "$f"; done; }
 up_until
 psql_file /tmp/tests/legacy_seed.sql >/dev/null
 up_from
