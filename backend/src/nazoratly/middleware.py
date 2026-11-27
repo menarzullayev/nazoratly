@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ipaddress
 import re
 import time
 import uuid
@@ -29,10 +30,16 @@ SECURITY_HEADERS = {
 }
 
 
-def client_ip(scope: Scope, trust_proxy: bool) -> str:
-    headers = dict(scope.get("headers", []))
-    if trust_proxy and b"x-forwarded-for" in headers:
-        return str(headers[b"x-forwarded-for"].decode("latin-1").split(",")[0].strip())
+def client_ip(scope: Scope, settings: Settings) -> str:
+    """The trusted proxy's client address header if it holds exactly one valid address, else the socket peer."""
+    if settings.trust_proxy_headers:
+        headers = dict(scope.get("headers", []))
+        value = headers.get(settings.client_ip_header.lower().encode("latin-1"))
+        if value is not None:
+            try:
+                return str(ipaddress.ip_address(value.decode("latin-1").strip()))
+            except ValueError:
+                pass
     client = scope.get("client")
     return str(client[0]) if client else "unknown"
 
@@ -177,7 +184,7 @@ class RateLimitMiddleware:
         if scope["type"] != "http" or scope.get("path") in ("/health", "/ready"):
             await self.app(scope, receive, send)
             return
-        ip = client_ip(scope, self.settings.trust_proxy_headers)
+        ip = client_ip(scope, self.settings)
         checks: list[tuple[str, int]] = [(f"all:{ip}", self.settings.rate_limit_per_minute)]
         if str(scope.get("path", "")).startswith(("/v1/auth/", "/v1/cabinet/auth/")):
             checks.append((f"auth:{ip}", self.settings.auth_rate_limit_per_minute))
@@ -196,7 +203,7 @@ class RateLimitMiddleware:
 
 
 def request_ip(request: Request, settings: Settings) -> str:
-    return client_ip(request.scope, settings.trust_proxy_headers)
+    return client_ip(request.scope, settings)
 
 
 __all__ = [

@@ -38,7 +38,10 @@ class Settings(BaseSettings):
     auth_rate_limit_per_minute: int = Field(default=20, ge=1)  # per client IP, /v1/auth/*
     login_max_failures: int = Field(default=5, ge=1)  # per identifier within the window
     login_lockout_window_s: int = Field(default=900, ge=60)
-    trust_proxy_headers: bool = False  # honour X-Forwarded-For only behind a trusted proxy
+    trust_proxy_headers: bool = False  # honour client_ip_header only behind a trusted proxy
+    # Header the trusted proxy overwrites with the real client address (Cloudflare: CF-Connecting-IP). It must be a
+    # single address: appended lists such as X-Forwarded-For start with a value the client controls.
+    client_ip_header: str = "cf-connecting-ip"
 
     secrets_key: SecretStr | None = None  # Fernet key; needed only to store/use Payme/Click credentials
 
