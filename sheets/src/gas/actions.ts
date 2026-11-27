@@ -476,7 +476,27 @@ export function balanceHtmlForChat(chatId: string): string {
   });
 }
 
-/** Values the relay needs (NAZORATLY_TG_RELAY_TARGET / NAZORATLY_TG_RELAY_SECRET). Shown only to the sheet owner. */
+/** Change (or clear) the relay address this Sheet gives Telegram: each relay connection has an address of its own. */
+export function changeRelayUrl(): void {
+  const current = props().getProperty("RELAY_URL") ?? "";
+  const r = ui().prompt(
+    "Relay manzili",
+    `Hozirgi manzil: ${current || "yo'q"}\nYangi relay manzilini kiriting (https://.../hooks/relay/...). Bo'sh qoldirsangiz o'chiriladi.`,
+    ui().ButtonSet.OK_CANCEL,
+  );
+  if (r.getSelectedButton() !== ui().Button.OK) return;
+  const v = r.getResponseText().trim();
+  if (v && !/^https:\/\/[^\s]+$/.test(v)) throw new Error("Relay manzili https:// bilan boshlanishi kerak.");
+  if (v) props().setProperty("RELAY_URL", v);
+  else props().deleteProperty("RELAY_URL");
+  if (!getToken()) {
+    toast(v ? "Saqlandi. Endi 'Telegram sozlash'ni bosing." : "O'chirildi.");
+    return;
+  }
+  finishTelegramSetup();
+}
+
+/** What a relay connection needs: this Sheet's web app address and secret. Shown only to the sheet owner. */
 export function showWebhookInfo(): void {
   let url = pickWebAppUrl(props().getProperty("WEBAPP_URL"), ScriptApp.getService().getUrl());
   if (!url) {
@@ -495,7 +515,7 @@ export function showWebhookInfo(): void {
     `NAZORATLY_TG_RELAY_TARGET=${url}
 NAZORATLY_TG_RELAY_SECRET=${webhookSecret()}
 
-Bu sirni boshqalarga bermang.`,
+Shu ikki qiymatni relay operatoriga xavfsiz yo'l bilan bering: u sizga o'z relay manzilingizni beradi ('Relay manzilini o'zgartirish'). Bu sirni boshqalarga bermang.`,
     ui().ButtonSet.OK,
   );
 }

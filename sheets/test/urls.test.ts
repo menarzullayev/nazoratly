@@ -59,3 +59,34 @@ describe("showWebhookInfo", () => {
     expect(h.prompts.length).toBe(0);
   });
 });
+
+describe("changeRelayUrl", () => {
+  const RELAY = "https://nazoratly.example/hooks/relay/0b1c2d3e-0000-4000-8000-000000000001";
+  let h: Harness;
+  beforeEach(() => {
+    h = installHarness();
+    h.props.clear();
+  });
+
+  it("stores a new https address, points the webhook at it with the Sheet's secret, and can clear it", () => {
+    h.props.set("TELEGRAM_BOT_TOKEN", "123456789:TEST-token-not-real-000000000000000");
+    h.props.set("RELAY_URL", "https://old.example/hooks/telegram");
+    h.telegram.handler = (method) => ({ status: 200, body: { ok: true, result: method === "getMe" ? { username: "x_bot" } : {} } });
+    h.prompts.push(RELAY);
+    actions.changeRelayUrl();
+    expect(h.props.get("RELAY_URL")).toBe(RELAY);
+    const hook = h.fetches.map((f) => f.body).find((b) => b._method === "setWebhook")!;
+    expect(hook.url).toBe(RELAY);
+    expect(hook.secret_token).toBe(webhookSecret());
+
+    h.prompts.push("", "");
+    actions.changeRelayUrl();
+    expect(h.props.has("RELAY_URL")).toBe(false);
+  });
+
+  it("refuses an address that is not https", () => {
+    h.prompts.push("http://nazoratly.example/hooks/relay/x");
+    expect(() => actions.changeRelayUrl()).toThrow(/https/);
+    expect(h.props.has("RELAY_URL")).toBe(false);
+  });
+});
