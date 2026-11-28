@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Awaitable, Callable
-from datetime import date
 from decimal import Decimal
 from typing import Annotated, Any, Literal
 
@@ -96,7 +95,7 @@ class ReminderSendOut(Out):
 
 # One row per student with an open charge: what is overdue and since when (installment plans included).
 _DEBTS = (
-    "SELECT b.student_id, sum(b.overdue_outstanding) AS overdue, min(b.next_due) AS oldest, CURRENT_DATE AS today "
+    "SELECT b.student_id, sum(b.overdue_outstanding) AS overdue, min(b.next_due) AS oldest "
     "FROM v_charge_balance b JOIN students s ON s.org_id = b.org_id AND s.id = b.student_id "
     "WHERE b.outstanding > 0 AND s.deleted_at IS NULL GROUP BY b.student_id "
     "ORDER BY sum(b.overdue_outstanding) DESC, b.student_id"
@@ -139,7 +138,9 @@ async def _plan(
     debt_rows = await fetch_all(conn, _DEBTS)
     if not debt_rows:
         return [], [], {}, {}
-    today: date = debt_rows[0]["today"]
+    today = await org_today(
+        conn
+    )  # the center's calendar: the database's CURRENT_DATE is a day behind at night
     ids = [r["student_id"] for r in debt_rows]
     people = {r["id"]: r for r in await fetch_all(conn, _STUDENTS, {"ids": ids, "prefix": _KEY_PREFIX})}
     overdue_ref: dict[int, dict[str, Any]] = {}

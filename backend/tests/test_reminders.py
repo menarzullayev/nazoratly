@@ -6,10 +6,12 @@ from __future__ import annotations
 import asyncio
 import json
 import uuid
-from datetime import timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import httpx
+import psycopg
 
 from nazoratly.rules import reminders as R
 from nazoratly.worker import Worker, WorkerSettings
@@ -22,7 +24,14 @@ TODAY = org_today()
 
 
 async def debtor(
-    t: Tenant, name: str, *, amount: str = "600000", days: int = 10, chat: bool = True, agreed: bool = True
+    t: Tenant,
+    name: str,
+    *,
+    amount: str = "600000",
+    days: int = 10,
+    chat: bool = True,
+    agreed: bool = True,
+    due: date | None = None,
 ) -> dict[str, Any]:
     student = await mk_student(t, name)
     body: dict[str, Any] = {"full_name": f"Ona {name}", "phone": f"+99890{uuid.uuid4().int % 10_000_000:07d}"}
@@ -45,7 +54,7 @@ async def debtor(
                 "kind": "tuition",
                 "period_month": TODAY.replace(day=1).isoformat(),
                 "amount": amount,
-                "due_date": (TODAY - timedelta(days=days)).isoformat(),
+                "due_date": (due or TODAY - timedelta(days=days)).isoformat(),
             },
         ),
         201,
@@ -89,6 +98,20 @@ async def test_preview_then_approve_queues_the_approved_text(tenant: Tenant) -> 
     # a cancelled reminder does not start a cooldown
     await ok(await tenant.post(f"/v1/outbox/{outbox[0]['id']}/cancel"))
     assert len((await ok(await tenant.get(PATH)))["drafts"]) == 1
+
+
+async def test_overdue_days_follow_the_centers_calendar(tenant: Tenant, super_dsn: str) -> None:
+    # a zone whose date differs from the database's (UTC) date at this very hour, whatever the hour is
+    zone = "Pacific/Kiritimati" if datetime.now(UTC).hour >= 12 else "Etc/GMT+12"
+    center_today = datetime.now(ZoneInfo(zone)).date()
+    assert center_today != datetime.now(UTC).date()
+    with psycopg.connect(super_dsn, autocommit=True) as c:
+        c.execute(
+            "UPDATE organizations SET timezone = %s WHERE public_id = %s", (zone, uuid.UUID(tenant.org_id))
+        )
+    await debtor(tenant, "Zone", due=center_today - timedelta(days=10))
+    [draft] = (await ok(await tenant.get(PATH)))["drafts"]
+    assert "10 kun" in draft["text"]
 
 
 async def test_installment_texts_and_the_center_settings(tenant: Tenant) -> None:
