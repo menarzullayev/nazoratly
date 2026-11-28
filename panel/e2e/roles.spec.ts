@@ -1,22 +1,25 @@
 /** Every role: its menu, every one of its screens against the real API, the screens it may not open, and the same
  * refusals from the server when the request skips the panel. Then the branch and center walls. */
 
+import { readFileSync } from "node:fs";
 import { directApi, expect, makeCenter, open, settled, signIn, test, type Role } from "./fixtures";
 
 // Written out by hand on purpose: if the server's role matrix changed, this table must be changed knowingly.
 const DAILY = ["Taqvim", "Bildirishnomalar"];
 const STUDY_READ = ["Guruhlar", "Kurslar", "Ustozlar", "Xonalar", "Darslar"];
 const STUDY_ALL = ["O'quvchilar", "Vasiylar", ...STUDY_READ, "Qoldirilgan darslar", "Jadval tekshiruvi", "Jadval xabarlari"];
-const MONEY = ["Hisoblar", "To'lovlar", "Qarzdorlar", "Xarajatlar", "Hisobotlar"];
+const MONEY = ["Hisoblar", "To'lovlar", "Qarzdorlar", "Xarajatlar", "Hisobotlar", "To'lov qismlari", "Abonementlar", "Chegirmalar", "Qaytarishlar", "Kassani yopish"];
+const BOOKS = ["Jurnal va davrlar", "Hisoblar rejasi", "Buxgalteriya hisobotlari", "Ta'minotchilar", "Ta'minotchi hisoblari", "Ko'chirma solishtirish"];
+const PAYROLL = "Oylik maosh";
 const CENTER = ["Markaz", "Filiallar", "Xodimlar", "Import"];
 const OWN = ["Mening ishim", "Mening darslarim", "Mening guruhlarim", "Mening oyligim", "Mening xabarlarim"];
-const EVERYTHING = ["Bosh panel", ...DAILY, "QR davomat", ...STUDY_ALL, ...MONEY, ...CENTER];
+const EVERYTHING = ["Bosh panel", ...DAILY, "QR davomat", ...STUDY_ALL, ...MONEY, PAYROLL, ...BOOKS, ...CENTER];
 
 const MENU: Record<Role, string[]> = {
   owner: EVERYTHING,
   admin: EVERYTHING,
-  manager: ["Bosh panel", ...DAILY, "QR davomat", ...STUDY_ALL, ...MONEY, "Markaz", "Filiallar", "Xodimlar", "Import"],
-  accountant: ["Bosh panel", ...DAILY, "O'quvchilar", "Vasiylar", ...STUDY_READ, "Qoldirilgan darslar", ...MONEY, "Markaz", "Filiallar"],
+  manager: ["Bosh panel", ...DAILY, "QR davomat", ...STUDY_ALL, ...MONEY, ...BOOKS, "Markaz", "Filiallar", "Xodimlar", "Import"],
+  accountant: ["Bosh panel", ...DAILY, "O'quvchilar", "Vasiylar", ...STUDY_READ, "Qoldirilgan darslar", ...MONEY, PAYROLL, ...BOOKS, "Markaz", "Filiallar"],
   teacher: [...OWN, ...DAILY, "QR davomat", ...STUDY_READ, "Markaz", "Filiallar"],
   viewer: ["Bosh panel", ...DAILY, "O'quvchilar", "Vasiylar", ...STUDY_READ, "Qoldirilgan darslar", "Hisobotlar", "Markaz", "Filiallar"],
 };
@@ -28,6 +31,9 @@ const ADDRESS: Record<string, string> = {
   "Qoldirilgan darslar": "absences", "Jadval tekshiruvi": "schedule-checks", "Jadval xabarlari": "notices",
   Hisoblar: "charges", "To'lovlar": "payments", Qarzdorlar: "debtors", Xarajatlar: "expenses", Hisobotlar: "reports",
   Markaz: "organization", Filiallar: "branches", Xodimlar: "staff", Import: "import",
+  "To'lov qismlari": "installments", Abonementlar: "packages", Chegirmalar: "discounts", Qaytarishlar: "refunds", "Kassani yopish": "cash-close",
+  "Oylik maosh": "payroll", "Jurnal va davrlar": "journal", "Hisoblar rejasi": "accounts", "Buxgalteriya hisobotlari": "book-reports",
+  "Ta'minotchilar": "suppliers", "Ta'minotchi hisoblari": "bills", "Ko'chirma solishtirish": "reconciliation",
 };
 
 type Op = [method: string, path: string, allowed: Role[]];
@@ -37,7 +43,7 @@ const MGMT: Role[] = ["owner", "admin", "manager"];
 const CASH: Role[] = ["owner", "admin", "manager", "accountant"];
 const SPEND: Role[] = ["owner", "admin", "accountant"];
 const ID = "00000000-0000-4000-8000-000000000000";
-// one or more operations behind every permission of part 1; a role not listed must get 403
+// one or more operations behind every permission of part 1, and every operation of part 2; a role not listed must get 403
 const OPERATIONS: Op[] = [
   ["PATCH", "/v1/organization", ["owner"]],
   ["POST", "/v1/branches", LEAD],
@@ -83,7 +89,87 @@ const OPERATIONS: Op[] = [
   ["GET", "/v1/dashboard", CASH.concat("viewer")],
   ["POST", "/v1/imports/students/preview", MGMT],
   ["POST", "/v1/imports/students/commit", MGMT],
+  // ---- part 2, every operation of it. finance:read / finance:write
+  ["GET", "/v1/discounts", CASH],
+  ["POST", "/v1/discounts", CASH],
+  ["PATCH", `/v1/discounts/${ID}`, CASH],
+  ["GET", "/v1/reports/discounts?month=2026-01-01", CASH.concat("viewer")],
+  ["GET", "/v1/refunds", CASH],
+  ["GET", `/v1/refunds/${ID}`, CASH],
+  ["POST", "/v1/refunds/preview", CASH],
+  ["POST", "/v1/refunds", CASH],
+  ["GET", "/v1/cash-close", CASH],
+  ["GET", "/v1/cash-close/preview", CASH],
+  ["GET", `/v1/cash-close/${ID}`, CASH],
+  ["POST", "/v1/cash-close", CASH],
+  ["GET", `/v1/charges/${ID}/plan`, CASH],
+  ["PUT", `/v1/charges/${ID}/plan`, CASH],
+  ["DELETE", `/v1/charges/${ID}/plan`, CASH],
+  ["GET", "/v1/reports/installments", CASH],
+  ["GET", "/v1/packages", CASH],
+  ["POST", "/v1/packages", CASH],
+  ["POST", `/v1/packages/${ID}/extend`, CASH],
+  ["GET", `/v1/students/${ID}/lesson-balance`, CASH],
+  ["GET", "/v1/reports/packages/payment-needed", CASH],
+  ["GET", "/v1/reports/packages/payment-needed/reminders", MGMT],
+  ["POST", "/v1/reports/packages/payment-needed/reminders", MGMT],
+  // payroll:read, payroll:write, payroll:approve
+  ["GET", "/v1/payrolls", SPEND],
+  ["GET", `/v1/payrolls/${ID}`, SPEND],
+  ["POST", "/v1/payrolls/generate", SPEND],
+  ["POST", `/v1/payrolls/${ID}/items`, SPEND],
+  ["DELETE", `/v1/payrolls/${ID}/items/${ID}`, SPEND],
+  ["POST", `/v1/payrolls/${ID}/approve`, LEAD],
+  ["POST", `/v1/payrolls/${ID}/pay`, SPEND],
+  // accounting:read, accounting:write, accounting:close
+  ["GET", "/v1/accounting/accounts", CASH],
+  ["POST", "/v1/accounting/accounts", SPEND],
+  ["PATCH", `/v1/accounting/accounts/${ID}`, SPEND],
+  ["GET", "/v1/accounting/cash-accounts", CASH],
+  ["POST", "/v1/accounting/cash-accounts", SPEND],
+  ["GET", "/v1/accounting/entries", CASH],
+  ["GET", `/v1/accounting/entries/${ID}`, CASH],
+  ["POST", "/v1/accounting/entries", SPEND],
+  ["POST", `/v1/accounting/entries/${ID}/reverse`, SPEND],
+  ["GET", "/v1/accounting/ledger?account=1000", CASH],
+  ["GET", "/v1/accounting/pending", CASH],
+  ["POST", "/v1/accounting/sync", SPEND],
+  ["GET", "/v1/accounting/verify", CASH],
+  ["GET", "/v1/accounting/periods", CASH],
+  ["POST", "/v1/accounting/periods/2020-01/close", LEAD],
+  ["GET", "/v1/accounting/reports/trial-balance", CASH],
+  ["GET", "/v1/accounting/reports/balance-sheet", CASH],
+  ["GET", "/v1/accounting/reports/income-statement?date_from=2026-01-01&date_to=2026-01-31", CASH],
+  ["GET", "/v1/accounting/suppliers", CASH],
+  ["POST", "/v1/accounting/suppliers", SPEND],
+  ["PATCH", `/v1/accounting/suppliers/${ID}`, SPEND],
+  ["GET", "/v1/accounting/bills", CASH],
+  ["GET", `/v1/accounting/bills/${ID}`, CASH],
+  ["POST", "/v1/accounting/bills", SPEND],
+  ["POST", `/v1/accounting/bills/${ID}/payments`, SPEND],
+  ["POST", `/v1/accounting/bills/${ID}/void`, SPEND],
+  ["POST", `/v1/accounting/bill-payments/${ID}/void`, SPEND],
+  ["GET", "/v1/accounting/reports/payables-aging", CASH],
+  ["GET", "/v1/accounting/statements", CASH],
+  ["GET", `/v1/accounting/statements/${ID}`, CASH],
+  ["POST", "/v1/accounting/statements", SPEND],
+  ["POST", `/v1/accounting/statements/${ID}/lines`, SPEND],
+  ["POST", `/v1/accounting/statements/${ID}/auto-match`, SPEND],
+  ["POST", `/v1/accounting/statements/${ID}/lines/${ID}/match`, SPEND],
+  ["POST", `/v1/accounting/statements/${ID}/lines/${ID}/unmatch`, SPEND],
+  ["POST", `/v1/accounting/statements/${ID}/finalize`, SPEND],
 ];
+
+test("the denial table names every operation of part 2", () => {
+  const manifest = JSON.parse(readFileSync(new URL("../coverage.json", import.meta.url), "utf8")) as { operations: Record<string, { part?: number }> };
+  const shape = (method: string, path: string): string => `${method} ${path.split("?")[0]!.replace(new RegExp(ID, "g"), "{}").replace("2020-01", "{}").replace(/\{\w+\}/g, "{}")}`;
+  const listed = new Set(OPERATIONS.map(([method, path]) => shape(method, path)));
+  const missing = Object.entries(manifest.operations)
+    .filter(([, entry]) => entry.part === 2)
+    .map(([key]) => shape(...(key.split(" ") as [string, string])))
+    .filter((key) => !listed.has(key));
+  expect(missing).toEqual([]);
+});
 
 for (const role of ALL) {
   test(`${role}: menu, every allowed screen, refused screens and refused requests`, async ({ page }) => {

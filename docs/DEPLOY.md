@@ -20,8 +20,8 @@ Jonli tizimga chiqarish alohida tasdiqlanadi. Tartib:
 
 Tekshiruv: botga `/start`; `docker compose logs api worker` da `telegram_` ogohlantirishlari yo'qligi.
 
-## Xodimlar paneli (`panel/`, migratsiyalar 0072-0073)
-Jonli tizimga chiqarish alohida tasdiqlanadi. Hozircha panelning faqat 1-bo'lagi qurilgan (docs/API.md). Tartib:
+## Xodimlar paneli (`panel/`, migratsiyalar 0072-0074)
+Jonli tizimga chiqarish alohida tasdiqlanadi. Hozircha panelning 1- va 2-bo'laklari qurilgan (docs/API.md). 0074 migratsiyasi `api` bilan birga `worker` ni ham yangilashni talab qiladi: eslatmaga jadval va tugmalarni worker qo'shadi, "To'lov qildim" bosilishini api qabul qiladi. Tartib:
 
 1. Zaxira nusxa: `docker compose exec db pg_dump -U postgres nazoratly > backup.sql`.
 2. `.env`: `NAZORATLY_PUBLIC_BASE_URL=https://<manzil>`. Panel origini shu manzildan olinadi: brauzerdagi manzil bilan aynan bir xil bo'lmasa, `/v1/auth/web/*` 403 qaytaradi; bo'sh bo'lsa bu yo'llar yopiq. Port: `NAZORATLY_PANEL_PORT` (standart 8013).

@@ -4,19 +4,24 @@
 import type { ReactElement } from "react";
 import type { Key } from "./i18n/core";
 import { AccountPage } from "./screens/account";
+import { AccountsPage, BookReportsPage, JournalPage } from "./screens/accounting";
 import { CoursesPage, GuardiansPage, RoomsPage, TeachersPage } from "./screens/academics";
 import { CalendarPage, NoticesPage, ScheduleChecksPage } from "./screens/calendar";
 import { DashboardPage } from "./screens/dashboard";
 import { ChargesPage, DebtorsPage, ExpensesPage, PaymentPage, PaymentsPage, ReportsPage } from "./screens/finance";
 import { GroupPage, GroupsPage } from "./screens/groups";
 import { ImportPage } from "./screens/import";
+import { CashClosePage, DiscountsPage, InstallmentsPage, PackagesPage, RefundsPage } from "./screens/money";
+import { BillPage, BillsPage, SuppliersPage } from "./screens/payables";
+import { PayrollDetailPage, PayrollPage } from "./screens/payroll";
+import { StatementPage, StatementsPage } from "./screens/reconciliation";
 import { AbsencesPage, LessonPage, LessonsPage } from "./screens/lessons";
 import { BranchesPage, OrganizationPage, StaffPage } from "./screens/org";
 import { ScanPage } from "./screens/scan";
 import { StudentPage, StudentsPage } from "./screens/students";
 import { NotificationsPage, TeacherGroupsPage, TeacherHomePage, TeacherLessonsPage, TeacherMessagesPage, TeacherPayPage } from "./screens/teacher";
 
-export type Section = "work" | "mine" | "study" | "money" | "center";
+export type Section = "work" | "mine" | "study" | "money" | "books" | "center";
 
 export interface Screen {
   path: string;
@@ -60,6 +65,22 @@ export const SCREENS: Screen[] = [
   { path: "/debtors", title: "nav.debtors", element: () => <DebtorsPage />, needs: ["finance:read"], menu: "money" },
   { path: "/expenses", title: "nav.expenses", element: () => <ExpensesPage />, needs: ["finance:read"], menu: "money" },
   { path: "/reports", title: "nav.reports", element: () => <ReportsPage />, needs: ["reports:read"], menu: "money" },
+  { path: "/installments", title: "nav.installments", element: () => <InstallmentsPage />, needs: ["finance:read"], menu: "money" },
+  { path: "/packages", title: "nav.packages", element: () => <PackagesPage />, needs: ["finance:read"], menu: "money" },
+  { path: "/discounts", title: "nav.discounts", element: () => <DiscountsPage />, needs: ["finance:read"], menu: "money" },
+  { path: "/refunds", title: "nav.refunds", element: () => <RefundsPage />, needs: ["finance:read"], menu: "money" },
+  { path: "/cash-close", title: "nav.cashClose", element: () => <CashClosePage />, needs: ["finance:read"], menu: "money" },
+
+  { path: "/payroll", title: "nav.payroll", element: () => <PayrollPage />, needs: ["payroll:read"], menu: "books" },
+  { path: "/payroll/:id", title: "payroll.one", element: () => <PayrollDetailPage />, needs: ["payroll:read"] },
+  { path: "/journal", title: "nav.journal", element: () => <JournalPage />, needs: ["accounting:read"], menu: "books" },
+  { path: "/accounts", title: "nav.accounts", element: () => <AccountsPage />, needs: ["accounting:read"], menu: "books" },
+  { path: "/book-reports", title: "nav.bookReports", element: () => <BookReportsPage />, needs: ["accounting:read"], menu: "books" },
+  { path: "/suppliers", title: "nav.suppliers", element: () => <SuppliersPage />, needs: ["accounting:read"], menu: "books" },
+  { path: "/bills", title: "nav.bills", element: () => <BillsPage />, needs: ["accounting:read"], menu: "books" },
+  { path: "/bills/:id", title: "payables.bill", element: () => <BillPage />, needs: ["accounting:read"] },
+  { path: "/reconciliation", title: "nav.reconciliation", element: () => <StatementsPage />, needs: ["accounting:read"], menu: "books" },
+  { path: "/reconciliation/:id", title: "reconcile.one", element: () => <StatementPage />, needs: ["accounting:read"] },
 
   { path: "/organization", title: "nav.organization", element: () => <OrganizationPage />, needs: ["org:read"], menu: "center" },
   { path: "/branches", title: "nav.branches", element: () => <BranchesPage />, needs: ["org:read"], menu: "center" },

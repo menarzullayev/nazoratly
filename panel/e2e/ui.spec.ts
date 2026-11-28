@@ -7,7 +7,8 @@ import { dialog, expect, makeCenter, settled, signIn, test } from "./fixtures";
 const PAGES = [
   "dashboard", "calendar", "scan", "students", "guardians", "groups", "courses", "teachers", "rooms", "lessons", "absences",
   "schedule-checks", "notices", "charges", "payments", "debtors", "expenses", "reports", "organization", "branches", "staff",
-  "import", "account", "notifications",
+  "import", "account", "notifications", "installments", "packages", "discounts", "refunds", "cash-close", "payroll", "journal", "accounts",
+  "book-reports", "suppliers", "bills", "reconciliation",
 ];
 
 async function axe(page: Page, where: string): Promise<void> {

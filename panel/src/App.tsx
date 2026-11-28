@@ -7,7 +7,7 @@ import { unsupportedBrowser } from "./session/browser";
 import { useSession, useStaff } from "./session/context";
 import { ErrorNote, Forbidden } from "./ui/kit";
 
-const SECTIONS: Section[] = ["work", "mine", "study", "money", "center"];
+const SECTIONS: Section[] = ["work", "mine", "study", "money", "books", "center"];
 
 function BranchChooser() {
   const { t } = useI18n();

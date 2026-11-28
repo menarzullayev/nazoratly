@@ -9,9 +9,11 @@ import { useI18n } from "../i18n";
 import { formatAmount, formatDate, formatDateTime, formatMonth, isPositive, monthStart, parseAmount } from "../lib/format";
 import { useStaff } from "../session/context";
 import { ConfirmButton, Dialog, Form, FormButton, FormDialog, type Field } from "../ui/form";
-import { useAction, useLoad } from "../ui/hooks";
-import { Badge, Card, Done, ErrorNote, Facts, Loaded, Page, PAGE_SIZE, Pager, Table, Tabs } from "../ui/kit";
+import { useLoad } from "../ui/hooks";
+import { Badge, Card, Done, Facts, Loaded, Page, PAGE_SIZE, Pager, Table, Tabs } from "../ui/kit";
 import { options, StudentPicker, useGroups, type Picked } from "../ui/pickers";
+import { PaymentPlan } from "./money";
+import { ReminderDrafts } from "./reminders";
 
 type Charge = components["schemas"]["ChargeOut"];
 type Payment = components["schemas"]["PaymentOut"];
@@ -20,7 +22,7 @@ const CHARGE_KINDS = ["tuition", "registration", "materials", "other"] as const;
 const EXPENSE_CATEGORIES = ["rent", "utilities", "salary", "marketing", "equipment", "tax", "other"] as const;
 
 /** The student a list is narrowed to, kept in the address (?student=) so a link from the student page works. */
-function useStudentFilter(): { id: string | null; picker: React.ReactNode } {
+export function useStudentFilter(): { id: string | null; picker: React.ReactNode } {
   const [params, setParams] = useSearchParams();
   const id = params.get("student");
   const load = useLoad(
@@ -123,6 +125,7 @@ function ChargeDialog({ id, onClose, done }: { id: string; onClose: () => void; 
               ]}
             />
             <ChargeState charge={c} />
+            <PaymentPlan charge={id} voided={c.voided} changed={changed} />
             {can("finance:write") && !c.voided ? (
               editing ? (
                 <Form
@@ -546,76 +549,19 @@ export function PaymentPage() {
 
 function Reminders({ onClose }: { onClose: () => void }) {
   const { t, label } = useI18n();
-  const load = useLoad(() => unwrap(api.GET("/v1/reports/debtors/reminders")), []);
-  const action = useAction();
-  const [texts, setTexts] = useState<Record<string, string>>({});
-  const [chosen, setChosen] = useState<Record<string, boolean>>({});
-  const [result, setResult] = useState<string | null>(null);
   return (
-    <Card title={t("reminders.title")} actions={<button type="button" onClick={onClose}>{t("common.close")}</button>}>
-      <p className="hint">{t("reminders.hint")}</p>
-      <Done text={result} />
-      <Loaded load={load}>
-        {(preview) => {
-          const messages = preview.drafts
-            .filter((d) => chosen[d.student_id])
-            .map((d) => ({ student_id: d.student_id, text: (texts[d.student_id] ?? d.text).trim() }));
-          return (
-            <>
-              {preview.drafts.length === 0 ? <p className="empty">{t("reminders.none")}</p> : null}
-              <ul className="drafts">
-                {preview.drafts.map((d) => (
-                  <li key={d.student_id}>
-                    <label className="check">
-                      <input type="checkbox" checked={chosen[d.student_id] ?? false} onChange={(e) => setChosen((c) => ({ ...c, [d.student_id]: e.target.checked }))} />
-                      <strong>{d.student_name}</strong> → {d.guardian_name} · {label("reminderKind", d.kind)} · {formatAmount(d.overdue_total)}
-                    </label>
-                    <textarea
-                      aria-label={`${t("common.message")}: ${d.student_name}`}
-                      rows={4}
-                      maxLength={4000}
-                      value={texts[d.student_id] ?? d.text}
-                      onChange={(e) => setTexts((x) => ({ ...x, [d.student_id]: e.target.value }))}
-                    />
-                  </li>
-                ))}
-              </ul>
-              {action.error ? <ErrorNote error={action.error} /> : null}
-              {preview.drafts.length ? (
-                <div className="actions">
-                  <button type="button" onClick={() => setChosen(Object.fromEntries(preview.drafts.map((d) => [d.student_id, true])))}>
-                    {t("reminders.chooseAll")}
-                  </button>
-                  <ConfirmButton
-                    label={t("reminders.send", { n: messages.length })}
-                    text={t("reminders.sendText", { n: messages.length })}
-                    danger={false}
-                    disabled={messages.length === 0 || messages.length > 200 || messages.some((m) => !m.text)}
-                    run={async (_reason, key) => {
-                      const sent = await unwrap(api.POST("/v1/reports/debtors/reminders", { body: { messages }, ...idempotent(key) }));
-                      setResult(t("reminders.sent", { queued: sent.queued.length, refused: sent.refused.length }));
-                      setChosen({});
-                      load.reload();
-                    }}
-                  />
-                </div>
-              ) : null}
-              {preview.skipped.length ? (
-                <Table
-                  caption={t("reminders.skipped")}
-                  rows={preview.skipped}
-                  rowKey={(s) => `${s.student_id}-${s.reason}`}
-                  columns={[
-                    { head: t("reminders.skipped"), cell: (s) => s.student_name },
-                    { head: t("reminders.why"), cell: (s) => label("skipReason", s.reason) },
-                  ]}
-                />
-              ) : null}
-            </>
-          );
-        }}
-      </Loaded>
-    </Card>
+    <ReminderDrafts
+      title={t("reminders.title")}
+      onClose={onClose}
+      load={async () => {
+        const preview = await unwrap(api.GET("/v1/reports/debtors/reminders"));
+        return {
+          skipped: preview.skipped,
+          drafts: preview.drafts.map((d) => ({ ...d, note: `${label("reminderKind", d.kind)} · ${formatAmount(d.overdue_total)}` })),
+        };
+      }}
+      send={(messages, key) => unwrap(api.POST("/v1/reports/debtors/reminders", { body: { messages }, ...idempotent(key) }))}
+    />
   );
 }
 
