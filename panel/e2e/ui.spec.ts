@@ -43,7 +43,8 @@ test("every staff screen passes axe, in light and dark", async ({ page }) => {
 test("on a phone nothing needs sideways scrolling and the menu opens", async ({ page }) => {
   test.setTimeout(180_000);
   const center = await makeCenter();
-  await page.setViewportSize({ width: 375, height: 740 });
+  // 320px, narrower than common phones: text is wider with some systems' fonts than on the developer's machine
+  await page.setViewportSize({ width: 320, height: 740 });
   await signIn(page, center.accounts.owner);
   const menu = page.getByRole("button", { name: "Menyu" });
   await menu.click();
