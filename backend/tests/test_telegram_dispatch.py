@@ -15,6 +15,7 @@ import pytest_asyncio
 from pydantic import SecretStr
 
 from nazoratly.main import create_app
+from nazoratly.rules import reminders as R_reminders
 from nazoratly.secrets_box import SecretsBox
 from nazoratly.telegram_setup import SetupError, setup_shared
 from nazoratly.worker import Worker, WorkerSettings
@@ -441,3 +442,64 @@ async def test_the_token_never_reaches_responses_or_logs(
             assert hidden not in everything
     finally:
         configure_logging(server.app.state.settings.model_copy(update={"log_level": "WARNING"}))
+
+
+# ---- "I have paid" under a debt reminder (owner decision 43) ---------------------------------------------------------
+def paid_button(student: dict[str, Any]) -> str:
+    return f"paid:{uuid.UUID(student['id']).hex}"
+
+
+async def student_notes(t: Tenant, student: dict[str, Any]) -> str:
+    return str((await ok(await t.get(f"/v1/students/{student['id']}")))["notes"] or "")
+
+
+async def paid_notices(t: Tenant) -> list[str]:
+    items = (await ok(await t.get("/v1/notifications")))["items"]
+    return [n["body"] for n in items if n["kind"] == "paid_claim"]
+
+
+async def test_the_paid_button_notes_the_claim_and_tells_the_owner_once_a_day(
+    server: Server, tenant: Tenant
+) -> None:
+    uid = new_uid()
+    student = await mk_student(tenant, "Bobur Saidov", notes="old note")
+    await family(tenant, student, uid)
+    calls = await server.tap(uid, paid_button(student))
+    assert toasts(calls) == [R_reminders.PAID_THANKS]
+    line = R_reminders.paid_note_line(org_today())
+    assert await student_notes(tenant, student) == f"old note {line}"
+    assert await paid_notices(tenant) == [R_reminders.paid_owner_text("Bobur Saidov")]
+    # tapped again: the guardian is thanked again, nothing is written twice
+    assert toasts(await server.tap(uid, paid_button(student))) == [R_reminders.PAID_THANKS]
+    assert await student_notes(tenant, student) == f"old note {line}"
+    assert len(await paid_notices(tenant)) == 1
+    # nothing was booked
+    assert (await ok(await tenant.get("/v1/payments", params={"student_id": student["id"]})))["items"] == []
+
+
+async def test_the_paid_button_works_only_for_a_student_linked_to_this_chat(
+    server: Server, tenant: Tenant, client: httpx.AsyncClient
+) -> None:
+    uid, other = new_uid(), new_uid()
+    mine, theirs = await mk_student(tenant, "Mine"), await mk_student(tenant, "Theirs")
+    await family(tenant, mine, uid)
+    await family(tenant, theirs, other)
+    foreign_center = await make_tenant(client, "paid-foreign")
+    foreign = await mk_student(foreign_center, "Foreign")
+    await family(foreign_center, foreign, new_uid())
+    for data in (paid_button(theirs), paid_button(foreign), "paid:zz", "paid:" + "0" * 32, "paid:"):
+        assert toasts(await server.tap(uid, data)) == [R_reminders.PAID_NOT_LINKED], data
+    stranger = await server.tap(new_uid(), paid_button(mine))
+    assert toasts(stranger) == [R_reminders.PAID_NOT_LINKED]
+    for t, s in ((tenant, mine), (tenant, theirs), (foreign_center, foreign)):
+        assert await student_notes(t, s) == ""
+        assert await paid_notices(t) == []
+
+
+async def test_a_full_note_is_left_alone_and_the_owner_is_still_told(server: Server, tenant: Tenant) -> None:
+    uid = new_uid()
+    student = await mk_student(tenant, "Full", notes="n" * 3990)
+    await family(tenant, student, uid)
+    assert toasts(await server.tap(uid, paid_button(student))) == [R_reminders.PAID_THANKS]
+    assert await student_notes(tenant, student) == "n" * 3990
+    assert len(await paid_notices(tenant)) == 1

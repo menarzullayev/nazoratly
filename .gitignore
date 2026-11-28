@@ -7,3 +7,5 @@ __pycache__/
 node_modules/
 *.egg-info/
 dist/
+panel/test-results/
+panel/playwright-report/

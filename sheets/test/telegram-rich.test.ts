@@ -9,7 +9,10 @@ import { loadSampleData, setupWorkbook } from "../src/gas/setup";
 import { sendRich, webhookSecret } from "../src/gas/telegram";
 import { handlePost } from "../src/gas/webhook";
 import type { Student } from "../src/domain/types";
+import { readFileSync } from "node:fs";
 import { installHarness, type Harness } from "./harness";
+
+const golden = JSON.parse(readFileSync(new URL("../../tests/golden/reminders.json", import.meta.url), "utf8")) as unknown;
 
 type StudentRow = Student & { linkCode?: string; note?: string };
 let h: Harness;
@@ -123,14 +126,17 @@ describe("Telegram adapters on the sheet runtime", () => {
     setSetting("Egasining Telegram chat ID si", "424242");
     h.fetches.length = 0;
     post({ callback_query: { id: "cbp", data: "p:S0005", message: { message_id: 9, chat: { id: 8001, type: "private" } } } });
-    expect(read<StudentRow>(STUDENTS).find((s) => s.id === "S0005")!.note).toContain("to'lov qildim");
+    const paid = (golden as unknown as { paid: { today: string; note_line: string; owner_text: string; thanks: string; not_linked: string } }).paid;
+    expect(read<StudentRow>(STUDENTS).find((s) => s.id === "S0005")!.note).toContain(paid.note_line);
+    expect(calls("answerCallbackQuery")[0]!.body.text).toBe(paid.thanks);
+    expect(String(calls("sendMessage").find((f) => f.body.chat_id === "424242")!.body.text)).toBe(paid.owner_text);
     expect(calls("answerCallbackQuery")[0]!.body).toMatchObject({ callback_query_id: "cbp", show_alert: true });
     const ownerMsg = calls("sendMessage").find((f) => f.body.chat_id === "424242")!;
     expect(String(ownerMsg.body.text)).toContain("Bobur Saidov");
     // the same button pressed from a chat that is not linked to S0002 is refused
     h.fetches.length = 0;
     post({ callback_query: { id: "cbq", data: "p:S0002", message: { message_id: 9, chat: { id: 8001, type: "private" } } } });
-    expect(String(calls("answerCallbackQuery")[0]!.body.text)).toContain("ulanmagan");
+    expect(calls("answerCallbackQuery")[0]!.body.text).toBe(paid.not_linked);
     expect(read<StudentRow>(STUDENTS).find((s) => s.id === "S0002")!.note ?? "").not.toContain("to'lov qildim");
     expect(calls("sendMessage")).toHaveLength(0);
   });

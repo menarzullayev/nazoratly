@@ -11,6 +11,7 @@ from datetime import datetime
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, Response
+from pydantic import Field
 
 from nazoratly.db import Conn, execute, fetch_all, fetch_one, resolve
 from nazoratly.deps import DB, Principal, require
@@ -73,6 +74,28 @@ class SendCardOut(Out):
 async def _org_name(conn: Conn, org_id: int) -> str:
     row = await fetch_one(conn, "SELECT name FROM organizations WHERE id = %s", (org_id,))
     return str(row["name"]) if row else ""
+
+
+class IssueAllOut(Out):
+    issued: int = Field(description="how many students got a code now; students who had one keep it")
+
+
+@router.post(
+    "/attendance/qr-codes/issue",
+    response_model=IssueAllOut,
+    summary="Give a QR code to every student who has none (students who left are skipped)",
+)
+async def issue_all_codes(p: Annotated[Principal, Depends(require("students:write"))], db: DB) -> IssueAllOut:
+    async with db.tx(p.session()) as conn:
+        rows = await fetch_all(
+            conn,
+            "SELECT id FROM students WHERE qr_code IS NULL AND status <> 'left' AND deleted_at IS NULL ORDER BY id",
+        )
+        issued = 0
+        for row in rows:
+            _, created = await ensure_code(conn, row["id"])
+            issued += int(created)
+    return IssueAllOut(issued=issued)
 
 
 @router.post(

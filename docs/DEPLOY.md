@@ -20,6 +20,26 @@ Jonli tizimga chiqarish alohida tasdiqlanadi. Tartib:
 
 Tekshiruv: botga `/start`; `docker compose logs api worker` da `telegram_` ogohlantirishlari yo'qligi.
 
+## Xodimlar paneli (`panel/`, migratsiyalar 0072-0074)
+Jonli tizimga chiqarish alohida tasdiqlanadi. Hozircha panelning 1- va 2-bo'laklari qurilgan (docs/API.md). 0074 migratsiyasi `api` bilan birga `worker` ni ham yangilashni talab qiladi: eslatmaga jadval va tugmalarni worker qo'shadi, "To'lov qildim" bosilishini api qabul qiladi. Tartib:
+
+1. Zaxira nusxa: `docker compose exec db pg_dump -U postgres nazoratly > backup.sql`.
+2. `.env`: `NAZORATLY_PUBLIC_BASE_URL=https://<manzil>`. Panel origini shu manzildan olinadi: brauzerdagi manzil bilan aynan bir xil bo'lmasa, `/v1/auth/web/*` 403 qaytaradi; bo'sh bo'lsa bu yo'llar yopiq. Port: `NAZORATLY_PANEL_PORT` (standart 8013).
+3. `docker compose up -d --build` (`panel` xizmati qo'shiladi).
+4. Tunnel: `^/app(/|$)` yo'lini `127.0.0.1:8013` ga yo'naltiring. Panel va API bitta originda bo'lishi shart (`/v1` avvalgidek API ga).
+5. Tekshiruv: `/app/` ochiladi; javobda `Content-Security-Policy` va `Cache-Control: no-store`; kirish ishlaydi; `curl -X POST https://<manzil>/v1/auth/web/refresh` (Origin'siz) 403 qaytaradi.
+
+Eski `/ui/scan`, `/ui/import`, `/ui/calendar` sahifalarining vazifalari panelda bor; ularni tashqariga ochmang. O'chirish alohida qaror.
+
+## Parolni tiklash (operator tartibi)
+Panelda parolni o'zi tiklash tugmasi yo'q va tiklash havolasini yaratadigan HTTP yo'li ham yo'q. Havolani faqat server operatori chiqaradi.
+
+1. **Avval so'ragan odam kimligini tekshiring**, faqat hisobda allaqachon yozilgan aloqa orqali: o'zingiz o'sha telefon raqamiga qo'ng'iroq qiling yoki o'sha email manzili egaligini tekshiring. Kiruvchi qo'ng'iroqqa, begona raqamdan xabarga yoki "emailim o'zgardi" degan gapga ishonmang. Xodim uchun markaz egasidan alohida tasdiq oling; egasi uchun u bilan avvaldan kelishilgan aloqa kanali orqali tasdiqlang. Shubha bo'lsa, havola bermang.
+2. Buyruq: `docker compose exec api python -m nazoratly.password_reset --identifier <email yoki +telefon> --operator "<ismingiz>"` (muddat standart 30 daqiqa, `--minutes` bilan 1-60).
+3. Havolani faqat tekshirilgan odamning o'ziga, tekshirilgan kanalda yuboring. Havolani guruh chatiga, tiketga yoki logga ko'chirmang. Kod URL fragmentida (`#`) turadi va serverga manzil sifatida bormaydi.
+4. Yangi havola eskisini bekor qiladi. Muvaffaqiyatli tiklashda hamma sessiyalar yopiladi va login bloki ochiladi. Allaqachon berilgan kirish tokeni muddati tugaguncha (standart 15 daqiqagacha) ishlaydi.
+5. Jurnal: `password_reset_codes` jadvali (kim chiqardi, qachon, qachon ishlatildi; kodning faqat xeshi) va API logidagi `password_reset_used` yozuvi.
+
 ## Sayt (web) va yo'l bo'yicha marshrutlash
 
 `nazoratly.bugvector.uz` bitta hostname; Cloudflare tunnel yo'l bo'yicha ajratadi (`~/.cloudflared/nazoratly.yml`):
@@ -27,6 +47,7 @@ Tekshiruv: botga `/start`; `docker compose logs api worker` da `telegram_` ogohl
 | Yo'l | Xizmat | Port |
 |---|---|---|
 | `/v1/*`, `/pay/*`, `/hooks/*`, `/health`, `/ready` | API (`api`) | 127.0.0.1:8010 |
+| `^/app(/|$)` (panel chiqarilgach) | xodimlar paneli (`panel`, nginx) | 127.0.0.1:8013 (`NAZORATLY_PANEL_PORT`) |
 | qolgan hamma narsa (`/`, `/ru/`, `/en/`, `/uz-cyrl/`, `/uz-new/`, `/lab/`) | statik sayt (`web`, nginx) | 127.0.0.1:8012 (`NAZORATLY_WEB_PORT`) |
 
 - Qurish/ishga tushirish: `docker compose up -d --build web` (build konteksti repo ildizi: sayt `sheets/src/domain` kodini ham ishlatadi).

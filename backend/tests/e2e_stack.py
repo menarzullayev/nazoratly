@@ -17,6 +17,7 @@ import asyncio
 import hashlib
 import hmac
 import json
+import os
 import re
 import selectors
 import socket
@@ -39,6 +40,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 
+from nazoratly.password_reset import issue_link
 from tests.conftest import MIGRATIONS, PG_IMAGE, ROLE_PW, SUPER_PW, Tenant, make_tenant
 from tests.helpers import consent, enroll, mk_group, mk_guardian, mk_student, mk_teacher, ok, org_today
 from tests.telegram_support import next_update_id, register_shared
@@ -148,6 +150,7 @@ def new_chat() -> int:
 class Factory:
     def __init__(self, client: httpx.AsyncClient, pg: dict[str, Any], bot: FakeBot) -> None:
         self.client, self.pg, self.bot = client, pg, bot
+        self.app: Any = None
         self.hook_path = ""  # the registered shared bot's webhook
 
     def sql(self, query: str, params: tuple[Any, ...] = ()) -> None:
@@ -438,6 +441,56 @@ class Factory:
             "students": students,
         }
 
+    async def panel_center(self) -> dict[str, Any]:
+        """The staff panel's world: one account for every role, a second branch with its own manager and student, a
+        group with a lesson today, a student with an overdue charge and a reachable guardian, and a second center."""
+        out = await self.teacher_center()
+        t = await self._tenant_of(out)
+        main = next(b for b in (await ok(await t.get("/v1/branches")))["items"] if b["is_default"])
+        second = await ok(await t.post("/v1/branches", {"name": "Chilonzor filiali"}), 201)
+        accounts = {"owner": out["owner"], "teacher": {**out["teacher"], "password": TEACHER_PW}}
+        for key, role, branch in (
+            ("admin", "admin", None),
+            ("manager", "manager", None),
+            ("accountant", "accountant", None),
+            ("viewer", "viewer", None),
+            ("branch_manager", "manager", second["id"]),
+        ):
+            email = f"{key.replace('_', '-')}-{uuid.uuid4().hex[:8]}@example.com"
+            body = {"full_name": f"Xodim {key}", "email": email, "role": role, "initial_password": TEACHER_PW}
+            if branch:
+                body["branch_id"] = branch
+            await ok(await t.post("/v1/staff", body), 201)
+            accounts[key] = {"email": email, "password": TEACHER_PW}
+        far = await mk_student(t, f"Filial o'quvchisi {uuid.uuid4().hex[:4]}", branch_id=second["id"])
+        debtor = out["students"][0]
+        await ok(
+            await t.post(
+                "/v1/charges",
+                {
+                    "student_id": debtor["id"],
+                    "kind": "tuition",
+                    "period_month": TODAY.replace(day=1).isoformat(),
+                    "amount": "600000",
+                    "due_date": (TODAY - timedelta(days=10)).isoformat(),
+                },
+            ),
+            201,
+        )
+        other = await make_tenant(self.client, "other")
+        theirs = await mk_student(other, f"Begona o'quvchi {uuid.uuid4().hex[:4]}")
+        out.update(
+            accounts=accounts,
+            branches={"main": main["id"], "second": second["id"], "second_name": second["name"]},
+            far_student={"id": far["id"], "name": far["full_name"]},
+            other={
+                "email": other.email,
+                "password": other.password,
+                "student": {"id": theirs["id"], "name": theirs["full_name"]},
+            },
+        )
+        return out
+
     async def calendar_center(self) -> dict[str, Any]:
         """Owner with a group, today's lessons, and one cancelled lesson whose guardian draft waits for approval."""
         f = await self.family(rich=False)
@@ -497,6 +550,7 @@ def make_control(factory: Factory, bot: FakeBot, api_url: str) -> Starlette:
             "unlinked": lambda: factory.unlinked(arg),
             "teacher": factory.teacher_center,
             "calendar": factory.calendar_center,
+            "panel": factory.panel_center,
             "owner": factory.owner,
         }
         if kind not in builders:
@@ -523,6 +577,19 @@ def make_control(factory: Factory, bot: FakeBot, api_url: str) -> Starlette:
             }
         )
 
+    async def reset_link(request: Request) -> JSONResponse:
+        """What the operator's command does (python -m nazoratly.password_reset)."""
+        body = await request.json()
+        assert factory.app is not None
+        link = await issue_link(
+            factory.app.state.db, factory.app.state.settings, identifier=body["email"], operator="e2e"
+        )
+        if body.get("expired"):
+            factory.sql(
+                "UPDATE password_reset_codes SET expires_at = now() - interval '1 second' WHERE used_at IS NULL AND revoked_at IS NULL"
+            )
+        return JSONResponse({"link": link})
+
     async def messages(request: Request) -> JSONResponse:
         return JSONResponse({"texts": bot.texts(int(request.query_params["chat"]))})
 
@@ -536,6 +603,7 @@ def make_control(factory: Factory, bot: FakeBot, api_url: str) -> Starlette:
             Route("/initdata", initdata),
             Route("/qr-matrix", qr_matrix_of),
             Route("/messages", messages),
+            Route("/reset-link", reset_link, methods=["POST"]),
             Route("/bot", hook, methods=["POST"]),
         ]
     )
@@ -560,7 +628,8 @@ async def main() -> None:
             login_max_failures=50,
             db_pool_max=20,
             telegram_bot_token=SecretStr(BOT_TOKEN),
-            public_base_url="http://127.0.0.1",
+            # the panel's tests serve /app and /v1 on one origin of their own (panel/e2e/global-setup.ts)
+            public_base_url=os.environ.get("NZ_PANEL_ORIGIN", "http://127.0.0.1"),
         )
         app = create_app(settings)
         bot = FakeBot()
@@ -570,6 +639,7 @@ async def main() -> None:
             app.state.outbound_transport = httpx.MockTransport(bot)
             seed_client = httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://seed")
             factory = Factory(seed_client, pg, bot)
+            factory.app = app
             factory.hook_path = register_shared(pg["super"], app.state.secrets_box, BOT_TOKEN, HOOK_SECRET)
             servers = [
                 uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=api_port, log_level="warning")),

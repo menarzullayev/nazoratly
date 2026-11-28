@@ -1,0 +1,420 @@
+{
+  "cases": [
+    {
+      "name": "plain overdue debt, standard text, whole so'm rounded half up",
+      "in": {
+        "today": "2026-11-27", "cooldown_days": 7, "min_overdue": "50000", "remind_days": 3, "center": "Ziyo", "template": null,
+        "students": [{ "id": "s1", "name": "Karimov Ali", "status": "active", "guardian": "Karimova Dilnoza", "has_chat": true, "consent": true, "last_reminded_on": null }],
+        "debts": [{ "student_id": "s1", "overdue": "1200000.50", "max_days_overdue": 12, "overdue_installment": null, "next_installment": null }]
+      },
+      "out": {
+        "drafts": [{ "student_id": "s1", "kind": "overdue", "text": "Assalomu alaykum, Karimova Dilnoza! Karimov Ali uchun 1 200 001 so'm to'lov muddati 12 kun oldin o'tgan. Iltimos, to'lovni amalga oshiring. Savollar bo'lsa, markazga murojaat qiling. Ziyo" }],
+        "skipped": []
+      }
+    },
+    {
+      "name": "own template, no guardian name, unknown placeholder kept",
+      "in": {
+        "today": "2026-11-27", "cooldown_days": 7, "min_overdue": "0", "remind_days": 0, "center": "Ziyo", "template": "{guardian}: {student} {amount} / {total} ({days}) {nope} {center}",
+        "students": [{ "id": "s1", "name": "Ali", "status": "graduated", "guardian": "", "has_chat": true, "consent": true, "last_reminded_on": null }],
+        "debts": [{ "student_id": "s1", "overdue": "70000", "max_days_overdue": 1, "overdue_installment": null, "next_installment": null }]
+      },
+      "out": { "drafts": [{ "student_id": "s1", "kind": "overdue", "text": "ota-ona: Ali 70 000 / 70 000 (1) {nope} Ziyo" }], "skipped": [] }
+    },
+    {
+      "name": "the oldest debt is an installment: its own text, whatever the own template says",
+      "in": {
+        "today": "2026-11-27", "cooldown_days": 7, "min_overdue": "50000", "remind_days": 3, "center": "Ziyo", "template": "own",
+        "students": [{ "id": "s1", "name": "Ali", "status": "active", "guardian": "Ona", "has_chat": true, "consent": true, "last_reminded_on": null }],
+        "debts": [{ "student_id": "s1", "overdue": "500000", "max_days_overdue": 10, "overdue_installment": { "seq": 1, "count": 3, "due_date": "2026-11-17", "outstanding": "200000" }, "next_installment": { "seq": 2, "count": 3, "due_date": "2026-11-28", "outstanding": "200000" } }]
+      },
+      "out": {
+        "drafts": [{ "student_id": "s1", "kind": "overdue", "text": "Assalomu alaykum, Ona! Ali uchun 1/3-to'lov (200 000 so'm) muddati 17.11.2026 edi (10 kun o'tdi). Jami muddati o'tgan qarz: 500 000 so'm. Iltimos, to'lovni amalga oshiring. Savollar bo'lsa, markazga murojaat qiling. Ziyo" }],
+        "skipped": []
+      }
+    },
+    {
+      "name": "skip reasons in order: left, paused, below threshold, no consent, no chat, cooldown",
+      "in": {
+        "today": "2026-11-27", "cooldown_days": 7, "min_overdue": "50000", "remind_days": 3, "center": "Ziyo", "template": null,
+        "students": [
+          { "id": "left", "name": "A", "status": "left", "guardian": "G", "has_chat": false, "consent": false, "last_reminded_on": null },
+          { "id": "paused", "name": "B", "status": "paused", "guardian": "G", "has_chat": true, "consent": true, "last_reminded_on": null },
+          { "id": "small", "name": "C", "status": "active", "guardian": "G", "has_chat": false, "consent": false, "last_reminded_on": null },
+          { "id": "noconsent", "name": "D", "status": "active", "guardian": "G", "has_chat": false, "consent": false, "last_reminded_on": null },
+          { "id": "nochat", "name": "E", "status": "active", "guardian": "G", "has_chat": false, "consent": true, "last_reminded_on": "2026-11-26" },
+          { "id": "cool", "name": "F", "status": "active", "guardian": "G", "has_chat": true, "consent": true, "last_reminded_on": "2026-11-21" }
+        ],
+        "debts": [
+          { "student_id": "left", "overdue": "900000", "max_days_overdue": 40, "overdue_installment": null, "next_installment": null },
+          { "student_id": "paused", "overdue": "800000", "max_days_overdue": 30, "overdue_installment": null, "next_installment": null },
+          { "student_id": "small", "overdue": "49999", "max_days_overdue": 5, "overdue_installment": null, "next_installment": null },
+          { "student_id": "noconsent", "overdue": "50000", "max_days_overdue": 5, "overdue_installment": null, "next_installment": null },
+          { "student_id": "nochat", "overdue": "60000", "max_days_overdue": 5, "overdue_installment": null, "next_installment": null },
+          { "student_id": "cool", "overdue": "70000", "max_days_overdue": 5, "overdue_installment": null, "next_installment": null }
+        ]
+      },
+      "out": {
+        "drafts": [],
+        "skipped": [
+          { "student_id": "left", "reason": "student_inactive" },
+          { "student_id": "paused", "reason": "student_inactive" },
+          { "student_id": "small", "reason": "below_threshold" },
+          { "student_id": "noconsent", "reason": "no_consent" },
+          { "student_id": "nochat", "reason": "no_chat" },
+          { "student_id": "cool", "reason": "cooldown" }
+        ]
+      }
+    },
+    {
+      "name": "cooldown ends on the Nth day; cooldown 0 never blocks",
+      "in": {
+        "today": "2026-11-27", "cooldown_days": 7, "min_overdue": "0", "remind_days": 0, "center": "Ziyo", "template": "{student}",
+        "students": [{ "id": "s1", "name": "Ali", "status": "active", "guardian": "Ona", "has_chat": true, "consent": true, "last_reminded_on": "2026-11-20" }],
+        "debts": [{ "student_id": "s1", "overdue": "1000", "max_days_overdue": 3, "overdue_installment": null, "next_installment": null }]
+      },
+      "out": { "drafts": [{ "student_id": "s1", "kind": "overdue", "text": "Ali" }], "skipped": [] }
+    },
+    {
+      "name": "nothing overdue: no draft and no skip line",
+      "in": {
+        "today": "2026-11-27", "cooldown_days": 7, "min_overdue": "0", "remind_days": 3, "center": "Ziyo", "template": null,
+        "students": [{ "id": "s1", "name": "Ali", "status": "active", "guardian": "Ona", "has_chat": true, "consent": true, "last_reminded_on": null }],
+        "debts": [{ "student_id": "s1", "overdue": "0", "max_days_overdue": 0, "overdue_installment": null, "next_installment": null }]
+      },
+      "out": { "drafts": [], "skipped": [] }
+    },
+    {
+      "name": "upcoming installment today and in two days; too far is ignored",
+      "in": {
+        "today": "2026-11-27", "cooldown_days": 7, "min_overdue": "50000", "remind_days": 3, "center": "Ziyo", "template": null,
+        "students": [
+          { "id": "today", "name": "Ali", "status": "active", "guardian": "Ona", "has_chat": true, "consent": true, "last_reminded_on": null },
+          { "id": "two", "name": "Vali", "status": "active", "guardian": "Ota", "has_chat": true, "consent": true, "last_reminded_on": null },
+          { "id": "far", "name": "Soli", "status": "active", "guardian": "Ota", "has_chat": true, "consent": true, "last_reminded_on": null }
+        ],
+        "debts": [
+          { "student_id": "today", "overdue": "0", "max_days_overdue": 0, "overdue_installment": null, "next_installment": { "seq": 2, "count": 2, "due_date": "2026-11-27", "outstanding": "300000" } },
+          { "student_id": "two", "overdue": "0", "max_days_overdue": 0, "overdue_installment": null, "next_installment": { "seq": 1, "count": 4, "due_date": "2026-11-29", "outstanding": "150000" } },
+          { "student_id": "far", "overdue": "0", "max_days_overdue": 0, "overdue_installment": null, "next_installment": { "seq": 1, "count": 2, "due_date": "2026-12-01", "outstanding": "100000" } }
+        ]
+      },
+      "out": {
+        "drafts": [
+          { "student_id": "today", "kind": "upcoming", "text": "Assalomu alaykum, Ona! Ali uchun 2/2-to'lov (300 000 so'm) muddati 27.11.2026 (bugun). Iltimos, to'lovni o'z vaqtida amalga oshiring. Savollar bo'lsa, markazga murojaat qiling. Ziyo" },
+          { "student_id": "two", "kind": "upcoming", "text": "Assalomu alaykum, Ota! Vali uchun 1/4-to'lov (150 000 so'm) muddati 29.11.2026 (2 kun qoldi). Iltimos, to'lovni o'z vaqtida amalga oshiring. Savollar bo'lsa, markazga murojaat qiling. Ziyo" }
+        ],
+        "skipped": []
+      }
+    },
+    {
+      "name": "already overdue gets no upcoming draft; upcoming obeys consent",
+      "in": {
+        "today": "2026-11-27", "cooldown_days": 7, "min_overdue": "500000", "remind_days": 3, "center": "Ziyo", "template": null,
+        "students": [
+          { "id": "od", "name": "Ali", "status": "active", "guardian": "Ona", "has_chat": true, "consent": true, "last_reminded_on": null },
+          { "id": "nc", "name": "Vali", "status": "active", "guardian": "Ota", "has_chat": true, "consent": false, "last_reminded_on": null }
+        ],
+        "debts": [
+          { "student_id": "od", "overdue": "100000", "max_days_overdue": 2, "overdue_installment": null, "next_installment": { "seq": 2, "count": 2, "due_date": "2026-11-28", "outstanding": "100000" } },
+          { "student_id": "nc", "overdue": "0", "max_days_overdue": 0, "overdue_installment": null, "next_installment": { "seq": 1, "count": 2, "due_date": "2026-11-28", "outstanding": "100000" } }
+        ]
+      },
+      "out": {
+        "drafts": [],
+        "skipped": [
+          { "student_id": "od", "reason": "below_threshold" },
+          { "student_id": "od", "reason": "already_overdue" },
+          { "student_id": "nc", "reason": "no_consent" }
+        ]
+      }
+    }
+  ],
+  "messages": [
+    {
+      "name": "two open charges, requisites, markup in the approved text",
+      "in": {
+        "text": "Salom <script>&\n\nIkkinchi \"abzats\"\nuchinchi qator",
+        "paid_data": "p:S0005",
+        "pay_info": "8600 1234 5678 9012",
+        "charges": [
+          {
+            "month": "2026-10-01",
+            "due_date": "2026-10-10",
+            "outstanding": "600000"
+          },
+          {
+            "month": "2026-11-01",
+            "due_date": "2026-11-10",
+            "outstanding": "600000"
+          }
+        ]
+      },
+      "out": {
+        "html": "<p>Salom &lt;script&gt;&amp;</p><p>Ikkinchi &quot;abzats&quot;<br>uchinchi qator</p><table striped compact><tr><th>Oy</th><th>Qoldiq (so'm)</th><th>Muddat</th></tr><tr><td>2026-10</td><td align=\"right\">600 000</td><td><tg-time unix=\"1791615600\" format=\"D\">2026-10-10</tg-time></td></tr><tr><td>2026-11</td><td align=\"right\">600 000</td><td><tg-time unix=\"1794294000\" format=\"D\">2026-11-10</tg-time></td></tr></table><p><b>Jami qoldiq: 1 200 000 so'm</b></p><tg-button-row align=\"center\"><tg-button type=\"copy_text\" style=\"primary\" text=\"8600 1234 5678 9012\">Rekvizitlarni nusxalash</tg-button><tg-button type=\"callback_data\" style=\"success\" data=\"p:S0005\">To'lov qildim</tg-button></tg-button-row>",
+        "plain": "Salom <script>&\nIkkinchi \"abzats\"\nuchinchi qator\nOy | Qoldiq (so'm) | Muddat\n2026-10 | 600 000 | 2026-10-10\n2026-11 | 600 000 | 2026-11-10\n\nJami qoldiq: 1 200 000 so'm\nRekvizitlarni nusxalashTo'lov qildim"
+      }
+    },
+    {
+      "name": "no requisites: no copy button",
+      "in": {
+        "text": "Qarz bor",
+        "paid_data": "p:S0007",
+        "pay_info": "",
+        "charges": [
+          {
+            "month": "2026-11-01",
+            "due_date": "2026-12-01",
+            "outstanding": "1200000.5"
+          }
+        ]
+      },
+      "out": {
+        "html": "<p>Qarz bor</p><table striped compact><tr><th>Oy</th><th>Qoldiq (so'm)</th><th>Muddat</th></tr><tr><td>2026-11</td><td align=\"right\">1 200 001</td><td><tg-time unix=\"1796108400\" format=\"D\">2026-12-01</tg-time></td></tr></table><p><b>Jami qoldiq: 1 200 001 so'm</b></p><tg-button-row align=\"center\"><tg-button type=\"callback_data\" style=\"success\" data=\"p:S0007\">To'lov qildim</tg-button></tg-button-row>",
+        "plain": "Qarz bor\nOy | Qoldiq (so'm) | Muddat\n2026-11 | 1 200 001 | 2026-12-01\n\nJami qoldiq: 1 200 001 so'm\nTo'lov qildim"
+      }
+    },
+    {
+      "name": "nothing owed any more: text and buttons only",
+      "in": {
+        "text": "Eslatma",
+        "paid_data": "p:S0001",
+        "pay_info": "karta 1",
+        "charges": []
+      },
+      "out": {
+        "html": "<p>Eslatma</p><tg-button-row align=\"center\"><tg-button type=\"copy_text\" style=\"primary\" text=\"karta 1\">Rekvizitlarni nusxalash</tg-button><tg-button type=\"callback_data\" style=\"success\" data=\"p:S0001\">To'lov qildim</tg-button></tg-button-row>",
+        "plain": "Eslatma\nRekvizitlarni nusxalashTo'lov qildim"
+      }
+    },
+    {
+      "name": "a long requisites text is cut at 256 characters",
+      "in": {
+        "text": "x",
+        "paid_data": "p:S0002",
+        "pay_info": "999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+        "charges": [
+          {
+            "month": "2026-09-01",
+            "due_date": "2026-09-05",
+            "outstanding": "50000"
+          }
+        ]
+      },
+      "out": {
+        "html": "<p>x</p><table striped compact><tr><th>Oy</th><th>Qoldiq (so'm)</th><th>Muddat</th></tr><tr><td>2026-09</td><td align=\"right\">50 000</td><td><tg-time unix=\"1788591600\" format=\"D\">2026-09-05</tg-time></td></tr></table><p><b>Jami qoldiq: 50 000 so'm</b></p><tg-button-row align=\"center\"><tg-button type=\"copy_text\" style=\"primary\" text=\"9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999\">Rekvizitlarni nusxalash</tg-button><tg-button type=\"callback_data\" style=\"success\" data=\"p:S0002\">To'lov qildim</tg-button></tg-button-row>",
+        "plain": "x\nOy | Qoldiq (so'm) | Muddat\n2026-09 | 50 000 | 2026-09-05\n\nJami qoldiq: 50 000 so'm\nRekvizitlarni nusxalashTo'lov qildim"
+      }
+    }
+  ],
+  "paid": {
+    "today": "2026-11-23",
+    "student_name": "Bobur Saidov",
+    "note_line": "[2026-11-23: vasiy \"to'lov qildim\" dedi]",
+    "owner_text": "Bobur Saidov: vasiy \"To'lov qildim\" tugmasini bosdi. To'lovni tekshirib kiriting.",
+    "thanks": "Rahmat! Markaz to'lovni tekshiradi.",
+    "not_linked": "Bu o'quvchi sizga ulanmagan"
+  },
+  "packages": [
+    {
+      "name": "the three texts, and the worst group of a student wins",
+      "in": {
+        "today": "2026-11-27",
+        "cooldown_days": 7,
+        "center": "Ziyo",
+        "students": [
+          {
+            "id": "a",
+            "name": "Ali",
+            "status": "active",
+            "guardian": "Ona",
+            "has_chat": true,
+            "consent": true,
+            "last_reminded_on": null
+          },
+          {
+            "id": "b",
+            "name": "Vali",
+            "status": "active",
+            "guardian": "",
+            "has_chat": true,
+            "consent": true,
+            "last_reminded_on": null
+          },
+          {
+            "id": "c",
+            "name": "Soli",
+            "status": "active",
+            "guardian": "Ona",
+            "has_chat": true,
+            "consent": true,
+            "last_reminded_on": null
+          }
+        ],
+        "balances": [
+          {
+            "student_id": "a",
+            "need": "low",
+            "balance": 2,
+            "debt_amount": "0"
+          },
+          {
+            "student_id": "a",
+            "need": "debt",
+            "balance": -3,
+            "debt_amount": "150000"
+          },
+          {
+            "student_id": "b",
+            "need": "exhausted",
+            "balance": 0,
+            "debt_amount": "0"
+          },
+          {
+            "student_id": "c",
+            "need": "low",
+            "balance": 3,
+            "debt_amount": "0"
+          },
+          {
+            "student_id": "c",
+            "need": "low",
+            "balance": 1,
+            "debt_amount": "0"
+          },
+          {
+            "student_id": "c",
+            "need": "ok",
+            "balance": 9,
+            "debt_amount": "0"
+          }
+        ]
+      },
+      "out": {
+        "drafts": [
+          {
+            "student_id": "a",
+            "text": "Assalomu alaykum, Ona! Ali 3 ta darsda to'lovsiz qatnashdi (150 000 so'm). Iltimos, abonement to'lovini amalga oshiring. Ziyo"
+          },
+          {
+            "student_id": "b",
+            "text": "Assalomu alaykum, ota-ona! Vali uchun abonementdagi darslar tugadi. Davom etish uchun yangi abonement to'lovini amalga oshiring. Ziyo"
+          },
+          {
+            "student_id": "c",
+            "text": "Assalomu alaykum, Ona! Soli uchun abonementda 1 ta dars qoldi. Darslar to'xtab qolmasligi uchun to'lovni oldindan amalga oshiring. Ziyo"
+          }
+        ],
+        "skipped": []
+      }
+    },
+    {
+      "name": "skip reasons: left, no consent, no chat, cooldown; nothing for a full package",
+      "in": {
+        "today": "2026-11-27",
+        "cooldown_days": 7,
+        "center": "Ziyo",
+        "students": [
+          {
+            "id": "l",
+            "name": "A",
+            "status": "left",
+            "guardian": "Ona",
+            "has_chat": true,
+            "consent": true,
+            "last_reminded_on": null
+          },
+          {
+            "id": "n",
+            "name": "B",
+            "status": "active",
+            "guardian": "Ona",
+            "has_chat": true,
+            "consent": false,
+            "last_reminded_on": null
+          },
+          {
+            "id": "h",
+            "name": "C",
+            "status": "active",
+            "guardian": "Ona",
+            "has_chat": false,
+            "consent": true,
+            "last_reminded_on": null
+          },
+          {
+            "id": "k",
+            "name": "D",
+            "status": "active",
+            "guardian": "Ona",
+            "has_chat": true,
+            "consent": true,
+            "last_reminded_on": "2026-11-21"
+          },
+          {
+            "id": "o",
+            "name": "E",
+            "status": "active",
+            "guardian": "Ona",
+            "has_chat": true,
+            "consent": true,
+            "last_reminded_on": null
+          }
+        ],
+        "balances": [
+          {
+            "student_id": "l",
+            "need": "debt",
+            "balance": -1,
+            "debt_amount": "1000"
+          },
+          {
+            "student_id": "n",
+            "need": "exhausted",
+            "balance": 0,
+            "debt_amount": "0"
+          },
+          {
+            "student_id": "h",
+            "need": "low",
+            "balance": 1,
+            "debt_amount": "0"
+          },
+          {
+            "student_id": "k",
+            "need": "low",
+            "balance": 2,
+            "debt_amount": "0"
+          },
+          {
+            "student_id": "o",
+            "need": "ok",
+            "balance": 8,
+            "debt_amount": "0"
+          }
+        ]
+      },
+      "out": {
+        "drafts": [],
+        "skipped": [
+          {
+            "student_id": "l",
+            "reason": "student_inactive"
+          },
+          {
+            "student_id": "n",
+            "reason": "no_consent"
+          },
+          {
+            "student_id": "h",
+            "reason": "no_chat"
+          },
+          {
+            "student_id": "k",
+            "reason": "cooldown"
+          }
+        ]
+      }
+    }
+  ]
+}

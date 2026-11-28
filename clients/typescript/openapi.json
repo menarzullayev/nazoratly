@@ -8123,6 +8123,20 @@
         "title": "InvoiceIn",
         "type": "object"
       },
+      "IssueAllOut": {
+        "properties": {
+          "issued": {
+            "description": "how many students got a code now; students who had one keep it",
+            "title": "Issued",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "issued"
+        ],
+        "title": "IssueAllOut",
+        "type": "object"
+      },
       "ItemIn": {
         "additionalProperties": false,
         "properties": {
@@ -11240,6 +11254,75 @@
           "expires_on"
         ],
         "title": "PackageOut",
+        "type": "object"
+      },
+      "PackageReminderDraftOut": {
+        "properties": {
+          "guardian_id": {
+            "format": "uuid",
+            "title": "Guardian Id",
+            "type": "string"
+          },
+          "guardian_name": {
+            "title": "Guardian Name",
+            "type": "string"
+          },
+          "need": {
+            "enum": [
+              "low",
+              "exhausted",
+              "debt"
+            ],
+            "title": "Need",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "student_id",
+          "student_name",
+          "guardian_id",
+          "guardian_name",
+          "need",
+          "text"
+        ],
+        "title": "PackageReminderDraftOut",
+        "type": "object"
+      },
+      "PackageReminderPreviewOut": {
+        "properties": {
+          "drafts": {
+            "items": {
+              "$ref": "#/components/schemas/PackageReminderDraftOut"
+            },
+            "title": "Drafts",
+            "type": "array"
+          },
+          "skipped": {
+            "items": {
+              "$ref": "#/components/schemas/ReminderSkipOut"
+            },
+            "title": "Skipped",
+            "type": "array"
+          }
+        },
+        "required": [
+          "drafts",
+          "skipped"
+        ],
+        "title": "PackageReminderPreviewOut",
         "type": "object"
       },
       "Page_AuditOut_": {
@@ -14665,6 +14748,77 @@
         "title": "RegisterIn",
         "type": "object"
       },
+      "ReminderDraftOut": {
+        "properties": {
+          "guardian_id": {
+            "format": "uuid",
+            "title": "Guardian Id",
+            "type": "string"
+          },
+          "guardian_name": {
+            "title": "Guardian Name",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "overdue",
+              "upcoming"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "overdue_total": {
+            "title": "Overdue Total",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "student_id",
+          "student_name",
+          "guardian_id",
+          "guardian_name",
+          "kind",
+          "overdue_total",
+          "text"
+        ],
+        "title": "ReminderDraftOut",
+        "type": "object"
+      },
+      "ReminderMessageIn": {
+        "additionalProperties": false,
+        "properties": {
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "student_id",
+          "text"
+        ],
+        "title": "ReminderMessageIn",
+        "type": "object"
+      },
       "ReminderOut": {
         "properties": {
           "days": {
@@ -14752,6 +14906,145 @@
           "last_contact_on"
         ],
         "title": "ReminderOut",
+        "type": "object"
+      },
+      "ReminderPreviewOut": {
+        "properties": {
+          "drafts": {
+            "items": {
+              "$ref": "#/components/schemas/ReminderDraftOut"
+            },
+            "title": "Drafts",
+            "type": "array"
+          },
+          "skipped": {
+            "items": {
+              "$ref": "#/components/schemas/ReminderSkipOut"
+            },
+            "title": "Skipped",
+            "type": "array"
+          }
+        },
+        "required": [
+          "drafts",
+          "skipped"
+        ],
+        "title": "ReminderPreviewOut",
+        "type": "object"
+      },
+      "ReminderQueuedOut": {
+        "properties": {
+          "message_id": {
+            "format": "uuid",
+            "title": "Message Id",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "student_id",
+          "message_id"
+        ],
+        "title": "ReminderQueuedOut",
+        "type": "object"
+      },
+      "ReminderRefusedOut": {
+        "properties": {
+          "reason": {
+            "description": "a skip reason of the preview, or `not_due` when nothing calls for a reminder",
+            "title": "Reason",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "student_id",
+          "reason"
+        ],
+        "title": "ReminderRefusedOut",
+        "type": "object"
+      },
+      "ReminderSendIn": {
+        "additionalProperties": false,
+        "properties": {
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/ReminderMessageIn"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Messages",
+            "type": "array"
+          }
+        },
+        "required": [
+          "messages"
+        ],
+        "title": "ReminderSendIn",
+        "type": "object"
+      },
+      "ReminderSendOut": {
+        "properties": {
+          "queued": {
+            "items": {
+              "$ref": "#/components/schemas/ReminderQueuedOut"
+            },
+            "title": "Queued",
+            "type": "array"
+          },
+          "refused": {
+            "items": {
+              "$ref": "#/components/schemas/ReminderRefusedOut"
+            },
+            "title": "Refused",
+            "type": "array"
+          }
+        },
+        "required": [
+          "queued",
+          "refused"
+        ],
+        "title": "ReminderSendOut",
+        "type": "object"
+      },
+      "ReminderSkipOut": {
+        "properties": {
+          "reason": {
+            "enum": [
+              "no_consent",
+              "no_chat",
+              "cooldown",
+              "below_threshold",
+              "student_inactive",
+              "already_overdue"
+            ],
+            "title": "Reason",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "student_id",
+          "student_name",
+          "reason"
+        ],
+        "title": "ReminderSkipOut",
         "type": "object"
       },
       "ReportDetail": {
@@ -15133,6 +15426,29 @@
           "decision_note"
         ],
         "title": "RequestRow",
+        "type": "object"
+      },
+      "ResetIn": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "maxLength": 200,
+            "minLength": 20,
+            "title": "Code",
+            "type": "string"
+          },
+          "new_password": {
+            "maxLength": 128,
+            "minLength": 10,
+            "title": "New Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "new_password"
+        ],
+        "title": "ResetIn",
         "type": "object"
       },
       "ResultRecord": {
@@ -16260,6 +16576,11 @@
             "title": "Family Discount 3Rd Percent",
             "type": "string"
           },
+          "installment_remind_days": {
+            "description": "draft a reminder this many days before an installment is due (0 = off)",
+            "title": "Installment Remind Days",
+            "type": "integer"
+          },
           "lead_reminder_days": {
             "description": "quiet days after which an open lead shows in the internal reminder list",
             "title": "Lead Reminder Days",
@@ -16280,6 +16601,40 @@
           "package_low_lessons": {
             "title": "Package Low Lessons",
             "type": "integer"
+          },
+          "pay_info": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "card or account that the copy button under a debt reminder copies; null = no such button",
+            "title": "Pay Info"
+          },
+          "reminder_cooldown_days": {
+            "description": "no second debt reminder draft for a student within these days",
+            "title": "Reminder Cooldown Days",
+            "type": "integer"
+          },
+          "reminder_min_overdue": {
+            "description": "no debt reminder draft below this overdue amount, whole so'm",
+            "title": "Reminder Min Overdue",
+            "type": "integer"
+          },
+          "reminder_template": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "own text of the debt reminder ({guardian} {student} {amount} {days} {center}); null = standard",
+            "title": "Reminder Template"
           },
           "requisites": {
             "anyOf": [
@@ -16317,7 +16672,12 @@
           "requisites",
           "ai_enabled",
           "ai_sees_names",
-          "ai_daily_limit"
+          "ai_daily_limit",
+          "reminder_cooldown_days",
+          "reminder_min_overdue",
+          "reminder_template",
+          "installment_remind_days",
+          "pay_info"
         ],
         "title": "SettingsOut",
         "type": "object"
@@ -16408,6 +16768,19 @@
             ],
             "title": "Family Discount 3Rd Percent"
           },
+          "installment_remind_days": {
+            "anyOf": [
+              {
+                "maximum": 30.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Installment Remind Days"
+          },
           "lead_reminder_days": {
             "anyOf": [
               {
@@ -16470,6 +16843,58 @@
               }
             ],
             "title": "Package Low Lessons"
+          },
+          "pay_info": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "empty string clears it",
+            "title": "Pay Info"
+          },
+          "reminder_cooldown_days": {
+            "anyOf": [
+              {
+                "maximum": 365.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reminder Cooldown Days"
+          },
+          "reminder_min_overdue": {
+            "anyOf": [
+              {
+                "maximum": 1000000000.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reminder Min Overdue"
+          },
+          "reminder_template": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "empty string = back to the standard text",
+            "title": "Reminder Template"
           },
           "requisites": {
             "anyOf": [
@@ -19094,6 +19519,114 @@
         "title": "WaitlistOut",
         "type": "object"
       },
+      "WebRefreshIn": {
+        "additionalProperties": false,
+        "properties": {
+          "org_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Org Id"
+          }
+        },
+        "title": "WebRefreshIn",
+        "type": "object"
+      },
+      "WebSessionOut": {
+        "properties": {
+          "access_token": {
+            "title": "Access Token",
+            "type": "string"
+          },
+          "expires_in": {
+            "title": "Expires In",
+            "type": "integer"
+          },
+          "org": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OrgRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "organizations": {
+            "items": {
+              "$ref": "#/components/schemas/OrgRef"
+            },
+            "title": "Organizations",
+            "type": "array"
+          },
+          "token_type": {
+            "default": "bearer",
+            "title": "Token Type",
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/WebUser"
+          }
+        },
+        "required": [
+          "access_token",
+          "expires_in",
+          "user",
+          "org",
+          "organizations"
+        ],
+        "title": "WebSessionOut",
+        "type": "object"
+      },
+      "WebUser": {
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          }
+        },
+        "required": [
+          "id",
+          "full_name",
+          "email",
+          "phone"
+        ],
+        "title": "WebUser",
+        "type": "object"
+      },
       "WeeklySlot": {
         "properties": {
           "end_time": {
@@ -19201,6 +19734,19 @@
       },
       "nazoratly__routers__auth__MeOut": {
         "properties": {
+          "branch_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "the branch this staff member is restricted to; null = all branches (or no center selected)",
+            "title": "Branch Id"
+          },
           "email": {
             "anyOf": [
               {
@@ -19238,6 +19784,14 @@
             "title": "Organizations",
             "type": "array"
           },
+          "permissions": {
+            "description": "what the role may do in the selected center (empty without one); the server enforces it anyway",
+            "items": {
+              "type": "string"
+            },
+            "title": "Permissions",
+            "type": "array"
+          },
           "phone": {
             "anyOf": [
               {
@@ -19256,7 +19810,9 @@
           "email",
           "phone",
           "org",
-          "organizations"
+          "organizations",
+          "permissions",
+          "branch_id"
         ],
         "title": "MeOut",
         "type": "object"
@@ -23351,6 +23907,32 @@
         ]
       }
     },
+    "/v1/attendance/qr-codes/issue": {
+      "post": {
+        "operationId": "issue_all_codes_v1_attendance_qr_codes_issue_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueAllOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Give a QR code to every student who has none (students who left are skipped)",
+        "tags": [
+          "qr attendance"
+        ]
+      }
+    },
     "/v1/attendance/scan": {
       "post": {
         "operationId": "scan_v1_attendance_scan_post",
@@ -23795,6 +24377,48 @@
         ]
       }
     },
+    "/v1/auth/reset": {
+      "post": {
+        "description": "The code comes from a link an operator issued (`python -m nazoratly.password_reset`). A wrong, used, expired and\nreplaced code all get the same answer. Success signs the account out everywhere and lifts its login lockout.",
+        "operationId": "reset_password_v1_auth_reset_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set a new password with a one-time reset code",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/v1/auth/switch": {
       "post": {
         "operationId": "switch_org_v1_auth_switch_post",
@@ -23879,6 +24503,150 @@
         "summary": "Sign in from the Telegram Mini App (verified initData of an account linked through an invitation)",
         "tags": [
           "teacher app (sign-in)"
+        ]
+      }
+    },
+    "/v1/auth/web/login": {
+      "post": {
+        "operationId": "web_login_v1_auth_web_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebSessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Panel: log in (refresh token in a cookie)",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/web/logout": {
+      "post": {
+        "operationId": "web_logout_v1_auth_web_logout_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Panel: end the cookie session",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/web/refresh": {
+      "post": {
+        "operationId": "web_refresh_v1_auth_web_refresh_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebRefreshIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebSessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Panel: rotate the cookie session",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/web/register": {
+      "post": {
+        "operationId": "web_register_v1_auth_web_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebSessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Panel: create a center and its owner account",
+        "tags": [
+          "auth"
         ]
       }
     },
@@ -34958,6 +35726,76 @@
         ]
       }
     },
+    "/v1/reports/debtors/reminders": {
+      "get": {
+        "operationId": "preview_reminders_v1_reports_debtors_reminders_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReminderPreviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Draft debt reminders (nothing is stored or sent) and who was left out",
+        "tags": [
+          "finance"
+        ]
+      },
+      "post": {
+        "operationId": "send_reminders_v1_reports_debtors_reminders_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReminderSendIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReminderSendOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Approve reminders: queue them for the guardians (this call IS the person's approval)",
+        "tags": [
+          "finance"
+        ]
+      }
+    },
     "/v1/reports/discounts": {
       "get": {
         "operationId": "discount_report_v1_reports_discounts_get",
@@ -35202,6 +36040,76 @@
         "summary": "Students whose package balance is low, exhausted or negative, with a reminder draft text",
         "tags": [
           "lesson packages"
+        ]
+      }
+    },
+    "/v1/reports/packages/payment-needed/reminders": {
+      "get": {
+        "operationId": "preview_package_reminders_v1_reports_packages_payment_needed_reminders_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackageReminderPreviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Draft payment reminders for lesson packages (nothing is stored or sent) and who was left out",
+        "tags": [
+          "finance"
+        ]
+      },
+      "post": {
+        "operationId": "send_package_reminders_v1_reports_packages_payment_needed_reminders_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReminderSendIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReminderSendOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Approve lesson-package reminders: queue them for the guardians (this call IS the person's approval)",
+        "tags": [
+          "finance"
         ]
       }
     },

@@ -10,6 +10,7 @@ so the bot has no session of its own. All Telegram calls go through `TelegramApi
 from __future__ import annotations
 
 import re
+import uuid
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -17,7 +18,7 @@ from typing import Any
 
 from nazoratly.accounting import org_today
 from nazoratly.config import Settings
-from nazoratly.db import Database, Session, execute, fetch_all, fetch_one
+from nazoratly.db import Conn, Database, Session, execute, fetch_all, fetch_one
 from nazoratly.guardian_service import (
     LINK_ATTEMPTS_PER_HOUR,
     GuardianCtx,
@@ -42,6 +43,8 @@ from nazoratly.guardian_service import (
 )
 from nazoratly.guardian_telegram import TelegramApi, contact_keyboard
 from nazoratly.rules import guardian as G
+from nazoratly.rules import reminders as R
+from nazoratly.telegram_delivery import PAID_CALLBACK
 from nazoratly.telegram_scope import Scope, keyboard
 
 _ANON = Session(user_id=None, org_id=None, actor_type="system")
@@ -57,6 +60,7 @@ KIND_TEXT = {
     "payment_promise": "To'lov va'dasi",
     "makeup_choice": "Qoplash darsi",
 }
+NOTES_MAX = 4000  # schemas.LongText: what the API accepts for a student's notes
 STATUS_ATT = {"present": "keldi", "late": "kechikdi", "absent": "kelmadi", "excused": "sababli"}
 WEEKDAY = ["", "Du", "Se", "Chor", "Pay", "Ju", "Sha", "Yak"]
 
@@ -67,6 +71,32 @@ def som(v: Any) -> str:
 
 def hm(t: Any) -> str:
     return str(t)[:5]
+
+
+async def _record_paid_claim(conn: Conn, org_id: int, sid: int, guardian_id: int) -> None:
+    today = await org_today(conn)
+    row = await fetch_one(conn, "SELECT full_name, notes FROM students WHERE id = %s FOR UPDATE", (sid,))
+    assert row is not None
+    line = R.paid_note_line(today)
+    notes = f"{row['notes'] or ''} {line}".strip()
+    # a note filled to the API's limit stays editable: the owner's notice below still carries the claim
+    if line not in (row["notes"] or "") and len(notes) <= NOTES_MAX:
+        await execute(conn, "UPDATE students SET notes = %s WHERE id = %s", (notes, sid))
+    await execute(
+        conn,
+        "INSERT INTO staff_notifications (org_id, user_id, kind, body, dedup_key, day, delivery) "
+        "SELECT m.org_id, u.id, 'paid_claim', %(body)s, concat('paid:', %(key)s::text, ':', u.id), %(day)s, "
+        "CASE WHEN u.telegram_user_id IS NOT NULL THEN 'queued' ELSE 'none' END "
+        "FROM memberships m JOIN users u ON u.id = m.user_id "
+        "WHERE m.org_id = %(org)s AND m.role = 'owner' AND m.status = 'active' "
+        "ON CONFLICT (org_id, dedup_key) DO NOTHING",
+        {
+            "org": org_id,
+            "body": R.paid_owner_text(row["full_name"]),
+            "key": f"{today.isoformat()}:{sid}:{guardian_id}",
+            "day": today,
+        },
+    )
 
 
 @dataclass(frozen=True)
@@ -360,6 +390,30 @@ class GuardianBot:
         self.epoch = await self.activate()
         await self.api.send_message(tg, "✅ Raqamingiz tasdiqlandi va ulandi.", {"remove_keyboard": True})
         await self._home(tg)
+
+    # ---- "I have paid" under a debt reminder ---------------------------------------------------------------------
+    async def on_paid(self, tg: int, data: str, callback_id: str) -> None:
+        """As in the Sheets edition: only for a student linked to this chat; the claim is noted on the student and the
+        owner is told. Nothing is booked: the center checks the money itself. One note and one notice per student,
+        guardian and day, however often the button is tapped."""
+        found = None
+        if match := PAID_CALLBACK.match(data):
+            found = await self._find_by_id(tg, uuid.UUID(match.group(1)))
+        if found is None:
+            await self.api.answer_callback(callback_id, R.PAID_NOT_LINKED, alert=True)
+            return
+        lk, s = found
+        async with self.db.tx(Session(user_id=None, org_id=lk.ctx.org_id, actor_type="system")) as conn:
+            await _record_paid_claim(conn, lk.ctx.org_id, int(s["sid"]), lk.ctx.guardian_id)
+        await self.api.answer_callback(callback_id, R.PAID_THANKS, alert=True)
+
+    async def _find_by_id(self, tg: int, student: uuid.UUID) -> tuple[Linked, dict[str, Any]] | None:
+        for lk in await self._linked(tg):
+            async with self.db.tx(lk.ctx.session()) as conn:
+                for s in await linked_students(conn, lk.ctx.guardian_id):
+                    if s["id"] == student:
+                        return lk, s
+        return None
 
     # ---- callbacks -----------------------------------------------------------------------------------------------
     async def on_callback(self, tg: int, data: str, callback_id: str) -> None:

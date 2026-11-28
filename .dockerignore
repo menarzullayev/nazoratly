@@ -14,3 +14,6 @@ web/out
 web/.next
 web/test-results
 web/playwright-report
+panel/dist
+panel/test-results
+panel/playwright-report

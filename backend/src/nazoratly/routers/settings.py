@@ -43,6 +43,21 @@ class SettingsOut(Out):
         description="the AI may receive real student names (default off: pseudonyms only, names restored locally)"
     )
     ai_daily_limit: int = Field(description="AI-written reports per day; the rest are rule-based")
+    reminder_cooldown_days: int = Field(
+        description="no second debt reminder draft for a student within these days"
+    )
+    reminder_min_overdue: int = Field(
+        description="no debt reminder draft below this overdue amount, whole so'm"
+    )
+    reminder_template: str | None = Field(
+        description="own text of the debt reminder ({guardian} {student} {amount} {days} {center}); null = standard"
+    )
+    installment_remind_days: int = Field(
+        description="draft a reminder this many days before an installment is due (0 = off)"
+    )
+    pay_info: str | None = Field(
+        description="card or account that the copy button under a debt reminder copies; null = no such button"
+    )
 
 
 class SettingsPatch(Model):
@@ -66,6 +81,16 @@ class SettingsPatch(Model):
     ai_enabled: bool | None = None  # AI switches need org:manage (the owner)
     ai_sees_names: bool | None = None
     ai_daily_limit: Annotated[int, Field(ge=0, le=200)] | None = None
+    reminder_cooldown_days: Annotated[int, Field(ge=0, le=365)] | None = None
+    reminder_min_overdue: Annotated[int, Field(ge=0, le=1_000_000_000)] | None = None
+    reminder_template: Annotated[str, StringConstraints(strip_whitespace=True, max_length=2000)] | None = (
+        Field(default=None, description="empty string = back to the standard text")
+    )
+    installment_remind_days: Annotated[int, Field(ge=0, le=30)] | None = None
+    # where guardians are told to pay: only the owner (org:manage) may change it
+    pay_info: Annotated[str, StringConstraints(strip_whitespace=True, max_length=256)] | None = Field(
+        default=None, description="empty string clears it"
+    )
 
 
 _FIELDS = (
@@ -81,7 +106,16 @@ _FIELDS = (
     "family_discount_3rd_percent",
     "requisites",
 )  # the settings a branch may override (the rest is center-wide)
-_ORG_ONLY = "demo_mode, ai_enabled, ai_sees_names, ai_daily_limit"
+_ORG_ONLY = (
+    "demo_mode, ai_enabled, ai_sees_names, ai_daily_limit, reminder_cooldown_days, reminder_min_overdue, "
+    "reminder_template, installment_remind_days, pay_info"
+)
+_CENTER_ONLY_PATCH = (
+    "reminder_",
+    "installment_remind_days",
+    "pay_info",
+)  # no branch override, as in the Sheets edition
+_CLEARABLE = ("requisites", "reminder_template", "pay_info")  # an empty string is stored as NULL
 _EFFECTIVE = ", ".join(f"COALESCE(bs.{f}, os.{f}) AS {f}" for f in _FIELDS if f != "requisites")
 # requisites may be cleared in a branch ('' = print nothing), so a NULL there means "inherit", an empty string "none"
 _EFFECTIVE += ", COALESCE(bs.requisites, os.requisites) AS requisites"
@@ -139,6 +173,8 @@ async def patch_settings(
     changes = body.model_dump(exclude_unset=True, exclude_none=True)
     if any(k.startswith("ai_") for k in changes) and not p.can("org:manage"):
         raise Forbidden("only the owner can change the AI switches")
+    if "pay_info" in changes and not p.can("org:manage"):
+        raise Forbidden("only the owner can change the payment requisites")
     async with db.tx(p.session()) as conn:
         await load_settings_at(conn, p.org_id, None)  # creates the center row on first use
         if p.scope_branch_id is None:
@@ -146,13 +182,17 @@ async def patch_settings(
                 column,
                 value,
             ) in changes.items():  # column names come from the model above, never from the client
-                stored = None if column == "requisites" and value == "" else value
+                stored = None if column in _CLEARABLE and value == "" else value
                 await execute(
                     conn, f"UPDATE org_settings SET {column} = %s WHERE org_id = %s", (stored, p.org_id)
                 )
         else:
             if any(k.startswith("ai_") for k in changes):
                 raise Unprocessable("The AI switches are center-wide: change them without choosing a branch")
+            if any(k.startswith(_CENTER_ONLY_PATCH) for k in changes):
+                raise Unprocessable(
+                    "The reminder settings are center-wide: change them without choosing a branch"
+                )
             await set_branch_overrides(conn, p.org_id, p.scope_branch_id, changes)
         return await load_settings(conn, p.org_id)
 

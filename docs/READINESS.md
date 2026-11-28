@@ -79,6 +79,8 @@ Belgilar: **Bor** = kodda API yoki menyu mavjud. Bu ikkala tomonda xatti-harakat
 
 ### Eng katta farq: foydalanuvchi interfeysi
 
+**Yangilanish (panel, 1-bo'lak):** `panel/` da poydevor va kunlik ish ekranlari qurildi (kirish, ro'yxatdan o'tish, parol tiklash, markaz va xodimlar, o'quvchi, guruh, jadval, davomat, QR, moliya, import, ustoz ishi). Pul (2-bo'lak), o'sish va ta'lim (3-bo'lak), boshqaruv (4-bo'lak) ekranlari hali yo'q. Panel jonli tizimga chiqarilmagan va uni odam sinamagan; `ru`/`en` tarjimalari hamda kirill va yangi lotin o'girishi odam ko'rigidan o'tmagan. Quyidagi matn audit paytidagi holat.
+
 Yuqoridagi "Server: Bor" **API** degani. Markaz egasi va xodimi uchun to'liq web panel **topilmadi**: server 5 ta alohida sahifa beradi (QR skan, import, taqvim, ustoz, vasiy). Sheets'da esa 135 ta menyu bandi bor. Biznes funksiyalari tengligi mezoniga ko'ra, serverdagi vazifani xodim bajara olishi uchun web panel kerak.
 
 ## Haqiqiy muhitda odam sinamagan

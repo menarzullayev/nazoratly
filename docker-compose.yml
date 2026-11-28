@@ -99,6 +99,16 @@ services:
       migrate: {condition: service_completed_successfully}
     restart: unless-stopped
 
+  # The staff web panel (static files under /app). The tunnel sends ^/app(/|$) here and /v1 to the api: one origin,
+  # which must equal the origin of NAZORATLY_PUBLIC_BASE_URL, or the panel's sign-in routes answer 403.
+  panel:
+    build:
+      context: .
+      dockerfile: panel/Dockerfile
+    ports:
+      - "127.0.0.1:${NAZORATLY_PANEL_PORT:-8013}:80"
+    restart: unless-stopped
+
   web:
     build:
       context: .
