@@ -97,6 +97,11 @@ abbr { text-decoration: none; cursor: help; }
 .filters, .mapping, .scan-form { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: flex-end; margin-bottom: 0.75rem; }
 .filters label, .mapping label, .scan-form label { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.85rem; color: var(--muted); }
 .filters input, .filters select, .mapping select, .scan-form input { color: var(--text); }
+/* A flex item is never narrower than its content unless told so: a file field or a select with a long option would push
+   the page sideways on a phone (how wide they are depends on the browser's fonts). */
+.filters label, .mapping label, .scan-form label { min-width: 0; max-width: 100%; }
+.filters input, .filters select, .mapping select, .scan-form input { min-width: 0; }
+input[type="file"] { width: 100%; }
 .filters label.check, label.check { flex-direction: row; align-items: center; gap: 0.4rem; color: var(--text); }
 .filters .field { margin: 0; }
 .tabs { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-bottom: 0.75rem; }

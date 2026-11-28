@@ -62,6 +62,45 @@ test("on a phone nothing needs sideways scrolling and the menu opens", async ({ 
   expect(wide).toEqual([]);
 });
 
+// the file field, the column mapping and the preview only show after a file is chosen, and their labels differ by language
+test("on a phone the import screen stays within the width in all five languages, before and after the preview", async ({ page }) => {
+  const center = await makeCenter();
+  await page.setViewportSize({ width: 320, height: 740 });
+  await signIn(page, center.accounts.owner);
+  await page.goto("import");
+  await settled(page);
+  const wide: string[] = [];
+  const measure = async (what: string): Promise<void> => {
+    const found = await page.evaluate(() => {
+      const limit = document.documentElement.clientWidth;
+      const extra = document.documentElement.scrollWidth - limit;
+      const culprits = [...document.querySelectorAll("main *")]
+        .filter((e) => e.getBoundingClientRect().right > limit + 1 && !e.closest(".table-wrap"))
+        .slice(0, 4)
+        .map((e) => `${e.tagName.toLowerCase()}[${e.getAttribute("type") ?? e.className}] ${Math.round(e.getBoundingClientRect().right)}`);
+      return extra > 1 ? `${extra}px ${culprits.join(", ")}` : "";
+    });
+    if (found) wide.push(`${what}: ${found}`);
+  };
+  const languages = ["uz", "uz-cyrl", "uz-new", "ru", "en"];
+  for (const language of languages) {
+    await page.locator("select.language").selectOption(language);
+    await measure(`${language}, empty`);
+  }
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "oquvchilar-royxati-sentabr-oktabr-2026-yakuniy.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from(["F.I.Sh.,Telefon,JudaUzunUstunNomiBoshJoysizKelganHolat", "Tekshiruv Bolasi,+998901234567,x"].join(String.fromCharCode(10))),
+  });
+  await page.locator("main button.primary").first().click();
+  await expect(page.locator(".mapping")).toBeVisible();
+  for (const language of languages) {
+    await page.locator("select.language").selectOption(language);
+    await measure(`${language}, preview`);
+  }
+  expect(wide).toEqual([]);
+});
+
 test("the five languages: interface text changes, a person's name never does", async ({ page }) => {
   const center = await makeCenter();
   await signIn(page, center.accounts.owner);
