@@ -507,28 +507,39 @@ _RESET_REFUSED = "This reset link is not valid. Ask for a new one."
 RESET_MAX_FAILURES = 10  # per client address inside the login lockout window
 
 
+async def _reset_blocked(conn: Conn, attempts: str, settings: Settings) -> bool:
+    failed = await fetch_one(
+        conn,
+        "SELECT count(*) AS n FROM login_attempts WHERE identifier = %s AND NOT succeeded "
+        "AND created_at > now() - make_interval(secs => %s)",
+        (attempts, settings.login_lockout_window_s),
+    )
+    assert failed is not None
+    return bool(failed["n"] >= RESET_MAX_FAILURES)
+
+
+def _too_many_resets(settings: Settings) -> TooManyRequests:
+    return TooManyRequests(
+        "Too many failed attempts, try again later",
+        headers={"Retry-After": str(settings.login_lockout_window_s)},
+    )
+
+
 @router.post("/auth/reset", response_model=Message, summary="Set a new password with a one-time reset code")
 async def reset_password(body: ResetIn, request: Request, db: DB, settings: Cfg) -> Message:
     """The code comes from a link an operator issued (`python -m nazoratly.password_reset`). A wrong, used, expired and
     replaced code all get the same answer. Success signs the account out everywhere and lifts its login lockout."""
-    new_hash = await hash_password(body.new_password)  # before the lookup: every request costs the same
     ip = request_ip(request, settings)
     attempts = f"reset:{ip}"
+    async with db.auth_tx(Session(None, None, request_id_of(request))) as conn:
+        if await _reset_blocked(conn, attempts, settings):  # first: a blocked address must not cost a hash
+            raise _too_many_resets(settings)
+    new_hash = await hash_password(body.new_password)  # before the lookup: every code costs the same
     failure: ApiError | None = None
     done: dict[str, Any] | None = None
     async with db.auth_tx(Session(None, None, request_id_of(request))) as conn:
-        failed = await fetch_one(
-            conn,
-            "SELECT count(*) AS n FROM login_attempts WHERE identifier = %s AND NOT succeeded "
-            "AND created_at > now() - make_interval(secs => %s)",
-            (attempts, settings.login_lockout_window_s),
-        )
-        assert failed is not None
-        if failed["n"] >= RESET_MAX_FAILURES:
-            failure = TooManyRequests(
-                "Too many failed attempts, try again later",
-                headers={"Retry-After": str(settings.login_lockout_window_s)},
-            )
+        if await _reset_blocked(conn, attempts, settings):  # again: others may have failed while we hashed
+            failure = _too_many_resets(settings)
         else:
             code = await fetch_one(
                 conn,

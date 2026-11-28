@@ -18,6 +18,7 @@ import pytest_asyncio
 
 from nazoratly.config import Settings
 from nazoratly.password_reset import ResetLinkError, issue_link
+from nazoratly.routers import auth as auth_router
 from nazoratly.security import sha256
 from tests.conftest import Tenant, make_tenant
 from tests.helpers import ok
@@ -380,6 +381,32 @@ async def test_reset_attempts_are_limited(
     good = await reset_code(panel, panel_settings, who["email"])
     r = await web.post("/v1/auth/reset", json={"code": good, "new_password": "whatever-password"})
     assert r.status_code == 429 and r.headers["retry-after"]
+
+
+async def test_a_blocked_address_costs_no_password_hash(
+    web: httpx.AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    hashed: list[str] = []
+    real = auth_router.hash_password
+
+    async def counting(password: str) -> str:
+        hashed.append(password)
+        return await real(password)
+
+    monkeypatch.setattr(auth_router, "hash_password", counting)
+
+    def attempt() -> Any:
+        return web.post(
+            "/v1/auth/reset", json={"code": "nzp_" + uuid.uuid4().hex, "new_password": "whatever-password"}
+        )
+
+    for _ in range(10):
+        assert (await attempt()).status_code == 422
+    assert len(hashed) == 10  # an address within the limit pays the same for every code
+    for _ in range(3):
+        r = await attempt()
+        assert (r.status_code, r.json()["error"]["code"]) == (429, "rate_limited")
+    assert len(hashed) == 10
 
 
 async def test_one_code_works_once_even_when_used_twice_at_the_same_time(
