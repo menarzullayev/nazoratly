@@ -4,6 +4,8 @@ cannot be delivered, and that is reported as a failure, never silently dropped."
 
 from __future__ import annotations
 
+import re
+import uuid
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
@@ -21,6 +23,16 @@ MARK_UNREACHABLE_SQL = "SELECT tg_mark_unreachable(%s, %s)"
 UNDELIVERABLE = (
     "undeliverable: no bot can reach this chat (the center stopped the shared bot or the bots were blocked)"
 )
+
+
+# the "I have paid" button of a debt reminder. It is not tied to a role or a menu epoch: it must work whenever the
+# person taps it; who may tap it is checked against the guardian links every time
+PAID_PREFIX = "paid:"
+PAID_CALLBACK = re.compile(r"^paid:([0-9a-f]{32})$")
+
+
+def paid_callback(student_public_id: uuid.UUID) -> str:
+    return f"{PAID_PREFIX}{student_public_id.hex}"
 
 
 @dataclass(frozen=True)

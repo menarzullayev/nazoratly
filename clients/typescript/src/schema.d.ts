@@ -3685,6 +3685,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/reports/packages/payment-needed/reminders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Draft payment reminders for lesson packages (nothing is stored or sent) and who was left out */
+        get: operations["preview_package_reminders_v1_reports_packages_payment_needed_reminders_get"];
+        put?: never;
+        /** Approve lesson-package reminders: queue them for the guardians (this call IS the person's approval) */
+        post: operations["send_package_reminders_v1_reports_packages_payment_needed_reminders_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/reports/progress": {
         parameters: {
             query?: never;
@@ -9179,6 +9197,37 @@ export interface components {
             /** Student Name */
             student_name: string;
         };
+        /** PackageReminderDraftOut */
+        PackageReminderDraftOut: {
+            /**
+             * Guardian Id
+             * Format: uuid
+             */
+            guardian_id: string;
+            /** Guardian Name */
+            guardian_name: string;
+            /**
+             * Need
+             * @enum {string}
+             */
+            need: "low" | "exhausted" | "debt";
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+            /** Text */
+            text: string;
+        };
+        /** PackageReminderPreviewOut */
+        PackageReminderPreviewOut: {
+            /** Drafts */
+            drafts: components["schemas"]["PackageReminderDraftOut"][];
+            /** Skipped */
+            skipped: components["schemas"]["ReminderSkipOut"][];
+        };
         /** Page[AuditOut] */
         Page_AuditOut_: {
             /** Has More */
@@ -11322,6 +11371,11 @@ export interface components {
             /** Package Low Lessons */
             package_low_lessons: number;
             /**
+             * Pay Info
+             * @description card or account that the copy button under a debt reminder copies; null = no such button
+             */
+            pay_info: string | null;
+            /**
              * Reminder Cooldown Days
              * @description no second debt reminder draft for a student within these days
              */
@@ -11372,6 +11426,11 @@ export interface components {
             package_expiry_days?: number | null;
             /** Package Low Lessons */
             package_low_lessons?: number | null;
+            /**
+             * Pay Info
+             * @description empty string clears it
+             */
+            pay_info?: string | null;
             /** Reminder Cooldown Days */
             reminder_cooldown_days?: number | null;
             /** Reminder Min Overdue */
@@ -21551,6 +21610,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaymentNeededRow"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_package_reminders_v1_reports_packages_payment_needed_reminders_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PackageReminderPreviewOut"];
+                };
+            };
+        };
+    };
+    send_package_reminders_v1_reports_packages_payment_needed_reminders_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReminderSendIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReminderSendOut"];
                 };
             };
             /** @description Validation Error */

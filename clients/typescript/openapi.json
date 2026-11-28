@@ -11256,6 +11256,75 @@
         "title": "PackageOut",
         "type": "object"
       },
+      "PackageReminderDraftOut": {
+        "properties": {
+          "guardian_id": {
+            "format": "uuid",
+            "title": "Guardian Id",
+            "type": "string"
+          },
+          "guardian_name": {
+            "title": "Guardian Name",
+            "type": "string"
+          },
+          "need": {
+            "enum": [
+              "low",
+              "exhausted",
+              "debt"
+            ],
+            "title": "Need",
+            "type": "string"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "student_id",
+          "student_name",
+          "guardian_id",
+          "guardian_name",
+          "need",
+          "text"
+        ],
+        "title": "PackageReminderDraftOut",
+        "type": "object"
+      },
+      "PackageReminderPreviewOut": {
+        "properties": {
+          "drafts": {
+            "items": {
+              "$ref": "#/components/schemas/PackageReminderDraftOut"
+            },
+            "title": "Drafts",
+            "type": "array"
+          },
+          "skipped": {
+            "items": {
+              "$ref": "#/components/schemas/ReminderSkipOut"
+            },
+            "title": "Skipped",
+            "type": "array"
+          }
+        },
+        "required": [
+          "drafts",
+          "skipped"
+        ],
+        "title": "PackageReminderPreviewOut",
+        "type": "object"
+      },
       "Page_AuditOut_": {
         "properties": {
           "has_more": {
@@ -16533,6 +16602,18 @@
             "title": "Package Low Lessons",
             "type": "integer"
           },
+          "pay_info": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "card or account that the copy button under a debt reminder copies; null = no such button",
+            "title": "Pay Info"
+          },
           "reminder_cooldown_days": {
             "description": "no second debt reminder draft for a student within these days",
             "title": "Reminder Cooldown Days",
@@ -16595,7 +16676,8 @@
           "reminder_cooldown_days",
           "reminder_min_overdue",
           "reminder_template",
-          "installment_remind_days"
+          "installment_remind_days",
+          "pay_info"
         ],
         "title": "SettingsOut",
         "type": "object"
@@ -16761,6 +16843,19 @@
               }
             ],
             "title": "Package Low Lessons"
+          },
+          "pay_info": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "empty string clears it",
+            "title": "Pay Info"
           },
           "reminder_cooldown_days": {
             "anyOf": [
@@ -35945,6 +36040,76 @@
         "summary": "Students whose package balance is low, exhausted or negative, with a reminder draft text",
         "tags": [
           "lesson packages"
+        ]
+      }
+    },
+    "/v1/reports/packages/payment-needed/reminders": {
+      "get": {
+        "operationId": "preview_package_reminders_v1_reports_packages_payment_needed_reminders_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackageReminderPreviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Draft payment reminders for lesson packages (nothing is stored or sent) and who was left out",
+        "tags": [
+          "finance"
+        ]
+      },
+      "post": {
+        "operationId": "send_package_reminders_v1_reports_packages_payment_needed_reminders_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReminderSendIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReminderSendOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Approve lesson-package reminders: queue them for the guardians (this call IS the person's approval)",
+        "tags": [
+          "finance"
         ]
       }
     },

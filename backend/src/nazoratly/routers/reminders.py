@@ -2,28 +2,34 @@
 
 The Sheets edition keeps drafts in a tab; here a draft is not stored. `GET` computes the drafts, `POST` is the person's
 approval: it recomputes them under a lock and queues only students who are still eligible, with the text the person
-approved (edited or not). Cooldown counts the reminders queued by this route that were not cancelled."""
+approved (edited or not). Cooldown counts the reminders queued by this route that were not cancelled. When the worker
+sends one it adds what the Sheets edition adds: the open charges as they are at that moment, their total, the
+center's payment requisites and the buttons (the key prefix below is how the database knows a reminder, 0074)."""
 
 from __future__ import annotations
 
 import uuid
+from collections.abc import Awaitable, Callable
 from datetime import date
 from decimal import Decimal
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends
 from pydantic import Field, StringConstraints
 
-from nazoratly.db import Conn, execute, fetch_all, fetch_one, resolve
+from nazoratly.accounting import org_today
+from nazoratly.db import Conn, Database, execute, fetch_all, fetch_one, resolve
 from nazoratly.deps import DB, Principal, require
 from nazoratly.idempotency import IdempotentRoute
-from nazoratly.routers.settings import load_settings_at
+from nazoratly.packages import load_balances, severity
+from nazoratly.routers.settings import load_settings, load_settings_at
 from nazoratly.rules import reminders as R
 from nazoratly.schemas import Dec2, Model, Out
 
 router = APIRouter(prefix="/v1", tags=["finance"], route_class=IdempotentRoute)
 
 _PATH = "/reports/debtors/reminders"
+_PACKAGE_PATH = "/reports/packages/payment-needed/reminders"
 _KEY_PREFIX = "debt-reminder-"
 
 
@@ -37,6 +43,15 @@ class ReminderDraftOut(Out):
     text: str
 
 
+class PackageReminderDraftOut(Out):
+    student_id: uuid.UUID
+    student_name: str
+    guardian_id: uuid.UUID
+    guardian_name: str
+    need: Literal["low", "exhausted", "debt"]
+    text: str
+
+
 class ReminderSkipOut(Out):
     student_id: uuid.UUID
     student_name: str
@@ -45,6 +60,11 @@ class ReminderSkipOut(Out):
 
 class ReminderPreviewOut(Out):
     drafts: list[ReminderDraftOut]
+    skipped: list[ReminderSkipOut]
+
+
+class PackageReminderPreviewOut(Out):
+    drafts: list[PackageReminderDraftOut]
     skipped: list[ReminderSkipOut]
 
 
@@ -216,6 +236,116 @@ async def send_reminders(
     p: Annotated[Principal, Depends(require("finance:read", "students:write"))],
     db: DB,
 ) -> ReminderSendOut:
+    async def eligible_now(conn: Conn) -> tuple[set[str], dict[str, str], dict[str, dict[str, Any]]]:
+        drafts, skipped, people, _ = await _plan(conn, p.org_id)
+        return {d.student_id for d in drafts}, {s.student_id: s.reason for s in skipped}, people
+
+    return await _approve(db, p, body, eligible_now)
+
+
+# ---- lesson packages (Sheets menu "To'lov eslatma loyihalarini yaratish") -----------------------------------------
+async def _package_plan(
+    conn: Conn, org_id: int
+) -> tuple[list[R.PackageDraft], list[R.Skip], dict[str, dict[str, Any]]]:
+    settings = await load_settings(conn, org_id)  # as the report: a branch may set its own "few lessons left"
+    center = await fetch_one(conn, "SELECT name FROM organizations WHERE id = %s", (org_id,))
+    assert center is not None
+    today = await org_today(conn)
+    balances = await load_balances(conn, today=today, low_lessons=settings.package_low_lessons)
+    balances = sorted(
+        (b for b in balances if b.need != "ok"),
+        key=lambda b: (severity(b.need), b.balance.balance, b.student_name.lower(), b.enrollment_id),
+    )
+    if not balances:
+        return [], [], {}
+    ids = sorted({b.student_id for b in balances})
+    people = {r["id"]: r for r in await fetch_all(conn, _STUDENTS, {"ids": ids, "prefix": _KEY_PREFIX})}
+    facts: list[R.PackageFacts] = []
+    students: dict[str, R.StudentFacts] = {}
+    by_key: dict[str, dict[str, Any]] = {}
+    for b in balances:
+        s = people[b.student_id]
+        key = str(s["public_id"])
+        facts.append(R.PackageFacts(key, b.need, b.balance.balance, b.debt_amount))
+        students[key] = R.StudentFacts(
+            key,
+            s["full_name"],
+            s["status"],
+            s["guardian_name"],
+            bool(s["has_chat"]),
+            bool(s["consent"]),
+            s["last_reminded_on"],
+        )
+        by_key[key] = s
+    drafts, skipped = R.plan_packages(
+        balances=facts,
+        students=students,
+        today=today,
+        cooldown_days=settings.reminder_cooldown_days,
+        center=center["name"],
+    )
+    return drafts, skipped, by_key
+
+
+@router.get(
+    _PACKAGE_PATH,
+    response_model=PackageReminderPreviewOut,
+    summary="Draft payment reminders for lesson packages (nothing is stored or sent) and who was left out",
+)
+async def preview_package_reminders(
+    p: Annotated[Principal, Depends(require("finance:read", "students:write"))], db: DB
+) -> PackageReminderPreviewOut:
+    async with db.tx(p.session()) as conn:
+        drafts, skipped, people = await _package_plan(conn, p.org_id)
+    return PackageReminderPreviewOut(
+        drafts=[
+            PackageReminderDraftOut(
+                student_id=uuid.UUID(d.student_id),
+                student_name=people[d.student_id]["full_name"],
+                guardian_id=people[d.student_id]["guardian_public_id"],
+                guardian_name=people[d.student_id]["guardian_name"],
+                need=d.need,
+                text=d.text,
+            )
+            for d in drafts
+        ],
+        skipped=[
+            ReminderSkipOut(
+                student_id=uuid.UUID(s.student_id),
+                student_name=people[s.student_id]["full_name"],
+                reason=s.reason,
+            )
+            for s in skipped
+        ],
+    )
+
+
+@router.post(
+    _PACKAGE_PATH,
+    response_model=ReminderSendOut,
+    status_code=201,
+    summary="Approve lesson-package reminders: queue them for the guardians (this call IS the person's approval)",
+)
+async def send_package_reminders(
+    body: ReminderSendIn,
+    p: Annotated[Principal, Depends(require("finance:read", "students:write"))],
+    db: DB,
+) -> ReminderSendOut:
+    async def eligible_now(conn: Conn) -> tuple[set[str], dict[str, str], dict[str, dict[str, Any]]]:
+        drafts, skipped, people = await _package_plan(conn, p.org_id)
+        return {d.student_id for d in drafts}, {s.student_id: s.reason for s in skipped}, people
+
+    return await _approve(db, p, body, eligible_now)
+
+
+async def _approve(
+    db: Database,
+    p: Principal,
+    body: ReminderSendIn,
+    eligible_now: Callable[[Conn], Awaitable[tuple[set[str], dict[str, str], dict[str, dict[str, Any]]]]],
+) -> ReminderSendOut:
+    """The approval shared by both kinds. As in the Sheets edition they share the cooldown, and each one gets the debt
+    table and the buttons when it is sent (both are queued under the reminder key prefix)."""
     queued: list[ReminderQueuedOut] = []
     refused: list[ReminderRefusedOut] = []
     async with db.tx(p.session()) as conn:
@@ -225,9 +355,7 @@ async def send_reminders(
             await resolve(
                 conn, "students", message.student_id, what="student"
             )  # another center's id is a 404
-        drafts, skipped, people, _ = await _plan(conn, p.org_id)
-        eligible = {d.student_id for d in drafts}
-        why = {s.student_id: s.reason for s in skipped}
+        eligible, why, people = await eligible_now(conn)
         for message in body.messages:
             key = str(message.student_id)
             if key not in eligible:

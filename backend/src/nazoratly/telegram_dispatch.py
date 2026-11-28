@@ -26,6 +26,7 @@ from nazoratly.guardian_telegram import TelegramApi, contact_keyboard
 from nazoratly.rules import guardian as G
 from nazoratly.rules import teacher as R
 from nazoratly.secrets_box import SecretsBox
+from nazoratly.telegram_delivery import PAID_PREFIX
 from nazoratly.telegram_registry import ANON, BotInfo, center_bots
 from nazoratly.telegram_scope import CALLBACK, MARKER, MENU, Scope
 
@@ -475,6 +476,9 @@ class _Turn:
         cb_id = str(cq.get("id") or "")
         if data.startswith(f"{MENU}m:"):
             await self.offer_move(data, cb_id)
+            return
+        if data.startswith(PAID_PREFIX):
+            await self.guardian().on_paid(self.tg, data, cb_id)
             return
         if not self.roles:
             await self.api.answer_callback(cb_id, "Avval ulaning", alert=True)

@@ -129,5 +129,292 @@
         ]
       }
     }
+  ],
+  "messages": [
+    {
+      "name": "two open charges, requisites, markup in the approved text",
+      "in": {
+        "text": "Salom <script>&\n\nIkkinchi \"abzats\"\nuchinchi qator",
+        "paid_data": "p:S0005",
+        "pay_info": "8600 1234 5678 9012",
+        "charges": [
+          {
+            "month": "2026-10-01",
+            "due_date": "2026-10-10",
+            "outstanding": "600000"
+          },
+          {
+            "month": "2026-11-01",
+            "due_date": "2026-11-10",
+            "outstanding": "600000"
+          }
+        ]
+      },
+      "out": {
+        "html": "<p>Salom &lt;script&gt;&amp;</p><p>Ikkinchi &quot;abzats&quot;<br>uchinchi qator</p><table striped compact><tr><th>Oy</th><th>Qoldiq (so'm)</th><th>Muddat</th></tr><tr><td>2026-10</td><td align=\"right\">600 000</td><td><tg-time unix=\"1791615600\" format=\"D\">2026-10-10</tg-time></td></tr><tr><td>2026-11</td><td align=\"right\">600 000</td><td><tg-time unix=\"1794294000\" format=\"D\">2026-11-10</tg-time></td></tr></table><p><b>Jami qoldiq: 1 200 000 so'm</b></p><tg-button-row align=\"center\"><tg-button type=\"copy_text\" style=\"primary\" text=\"8600 1234 5678 9012\">Rekvizitlarni nusxalash</tg-button><tg-button type=\"callback_data\" style=\"success\" data=\"p:S0005\">To'lov qildim</tg-button></tg-button-row>",
+        "plain": "Salom <script>&\nIkkinchi \"abzats\"\nuchinchi qator\nOy | Qoldiq (so'm) | Muddat\n2026-10 | 600 000 | 2026-10-10\n2026-11 | 600 000 | 2026-11-10\n\nJami qoldiq: 1 200 000 so'm\nRekvizitlarni nusxalashTo'lov qildim"
+      }
+    },
+    {
+      "name": "no requisites: no copy button",
+      "in": {
+        "text": "Qarz bor",
+        "paid_data": "p:S0007",
+        "pay_info": "",
+        "charges": [
+          {
+            "month": "2026-11-01",
+            "due_date": "2026-12-01",
+            "outstanding": "1200000.5"
+          }
+        ]
+      },
+      "out": {
+        "html": "<p>Qarz bor</p><table striped compact><tr><th>Oy</th><th>Qoldiq (so'm)</th><th>Muddat</th></tr><tr><td>2026-11</td><td align=\"right\">1 200 001</td><td><tg-time unix=\"1796108400\" format=\"D\">2026-12-01</tg-time></td></tr></table><p><b>Jami qoldiq: 1 200 001 so'm</b></p><tg-button-row align=\"center\"><tg-button type=\"callback_data\" style=\"success\" data=\"p:S0007\">To'lov qildim</tg-button></tg-button-row>",
+        "plain": "Qarz bor\nOy | Qoldiq (so'm) | Muddat\n2026-11 | 1 200 001 | 2026-12-01\n\nJami qoldiq: 1 200 001 so'm\nTo'lov qildim"
+      }
+    },
+    {
+      "name": "nothing owed any more: text and buttons only",
+      "in": {
+        "text": "Eslatma",
+        "paid_data": "p:S0001",
+        "pay_info": "karta 1",
+        "charges": []
+      },
+      "out": {
+        "html": "<p>Eslatma</p><tg-button-row align=\"center\"><tg-button type=\"copy_text\" style=\"primary\" text=\"karta 1\">Rekvizitlarni nusxalash</tg-button><tg-button type=\"callback_data\" style=\"success\" data=\"p:S0001\">To'lov qildim</tg-button></tg-button-row>",
+        "plain": "Eslatma\nRekvizitlarni nusxalashTo'lov qildim"
+      }
+    },
+    {
+      "name": "a long requisites text is cut at 256 characters",
+      "in": {
+        "text": "x",
+        "paid_data": "p:S0002",
+        "pay_info": "999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+        "charges": [
+          {
+            "month": "2026-09-01",
+            "due_date": "2026-09-05",
+            "outstanding": "50000"
+          }
+        ]
+      },
+      "out": {
+        "html": "<p>x</p><table striped compact><tr><th>Oy</th><th>Qoldiq (so'm)</th><th>Muddat</th></tr><tr><td>2026-09</td><td align=\"right\">50 000</td><td><tg-time unix=\"1788591600\" format=\"D\">2026-09-05</tg-time></td></tr></table><p><b>Jami qoldiq: 50 000 so'm</b></p><tg-button-row align=\"center\"><tg-button type=\"copy_text\" style=\"primary\" text=\"9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999\">Rekvizitlarni nusxalash</tg-button><tg-button type=\"callback_data\" style=\"success\" data=\"p:S0002\">To'lov qildim</tg-button></tg-button-row>",
+        "plain": "x\nOy | Qoldiq (so'm) | Muddat\n2026-09 | 50 000 | 2026-09-05\n\nJami qoldiq: 50 000 so'm\nRekvizitlarni nusxalashTo'lov qildim"
+      }
+    }
+  ],
+  "paid": {
+    "today": "2026-11-23",
+    "student_name": "Bobur Saidov",
+    "note_line": "[2026-11-23: vasiy \"to'lov qildim\" dedi]",
+    "owner_text": "Bobur Saidov: vasiy \"To'lov qildim\" tugmasini bosdi. To'lovni tekshirib kiriting.",
+    "thanks": "Rahmat! Markaz to'lovni tekshiradi.",
+    "not_linked": "Bu o'quvchi sizga ulanmagan"
+  },
+  "packages": [
+    {
+      "name": "the three texts, and the worst group of a student wins",
+      "in": {
+        "today": "2026-11-27",
+        "cooldown_days": 7,
+        "center": "Ziyo",
+        "students": [
+          {
+            "id": "a",
+            "name": "Ali",
+            "status": "active",
+            "guardian": "Ona",
+            "has_chat": true,
+            "consent": true,
+            "last_reminded_on": null
+          },
+          {
+            "id": "b",
+            "name": "Vali",
+            "status": "active",
+            "guardian": "",
+            "has_chat": true,
+            "consent": true,
+            "last_reminded_on": null
+          },
+          {
+            "id": "c",
+            "name": "Soli",
+            "status": "active",
+            "guardian": "Ona",
+            "has_chat": true,
+            "consent": true,
+            "last_reminded_on": null
+          }
+        ],
+        "balances": [
+          {
+            "student_id": "a",
+            "need": "low",
+            "balance": 2,
+            "debt_amount": "0"
+          },
+          {
+            "student_id": "a",
+            "need": "debt",
+            "balance": -3,
+            "debt_amount": "150000"
+          },
+          {
+            "student_id": "b",
+            "need": "exhausted",
+            "balance": 0,
+            "debt_amount": "0"
+          },
+          {
+            "student_id": "c",
+            "need": "low",
+            "balance": 3,
+            "debt_amount": "0"
+          },
+          {
+            "student_id": "c",
+            "need": "low",
+            "balance": 1,
+            "debt_amount": "0"
+          },
+          {
+            "student_id": "c",
+            "need": "ok",
+            "balance": 9,
+            "debt_amount": "0"
+          }
+        ]
+      },
+      "out": {
+        "drafts": [
+          {
+            "student_id": "a",
+            "text": "Assalomu alaykum, Ona! Ali 3 ta darsda to'lovsiz qatnashdi (150 000 so'm). Iltimos, abonement to'lovini amalga oshiring. Ziyo"
+          },
+          {
+            "student_id": "b",
+            "text": "Assalomu alaykum, ota-ona! Vali uchun abonementdagi darslar tugadi. Davom etish uchun yangi abonement to'lovini amalga oshiring. Ziyo"
+          },
+          {
+            "student_id": "c",
+            "text": "Assalomu alaykum, Ona! Soli uchun abonementda 1 ta dars qoldi. Darslar to'xtab qolmasligi uchun to'lovni oldindan amalga oshiring. Ziyo"
+          }
+        ],
+        "skipped": []
+      }
+    },
+    {
+      "name": "skip reasons: left, no consent, no chat, cooldown; nothing for a full package",
+      "in": {
+        "today": "2026-11-27",
+        "cooldown_days": 7,
+        "center": "Ziyo",
+        "students": [
+          {
+            "id": "l",
+            "name": "A",
+            "status": "left",
+            "guardian": "Ona",
+            "has_chat": true,
+            "consent": true,
+            "last_reminded_on": null
+          },
+          {
+            "id": "n",
+            "name": "B",
+            "status": "active",
+            "guardian": "Ona",
+            "has_chat": true,
+            "consent": false,
+            "last_reminded_on": null
+          },
+          {
+            "id": "h",
+            "name": "C",
+            "status": "active",
+            "guardian": "Ona",
+            "has_chat": false,
+            "consent": true,
+            "last_reminded_on": null
+          },
+          {
+            "id": "k",
+            "name": "D",
+            "status": "active",
+            "guardian": "Ona",
+            "has_chat": true,
+            "consent": true,
+            "last_reminded_on": "2026-11-21"
+          },
+          {
+            "id": "o",
+            "name": "E",
+            "status": "active",
+            "guardian": "Ona",
+            "has_chat": true,
+            "consent": true,
+            "last_reminded_on": null
+          }
+        ],
+        "balances": [
+          {
+            "student_id": "l",
+            "need": "debt",
+            "balance": -1,
+            "debt_amount": "1000"
+          },
+          {
+            "student_id": "n",
+            "need": "exhausted",
+            "balance": 0,
+            "debt_amount": "0"
+          },
+          {
+            "student_id": "h",
+            "need": "low",
+            "balance": 1,
+            "debt_amount": "0"
+          },
+          {
+            "student_id": "k",
+            "need": "low",
+            "balance": 2,
+            "debt_amount": "0"
+          },
+          {
+            "student_id": "o",
+            "need": "ok",
+            "balance": 8,
+            "debt_amount": "0"
+          }
+        ]
+      },
+      "out": {
+        "drafts": [],
+        "skipped": [
+          {
+            "student_id": "l",
+            "reason": "student_inactive"
+          },
+          {
+            "student_id": "n",
+            "reason": "no_consent"
+          },
+          {
+            "student_id": "h",
+            "reason": "no_chat"
+          },
+          {
+            "student_id": "k",
+            "reason": "cooldown"
+          }
+        ]
+      }
+    }
   ]
 }

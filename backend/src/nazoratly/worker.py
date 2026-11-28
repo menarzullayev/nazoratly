@@ -14,7 +14,7 @@ import signal
 import sys
 import time
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -27,11 +27,13 @@ from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from nazoratly.observability import quiet_http_client_logs
+from nazoratly.rules import reminders as R
 from nazoratly.secrets_box import SecretsBox
 from nazoratly.telegram_delivery import (
     MARK_UNREACHABLE_SQL,
     ROUTES_SQL,
     UNDELIVERABLE,
+    paid_callback,
     refused_for_good,
     resolve_routes,
 )
@@ -147,6 +149,20 @@ class TelegramSender:
             if out.ok or out.status_code not in (400, 404):
                 return out
         return await self.send(msg)
+
+    async def send_reminder(self, msg: Message) -> Outcome:
+        """A debt reminder as the Sheets edition sends it: rich, or the same content as plain text when Telegram
+        rejects the rich message (the buttons are lost with it)."""
+        assert msg.body_html is not None
+        if msg.telegram_chat_id is None:
+            return Outcome(False, "guardian has no Telegram chat", permanent=True)
+        out = await self._call(
+            "sendRichMessage",
+            json={"chat_id": msg.telegram_chat_id, "rich_message": {"html": msg.body_html}},
+        )
+        if out.ok or out.status_code not in (400, 404):
+            return out
+        return await self.send(replace(msg, body=R.strip_html(msg.body_html)))
 
     async def send_document(self, chat_id: int, filename: str, pdf: bytes) -> Outcome:
         return await self._call(
@@ -294,6 +310,8 @@ class Worker:
             )
             if msg.channel == "telegram":
                 deliver = self._deliver_document if msg.has_document else TelegramSender.send
+                if not msg.has_document and (html := await self._reminder_html(msg)) is not None:
+                    msg, deliver = replace(msg, body_html=html), TelegramSender.send_reminder
                 outcome = await self._through_routes(int(row["org_id"]), msg, deliver)
             elif msg.has_document:
                 outcome = Outcome(False, "documents are delivered through Telegram only", permanent=True)
@@ -314,6 +332,25 @@ class Worker:
                 error=outcome.error,
             )
         return len(claimed)
+
+    async def _reminder_html(self, msg: Message) -> str | None:
+        """What a debt reminder looks like at this very moment (owner decision 43): the approved text plus what the
+        student owes NOW, the center's payment requisites and the buttons. None = not a debt reminder."""
+        async with self.pool.connection() as conn:
+            cur = await conn.execute("SELECT * FROM outbox_reminder_facts(%s)", (msg.message_id,))
+            rows = list(await cur.fetchall())
+        if not rows:
+            return None
+        return R.reminder_rich(
+            text=msg.body,
+            paid_data=paid_callback(rows[0]["student_public_id"]),
+            charges=[
+                R.OpenCharge(r["period_month"], r["due_date"], r["outstanding"])
+                for r in rows
+                if r["outstanding"] is not None
+            ],
+            pay_info=rows[0]["pay_info"] or "",
+        )
 
     async def _through_routes(
         self, org_id: int, msg: Message, deliver: Callable[[TelegramSender, Message], Awaitable[Outcome]]

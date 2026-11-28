@@ -55,6 +55,9 @@ class SettingsOut(Out):
     installment_remind_days: int = Field(
         description="draft a reminder this many days before an installment is due (0 = off)"
     )
+    pay_info: str | None = Field(
+        description="card or account that the copy button under a debt reminder copies; null = no such button"
+    )
 
 
 class SettingsPatch(Model):
@@ -84,6 +87,10 @@ class SettingsPatch(Model):
         Field(default=None, description="empty string = back to the standard text")
     )
     installment_remind_days: Annotated[int, Field(ge=0, le=30)] | None = None
+    # where guardians are told to pay: only the owner (org:manage) may change it
+    pay_info: Annotated[str, StringConstraints(strip_whitespace=True, max_length=256)] | None = Field(
+        default=None, description="empty string clears it"
+    )
 
 
 _FIELDS = (
@@ -101,9 +108,14 @@ _FIELDS = (
 )  # the settings a branch may override (the rest is center-wide)
 _ORG_ONLY = (
     "demo_mode, ai_enabled, ai_sees_names, ai_daily_limit, reminder_cooldown_days, reminder_min_overdue, "
-    "reminder_template, installment_remind_days"
+    "reminder_template, installment_remind_days, pay_info"
 )
-_CENTER_ONLY_PATCH = ("reminder_", "installment_remind_days")  # no branch override, as in the Sheets edition
+_CENTER_ONLY_PATCH = (
+    "reminder_",
+    "installment_remind_days",
+    "pay_info",
+)  # no branch override, as in the Sheets edition
+_CLEARABLE = ("requisites", "reminder_template", "pay_info")  # an empty string is stored as NULL
 _EFFECTIVE = ", ".join(f"COALESCE(bs.{f}, os.{f}) AS {f}" for f in _FIELDS if f != "requisites")
 # requisites may be cleared in a branch ('' = print nothing), so a NULL there means "inherit", an empty string "none"
 _EFFECTIVE += ", COALESCE(bs.requisites, os.requisites) AS requisites"
@@ -161,6 +173,8 @@ async def patch_settings(
     changes = body.model_dump(exclude_unset=True, exclude_none=True)
     if any(k.startswith("ai_") for k in changes) and not p.can("org:manage"):
         raise Forbidden("only the owner can change the AI switches")
+    if "pay_info" in changes and not p.can("org:manage"):
+        raise Forbidden("only the owner can change the payment requisites")
     async with db.tx(p.session()) as conn:
         await load_settings_at(conn, p.org_id, None)  # creates the center row on first use
         if p.scope_branch_id is None:
@@ -168,7 +182,7 @@ async def patch_settings(
                 column,
                 value,
             ) in changes.items():  # column names come from the model above, never from the client
-                stored = None if column in ("requisites", "reminder_template") and value == "" else value
+                stored = None if column in _CLEARABLE and value == "" else value
                 await execute(
                     conn, f"UPDATE org_settings SET {column} = %s WHERE org_id = %s", (stored, p.org_id)
                 )

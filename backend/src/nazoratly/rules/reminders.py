@@ -3,16 +3,22 @@
 
 Nothing is sent from here: a person reads each draft and approves it. A student is skipped without a notifications
 consent or a linked Telegram chat, after leaving or pausing, below the debt threshold, or when a reminder was already
-made within the cooldown."""
+made within the cooldown.
+
+The second half is what is added to an approved text WHEN IT IS SENT (sheets/src/domain/messages.ts: `reminderRich` and
+`stripHtml`; the paid-claim texts are in sheets/src/gas/webhook.ts), checked against the same golden file."""
 
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping
+from calendar import timegm
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Final, Literal
+from typing import Final, Literal, cast
+
+from nazoratly.rules.packages import Need, package_reminder_text
 
 DEFAULT_TEMPLATE: Final = (
     "Assalomu alaykum, {guardian}! {student} uchun {amount} so'm to'lov muddati {days} kun oldin o'tgan. "
@@ -178,3 +184,134 @@ def plan(
         )
         drafts.append(Draft(student.id, "upcoming", text))
     return drafts, skipped
+
+
+# ---- lesson packages (sheets/src/domain/reminders.ts: `planPackageReminders`) --------------------------------------
+_PACKAGE_RANK: Final = {"debt": 0, "exhausted": 1, "low": 2}
+
+
+@dataclass(frozen=True)
+class PackageFacts:
+    student_id: str
+    need: str  # "low" | "exhausted" | "debt" ("ok" rows are ignored)
+    balance: int  # lessons left; negative = lessons attended without cover
+    debt_amount: Decimal
+
+
+@dataclass(frozen=True)
+class PackageDraft:
+    student_id: str
+    need: str
+    text: str
+
+
+def plan_packages(
+    *,
+    balances: list[PackageFacts],
+    students: Mapping[str, StudentFacts],
+    today: date,
+    cooldown_days: int,
+    center: str,
+) -> tuple[list[PackageDraft], list[Skip]]:
+    """One draft per student whose lesson package needs a payment: the worst of the student's package groups. The same
+    consent, chat and cooldown rules as every reminder."""
+    worst: dict[str, PackageFacts] = {}
+    for b in balances:
+        if b.need not in _PACKAGE_RANK:
+            continue
+        cur = worst.get(b.student_id)
+        if cur is None or (_PACKAGE_RANK[b.need], b.balance) < (_PACKAGE_RANK[cur.need], cur.balance):
+            worst[b.student_id] = b
+    drafts: list[PackageDraft] = []
+    skipped: list[Skip] = []
+    for key, b in worst.items():
+        student = students.get(key)
+        if student is None or _inactive(student):
+            skipped.append(Skip(key, "student_inactive"))
+            continue
+        reason = _blocked(student, today, cooldown_days)
+        if reason is not None:
+            skipped.append(Skip(key, reason))
+            continue
+        text = package_reminder_text(
+            need=cast(Need, b.need),
+            guardian=student.guardian_name or "ota-ona",
+            student=student.name,
+            balance=b.balance,
+            debt_amount=b.debt_amount,
+            center=center,
+        )
+        drafts.append(PackageDraft(key, b.need, text))
+    return drafts, skipped
+
+
+# ---- the message as it is sent ------------------------------------------------------------------------------------
+PAY_INFO_BUTTON: Final = "Rekvizitlarni nusxalash"
+PAID_BUTTON: Final = "To'lov qildim"
+PAID_THANKS: Final = "Rahmat! Markaz to'lovni tekshiradi."
+PAID_NOT_LINKED: Final = "Bu o'quvchi sizga ulanmagan"
+_PARAGRAPHS = re.compile(r"\n{2,}")
+
+
+@dataclass(frozen=True)
+class OpenCharge:
+    month: date
+    due_date: date
+    outstanding: Decimal
+
+
+def _esc(text: str) -> str:
+    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+
+
+def _tg_time(day: date) -> str:
+    """`<tg-time>` shows the date in the reader's language and time zone; noon in Tashkent (07:00 UTC) keeps the day."""
+    unix = timegm((day.year, day.month, day.day, 7, 0, 0))
+    return f'<tg-time unix="{unix}" format="D">{day.isoformat()}</tg-time>'
+
+
+def charges_table(charges: Sequence[OpenCharge]) -> str:
+    if not charges:
+        return ""
+    rows = "".join(
+        f'<tr><td>{c.month.isoformat()[:7]}</td><td align="right">{format_som(c.outstanding)}</td>'
+        f"<td>{_tg_time(c.due_date)}</td></tr>"
+        for c in charges
+    )
+    return f"<table striped compact><tr><th>Oy</th><th>Qoldiq (so'm)</th><th>Muddat</th></tr>{rows}</table>"
+
+
+def reminder_rich(*, text: str, paid_data: str, charges: Sequence[OpenCharge], pay_info: str) -> str:
+    """The approved text, a table of what is owed now (oldest due date first, as given), its total and two one-tap
+    buttons. `pay_info` is what the copy button copies ("" = no such button)."""
+    body = "".join(f"<p>{_esc(part).replace(chr(10), '<br>')}</p>" for part in _PARAGRAPHS.split(text))
+    total = sum((c.outstanding for c in charges), Decimal(0))
+    summary = f"<p><b>Jami qoldiq: {format_som(total)} so'm</b></p>" if total > 0 else ""
+    copy = (
+        f'<tg-button type="copy_text" style="primary" text="{_esc(pay_info[:256])}">{PAY_INFO_BUTTON}</tg-button>'
+        if pay_info
+        else ""
+    )
+    paid = f'<tg-button type="callback_data" style="success" data="{_esc(paid_data[:64])}">{PAID_BUTTON}</tg-button>'
+    return (
+        f'{body}{charges_table(charges)}{summary}<tg-button-row align="center">{copy}{paid}</tg-button-row>'
+    )
+
+
+def strip_html(html: str) -> str:
+    """The plain text sent when Telegram refuses the rich message."""
+    out = re.sub(r"</(p|h3|tr|table|tg-button-row)>", "\n", html)
+    out = re.sub(r"<br\s*/?>", "\n", out)
+    out = re.sub(r"</t[dh]>", " | ", out)
+    out = re.sub(r"<[^>]+>", "", out)
+    out = out.replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", '"').replace("&amp;", "&")
+    out = re.sub(r"[ \t]*\|[ \t]*\n", "\n", out)
+    return re.sub(r"\n{3,}", "\n\n", out).strip()
+
+
+def paid_note_line(today: date) -> str:
+    return f'[{today.isoformat()}: vasiy "to\'lov qildim" dedi]'
+
+
+def paid_owner_text(student_name: str) -> str:
+    return f'{student_name}: vasiy "{PAID_BUTTON}" tugmasini bosdi. To\'lovni tekshirib kiriting.'
